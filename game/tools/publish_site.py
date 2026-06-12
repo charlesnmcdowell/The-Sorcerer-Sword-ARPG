@@ -21,7 +21,12 @@ def main():
     if PLAY.exists(): shutil.rmtree(PLAY)
     PLAY.mkdir()
 
-    shutil.copy2(GAME / "index.html", PLAY / "index.html")
+    # cache-bust every local script so players always get fresh code after a publish
+    import time
+    stamp = str(int(time.time()))
+    html = (GAME / "index.html").read_text(encoding="utf-8")
+    html = re.sub(r'(src="(?!https?:)[^"?]+\.js)"', r'\1?v=' + stamp + '"', html)
+    (PLAY / "index.html").write_text(html, encoding="utf-8")
     shutil.copytree(GAME / "lib", PLAY / "lib")
     shutil.copytree(GAME / "src", PLAY / "src")
     (PLAY / "assets").mkdir()
