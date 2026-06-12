@@ -82,14 +82,10 @@ function run(ch) {
           }
           if (foe.attacking && foe.tele < 0.15 && dFoe < 100 && P.rollCD <= 0) combat.doRoll();
         } else if (ch === 'seraph') {
-          if (dFoe > 85) moveTo(foe.x, foe.y);
+          if (dFoe > 100) moveTo(foe.x, foe.y);
           else moveTo(P.x + (P.x - foe.x), P.y + (P.y - foe.y));
           combat.doSlash();
-          const ca = Math.cos(P.face), sa = Math.sin(P.face);
-          const lined = foes.filter(e => { const rx = e.x - P.x, ry = e.y - P.y;
-            const proj = rx * ca + ry * sa, perp = Math.abs(-rx * sa + ry * ca);
-            return proj > 0 && proj < 900 && perp < 40; }).length;
-          if (P.heavyCD <= 0 && P.heavyWind <= 0 && (lined >= 2 || (foes.length === 1 && dFoe < 320))) combat.doHeavy();
+          if (P.heavyCD <= 0 && P.heavyWind <= 0 && dFoe < 600) combat.doHeavy();
           const crowd = foes.filter(e => dist(P, e) < 110).length;
           if (P.parryCD <= 0 && (crowd >= 2 || (P.hp / combat.maxHP() < 0.45 && dFoe < 100))) combat.doParry();
           if (foe.attacking && foe.tele < 0.15 && dFoe < 100 && P.rollCD <= 0 && !(P.ascendT > 0)) combat.doRoll();
