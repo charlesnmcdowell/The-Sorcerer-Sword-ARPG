@@ -127,6 +127,7 @@ def main():
     if not args.yes and input("Proceed? [y/N] ").strip().lower() != "y": sys.exit("aborted")
 
     print("[4/4] generating...")
+    skipped = set()  # voices we couldn't design (e.g. account voice-slot limit) — their lines wait, everything else proceeds
     for slot in need:
         sample = BRIEFS[slot]
         for l in todo:
@@ -135,11 +136,16 @@ def main():
         st, body = http("POST", "/v1/text-to-voice/design", key,
             {"voice_description": BRIEFS[slot], "text": sample[:950] if len(sample) >= 100 else (sample + " " + BRIEFS[slot])[:950],
              "model_id": "eleven_multilingual_ttv_v2"})
-        if st != 200: sys.exit(f"design failed for {slot} ({st}): {body[:300].decode(errors='replace')}")
+        if st != 200:
+            print(f"  !! could not design '{slot}' ({st}): {body[:160].decode(errors='replace')}")
+            print(f"     -> paste an existing voice id into voice_config.json under \"{slot}\" and rerun; skipping its lines for now.")
+            skipped.add(slot); continue
         gen = json.loads(body)["previews"][0]["generated_voice_id"]
         st, body = http("POST", "/v1/text-to-voice", key,
             {"voice_name": "ARPG " + slot, "voice_description": BRIEFS[slot], "generated_voice_id": gen})
-        if st != 200: sys.exit(f"voice create failed for {slot} ({st}): {body[:300].decode(errors='replace')}")
+        if st != 200:
+            print(f"  !! could not save designed voice '{slot}' ({st}): {body[:160].decode(errors='replace')}")
+            skipped.add(slot); continue
         voices[slot] = json.loads(body)["voice_id"]
         cfg["voices"] = voices
         CONFIG.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
@@ -154,9 +160,11 @@ def main():
             if st in (429, 500, 502, 503, 504): time.sleep(2 ** attempt); continue
             print(f"  FAILED {st}: {body[:160].decode(errors='replace')}"); return None
         return None
-    done = fails = 0
+    done = fails = waiting = 0
     for l in todo:
         segs = l.get("segs") or [{"sp": l["speaker"], "t": l.get("vtext", l["text"])}]
+        if any(slots.get(g["sp"], "Narrator") in skipped for g in segs):
+            waiting += 1; continue  # needs a voice we couldn't design — picks up on the next run
         chunks = []
         ok = True
         for g in segs:
@@ -169,7 +177,7 @@ def main():
             tag = "+narr" if len(segs) > 1 else ""
             print(f"  [{done}/{len(todo)}] {l['speaker']}{tag}: {l['text'][:42]}...")
         else: fails += 1
-    print(f"\ndone: {done} generated, {fails} failed -> {OUT_DIR}")
+    print(f"\ndone: {done} generated, {fails} failed" + (f", {waiting} waiting on missing voices ({', '.join(sorted(skipped))})" if waiting else "") + f" -> {OUT_DIR}")
     print("Reload the game - dialogs speak. Retake a line: delete its mp3, rerun.")
 
 if __name__ == "__main__":

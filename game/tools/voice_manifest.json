@@ -43,7 +43,7 @@
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
   "count": 170,
-  "totalChars": 29214,
+  "totalChars": 29569,
   "lines": [
     {
       "id": "0a8752aa",
@@ -70,7 +70,8 @@
       "id": "cc0b74c2",
       "speaker": "NARRATOR",
       "text": "He is not from the city. He is from the place above, as most angels are. Giant wings. Runic chains. Three heads, and every one of them watching a different sin. He says great evil brews in the land and he has come to find warriors worthy of the cleansing. The crowd believes him completely. Bellow, privately, is not so sure.",
-      "note": "character intro bio"
+      "note": "character intro bio",
+      "vtext": "[low, reverent] He is not from the city. He is from the place above, as most angels are. Giant wings. Runic chains. Three heads, and every one of them watching a different sin. He says great evil brews in the land and he has come to find warriors worthy of the cleansing. The crowd believes him completely. Bellow, privately, is not so sure."
     },
     {
       "id": "e79b8998",
@@ -1119,7 +1120,7 @@
         },
         {
           "sp": "MARLOW",
-          "t": "We don't— I haven't—"
+          "t": "[nervously] We don't— I haven't—"
         },
         {
           "sp": "NARRATOR",
@@ -1127,9 +1128,10 @@
         },
         {
           "sp": "MARLOW",
-          "t": "Welcome to the Last Lantern, holy one. First drink's free. All the drinks are free. Please don't unmake the inn."
+          "t": "[shaky breath] Welcome to the Last Lantern, holy one. First drink's free. All the drinks are free. [whispers] please don't unmake the inn."
         }
-      ]
+      ],
+      "vtext": "Marlow does not reach for a tankard. He reaches, slowly, for his BEST one. \"[nervously] We don't— I haven't—\" He stops. Starts over, quieter. \"[shaky breath] Welcome to the Last Lantern, holy one. First drink's free. All the drinks are free. [whispers] please don't unmake the inn.\""
     },
     {
       "id": "d4e0b590",
@@ -1140,7 +1142,7 @@
       "segs": [
         {
           "sp": "MARLOW",
-          "t": "Adequate. The PIT. Adequate."
+          "t": "[deadpan] Adequate. The PIT. Adequate."
         },
         {
           "sp": "NARRATOR",
@@ -1156,9 +1158,10 @@
         },
         {
           "sp": "MARLOW",
-          "t": "I am not charging Heaven five silver. Tell the mountain Marlow sent you. Tell it GENTLY."
+          "t": "I am not charging Heaven five silver. Tell the mountain Marlow sent you. [whispers] tell it GENTLY."
         }
-      ]
+      ],
+      "vtext": "\"[deadpan] Adequate. The PIT. Adequate.\" He laughs the way men laugh near cliff edges. \"Dragonspine, holy one. The treaty lands — east past Thorn Grove, up the spine trail. Where the dragons signed their peace, and everything too proud or too heavy for the valley went up to be a LEGEND about it. Ogres that carry hills. An orc whose blade keeps a funeral ledger. A goblin king — gods help us — with three crowns. The wyvern brood-mother. And older things. Treaty things.\" He slides your silver back across the bar with one finger. \"I am not charging Heaven five silver. Tell the mountain Marlow sent you. [whispers] tell it GENTLY.\""
     },
     {
       "id": "08936c58",
@@ -1197,7 +1200,7 @@
         },
         {
           "sp": "KARGOTH",
-          "t": "Little god,"
+          "t": "[slow, rumbling] Little god,"
         },
         {
           "sp": "NARRATOR",
@@ -1213,9 +1216,10 @@
         },
         {
           "sp": "KARGOTH",
-          "t": "Kargoth knows why the bright ones come. Single combat. No wings past the cairn line. Win, and Kargoth listens."
+          "t": "Kargoth knows why the bright ones come. [pause] Single combat. No wings past the cairn line. Win, and Kargoth listens."
         }
-      ]
+      ],
+      "vtext": "An ogre the size of a toll-house sits braiding a rope from whole pines. He looks up without alarm — very little alarms a hill. \"[slow, rumbling] Little god,\" he rumbles. \"The stone said something bright was coming up the trail.\" He stands. The mountain adjusts. \"Kargoth knows why the bright ones come. [pause] Single combat. No wings past the cairn line. Win, and Kargoth listens.\""
     },
     {
       "id": "6500b1da",
@@ -1229,15 +1233,17 @@
         },
         {
           "sp": "KARGOTH",
-          "t": "STRONG little god. Nobody has knocked Kargoth onto his own rope in a hundred years."
+          "t": "[booming laugh] STRONG little god. Nobody has knocked Kargoth onto his own rope in a hundred years."
         }
-      ]
+      ],
+      "vtext": "He sits down where he fell, laughing — an avalanche learning to chuckle. \"[booming laugh] STRONG little god. Nobody has knocked Kargoth onto his own rope in a hundred years.\""
     },
     {
       "id": "b0088310",
       "speaker": "KARGOTH",
       "text": "\"Kargoth comes. Kargoth has always wondered what hills look like from above.\"",
-      "note": "recruited: kargoth"
+      "note": "recruited: kargoth",
+      "vtext": "\"[slow, rumbling] Kargoth comes. Kargoth has always wondered what hills look like from above.\""
     },
     {
       "id": "78cb3c01",
@@ -1285,7 +1291,7 @@
         },
         {
           "sp": "SKARVA",
-          "t": "I keep a ledger,"
+          "t": "[dry] I keep a ledger,"
         },
         {
           "sp": "NARRATOR",
@@ -1301,9 +1307,10 @@
         },
         {
           "sp": "SKARVA",
-          "t": "FINALLY. Something the ledger might not fit."
+          "t": "[grinning] FINALLY. Something the ledger might not fit."
         }
-      ]
+      ],
+      "vtext": "She is sharpening a blade that is already sharp on a whetstone cut from a tombstone. \"[dry] I keep a ledger,\" she says, not looking up. \"Every name this blade has closed. Page one was my warlord. Page last is whoever asks.\" She looks up. Three heads look back at her. She grins like a drawn sword. \"[grinning] FINALLY. Something the ledger might not fit.\""
     },
     {
       "id": "752ee2f8",
@@ -1329,7 +1336,8 @@
       "id": "5684b938",
       "speaker": "SKARVA",
       "text": "\"One condition, angel: when your war is done, the last page is MINE to write.\"",
-      "note": "recruited: skarva"
+      "note": "recruited: skarva",
+      "vtext": "\"[level, cold] One condition, angel: when your war is done, the last page is MINE to write.\""
     },
     {
       "id": "de44ff6c",
@@ -1377,7 +1385,7 @@
         },
         {
           "sp": "NIBNOB",
-          "t": "ANOTHER recruiter!"
+          "t": "[shrieks] ANOTHER recruiter!"
         },
         {
           "sp": "NARRATOR",
@@ -1385,7 +1393,7 @@
         },
         {
           "sp": "NIBNOB",
-          "t": "Oh, I've HEARD about you sky-folk. First it's cleanse the great evil, then it's build my temple, then it's meet my seventeen brides. NO SALE."
+          "t": "Oh, I've HEARD about you sky-folk. First it's cleanse the great evil, then it's build my temple, then it's meet my seventeen brides. [snaps] NO SALE."
         },
         {
           "sp": "NARRATOR",
@@ -1393,9 +1401,10 @@
         },
         {
           "sp": "NIBNOB",
-          "t": "But a DUEL? A duel the king will take. Crown rules: my guard fights too. Kings don't have FAIR. Kings have SUBJECTS."
+          "t": "But a DUEL? A duel the king will take. Crown rules: my guard fights too. Kings don't have FAIR. [gleeful] Kings have SUBJECTS."
         }
-      ]
+      ],
+      "vtext": "A goblin in three crowns — one iron, one gold, one suspiciously municipal — receives you from a throne of stolen saddles. \"[shrieks] ANOTHER recruiter!\" he shrieks, delighted. \"Oh, I've HEARD about you sky-folk. First it's cleanse the great evil, then it's build my temple, then it's meet my seventeen brides. [snaps] NO SALE.\" He claps twice anyway. \"But a DUEL? A duel the king will take. Crown rules: my guard fights too. Kings don't have FAIR. [gleeful] Kings have SUBJECTS.\""
     },
     {
       "id": "91bbc8d6",
@@ -1409,15 +1418,17 @@
         },
         {
           "sp": "NIBNOB",
-          "t": "FINE! FINE. The king concedes the field. STOP GLOWING AT ME."
+          "t": "[muffled, from inside a barrel] FINE! FINE. The king concedes the field. STOP GLOWING AT ME."
         }
-      ]
+      ],
+      "vtext": "He surrenders from inside a barrel, all three crowns askew. \"[muffled, from inside a barrel] FINE! FINE. The king concedes the field. STOP GLOWING AT ME.\""
     },
     {
       "id": "8c6a05a0",
       "speaker": "NIBNOB",
       "text": "\"The SKY kingdom. Yes. YES. Do they have an army? Do they have a TREASURY? Don't answer. Crown me up, featherbeard.\"",
-      "note": "recruited: nibnob"
+      "note": "recruited: nibnob",
+      "vtext": "\"[rapid, greedy] The SKY kingdom. Yes. YES. Do they have an army? Do they have a TREASURY? Don't answer. Crown me up, featherbeard.\""
     },
     {
       "id": "c5ac7518",
@@ -1501,7 +1512,7 @@
         },
         {
           "sp": "AURVAETH",
-          "t": "Seraphim."
+          "t": "[ancient, layered] Seraphim."
         },
         {
           "sp": "NARRATOR",
@@ -1517,9 +1528,10 @@
         },
         {
           "sp": "AURVAETH",
-          "t": "...Convince me the old way. The treaty says nothing about duels."
+          "t": "[long pause] ...Convince me the old way. The treaty says nothing about duels."
         }
-      ]
+      ],
+      "vtext": "At the highest cairn waits a grey-eyed traveler who was never a traveler. The shape is a polite fiction; the shadow it throws is not. \"[ancient, layered] Seraphim.\" The voice has strata. \"I signed a treaty to keep my fire out of the valley. And here you stand, smelling of two gods and one war, come to talk me into breaking it upward.\" A pause, geological. \"[long pause] ...Convince me the old way. The treaty says nothing about duels.\""
     },
     {
       "id": "9076d578",
@@ -1549,13 +1561,14 @@
       "segs": [
         {
           "sp": "AURVAETH",
-          "t": "Clever. The valley keeps its peace, and heaven inherits my fire. I begin to see why two gods share you."
+          "t": "[slow, amused] Clever. The valley keeps its peace, and heaven inherits my fire. I begin to see why two gods share you."
         },
         {
           "sp": "NARRATOR",
           "t": "The traveler-shape smiles with too many years."
         }
-      ]
+      ],
+      "vtext": "\"[slow, amused] Clever. The valley keeps its peace, and heaven inherits my fire. I begin to see why two gods share you.\" The traveler-shape smiles with too many years."
     },
     {
       "id": "7ee3808c",
@@ -1601,13 +1614,15 @@
       "id": "d1fa0100",
       "speaker": "NARRATOR",
       "text": "The Skyreach shrine is older than the treaty, older than the kingdom whose maps forgot it. Wind-scoured steps end at an altar made of nothing — a standing doorway of cold, bright air. The runic chains at your waist and chest hum against it like struck bells. Somewhere above, your two patrons lean closer: the one who closes doors, and the one who opens them.",
-      "note": "shrine"
+      "note": "shrine",
+      "vtext": "[hushed] The Skyreach shrine is older than the treaty, older than the kingdom whose maps forgot it. Wind-scoured steps end at an altar made of nothing — a standing doorway of cold, bright air. The runic chains at your waist and chest hum against it like struck bells. Somewhere above, your two patrons lean closer: the one who closes doors, and the one who opens them."
     },
     {
       "id": "0c68ca36",
       "speaker": "NARRATOR",
       "text": "The land below keeps its conspiracies. The taint keeps brewing in the Ashenveil; the ledgers keep their four small letters; the war you spoke of is real, whatever else you are. The Pit's crowds will tell it their own way for a hundred years — the night the angel and his champion walked into the sky. The light takes you both. The mountain keeps the story.",
-      "note": "shrine"
+      "note": "shrine",
+      "vtext": "[slow, final] The land below keeps its conspiracies. The taint keeps brewing in the Ashenveil; the ledgers keep their four small letters; the war you spoke of is real, whatever else you are. The Pit's crowds will tell it their own way for a hundred years — the night the angel and his champion walked into the sky. The light takes you both. The mountain keeps the story."
     },
     {
       "id": "9ee354b8",
@@ -1617,9 +1632,10 @@
       "segs": [
         {
           "sp": "PLAYER-SERAPH",
-          "t": "Peace, innkeeper. I seek warriors. The Pit's were adequate. Where does true strength live?"
+          "t": "[calm, resonant] Peace, innkeeper. I seek warriors. The Pit's were adequate. Where does true strength live?"
         }
-      ]
+      ],
+      "vtext": "\"[calm, resonant] Peace, innkeeper. I seek warriors. The Pit's were adequate. Where does true strength live?\""
     },
     {
       "id": "1529b488",
@@ -1653,9 +1669,10 @@
       "segs": [
         {
           "sp": "PLAYER-SERAPH",
-          "t": "Then stand, Kargoth. The cairn line it is."
+          "t": "[calm, resonant] Then stand, Kargoth. The cairn line it is."
         }
-      ]
+      ],
+      "vtext": "\"[calm, resonant] Then stand, Kargoth. The cairn line it is.\""
     },
     {
       "id": "72476b4a",
@@ -1773,9 +1790,10 @@
       "segs": [
         {
           "sp": "PLAYER-SERAPH",
-          "t": "The treaty bound your fire to the valley, Aurvaeth. The sky above it was never named."
+          "t": "[measured] The treaty bound your fire to the valley, Aurvaeth. The sky above it was never named."
         }
-      ]
+      ],
+      "vtext": "\"[measured] The treaty bound your fire to the valley, Aurvaeth. The sky above it was never named.\""
     },
     {
       "id": "8e0fdd48",

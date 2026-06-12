@@ -22,11 +22,19 @@ def main():
     PLAY.mkdir()
 
     # cache-bust every local script so players always get fresh code after a publish
-    import time
+    import time, os
     stamp = str(int(time.time()))
-    html = (GAME / "index.html").read_text(encoding="utf-8")
+    src_index = GAME / "index.html"
+    # OneDrive guard: force a fresh read (cloud sync has served truncated files mid-write)
+    tmp = GAME / ".index_publish_tmp"
+    os.replace(src_index, tmp); os.replace(tmp, src_index)
+    html = src_index.read_text(encoding="utf-8")
+    if not html.rstrip().endswith("</html>"):
+        sys.exit("ABORT: game/index.html is TRUNCATED (OneDrive flap?) — re-sync the file and rerun. Nothing was published.")
     html = re.sub(r'(src="(?!https?:)[^"?]+\.js)"', r'\1?v=' + stamp + '"', html)
     (PLAY / "index.html").write_text(html, encoding="utf-8")
+    if not (PLAY / "index.html").read_text(encoding="utf-8").rstrip().endswith("</html>"):
+        sys.exit("ABORT: written play/index.html failed verification — do not push.")
     shutil.copytree(GAME / "lib", PLAY / "lib")
     shutil.copytree(GAME / "src", PLAY / "src")
     (PLAY / "assets").mkdir()
@@ -35,6 +43,12 @@ def main():
         d = GAME / "assets" / sub
         if d.exists(): shutil.copytree(d, PLAY / "assets" / sub,
                                        ignore=shutil.ignore_patterns("_raw", "README.txt"))
+    # verify every copied text file matches its source byte-for-byte in size
+    bad = []
+    for rel in ["config.js"] + [str(p.relative_to(GAME)) for p in (GAME / "src").rglob("*.js")]:
+        s, d2 = GAME / rel, PLAY / rel
+        if rel != "config.js" and d2.exists() and s.stat().st_size != d2.stat().st_size: bad.append(rel)
+    if bad: sys.exit("ABORT: copied files differ from source (truncation?): " + ", ".join(bad))
 
     # sanitize config: NEVER ship a key
     cfg = (GAME / "config.js").read_text(encoding="utf-8")
