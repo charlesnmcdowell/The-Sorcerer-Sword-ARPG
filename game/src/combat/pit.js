@@ -1995,6 +1995,7 @@ const api={
   pointerMove:(x,y)=>{mouse.x=x;mouse.y=y;},
   clearDecals:()=>{},
   get S(){return S;},get P(){return P;},get enemies(){return enemies;},
+  get demons(){return demons;},get wolves(){return wolves;},
   get nickname(){return nickname;},get FIGHTS(){return FIGHTS;},
   maxHP,lvl,diceN,stat,
 };

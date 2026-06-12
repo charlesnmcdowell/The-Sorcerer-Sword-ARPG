@@ -4,6 +4,7 @@
 
 class ArenaScene extends Phaser.Scene {
   constructor() { super({ key: 'ArenaScene' }); }
+  static get PAYOUT_PER_KILL() { return 15; } // Bellow's rate — gold is score/flavor (no economy this build)
 
   create() {
     const W = this.scale.width, H = this.scale.height; // 1280x720 logical
@@ -74,7 +75,23 @@ class ArenaScene extends Phaser.Scene {
         }
         if (id === 'death' && data) { $('deathStats').textContent = data.stats;
           $('deathQuote').textContent = data.quote; $('deathHints').textContent = data.hints; }
-        if (id === 'victory' && data) { $('vicStats').textContent = data.stats; }
+        if (id === 'victory' && data) {
+          // ---- arena -> city handoff: the run's earnings follow the player out of the Pit ----
+          const P = this.combat.P;
+          const gold = P.kills * ArenaScene.PAYOUT_PER_KILL;
+          window.GameState.player = {
+            char: P.char,
+            kills: P.kills,
+            level: P.char === 'ronin' ? 1 : Math.min(10, Math.floor(P.level || 1)),
+            bladeTier: P.bladeTier || 0,
+            base: Object.assign({}, P.base),
+            nickname: this.combat.nickname,
+            gold,
+            belt: []
+          };
+          window.GameState.world.flags.pitChampion = true;
+          $('vicStats').textContent = data.stats + ' · Bellow pays out ' + gold + ' gold';
+        }
         $(id).classList.add('show');
       }
     };
@@ -125,6 +142,10 @@ class ArenaScene extends Phaser.Scene {
     $('fightBtn').addEventListener('pointerdown', () => this.combat.startFight());
     $('againBtn').addEventListener('pointerdown', () => this.combat.fullReset());
     $('vicBtn').addEventListener('pointerdown', () => this.combat.fullReset());
+    $('leaveBtn').addEventListener('pointerdown', () => {
+      // Bucket 3 replaces this stub with the real CityScene transition
+      ui.banner('KARRIDGE CITY', 'beyond the pit gate — built in Bucket 3', 2200, '#e7b450');
+    });
 
     // expose for save/load + city transition later
     window.GameState.world.zone = 'pit-of-karridge';
