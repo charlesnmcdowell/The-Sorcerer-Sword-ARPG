@@ -20,9 +20,9 @@ const Quests = {
   ],
 
   guildBoard: [
-    { id: 'g-wolves', title: 'CULL: WOLVES', text: 'Eight wolves out of Thorn Grove\'s edge worry the wood-elf herds.', reward: '40c + potion', region: 'Thorn Grove', locked: true },
-    { id: 'g-rotshaman', title: 'HUNT: ROT SHAMAN', text: 'Something is raising the forest\'s dead. The Eldest want it stopped.', reward: '80c + potion', region: 'Thorn Grove', locked: true },
-    { id: 'g-hounds', title: 'CULL: GRAVE HOUNDS', text: 'Escaped pit hounds gone feral in the southern brush.', reward: '40c + potion', region: 'Thorn Grove', locked: true },
+    { id: 'g-wolves', title: 'CULL: WOLVES', text: 'Eight wolves out of Thorn Grove\'s edge worry the wood-elf herds.', reward: '4s + potion', region: 'Thorn Grove', need: 8, copper: 40, potion: 'potion-health', potionLabel: 'Health Potion' },
+    { id: 'g-rotshaman', title: 'HUNT: ROT SHAMAN', text: 'Something is raising the forest\'s dead. The Eldest want it stopped.', reward: '8s + potion', region: 'Thorn Grove', need: 1, copper: 80, potion: 'potion-str', potionLabel: 'STR Potion' },
+    { id: 'g-hounds', title: 'CULL: GRAVE HOUNDS', text: 'Escaped pit hounds gone feral in the southern brush.', reward: '4s + potion', region: 'Thorn Grove', need: 6, copper: 40, potion: 'potion-dex', potionLabel: 'DEX Potion' },
   ],
 
   innkeeper: {

@@ -6,6 +6,9 @@ const UI=Object.assign({stats(){},btnLabel(){},flash(){},banner(){},screen(){},h
 const NOW=D.now||(()=>Date.now());
 const _stub2d=()=>new Proxy({},{get:(t,k)=>(k==='createRadialGradient'?(()=>({addColorStop(){}})):()=>{}),set:()=>true});
 const ctx=D.ctx||null,dctx=D.dctx||_stub2d();
+const THEME=Object.assign({backdrop:'#06040a',star:'rgba(120,100,140,.14)',ringBase:0.34,ringStep:0.06,
+  ringCol:'255,90,140',crowdCol:'240,168,61',floor:'#100d18',rim:'#ff5a8c',rivet:'#ffd0e0',
+  showCrowd:true},D.theme||{});
 let W=0,H=0,DPR=1,arena={x:0,y:0,r:0};
 // cinematic camera (declared before resize, which runs at load)
 const cam={x:0,y:0,z:1,tx:0,ty:0,tz:1,hold:0};
@@ -23,7 +26,9 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const ang=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x);
 const clampArena=(e)=>{const d=Math.hypot(e.x-arena.x,e.y-arena.y),max=arena.r-e.r;
   if(d>max){const a=Math.atan2(e.y-arena.y,e.x-arena.x);e.x=arena.x+Math.cos(a)*max;e.y=arena.y+Math.sin(a)*max;}};
-function rollDice(n,s){let t=0;for(let i=0;i<n;i++)t+=1+Math.floor(Math.random()*s);return t;}
+const MODS={dmg:1,maxhp:1,parryWin:1,dodgeWin:1};
+function setMods(m){Object.assign(MODS,m||{});}
+function rollDice(n,s){let t=0;for(let i=0;i<n;i++)t+=1+Math.floor(Math.random()*s);return Math.round(t*MODS.dmg);}
 const vib=(ms)=>{if(D.vibrate)D.vibrate(ms);};
 
 /* ============ STATE ============ */
@@ -39,8 +44,20 @@ const P={x:0,y:0,r:16,face:0,hp:45,kills:0,
   ft:{dmgTaken:0,heavy:0,slash:0,rolls:0,parries:0,t0:0,low:false}};
 let wolves=[],demons=[],fireballs=[],tracers=[];
 const lvl=()=>Math.min(10,Math.floor(P.level||1));
-const stat=k=>P.char==='ronin'?P.base[k]+P.kills*2:P.base[k]+3*(lvl()-1);
-const maxHP=()=>(P.char==='ronin'?38:45)+(stat('CON')-10)*5;
+let buffs=[]; // {k,amt,until} from belt potions
+const buffAmt=k=>{let a=0;for(const b of buffs)if(b.k===k&&b.until>S.time)a+=b.amt;return a;};
+const stat=k=>(P.char==='ronin'?P.base[k]+P.kills*2:P.base[k]+3*(lvl()-1))+buffAmt(k);
+function usePotion(type){
+  if(P.dead)return false;
+  if(type==='potion-health'){const hl=Math.round(maxHP()*0.5);P.hp=Math.min(maxHP(),P.hp+hl);
+    popup(P.x,P.y-48,'+'+hl,'#7fbf6a',16);flashFx(.12);return true;}
+  const k={'potion-str':'STR','potion-dex':'DEX','potion-con':'CON','potion-atk':'ATK'}[type];
+  if(!k)return false;
+  const amt=Math.round(stat(k)*0.25);
+  buffs=buffs.filter(b=>b.k!==k);
+  buffs.push({k,amt,until:S.time+60});
+  popup(P.x,P.y-48,k+' +25% — 60s','#3df0c8',14);flashFx(.1);return true;}
+const maxHP=()=>Math.round(((P.char==='ronin'?38:45)+(stat('CON')-10)*5)*MODS.maxhp);
 const UNLOCKS={druid:{3:'BEAR FORM UNLOCKED',6:'WOLF FORM UNLOCKED'},
                warlock:{3:'BONE DRAGON UNLOCKED',5:'SUCCUBI UNLOCKED',8:'ARCH DEVIL UNLOCKED'}};
 function gainLevel(){ // +1.5 levels per kill, max 10
@@ -104,7 +121,7 @@ function doParry(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.rollT>0||P.he
   if(P.char==='druid'){cycleForm();return;}
   if(P.parryCD>0)return;
   if(P.char==='warlock'){portal();return;}
-  autoFace();P.parryT=2.3;P.parryCD=1.4;}
+  autoFace();P.parryT=2.3*MODS.parryWin;P.parryCD=1.4;}
 
 /* ============ DRUID ============ */
 function setBtnLabel(id,txt){UI.btnLabel(id,txt);}
@@ -522,7 +539,7 @@ function heavyLand(){P.ft.heavy++;
   strike(P.face,2.1,92+roninTier()*14,Math.round((rollDice(diceN()*2,8)+dmgBonus())*0.88),true);}
 function doRoll(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.rollCD>0||P.rollT>0||P.channel||P.paralyzeT>0)return;
   if(P.char==='warlock'){autoFace();blink();return;}
-  P.rollT=.32;P.rollCD=rollCDmax();P.heavyWind=0;P.ft.rolls++;
+  P.rollT=.32*MODS.dodgeWin;P.rollCD=rollCDmax();P.heavyWind=0;P.ft.rolls++;
   let mx=stick.dx,my=stick.dy;
   if(keys['w'])my=-1;if(keys['s'])my=1;if(keys['a'])mx=-1;if(keys['d'])mx=1;
   if(Math.hypot(mx,my)<.2){mx=Math.cos(P.face);my=Math.sin(P.face);}
@@ -1086,7 +1103,24 @@ function computeNickname(){
   const prev=nickname;
   nickname=bk?bank.styles[bk][tier]:bank.fallback[tier];
   return nickname!==prev;}
+let encounterCb=null;
+function startEncounter(list,cb){
+  encounterCb=cb||null;
+  enemies=list.map(o=>mkEnemy(o));
+  zones=[];swings=[];particles=[];popups=[];bullets=[];limbs=[];wolves=[];P.wolfCD=0;P.glaive=null;
+  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;
+  if(P.devilT>0){P.devilT=0;P.r=16;updateLabels();}
+  if(P.char==='druid'){P.form='human';P.r=16;P.formT=0;P.humanCD=0;updateLabels();}
+  cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;
+  P.x=arena.x;P.y=arena.y+arena.r*0.55;P.hp=maxHP();P.dead=false;P.rollT=0;P.rollCD=0;P.heavyCD=0;P.heavyWind=0;
+  P.parryT=0;P.parryCD=0;P.ripoT=0;P.combo=0;P.comboT=0;
+  P.ft={dmgTaken:0,heavy:0,slash:0,rolls:0,parries:0,t0:NOW(),low:false};
+  S.mode='fight';UI.hud(true);UI.controls(true);UI.name(nickname);
+  UI.stats(diceN()+'d8',(P.char==='ronin'?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
+  UI.boss(false,'');}
 function winFight(){
+  if(encounterCb){const cb=encounterCb;encounterCb=null;
+    computeNickname();S.mode='title';UI.hud(false);UI.controls(false);cb(true);return;}
   const renamed=computeNickname();
   S.fight++;
   if(S.fight>=FIGHTS.length){
@@ -1096,6 +1130,8 @@ function winFight(){
   setTimeout(toBoard,1500);}
 let dqOrder=[],dqIdx=0;
 function lose(){
+  if(encounterCb){const cb=encounterCb;encounterCb=null;
+    S.mode='title';UI.hud(false);UI.controls(false);cb(false);return;}
   S.mode='death';UI.hud(false);UI.controls(false);
   const _deathStats=P.kills+' kills · died to '+FIGHTS[S.fight].name;
   const q=['Bellow chalks a line through the word NOBODY.',
@@ -1632,15 +1668,15 @@ function draw(){
   if(!ctx)return;
   ctx.clearRect(0,0,W,H);
   // arcade-black backdrop with rivet stars (Girder Ape style)
-  ctx.fillStyle='#06040a';ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='rgba(120,100,140,.14)';
+  ctx.fillStyle=THEME.backdrop;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=THEME.star;
   for(let i=0;i<44;i++){ctx.fillRect((i*53)%W,(i*97)%H,2,2);}
   // crowd tiers — neon girder rings
   for(let i=4;i>=1;i--){
-    ctx.strokeStyle='rgba(255,90,140,'+(0.34-i*0.06)+')';ctx.lineWidth=arena.r*.085;
+    ctx.strokeStyle='rgba('+THEME.ringCol+','+(THEME.ringBase-i*THEME.ringStep)+')';ctx.lineWidth=arena.r*.085;
     ctx.beginPath();ctx.arc(arena.x,arena.y,arena.r+arena.r*.11*i+8,0,7);ctx.stroke();
     // flicker crowd dots
-    if(S.mode==='fight'||S.mode==='demo'){ctx.fillStyle='rgba(240,168,61,'+(0.10+0.04*Math.sin(S.time*3+i))+')';
+    if((S.mode==='fight'||S.mode==='demo')&&THEME.showCrowd){ctx.fillStyle='rgba('+THEME.crowdCol+','+(0.10+0.04*Math.sin(S.time*3+i))+')';
       for(let j=0;j<14;j++){const a=j/14*Math.PI*2+i*.4+S.time*.02;
         ctx.fillRect(arena.x+Math.cos(a)*(arena.r+arena.r*.11*i+8)-2,arena.y+Math.sin(a)*(arena.r+arena.r*.11*i+8)-2,4,4);}}}
   // cinematic camera + shake
@@ -1648,9 +1684,9 @@ function draw(){
   ctx.translate(W/2,H/2);ctx.scale(cam.z,cam.z);ctx.translate(-cam.x,-cam.y);
   if(S.shake>0)ctx.translate(rnd(-S.shake,S.shake),rnd(-S.shake,S.shake));
   // pit floor — dark steel-blue with pink girder rim + rivets
-  ctx.fillStyle='#100d18';ctx.strokeStyle='#ff5a8c';ctx.lineWidth=5;
+  ctx.fillStyle=THEME.floor;ctx.strokeStyle=THEME.rim;ctx.lineWidth=5;
   ctx.beginPath();ctx.arc(arena.x,arena.y,arena.r,0,7);ctx.fill();ctx.stroke();
-  ctx.fillStyle='#ffd0e0';
+  ctx.fillStyle=THEME.rivet;
   for(let i=0;i<26;i++){const a=i/26*Math.PI*2;
     ctx.fillRect(arena.x+Math.cos(a)*arena.r-1.5,arena.y+Math.sin(a)*arena.r-1.5,3,3);}
   ctx.fillStyle='rgba(0,0,0,0.18)';
@@ -1999,6 +2035,10 @@ const api={
   get nickname(){return nickname;},get FIGHTS(){return FIGHTS;},
   maxHP,lvl,diceN,stat,
   drawFighter, // render-only reuse: city NPCs/player share the arena art style
+  startEncounter,setMods,usePotion,mkEnemy,
+  setPlayerSnapshot:(snap)=>{P.char=snap.char;P.kills=snap.kills;P.level=snap.level;
+    P.bladeTier=snap.bladeTier||0;Object.assign(P.base,snap.base);nickname=snap.nickname;
+    P.form='human';P.r=[16,19,23][P.bladeTier||0]||16;updateLabels();},
 };
 return api;
 }
