@@ -88,11 +88,50 @@ for (const [key, c] of Object.entries(Companions)) {
     if (c[k]) add(c.name, c[k], 'recruit');
 }
 
+// ---- voice segmentation: characters speak ONLY their quoted dialogue; ----
+// ---- descriptions of them and their surroundings belong to the Narrator ----
+// Rules: NARRATOR lines stay whole. MARLOW speaks everything in his lines
+// (his inner quotes are him quoting others). PLAYER-* lines are spoken whole,
+// minus stage directions in (parentheses) and outer quotes. Everyone else:
+// text outside "quotes" -> Narrator, inside -> the character. The generator
+// synthesizes each segment with its voice and stitches one mp3 per line.
+const SPEAK_WHOLE = new Set(['NARRATOR', 'MARLOW', 'SIGNPOST']);
+function segment(l) {
+  const src = l.vtext || l.text;
+  if (SPEAK_WHOLE.has(l.speaker) || l.speaker.startsWith('PLAYER-')) {
+    if (l.speaker.startsWith('PLAYER-')) {
+      const t = src.replace(/\(.*?\)/g, '').replace(/^"|"$/g, '').trim();
+      if (t !== src) l.segs = [{ sp: l.speaker, t }];
+    }
+    return;
+  }
+  const parts = src.split('"');
+  if (parts.length < 3) { // no quoted speech: it's all description -> Narrator
+    if (l.speaker !== 'NARRATOR') l.segs = [{ sp: 'NARRATOR', t: src }];
+    return;
+  }
+  const segs = [];
+  for (let i = 0; i < parts.length; i++) {
+    const t = parts[i].trim();
+    if (!t) continue;
+    segs.push({ sp: i % 2 === 1 ? l.speaker : 'NARRATOR', t });
+  }
+  // merge adjacent same-speaker segments
+  const merged = [];
+  for (const g of segs) {
+    if (merged.length && merged[merged.length - 1].sp === g.sp) merged[merged.length - 1].t += ' ' + g.t;
+    else merged.push({ ...g });
+  }
+  if (merged.length > 1 || merged[0].sp !== l.speaker) l.segs = merged;
+}
+for (const l of lines) segment(l);
+const segged = lines.filter(l => l.segs).length;
+
 // ---- merge performance scripts (v3 audio-tagged delivery; keyed by line id) ----
 let perf = {};
 try { perf = JSON.parse(fs.readFileSync(path.join(__dirname, 'performance_script.json'), 'utf8')); } catch (e) {}
 let tagged = 0;
-for (const l of lines) if (perf[l.id]) { l.vtext = perf[l.id]; tagged++; }
+for (const l of lines) if (perf[l.id]) { l.vtext = perf[l.id]; tagged++; segment(l); }
 
 const out = path.join(__dirname, 'voice_manifest.json');
 const chars = lines.reduce((n, l) => n + (l.vtext || l.text).length, 0);
@@ -124,5 +163,5 @@ fs.writeFileSync(out, JSON.stringify({
   },
   count: lines.length, totalChars: chars, lines,
 }, null, 2));
-console.log(`voice_manifest.json: ${lines.length} lines (${tagged} performance-tagged), ${chars} chars (~$${(chars * 0.00015).toFixed(2)}-$${(chars * 0.0003).toFixed(2)} ElevenLabs)`);
+console.log(`voice_manifest.json: ${lines.length} lines (${tagged} performance-tagged, ${segged} narrator-split), ${chars} chars (~$${(chars * 0.00015).toFixed(2)}-$${(chars * 0.0003).toFixed(2)} ElevenLabs)`);
 if (process.argv.includes('--list')) for (const l of lines) console.log(l.id, '|', l.speaker, '|', l.text.slice(0, 60));

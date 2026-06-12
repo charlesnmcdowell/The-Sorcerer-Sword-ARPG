@@ -65,50 +65,102 @@
       "id": "8d094f98",
       "speaker": "THE WELL",
       "text": "Coins glint far below. Most are offerings. Some are bribes. The well keeps every secret it is paid.",
-      "note": "flavor: CityScene"
+      "note": "flavor: CityScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Coins glint far below. Most are offerings. Some are bribes. The well keeps every secret it is paid."
+        }
+      ]
     },
     {
       "id": "4f1c0d20",
       "speaker": "LEY-LINE NODE",
       "text": "The current here runs WRONG — pulled thin, like a vein tapped upstream. The wood-elves feel it too. Something is drinking from the line.",
-      "note": "flavor: GroveScene"
+      "note": "flavor: GroveScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The current here runs WRONG — pulled thin, like a vein tapped upstream. The wood-elves feel it too. Something is drinking from the line."
+        }
+      ]
     },
     {
       "id": "596577f6",
       "speaker": "THE CRATES OPEN",
       "text": "Three captives, sedated, breathing. A juggler. A hedge-witch. A girl nobody reported missing. They wake on the forest floor free, terrified, and ALIVE — and they beg you, each one, not to speak their names to anyone. By the time you look back at the wagon, the cult's dead have already been dragged away by someone you never saw. JOURNAL UPDATED — the Dragon Emperor passes through Karridge. Go to the plaza.",
       "note": "flavor: GroveScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Three captives. Sedated. Breathing. A juggler. A hedge-witch. A girl nobody reported missing. They wake on the forest floor free, terrified, and ALIVE — and they beg you, each one, not to speak their names to anyone. [short pause] By the time you look back at the wagon, the cult's dead have already been dragged away... by someone you never saw. [paper rustling tone] JOURNAL UPDATED — the Dragon Emperor passes through Karridge. Go to the plaza."
+        }
+      ],
       "vtext": "Three captives. Sedated. Breathing. A juggler. A hedge-witch. A girl nobody reported missing. They wake on the forest floor free, terrified, and ALIVE — and they beg you, each one, not to speak their names to anyone. [short pause] By the time you look back at the wagon, the cult's dead have already been dragged away... by someone you never saw. [paper rustling tone] JOURNAL UPDATED — the Dragon Emperor passes through Karridge. Go to the plaza."
     },
     {
       "id": "84bfce9a",
       "speaker": "THE ACADEMY",
       "text": "Term is out. Somewhere in there is a registrar still recovering from an accelerated graduation, and a teacher who suspects \"children of fire.\"",
-      "note": "flavor: VarenholmScene"
+      "note": "flavor: VarenholmScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Term is out. Somewhere in there is a registrar still recovering from an accelerated graduation, and a teacher who suspects"
+        },
+        {
+          "sp": "THE ACADEMY",
+          "t": "children of fire."
+        }
+      ]
     },
     {
       "id": "a208b688",
       "speaker": "THE GILDED THREAD",
       "text": "Performance outfitter. The wererat damage in the cellar has been repaired, the discount plaque on the wall has one name on it, and the staff speak of her in the tone reserved for weather.",
-      "note": "flavor: VarenholmScene"
+      "note": "flavor: VarenholmScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Performance outfitter. The wererat damage in the cellar has been repaired, the discount plaque on the wall has one name on it, and the staff speak of her in the tone reserved for weather."
+        }
+      ]
     },
     {
       "id": "38ee7f6c",
       "speaker": "PLAYBILL",
       "text": "ONE NIGHT — THE DANCER. V.E.A. MASTER OF VOICE. CIVIC AUDITORIUM. (Sold out. Sold out. SOLD OUT — standing room by mercy of the fire marshal.)",
-      "note": "flavor: VarenholmScene"
+      "note": "flavor: VarenholmScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "ONE NIGHT — THE DANCER. V.E.A. MASTER OF VOICE. CIVIC AUDITORIUM. (Sold out. Sold out. SOLD OUT — standing room by mercy of the fire marshal.)"
+        }
+      ]
     },
     {
       "id": "39389c82",
       "speaker": "CIVIC AUDITORIUM",
       "text": "The hall is dark now. The footlights are cold. The grin lingers in the room the way warmth lingers in stone.",
-      "note": "flavor: VarenholmScene"
+      "note": "flavor: VarenholmScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The hall is dark now. The footlights are cold. The grin lingers in the room the way warmth lingers in stone."
+        }
+      ]
     },
     {
       "id": "49f684ce",
       "speaker": "ADVENTURERS GUILD",
       "text": "The board is thick with contracts and the room is thin with people — everyone who matters is at the Auditorium. Whatever you came for, it's on that stage right now.",
-      "note": "flavor: VarenholmScene"
+      "note": "flavor: VarenholmScene",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The board is thick with contracts and the room is thin with people — everyone who matters is at the Auditorium. Whatever you came for, it's on that stage right now."
+        }
+      ]
     },
     {
       "id": "00a84c30",
@@ -187,6 +239,20 @@
       "speaker": "THE QUARRY BOY",
       "text": "He comes up swinging until he sees the cage door open. \"They watched me lift at the quarry fair. WEEKS ago. Asked the others what I could do, wrote it down. There's a buyer in the city — back alleys, near the west wall. I heard them price me.\" He won't take an escort. He runs.",
       "note": "beat 3",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[breathing hard] He comes up swinging until he sees the cage door open. [shaky]"
+        },
+        {
+          "sp": "THE QUARRY BOY",
+          "t": "They watched me lift at the quarry fair. WEEKS ago. Asked the others what I could do — wrote it down. There's a buyer in the city. Back alleys, near the west wall. [swallows] I heard them... PRICE me."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[short pause] He won't take an escort. He runs."
+        }
+      ],
       "vtext": "[breathing hard] He comes up swinging until he sees the cage door open. [shaky] \"They watched me lift at the quarry fair. WEEKS ago. Asked the others what I could do — wrote it down. There's a buyer in the city. Back alleys, near the west wall. [swallows] I heard them... PRICE me.\" [short pause] He won't take an escort. He runs."
     },
     {
@@ -194,6 +260,28 @@
       "speaker": "SHEN SAMA",
       "text": "Scales like cooling slag under a traveler's hood. Eyes too old for the face. \"You freed the wrong cargo, champion — they'll re-profile and restock within a season. They are SHOPPING. Specific gifts, specific blood. Mine most of all.\" He looks north, the way hunted things do. \"Don't follow me. Being near me is how people end up in crates.\" He is gone between one breath and the next.",
       "note": "beat 3 cameo",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[low, rasping] Scales like cooling slag under a traveler's hood. Eyes too old for the face."
+        },
+        {
+          "sp": "SHEN SAMA",
+          "t": "You freed the wrong cargo, champion. They'll re-profile and restock within a season. They are SHOPPING. Specific gifts. Specific blood. [short pause] Mine most of all."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[exhales] He looks north, the way hunted things do."
+        },
+        {
+          "sp": "SHEN SAMA",
+          "t": "Don't follow me. Being near me is how people end up in crates."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[long pause] He is gone between one breath and the next."
+        }
+      ],
       "vtext": "[low, rasping] Scales like cooling slag under a traveler's hood. Eyes too old for the face. \"You freed the wrong cargo, champion. They'll re-profile and restock within a season. They are SHOPPING. Specific gifts. Specific blood. [short pause] Mine most of all.\" [exhales] He looks north, the way hunted things do. \"Don't follow me. Being near me is how people end up in crates.\" [long pause] He is gone between one breath and the next."
     },
     {
@@ -201,6 +289,20 @@
       "speaker": "THE VEILED WOMAN",
       "text": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run. \"You broke the camp. Then you've killed her — the elixir was BOUGHT, paid in full. Out of the Ashenveil, they said. Grown, they said, not brewed.\" She shows you the vial — it hums against your teeth like the ley-node did.",
       "note": "beat 4",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run. [tight, controlled]"
+        },
+        {
+          "sp": "THE VEILED WOMAN",
+          "t": "You broke the camp. Then you've killed her — the elixir was BOUGHT. Paid in full. Out of the Ashenveil, they said. [voice cracking] Grown, they said. Not brewed."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She shows you the vial — it hums against your teeth like the ley-node did."
+        }
+      ],
       "vtext": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run. [tight, controlled] \"You broke the camp. Then you've killed her — the elixir was BOUGHT. Paid in full. Out of the Ashenveil, they said. [voice cracking] Grown, they said. Not brewed.\" She shows you the vial — it hums against your teeth like the ley-node did."
     },
     {
@@ -208,6 +310,24 @@
       "speaker": "THE VEILED WOMAN",
       "text": "\"I don't care what it's made of.\" Her voice cracks on the lie. \"I was told it's the only one that works. You want the men who sell it? They come down the west forest path, new moon, every month. That's all I know. Leave me the vial. Please.\"",
       "note": "beat 4",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[defensive]"
+        },
+        {
+          "sp": "THE VEILED WOMAN",
+          "t": "I don't care what it's made of."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[voice cracks] Her voice cracks on the lie. [pleading]"
+        },
+        {
+          "sp": "THE VEILED WOMAN",
+          "t": "I was told it's the only one that works. You want the men who sell it? They come down the west forest path. New moon. Every month. That's all I know. [whispers] Leave me the vial. Please."
+        }
+      ],
       "vtext": "[defensive] \"I don't care what it's made of.\" [voice cracks] Her voice cracks on the lie. [pleading] \"I was told it's the only one that works. You want the men who sell it? They come down the west forest path. New moon. Every month. That's all I know. [whispers] Leave me the vial. Please.\""
     },
     {
@@ -227,6 +347,12 @@
       "speaker": "ANKUNYX",
       "text": "He comes through Karridge the way weather comes — the plaza kneels in a wave, the pit-criers go silent mid-shout. ANKUNYX. The Dragon Emperor. He is exactly as tall as the stories and somehow worse: calm. His eyes pass over the crowd and stop, briefly, on you.",
       "note": "finale",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "He comes through Karridge the way weather comes — the plaza kneels in a wave, the pit-criers go silent mid-shout. [long pause] ANKUNYX. The Dragon Emperor. He is exactly as tall as the stories... and somehow worse: [quietly] calm. His eyes pass over the crowd — and stop, briefly, on you."
+        }
+      ],
       "vtext": "He comes through Karridge the way weather comes — the plaza kneels in a wave, the pit-criers go silent mid-shout. [long pause] ANKUNYX. The Dragon Emperor. He is exactly as tall as the stories... and somehow worse: [quietly] calm. His eyes pass over the crowd — and stop, briefly, on you."
     },
     {
@@ -234,6 +360,28 @@
       "speaker": "ANKUNYX",
       "text": "\"The pit-crowned.\" His voice is conversational, which is the frightening part. \"Karridge is louder about you than about its taxes. Good. Loud places stay honest.\" A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? He is already turning away. The crowd is already rising. The moment is already over.",
       "note": "finale",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[calm, unhurried]"
+        },
+        {
+          "sp": "ANKUNYX",
+          "t": "The pit-crowned."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "His voice is conversational — which is the frightening part."
+        },
+        {
+          "sp": "ANKUNYX",
+          "t": "Karridge is louder about you than about its taxes. [faint amusement] Good. Loud places stay honest."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[long pause] A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? [short pause] He is already turning away. The crowd is already rising. The moment is already over."
+        }
+      ],
       "vtext": "[calm, unhurried] \"The pit-crowned.\" His voice is conversational — which is the frightening part. \"Karridge is louder about you than about its taxes. [faint amusement] Good. Loud places stay honest.\" [long pause] A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? [short pause] He is already turning away. The crowd is already rising. The moment is already over."
     },
     {
@@ -241,6 +389,12 @@
       "speaker": "ANKUNYX",
       "text": "The conspiracy holds. The camp is ash and silence; the Academy's lower levels keep their secrets; somewhere a woman with a vial tells herself it's medicine. But the captives are free, the grove's line runs clean — and you know. The crowd still chants your name. The story is not over. It has barely begun.",
       "note": "finale",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[measured] The conspiracy holds. The camp is ash and silence; the Academy's lower levels keep their secrets; somewhere a woman with a vial tells herself it's medicine. [short pause] But the captives are free. The grove's line runs clean. And you... know. [faint smile] The crowd still chants your name. The story is not over. It has barely begun."
+        }
+      ],
       "vtext": "[measured] The conspiracy holds. The camp is ash and silence; the Academy's lower levels keep their secrets; somewhere a woman with a vial tells herself it's medicine. [short pause] But the captives are free. The grove's line runs clean. And you... know. [faint smile] The crowd still chants your name. The story is not over. It has barely begun."
     },
     {
@@ -303,6 +457,24 @@
       "speaker": "COOKIE",
       "text": "She's at the guild board before you are, still in the red, hair pinned with what is definitely a stolen quill. \"You're the pit one. Karridge. They do a CHANT about you, it's very dramatic.\" She doesn't wait for an answer. \"I'm Cookie. I'm taking the saltcellar job and I need a front line. You're hired. I pay in exposure and one (1) gold.\"",
       "note": "cookie",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[bright, fast] She's at the guild board before you are, still in the red, hair pinned with what is definitely a stolen quill."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "You're the pit one! Karridge. They do a CHANT about you — it's very dramatic."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[no pause for an answer]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "I'm Cookie. I'm taking the saltcellar job and I need a front line. You're hired. [grinning] I pay in exposure and one — ONE — gold."
+        }
+      ],
       "vtext": "[bright, fast] She's at the guild board before you are, still in the red, hair pinned with what is definitely a stolen quill. \"You're the pit one! Karridge. They do a CHANT about you — it's very dramatic.\" [no pause for an answer] \"I'm Cookie. I'm taking the saltcellar job and I need a front line. You're hired. [grinning] I pay in exposure and one — ONE — gold.\""
     },
     {
@@ -310,6 +482,24 @@
       "speaker": "COOKIE",
       "text": "She's at the guild board before you are — and she goes still the moment you're close, head tilting like a tuning fork. \"...Huh. There it IS. You were at the show. Third tier, left. You HUM.\" She looks you up and down with frank delight. \"Green-flavored. Mine's all heartstrings. Okay, two questions: saltcellar job, you in? And does dad know about YOU too, or is he still collecting us by accident?\"",
       "note": "cookie",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "She's at the guild board before you are — and she goes still the moment you're close. Head tilting. Like a tuning fork. [slowly]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "...Huh. There it IS. You were at the show. Third tier, left. You HUM."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[delighted] She looks you up and down with frank delight."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Green-flavored! Mine's all heartstrings. Okay — two questions. Saltcellar job: you in? [conspiratorial] And does dad know about YOU too... or is he still collecting us by accident?"
+        }
+      ],
       "vtext": "She's at the guild board before you are — and she goes still the moment you're close. Head tilting. Like a tuning fork. [slowly] \"...Huh. There it IS. You were at the show. Third tier, left. You HUM.\" [delighted] She looks you up and down with frank delight. \"Green-flavored! Mine's all heartstrings. Okay — two questions. Saltcellar job: you in? [conspiratorial] And does dad know about YOU too... or is he still collecting us by accident?\""
     },
     {
@@ -317,13 +507,41 @@
       "speaker": "COOKIE",
       "text": "\"Saltcellar by the canal. Something's chewing through the pork shipments and the warehouse boys won't go down past the third step. Guild says rats. Rats don't leave FROST on the railings. Probably wights. Possibly worse. Definitely fun.\"",
       "note": "cookie",
-      "vtext": "[matter-of-fact] \"Saltcellar by the canal. Something's chewing through the pork shipments and the warehouse boys won't go down past the third step. Guild says rats. [skeptical] Rats don't leave FROST on the railings. Probably wights. Possibly worse. [excited] Definitely fun.\""
+      "vtext": "[matter-of-fact] \"Saltcellar by the canal. Something's chewing through the pork shipments and the warehouse boys won't go down past the third step. Guild says rats. [skeptical] Rats don't leave FROST on the railings. Probably wights. Possibly worse. [excited] Definitely fun.\"",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[matter-of-fact]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Saltcellar by the canal. Something's chewing through the pork shipments and the warehouse boys won't go down past the third step. Guild says rats. [skeptical] Rats don't leave FROST on the railings. Probably wights. Possibly worse. [excited] Definitely fun."
+        }
+      ]
     },
     {
       "id": "eb7f25f8",
       "speaker": "COOKIE",
       "text": "\"See, THAT'S a front line.\" She flips a silver to the warehouse boy watching from the stairs. \"Drinks would be on me, except—\"",
       "note": "cookie",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[laughs]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "See, THAT'S a front line."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She flips a silver to the warehouse boy watching from the stairs."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Drinks would be on me, except—"
+        }
+      ],
       "vtext": "[laughs] \"See, THAT'S a front line.\" She flips a silver to the warehouse boy watching from the stairs. \"Drinks would be on me, except—\""
     },
     {
@@ -331,6 +549,40 @@
       "speaker": "COOKIE",
       "text": "\"—FOUR of you this time? I'm FLATTERED.\" She straightens her hair-quill, breathing hard, grinning harder. \"They keep sending little shopping parties. One day someone's going to explain to them what happened to the wererats.\" A beat — the grin banks down to something older. \"You broke one of their camps out east. I heard. They don't stop, you know. They just re-letter the ledger.\" She presses the promised gold into your hand and one extra. \"For the warning you didn't have to ride three days to give me. Tell the road I said hi.\"",
       "note": "cookie",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[breathing hard, exhilarated]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "—FOUR of you this time? I'm FLATTERED."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[laughs] She straightens her hair-quill, breathing hard, grinning harder."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "They keep sending little shopping parties. One day someone's going to explain to them what happened to the wererats."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[the grin banks down] [quieter]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "You broke one of their camps out east. I heard. They don't stop, you know. They just... re-letter the ledger."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She presses the promised gold into your hand. And one extra. [warm]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "For the warning you didn't have to ride three days to give me. Tell the road I said hi."
+        }
+      ],
       "vtext": "[breathing hard, exhilarated] \"—FOUR of you this time? I'm FLATTERED.\" [laughs] She straightens her hair-quill, breathing hard, grinning harder. \"They keep sending little shopping parties. One day someone's going to explain to them what happened to the wererats.\" [the grin banks down] [quieter] \"You broke one of their camps out east. I heard. They don't stop, you know. They just... re-letter the ledger.\" She presses the promised gold into your hand. And one extra. [warm] \"For the warning you didn't have to ride three days to give me. Tell the road I said hi.\""
     },
     {
@@ -338,6 +590,40 @@
       "speaker": "COOKIE",
       "text": "\"—FOUR of you this time? I'm FLATTERED.\" She catches her breath, then looks at you — really looks. \"They had two cart-cages, cousin. TWO.\" The grin banks down to something older. \"Whatever we are, we're worth more to them alive, which means we never stop being worth it. So: rule one, never be boring. Rule two, never be ALONE when it matters.\" She presses the gold into your hand, plus one extra, plus — quickly, like it costs her — a squeeze of your wrist. \"Family discount. If you ever find out whether dad knows... I get the letter first.\"",
       "note": "cookie",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[breathing hard, exhilarated]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "—FOUR of you this time? I'm FLATTERED."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[laughs] She catches her breath — then looks at you. Really looks. [sobering]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "They had two cart-cages, cousin. TWO."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[quieter]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Whatever we are, we're worth more to them alive. Which means we never stop being worth it. So: rule one — never be boring. Rule two — [gently] never be ALONE when it matters."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She presses the gold into your hand, plus one extra, plus — quickly, like it costs her — a squeeze of your wrist. [soft]"
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Family discount. If you ever find out whether dad knows... I get the letter first."
+        }
+      ],
       "vtext": "[breathing hard, exhilarated] \"—FOUR of you this time? I'm FLATTERED.\" [laughs] She catches her breath — then looks at you. Really looks. [sobering] \"They had two cart-cages, cousin. TWO.\" [quieter] \"Whatever we are, we're worth more to them alive. Which means we never stop being worth it. So: rule one — never be boring. Rule two — [gently] never be ALONE when it matters.\" She presses the gold into your hand, plus one extra, plus — quickly, like it costs her — a squeeze of your wrist. [soft] \"Family discount. If you ever find out whether dad knows... I get the letter first.\""
     },
     {
@@ -352,19 +638,77 @@
       "speaker": "SHEN SAMA",
       "text": "Scales like cooling slag under a traveler's hood. Eyes too old for the face. \"You freed the wrong cargo, champion — they'll re-profile and restock within a season. They are SHOPPING. Specific gifts, specific blood. Mine most of all.\" He looks north, the way hunted things do. \"Don't follow me. Being near me is how people end up in crates.\" He is gone between one breath and the next. He stops, half-turned. Nostrils flare, like catching woodsmoke. \"...And yours, sister. Verdance, if I had to guess — life-magic gone loud. You don't even know what you're carrying, do you?\" Something almost gentle crosses the old eyes. \"Stay away from the Ashenveil. ESPECIALLY you. What they'd render you down for is the one thing they can't brew.\"",
       "note": "druid variant",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[low, rasping] Scales like cooling slag under a traveler's hood. Eyes too old for the face."
+        },
+        {
+          "sp": "SHEN SAMA",
+          "t": "You freed the wrong cargo, champion. They'll re-profile and restock within a season. They are SHOPPING. Specific gifts. Specific blood. Mine most of all."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[short pause] He stops. Half-turned. [sniffs] Nostrils flare, like catching woodsmoke. [quietly]"
+        },
+        {
+          "sp": "SHEN SAMA",
+          "t": "...And yours. Sister. Verdance, if I had to guess — life-magic gone loud. You don't even know what you're carrying... do you?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[softer] Something almost gentle crosses the old eyes."
+        },
+        {
+          "sp": "SHEN SAMA",
+          "t": "Stay away from the Ashenveil. ESPECIALLY you. What they'd render you down for is the one thing they can't brew."
+        }
+      ],
       "vtext": "[low, rasping] Scales like cooling slag under a traveler's hood. Eyes too old for the face. \"You freed the wrong cargo, champion. They'll re-profile and restock within a season. They are SHOPPING. Specific gifts. Specific blood. Mine most of all.\" [short pause] He stops. Half-turned. [sniffs] Nostrils flare, like catching woodsmoke. [quietly] \"...And yours. Sister. Verdance, if I had to guess — life-magic gone loud. You don't even know what you're carrying... do you?\" [softer] Something almost gentle crosses the old eyes. \"Stay away from the Ashenveil. ESPECIALLY you. What they'd render you down for is the one thing they can't brew.\""
     },
     {
       "id": "d646c9ba",
       "speaker": "THE VEILED WOMAN",
       "text": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run. \"You broke the camp. Then you've killed her — the elixir was BOUGHT, paid in full. Out of the Ashenveil, they said. Grown, they said, not brewed.\" She shows you the vial — it hums against your teeth like the ley-node did. For you it is worse: the vial hums in your TEETH, in the wet of your blood, the way the grove node hums — the way, you realize with a cold drop, that YOU hum. You have always thought everyone could hear the green singing. They can't.",
-      "note": "druid variant"
+      "note": "druid variant",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run."
+        },
+        {
+          "sp": "THE VEILED WOMAN",
+          "t": "You broke the camp. Then you've killed her — the elixir was BOUGHT, paid in full. Out of the Ashenveil, they said. Grown, they said, not brewed."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She shows you the vial — it hums against your teeth like the ley-node did. For you it is worse: the vial hums in your TEETH, in the wet of your blood, the way the grove node hums — the way, you realize with a cold drop, that YOU hum. You have always thought everyone could hear the green singing. They can't."
+        }
+      ]
     },
     {
       "id": "9f4dc776",
       "speaker": "ANKUNYX",
       "text": "\"The pit-crowned.\" His voice is conversational, which is the frightening part. \"Karridge is louder about you than about its taxes. Good. Loud places stay honest.\" A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? He is already turning away. The crowd is already rising. The moment is already over. And then he stops. Not on the vial. On YOU. For three heartbeats the Emperor of everything looks at you the way a man looks at a song he heard once, years ago, in a town whose name he traded away. He almost frowns. He moves on. He does not know what he is leaving in the plaza — and you, who have your mother's caution if not her contentment, do not tell him.",
-      "note": "druid variant"
+      "note": "druid variant",
+      "segs": [
+        {
+          "sp": "ANKUNYX",
+          "t": "The pit-crowned."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "His voice is conversational, which is the frightening part."
+        },
+        {
+          "sp": "ANKUNYX",
+          "t": "Karridge is louder about you than about its taxes. Good. Loud places stay honest."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? He is already turning away. The crowd is already rising. The moment is already over. And then he stops. Not on the vial. On YOU. For three heartbeats the Emperor of everything looks at you the way a man looks at a song he heard once, years ago, in a town whose name he traded away. He almost frowns. He moves on. He does not know what he is leaving in the plaza — and you, who have your mother's caution if not her contentment, do not tell him."
+        }
+      ]
     },
     {
       "id": "a95f4827",
@@ -384,169 +728,337 @@
       "id": "b99e04c0",
       "speaker": "PLAYER-RONIN",
       "text": "\"Champions don't leave their boots behind. Tell me about Dren.\"",
-      "note": "player line: marlowAsk"
+      "note": "player line: marlowAsk",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Champions don't leave their boots behind. Tell me about Dren."
+        }
+      ]
     },
     {
       "id": "c077abd0",
       "speaker": "PLAYER-DRUID",
       "text": "\"People are going missing quietly out here. Start with him.\"",
-      "note": "player line: marlowAsk"
+      "note": "player line: marlowAsk",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "People are going missing quietly out here. Start with him."
+        }
+      ]
     },
     {
       "id": "0af883b8",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Dead men leave echoes. His is still warm in this room — speak.\"",
-      "note": "player line: marlowAsk"
+      "note": "player line: marlowAsk",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Dead men leave echoes. His is still warm in this room — speak."
+        }
+      ]
     },
     {
       "id": "24396bbc",
       "speaker": "PLAYER-RONIN",
       "text": "\"A fair price for a fair truth.\" (pay 5s)",
-      "note": "player line: marlowPay"
+      "note": "player line: marlowPay",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "A fair price for a fair truth.\""
+        }
+      ]
     },
     {
       "id": "aafc4534",
       "speaker": "PLAYER-DRUID",
       "text": "\"For the missing, then.\" (pay 5s)",
-      "note": "player line: marlowPay"
+      "note": "player line: marlowPay",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "For the missing, then.\""
+        }
+      ]
     },
     {
       "id": "afa3950b",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Knowledge has a price. Here is yours.\" (pay 5s)",
-      "note": "player line: marlowPay"
+      "note": "player line: marlowPay",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Knowledge has a price. Here is yours.\""
+        }
+      ]
     },
     {
       "id": "0d05c46c",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Five silver. Cheaper than the other ways I ask questions.\" (pay 5s)",
-      "note": "player line: marlowPay"
+      "note": "player line: marlowPay",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Five silver. Cheaper than the other ways I ask questions.\""
+        }
+      ]
     },
     {
       "id": "851bf2c2",
       "speaker": "PLAYER-RONIN",
       "text": "\"No banner on these tents. Cut them down.\"",
-      "note": "player line: campStrike"
+      "note": "player line: campStrike",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "No banner on these tents. Cut them down."
+        }
+      ]
     },
     {
       "id": "cae5e44e",
       "speaker": "PLAYER-DRUID",
       "text": "\"The grove wants them gone. So do I.\"",
-      "note": "player line: campStrike"
+      "note": "player line: campStrike",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "The grove wants them gone. So do I."
+        }
+      ]
     },
     {
       "id": "92df6ae0",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Fold their camp the way they fold people.\"",
-      "note": "player line: campStrike"
+      "note": "player line: campStrike",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Fold their camp the way they fold people."
+        }
+      ]
     },
     {
       "id": "1ff48568",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Wake them first. I want this heard.\"",
-      "note": "player line: campStrike"
+      "note": "player line: campStrike",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Wake them first. I want this heard."
+        }
+      ]
     },
     {
       "id": "23cbac7e",
       "speaker": "PLAYER-RONIN",
       "text": "\"Run far, boy. Don't look back at anything.\"",
-      "note": "player line: captiveGo"
+      "note": "player line: captiveGo",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Run far, boy. Don't look back at anything."
+        }
+      ]
     },
     {
       "id": "b0781cf8",
       "speaker": "PLAYER-DRUID",
       "text": "\"Go. And learn to stop being SEEN.\"",
-      "note": "player line: captiveGo"
+      "note": "player line: captiveGo",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "Go. And learn to stop being SEEN."
+        }
+      ]
     },
     {
       "id": "3e877258",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Run. You're worth more to me as a rumor.\"",
-      "note": "player line: captiveGo"
+      "note": "player line: captiveGo",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Run. You're worth more to me as a rumor."
+        }
+      ]
     },
     {
       "id": "b0999546",
       "speaker": "PLAYER-RONIN",
       "text": "\"Roads keep secrets better than men. Go.\"",
-      "note": "player line: shenGo"
+      "note": "player line: shenGo",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Roads keep secrets better than men. Go."
+        }
+      ]
     },
     {
       "id": "dd79e3d8",
       "speaker": "PLAYER-DRUID",
       "text": "\"Then run well... brother.\"",
-      "note": "player line: shenGo"
+      "note": "player line: shenGo",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "Then run well... brother."
+        }
+      ]
     },
     {
       "id": "6358a0b8",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Go. Hunted things make the finest debts.\"",
-      "note": "player line: shenGo"
+      "note": "player line: shenGo",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Go. Hunted things make the finest debts."
+        }
+      ]
     },
     {
       "id": "b9881c64",
       "speaker": "PLAYER-RONIN",
       "text": "\"Evidence outlives sentiment. I keep it.\"",
-      "note": "player line: buyerKeep"
+      "note": "player line: buyerKeep",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Evidence outlives sentiment. I keep it."
+        }
+      ]
     },
     {
       "id": "2bcbfb70",
       "speaker": "PLAYER-DRUID",
       "text": "\"It hums like ME. I need to know why. ...I'm sorry.\"",
-      "note": "player line: buyerKeep"
+      "note": "player line: buyerKeep",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "It hums like ME. I need to know why. ...I'm sorry."
+        }
+      ]
     },
     {
       "id": "9e73a2b8",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"It's safer in my hands than in your veins.\"",
-      "note": "player line: buyerKeep"
+      "note": "player line: buyerKeep",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "It's safer in my hands than in your veins."
+        }
+      ]
     },
     {
       "id": "7caeba8c",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Mine now. Miracles rot in weak hands.\"",
-      "note": "player line: buyerKeep"
+      "note": "player line: buyerKeep",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Mine now. Miracles rot in weak hands."
+        }
+      ]
     },
     {
       "id": "370bc49c",
       "speaker": "PLAYER-RONIN",
       "text": "\"A blade knows when not to cut. Keep it.\"",
-      "note": "player line: buyerGive"
+      "note": "player line: buyerGive",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "A blade knows when not to cut. Keep it."
+        }
+      ]
     },
     {
       "id": "ff44eb68",
       "speaker": "PLAYER-DRUID",
       "text": "\"Keep it. But NO ONE sells you hope again.\"",
-      "note": "player line: buyerGive"
+      "note": "player line: buyerGive",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "Keep it. But NO ONE sells you hope again."
+        }
+      ]
     },
     {
       "id": "d0887698",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Keep your bottled miracle. Your debt amuses me more.\"",
-      "note": "player line: buyerGive"
+      "note": "player line: buyerGive",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Keep your bottled miracle. Your debt amuses me more."
+        }
+      ]
     },
     {
       "id": "7373f864",
       "speaker": "PLAYER-RONIN",
       "text": "\"One cut for the wheel. The rest for whoever minds.\"",
-      "note": "player line: caravanBreak"
+      "note": "player line: caravanBreak",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "One cut for the wheel. The rest for whoever minds."
+        }
+      ]
     },
     {
       "id": "8f07f514",
       "speaker": "PLAYER-DRUID",
       "text": "\"Nothing rides in cages tonight.\"",
-      "note": "player line: caravanBreak"
+      "note": "player line: caravanBreak",
+      "segs": [
+        {
+          "sp": "PLAYER-DRUID",
+          "t": "Nothing rides in cages tonight."
+        }
+      ]
     },
     {
       "id": "31873e24",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Stop the wagon. What spills, spills.\"",
-      "note": "player line: caravanBreak"
+      "note": "player line: caravanBreak",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Stop the wagon. What spills, spills."
+        }
+      ]
     },
     {
       "id": "c336dcd8",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Open the crates. Then the crews.\"",
-      "note": "player line: caravanBreak"
+      "note": "player line: caravanBreak",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Open the crates. Then the crews."
+        }
+      ]
     },
     {
       "id": "bf03feb8",
@@ -576,31 +1088,85 @@
       "id": "7dcb00d8",
       "speaker": "PLAYER-WARLOCK",
       "text": "\"Not yet. Patience is also a weapon.\"",
-      "note": "player line: finale2"
+      "note": "player line: finale2",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Not yet. Patience is also a weapon."
+        }
+      ]
     },
     {
       "id": "c2e0c42c",
       "speaker": "PLAYER-RONIN",
       "text": "Wait with the crowd. (You don't kneel. Habit.)",
-      "note": "player line: roninWait1"
+      "note": "player line: roninWait1",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Wait with the crowd."
+        }
+      ]
     },
     {
       "id": "c3f8974c",
       "speaker": "GROVE KEEPER",
       "text": "A wood elf with bark-braided hair sizes you up. \"The pit-crowned. Word outruns you.\" \"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood's shade. You might.\" (The trail sharpens in the next stretch of the hunt — Bucket 5.)",
-      "note": "keeper"
+      "note": "keeper",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "A wood elf with bark-braided hair sizes you up."
+        },
+        {
+          "sp": "GROVE KEEPER",
+          "t": "The pit-crowned. Word outruns you. The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood's shade. You might."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "(The trail sharpens in the next stretch of the hunt — Bucket 5.)"
+        }
+      ]
     },
     {
       "id": "cda62886",
       "speaker": "GROVE KEEPER",
       "text": "A wood elf with bark-braided hair sizes you up. \"The pit-crowned. Word outruns you.\" \"Wolves grow bold and something fouls the dead. The guild posts coin for both. Earn the grove's trust, champion.\"",
-      "note": "keeper"
+      "note": "keeper",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "A wood elf with bark-braided hair sizes you up."
+        },
+        {
+          "sp": "GROVE KEEPER",
+          "t": "The pit-crowned. Word outruns you. Wolves grow bold and something fouls the dead. The guild posts coin for both. Earn the grove's trust, champion."
+        }
+      ]
     },
     {
       "id": "c1ccd16e",
       "speaker": "BRAKKA",
       "text": "\"You're the pit-crowned. Saw your third fight. Sloppy footwork, good instincts.\" He goes back to oiling the axe. \"Mercenary company's gone. Just me. Contracts only.\"",
       "note": "greet",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[gruff]"
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "You're the pit-crowned. Saw your third fight. Sloppy footwork. [grudging] Good instincts."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He goes back to oiling the axe."
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "Mercenary company's gone. Just me. Contracts only."
+        }
+      ],
       "vtext": "[gruff] \"You're the pit-crowned. Saw your third fight. Sloppy footwork. [grudging] Good instincts.\" He goes back to oiling the axe. \"Mercenary company's gone. Just me. Contracts only.\""
     },
     {
@@ -626,6 +1192,24 @@
       "speaker": "BRAKKA",
       "text": "\"The hollow under the grove. My company's last contract went in there, years back. One of mine never came out — Dorga. If the thing that kept that place is dead...\" he stops oiling. \"Is it dead?\"",
       "note": "recruit",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[low]"
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "The hollow under the grove. My company's last contract went in there, years back. One of mine never came out. Dorga. [long pause] If the thing that kept that place is dead..."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "[he stops oiling]"
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "...Is it dead?"
+        }
+      ],
       "vtext": "[low] \"The hollow under the grove. My company's last contract went in there, years back. One of mine never came out. Dorga. [long pause] If the thing that kept that place is dead...\" [he stops oiling] \"...Is it dead?\""
     },
     {
@@ -633,6 +1217,24 @@
       "speaker": "BRAKKA",
       "text": "\"Then Dorga's debt is paid and I'm out of reasons to sit here.\" He stands. The axe looks lighter on his shoulder than it should. \"Contract's simple: I walk where you walk. Pay negotiable. Don't waste my time and we'll be fine.\"",
       "note": "recruit",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[exhales slowly]"
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "Then Dorga's debt is paid. And I'm out of reasons to sit here."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He stands. The axe looks lighter on his shoulder than it should. [businesslike]"
+        },
+        {
+          "sp": "BRAKKA",
+          "t": "Contract's simple: I walk where you walk. Pay negotiable. Don't waste my time, and we'll be fine."
+        }
+      ],
       "vtext": "[exhales slowly] \"Then Dorga's debt is paid. And I'm out of reasons to sit here.\" He stands. The axe looks lighter on his shoulder than it should. [businesslike] \"Contract's simple: I walk where you walk. Pay negotiable. Don't waste my time, and we'll be fine.\""
     },
     {
@@ -646,6 +1248,24 @@
       "speaker": "VEXA",
       "text": "\"Ooh. You smell like the Pit and bad decisions.\" She doesn't look up from a vial that is, faintly, smoking. \"I'm not selling anything. Legally.\"",
       "note": "greet",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[delighted]"
+        },
+        {
+          "sp": "VEXA",
+          "t": "Ooh. You smell like the Pit and bad decisions."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She doesn't look up from a vial that is, faintly, smoking. [innocent]"
+        },
+        {
+          "sp": "VEXA",
+          "t": "I'm not selling anything. ...Legally."
+        }
+      ],
       "vtext": "[delighted] \"Ooh. You smell like the Pit and bad decisions.\" She doesn't look up from a vial that is, faintly, smoking. [innocent] \"I'm not selling anything. ...Legally.\""
     },
     {
@@ -671,14 +1291,34 @@
       "speaker": "VEXA",
       "text": "\"YES. Okay. Rules: I walk where you walk, I light what you point at, and if I say 'run' it's already too late. This is going to be GREAT.\"",
       "note": "recruit",
-      "vtext": "[thrilled] \"YES. Okay. Rules: I walk where you walk, I light what you point at, and if I say 'run' — [laughs] it's already too late. This is going to be GREAT.\""
+      "vtext": "[thrilled] \"YES. Okay. Rules: I walk where you walk, I light what you point at, and if I say 'run' — [laughs] it's already too late. This is going to be GREAT.\"",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[thrilled]"
+        },
+        {
+          "sp": "VEXA",
+          "t": "YES. Okay. Rules: I walk where you walk, I light what you point at, and if I say 'run' — [laughs] it's already too late. This is going to be GREAT."
+        }
+      ]
     },
     {
       "id": "7b4ce698",
       "speaker": "VEXA",
       "text": "\"Keep your hum-bottle then. I'll be here. Bored. DANGEROUSLY bored.\"",
       "note": "recruit",
-      "vtext": "[pouting] \"Keep your hum-bottle then. I'll be here. Bored. [ominous singsong] DANGEROUSLY bored.\""
+      "vtext": "[pouting] \"Keep your hum-bottle then. I'll be here. Bored. [ominous singsong] DANGEROUSLY bored.\"",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "[pouting]"
+        },
+        {
+          "sp": "VEXA",
+          "t": "Keep your hum-bottle then. I'll be here. Bored. [ominous singsong] DANGEROUSLY bored."
+        }
+      ]
     },
     {
       "id": "c2dcecc0",
@@ -690,13 +1330,41 @@
       "id": "ecc56f40",
       "speaker": "VEXA",
       "text": "\"You gave the real one away? To a SAD WOMAN? Ugh, you're one of THOSE.\" She grins, all teeth. \"Fine. Bring me a strength potion to take apart instead. I'll come along for the entertainment value alone.\"",
-      "note": "recruit"
+      "note": "recruit",
+      "segs": [
+        {
+          "sp": "VEXA",
+          "t": "You gave the real one away? To a SAD WOMAN? Ugh, you're one of THOSE."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She grins, all teeth."
+        },
+        {
+          "sp": "VEXA",
+          "t": "Fine. Bring me a strength potion to take apart instead. I'll come along for the entertainment value alone."
+        }
+      ]
     },
     {
       "id": "c16a1e14",
       "speaker": "DORIAN",
       "text": "\"Champion.\" He salutes with a hand that remembers better banners. \"Dorian. Formerly of the Third Shields. The 'formerly' is the interesting part, and I'd rather not.\"",
-      "note": "greet"
+      "note": "greet",
+      "segs": [
+        {
+          "sp": "DORIAN",
+          "t": "Champion."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He salutes with a hand that remembers better banners."
+        },
+        {
+          "sp": "DORIAN",
+          "t": "Dorian. Formerly of the Third Shields. The 'formerly' is the interesting part, and I'd rather not."
+        }
+      ]
     },
     {
       "id": "7881fa90",
@@ -732,7 +1400,21 @@
       "id": "9c78d468",
       "speaker": "SYLVARA",
       "text": "\"You're louder than you think, champion. So is what you're hunting.\" She doesn't turn around. \"I was Academy. Ashenveil. Ask better questions than the guild does.\"",
-      "note": "greet"
+      "note": "greet",
+      "segs": [
+        {
+          "sp": "SYLVARA",
+          "t": "You're louder than you think, champion. So is what you're hunting."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She doesn't turn around."
+        },
+        {
+          "sp": "SYLVARA",
+          "t": "I was Academy. Ashenveil. Ask better questions than the guild does."
+        }
+      ]
     },
     {
       "id": "77b5b988",

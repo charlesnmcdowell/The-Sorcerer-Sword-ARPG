@@ -104,7 +104,12 @@ def main():
     if not todo:
         print("nothing to do - all clips exist. (Delete a clip to retake it.)"); return
 
-    need = sorted({slot_for(l["speaker"]) for l in todo if not voices.get(slot_for(l["speaker"]))})
+    need_slots = set()
+    for l in todo:
+        for g in (l.get("segs") or [{"sp": l["speaker"]}]):
+            sl = slots.get(g["sp"], "Narrator")
+            if not voices.get(sl): need_slots.add(sl)
+    need = sorted(need_slots)
     bad = [s for s in need if s not in BRIEFS]
     if bad: sys.exit(f"no voice and no brief for: {bad}")
     print(f"[2/4] voices to design from briefs: {need or 'none'}")
@@ -118,7 +123,10 @@ def main():
 
     print("[4/4] generating...")
     for slot in need:
-        sample = next((l.get("vtext", l["text"]) for l in todo if slot_for(l["speaker"]) == slot), BRIEFS[slot])
+        sample = BRIEFS[slot]
+        for l in todo:
+            for g in (l.get("segs") or [{"sp": l["speaker"], "t": l.get("vtext", l["text"])}]):
+                if slots.get(g["sp"], "Narrator") == slot and len(g["t"]) > len(sample): sample = g["t"]
         st, body = http("POST", "/v1/text-to-voice/design", key,
             {"voice_description": BRIEFS[slot], "text": sample[:950] if len(sample) >= 100 else (sample + " " + BRIEFS[slot])[:950],
              "model_id": "eleven_multilingual_ttv_v2"})
@@ -133,18 +141,28 @@ def main():
         print(f"  + designed {slot} -> {voices[slot]}")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    done = fails = 0
-    for l in todo:
-        vid = voices[slot_for(l["speaker"])]
-        text = l.get("vtext", l["text"])
+    def synth(vid, text):
         for attempt in range(5):
             st, body = http("POST", f"/v1/text-to-speech/{vid}?output_format=mp3_44100_128", key,
                 {"text": text, "model_id": cfg.get("model", "eleven_v3")})
-            if st == 200:
-                (OUT_DIR / f"{l['id']}.mp3").write_bytes(body); done += 1
-                print(f"  [{done}/{len(todo)}] {l['speaker']}: {l['text'][:44]}..."); break
+            if st == 200: return body
             if st in (429, 500, 502, 503, 504): time.sleep(2 ** attempt); continue
-            print(f"  FAILED {st} {l['speaker']}: {body[:160].decode(errors='replace')}"); fails += 1; break
+            print(f"  FAILED {st}: {body[:160].decode(errors='replace')}"); return None
+        return None
+    done = fails = 0
+    for l in todo:
+        segs = l.get("segs") or [{"sp": l["speaker"], "t": l.get("vtext", l["text"])}]
+        chunks = []
+        ok = True
+        for g in segs:
+            vslot = slots.get(g["sp"], "Narrator")
+            b = synth(voices[vslot], g["t"])
+            if b is None: ok = False; break
+            chunks.append(b)
+        if ok:
+            (OUT_DIR / f"{l['id']}.mp3").write_bytes(b"".join(chunks)); done += 1
+            tag = "+narr" if len(segs) > 1 else ""
+            print(f"  [{done}/{len(todo)}] {l['speaker']}{tag}: {l['text'][:42]}...")
         else: fails += 1
     print(f"\ndone: {done} generated, {fails} failed -> {OUT_DIR}")
     print("Reload the game - dialogs speak. Retake a line: delete its mp3, rerun.")
