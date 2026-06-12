@@ -38,7 +38,7 @@ SEED_VOICES = {
 # Casting briefs for FULL-AUTO voice design (only used when no voice exists anywhere)
 CASTING_BRIEFS = {
     "Bellow":       "Booming gravel-voiced fantasy arena announcer, male, 50s, theatrical showman with a smoker's rasp, equal parts carnival barker and undertaker.",
-    "Innkeeper":    "Weathered male innkeeper, 60s, low conspiratorial tavern voice, warm but shrewd, every sentence sounds like it costs you a coin.",
+    "Marlow":       "Weathered male innkeeper, 60s, low conspiratorial tavern voice, warm but shrewd, every sentence sounds like it costs you a coin.",
     "Quarry Boy":   "Young rural man, late teens, shaken but defiant, breathless country accent, voice still cracking between fear and anger.",
     "Veiled Woman": "Woman mid-30s, desperate dignity, refined accent fraying at the edges, grief held behind clenched control.",
     "Shen Sama":    "Ancient voice in a young man's throat — low, dry, faintly inhuman resonance, words chosen like a creature that has outlived many names.",
