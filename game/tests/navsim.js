@@ -98,7 +98,7 @@ for (const f of ['assets/embedded.js', 'src/core/money.js', 'src/core/dialog.js'
   'src/core/autopilot.js', 'src/core/questnav.js', 'src/core/touchstick.js', 'src/core/save.js',
   'src/core/music.js', 'src/core/voice.js', 'src/world/citymap.js', 'src/world/quests.js',
   'src/world/companions.js', 'src/core/companionAI.js', 'src/combat/pit.js']) load(f);
-for (const f of ['WorldScene', 'CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene', 'MountainScene'])
+for (const f of ['WorldScene', 'CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene', 'MountainScene', 'AshenveilScene'])
   (0, eval)(fs.readFileSync(path.join(root, 'src/scenes', f + '.js'), 'utf8') + ';global.' + f + '=' + f + ';');
 
 // ---------- world state: champion fresh out of the Pit, AUTO FULL ----------
@@ -111,7 +111,7 @@ global.GameState = {
 };
 
 // ---------- scene host with zone swapping ----------
-const CLASSES = { CityScene, GroveScene, DungeonScene, VarenholmScene, MountainScene };
+const CLASSES = { CityScene, GroveScene, DungeonScene, VarenholmScene, MountainScene, AshenveilScene };
 let pendingScene = null, scene = null, sceneTimers = [];
 function plumb(s) {
   Object.assign(s, {
@@ -146,9 +146,9 @@ function log(msg) { console.log(`  [${(simNow / 1000).toFixed(0).padStart(4)}s] 
 console.log(`NAVSIM — ${CHAR.toUpperCase()} on AUTO FULL, target: complete the main quest\n`);
 startScene('CityScene');
 
-// druid PASS now requires the credits to actually roll (coach home after Cookie) —
-// catches the post-Cookie "nowhere to go" dead end, not just reaching mq6.
-const PASSED = () => CHAR === 'druid' ? !!GameState.world.flags['credits-rolled']
+// druid AND warlock PASS require the credits to actually roll (their epilogues walk
+// past the plaza) — catches any "nowhere to go" dead end, not just the last quest flag.
+const PASSED = () => (CHAR === 'druid' || CHAR === 'warlock') ? !!GameState.world.flags['credits-rolled']
   : GameState.world.flags[CHAR === 'seraph' ? 'q-sq4-the-chosen' : 'q-mq5-ash-and-silence'] === 'done';
 let result = 'TIMEOUT';
 while (simNow < MAXMIN * 60 * 1000) {
@@ -160,7 +160,7 @@ while (simNow < MAXMIN * 60 * 1000) {
   catch (e) { console.error('\n=== CRASH ==='); console.error(e.stack); process.exit(1); }
   // flag transition log
   for (const [k, v] of Object.entries(GameState.world.flags))
-    if (seenFlags[k] !== v && /^q-mq|^q-sq|^druid-|^duel-|seraph-recruit|varenholm-show/.test(k)) { seenFlags[k] = v; log(`flag ${k} = ${v}`); }
+    if (seenFlags[k] !== v && /^q-mq|^q-sq|^q-wq|^druid-|^duel-|seraph-recruit|varenholm-show|credits-rolled/.test(k)) { seenFlags[k] = v; log(`flag ${k} = ${v}`); }
   if (pendingScene) { const n = pendingScene; pendingScene = null; startScene(n); }
   if (simNow - (global._dbgT || 0) > 30000) { global._dbgT = simNow;
     log(`dbg pos=(${Math.round(scene.player.x)},${Math.round(scene.player.y)}) track=${QuestNav.tracking} path=${QuestNav.path.length} tgt=${QuestNav.target ? Math.round(QuestNav.target.x) + ',' + Math.round(QuestNav.target.y) : '-'} dlg=${CityUI.dialogOpen()} enc=${scene.encounterActive} autoDlg=${QuestNav.autoDialog}`); }

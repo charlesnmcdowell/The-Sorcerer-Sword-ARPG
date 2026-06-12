@@ -25,6 +25,10 @@
     "SKARVA": "Skarva",
     "NIBNOB": "Nibnob",
     "AURVAETH": "Aurvaeth",
+    "HALDRIC": "Haldric",
+    "SALLOW": "Sallow",
+    "PALE COURIER": "Pale Courier",
+    "NYX": "Nyx",
     "GROVE KEEPER": "Faelar",
     "THE PERFORMANCE": "Narrator",
     "THE COACH ROAD": "Narrator",
@@ -42,8 +46,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 170,
-  "totalChars": 29569,
+  "count": 192,
+  "totalChars": 34510,
   "lines": [
     {
       "id": "0a8752aa",
@@ -1804,6 +1808,358 @@
         {
           "sp": "PLAYER-SERAPH",
           "t": "Keep your treaty. I am not done looking."
+        }
+      ]
+    },
+    {
+      "id": "a38ced04",
+      "speaker": "HALDRIC",
+      "text": "They part the dispersing crowd like a blade through wool: two paladins in Writ-white, an inquisitor thin as a margin note, a demon hunter already loading. The lead paladin's voice carries court-room calm. \"Warlock of Karridge. Ser Haldric, of the White Order. Your menagerie has been weighed, your portals catalogued, your... arch devil... witnessed by two thousand citizens at a sanctioned games.\" He unrolls nothing; the writ is memorized. \"The Order thanks you for the camp you burned. The Order is not in the habit of leaving the instrument lying about after the surgery.\"",
+      "note": "white writ",
+      "split": true,
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "They part the dispersing crowd like a blade through wool: two paladins in Writ-white, an inquisitor thin as a margin note, a demon hunter already loading. The lead paladin's voice carries court-room calm."
+        },
+        {
+          "sp": "HALDRIC",
+          "t": "Warlock of Karridge. Ser Haldric, of the White Order. Your menagerie has been weighed, your portals catalogued, your... arch devil... witnessed by two thousand citizens at a sanctioned games."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He unrolls nothing; the writ is memorized."
+        },
+        {
+          "sp": "HALDRIC",
+          "t": "The Order thanks you for the camp you burned. The Order is not in the habit of leaving the instrument lying about after the surgery."
+        }
+      ]
+    },
+    {
+      "id": "9cd09842",
+      "speaker": "SALLOW",
+      "text": "The inquisitor does not look up from the ledger. \"Eleven summonings, public. One transformation, public. Zero licenses.\" A small, terrible smile at the margin. \"The arithmetic sentences itself.\"",
+      "note": "white writ",
+      "split": true,
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The inquisitor does not look up from the ledger."
+        },
+        {
+          "sp": "SALLOW",
+          "t": "Eleven summonings, public. One transformation, public. Zero licenses."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A small, terrible smile at the margin."
+        },
+        {
+          "sp": "SALLOW",
+          "t": "The arithmetic sentences itself."
+        }
+      ]
+    },
+    {
+      "id": "62e485e2",
+      "speaker": "NARRATOR",
+      "text": "It is over by the time the crowd dares to look back. Writ-white does not stay white. The demon hunter's last bolt is still in the air when the portal takes you sideways out of its path, and then it is only you, the bodies, and a plaza that has learned a brand-new chant it is too afraid to use. By nightfall, every door in Karridge is locked to you. On your sill, where no courier was seen: a letter with no seal.",
+      "note": "white writ"
+    },
+    {
+      "id": "a970af94",
+      "speaker": "NARRATOR",
+      "text": "\"We watched. Competent work — they were SANCTIONED, warlock, and there will be more writs, then knights, then whatever the Order keeps below the knights. We offer better arithmetic. The alley behind the west wall, after dark. Come alone. — A friend of the family.\"",
+      "note": "white writ"
+    },
+    {
+      "id": "1004ba04",
+      "speaker": "PALE COURIER",
+      "text": "She is waiting where the lamplight gives up — elegant, bloodless, dressed like a funeral that money attended. \"The plaza was poetry,\" she says, by way of greeting. \"Three professions, one survivor, and the survivor wasn't theirs.\" She does not bow. The cult does not bow to applicants. \"My Matron makes problems like yours into careers. The writ on your name? It dies in committee the moment hers signs it. She would like to meet you. The black carriage, by the guild. The horses are patient. They have nowhere better to be — they're dead.\"",
+      "note": "courier",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "She is waiting where the lamplight gives up — elegant, bloodless, dressed like a funeral that money attended."
+        },
+        {
+          "sp": "PALE COURIER",
+          "t": "The plaza was poetry,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "she says, by way of greeting."
+        },
+        {
+          "sp": "PALE COURIER",
+          "t": "Three professions, one survivor, and the survivor wasn't theirs."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She does not bow. The cult does not bow to applicants."
+        },
+        {
+          "sp": "PALE COURIER",
+          "t": "My Matron makes problems like yours into careers. The writ on your name? It dies in committee the moment hers signs it. She would like to meet you. The black carriage, by the guild. The horses are patient. They have nowhere better to be — they're dead."
+        }
+      ]
+    },
+    {
+      "id": "40cffebe",
+      "speaker": "PALE COURIER",
+      "text": "\"Decline?\" The word seems to amuse her the way weather amuses mountains. \"Then we never met, this alley stays dark... and the next writ finds you SLEEPING. The Order forgives nothing. My Matron forgives everything she finds useful.\" She is already walking away. \"The carriage waits either way.\"",
+      "note": "courier",
+      "segs": [
+        {
+          "sp": "PALE COURIER",
+          "t": "Decline?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The word seems to amuse her the way weather amuses mountains."
+        },
+        {
+          "sp": "PALE COURIER",
+          "t": "Then we never met, this alley stays dark... and the next writ finds you SLEEPING. The Order forgives nothing. My Matron forgives everything she finds useful."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She is already walking away."
+        },
+        {
+          "sp": "PALE COURIER",
+          "t": "The carriage waits either way."
+        }
+      ]
+    },
+    {
+      "id": "3a1a9b40",
+      "speaker": "NARRATOR",
+      "text": "The carriage is upholstered in a silence that costs more than the inn. The horses do not breathe, do not tire, do not stop. The road runs out of farms, then out of green, then out of birdsong — and the Ashenveil begins: ash-grey fields where the DEAD are working, neat as clockwork, mending fences for a kingdom that officially does not employ them.",
+      "note": "ashenveil"
+    },
+    {
+      "id": "ceda3dda",
+      "speaker": "NYX",
+      "text": "The academy's great hall is colder inside than the night outside, and the woman at the far end of it has been dead longer than the kingdom has had a name. She does not look it — she looks like the portrait of someone's beloved queen, if the portrait moved, and chose you, and smiled. \"The warlock of Karridge,\" says Lady Nyx, Matron of every ledger you have been bleeding for a season. \"You burned my waystation. Broke my caravan. Freed my inventory. And then unmade a White Writ in open daylight.\" The smile deepens by one degree. \"Most candidates apply with a LETTER.\"",
+      "note": "nyx",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The academy's great hall is colder inside than the night outside, and the woman at the far end of it has been dead longer than the kingdom has had a name. She does not look it — she looks like the portrait of someone's beloved queen, if the portrait moved, and chose you, and smiled."
+        },
+        {
+          "sp": "NYX",
+          "t": "The warlock of Karridge,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "says Lady Nyx, Matron of every ledger you have been bleeding for a season."
+        },
+        {
+          "sp": "NYX",
+          "t": "You burned my waystation. Broke my caravan. Freed my inventory. And then unmade a White Writ in open daylight."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The smile deepens by one degree."
+        },
+        {
+          "sp": "NYX",
+          "t": "Most candidates apply with a LETTER."
+        }
+      ]
+    },
+    {
+      "id": "543632a0",
+      "speaker": "NYX",
+      "text": "\"Let us be adults about the arithmetic. The Order will not stop — you killed SANCTIONED men, and their god keeps books. You need protection that outranks a writ. There is exactly one signature in this kingdom that does.\" She does not say her husband's name. The whole room says it for her. \"And I — I have a procurement problem. The gifted. The Ankuspawn. My collectors keep bruising the merchandise, and the merchandise keeps being RESCUED by talented freelancers.\" The dead light in her eyes finds yours, amused. \"You see the shape of the offer.\"",
+      "note": "nyx",
+      "segs": [
+        {
+          "sp": "NYX",
+          "t": "Let us be adults about the arithmetic. The Order will not stop — you killed SANCTIONED men, and their god keeps books. You need protection that outranks a writ. There is exactly one signature in this kingdom that does."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She does not say her husband's name. The whole room says it for her."
+        },
+        {
+          "sp": "NYX",
+          "t": "And I — I have a procurement problem. The gifted. The Ankuspawn. My collectors keep bruising the merchandise, and the merchandise keeps being RESCUED by talented freelancers."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The dead light in her eyes finds yours, amused."
+        },
+        {
+          "sp": "NYX",
+          "t": "You see the shape of the offer."
+        }
+      ]
+    },
+    {
+      "id": "fefe0e38",
+      "speaker": "NYX",
+      "text": "\"Hunt the Ankuspawn. CAPTURE — never kill; dead stock is worthless stock. In exchange: my seal on your name. Diplomatic protection, warlock — kill-writs die in committee when the crown's own shadow countersigns. The Order may hate you forever. It may do so in WRITING, from very far away.\" She extends one perfect, room-temperature hand. \"Terms?\"",
+      "note": "nyx",
+      "segs": [
+        {
+          "sp": "NYX",
+          "t": "Hunt the Ankuspawn. CAPTURE — never kill; dead stock is worthless stock. In exchange: my seal on your name. Diplomatic protection, warlock — kill-writs die in committee when the crown's own shadow countersigns. The Order may hate you forever. It may do so in WRITING, from very far away."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She extends one perfect, room-temperature hand."
+        },
+        {
+          "sp": "NYX",
+          "t": "Terms?"
+        }
+      ]
+    },
+    {
+      "id": "d05c8c21",
+      "speaker": "NYX",
+      "text": "Somewhere north, an Emperor passes through cities like weather. Somewhere east, a grove hums over a line that runs thinner every season. And in the Ashenveil, a warlock signs nothing — the cult does not use paper for the things that matter — and walks out with the only armor the Order cannot pierce: employment. The hunt continues. It simply hunts for the web now.",
+      "note": "nyx",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Somewhere north, an Emperor passes through cities like weather. Somewhere east, a grove hums over a line that runs thinner every season. And in the Ashenveil, a warlock signs nothing — the cult does not use paper for the things that matter — and walks out with the only armor the Order cannot pierce: employment. The hunt continues. It simply hunts for the web now."
+        }
+      ]
+    },
+    {
+      "id": "bec1f2e8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"You've brought a WRIT to a portal fight, Ser.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "You've brought a WRIT to a portal fight, Ser."
+        }
+      ]
+    },
+    {
+      "id": "b529e6d0",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Add one more line to the ledger, inquisitor. Yours.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Add one more line to the ledger, inquisitor. Yours."
+        }
+      ]
+    },
+    {
+      "id": "fb0c98c4",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Three professions walk into a plaza. One of them digs.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Three professions walk into a plaza. One of them digs."
+        }
+      ]
+    },
+    {
+      "id": "b8aee8ec",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"A friend of the family. How... familial.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "A friend of the family. How... familial."
+        }
+      ]
+    },
+    {
+      "id": "510bdfe8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"The carriage, then. Dead horses keep secrets.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "The carriage, then. Dead horses keep secrets."
+        }
+      ]
+    },
+    {
+      "id": "2cefb953",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"And if I decline the invitation?\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "And if I decline the invitation?"
+        }
+      ]
+    },
+    {
+      "id": "d47bafa8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"...The carriage, then.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "...The carriage, then."
+        }
+      ]
+    },
+    {
+      "id": "af8da2ce",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"You keep meticulous books, Matron.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "You keep meticulous books, Matron."
+        }
+      ]
+    },
+    {
+      "id": "30c8ab68",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"I see the shape. Name the terms.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "I see the shape. Name the terms."
+        }
+      ]
+    },
+    {
+      "id": "131da3f0",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Protection for procurement. Clean arithmetic. Accepted.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Protection for procurement. Clean arithmetic. Accepted."
+        }
+      ]
+    },
+    {
+      "id": "caa549be",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Point the web at the prey. I'll mind the bruising.\"",
+      "note": "player line: epilogue",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Point the web at the prey. I'll mind the bruising."
         }
       ]
     },

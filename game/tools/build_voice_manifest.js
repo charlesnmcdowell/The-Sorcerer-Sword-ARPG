@@ -104,6 +104,30 @@ for (const t of [
   ...SE.candidates.flatMap(c => [c.challenge, c.recruit, c.spare]),
 ]) if (t.trim().startsWith('"')) add('PLAYER-SERAPH', t, 'player line: seraph');
 
+// ---- THE WARLOCK'S EPILOGUE: the White Writ, the Pale Courier, Lady Nyx ----
+const WE = Quests.warlockEpilogue;
+add('SER HALDRIC', WE.ambush.haldric, 'white writ', { split: true });
+add('INQUISITOR SALLOW', WE.ambush.sallow, 'white writ', { split: true });
+add('THE PLAZA, AFTER', WE.ambush.winNarr, 'white writ');
+add('A LETTER WITH NO SEAL', WE.ambush.letter, 'white writ');
+add('THE PALE COURIER', WE.courier.meet, 'courier');
+add('THE PALE COURIER', WE.courier.decline, 'courier');
+add('THE BLACK CARRIAGE', WE.carriage, 'ashenveil');
+for (const k of ['reveal1', 'reveal2', 'offer', 'done']) add('LADY NYX', WE.nyx[k], 'nyx');
+for (const t of [
+  '"You\'ve brought a WRIT to a portal fight, Ser."',
+  '"Add one more line to the ledger, inquisitor. Yours."',
+  '"Three professions walk into a plaza. One of them digs."',
+  '"A friend of the family. How... familial."',
+  '"The carriage, then. Dead horses keep secrets."',
+  '"And if I decline the invitation?"',
+  '"...The carriage, then."',
+  '"You keep meticulous books, Matron."',
+  '"I see the shape. Name the terms."',
+  '"Protection for procurement. Clean arithmetic. Accepted."',
+  '"Point the web at the prey. I\'ll mind the bruising."',
+]) add('PLAYER-WARLOCK', t, 'player line: epilogue');
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -177,6 +201,7 @@ fs.writeFileSync(out, JSON.stringify({
     'PLAYER-RONIN': 'Kenji', 'PLAYER-DRUID': 'Druid', 'PLAYER-WARLOCK': 'Warlock',
     'PLAYER-SERAPH': 'Seraphim',
     'KARGOTH': 'Kargoth', 'SKARVA': 'Skarva', 'NIBNOB': 'Nibnob', 'AURVAETH': 'Aurvaeth',
+    'HALDRIC': 'Haldric', 'SALLOW': 'Sallow', 'PALE COURIER': 'Pale Courier', 'NYX': 'Nyx',
     'GROVE KEEPER': 'Faelar',
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
