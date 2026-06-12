@@ -5,6 +5,7 @@
 const { createPitCombat } = require('../src/combat/pit.js');
 const { Money } = require('../src/core/money.js');
 const { Quests } = require('../src/world/quests.js');
+const { Companions } = require('../src/world/companions.js');
 
 const CHAR = process.argv[2] || 'warlock';
 const HONEST = process.argv[3] === 'honest';
@@ -179,6 +180,14 @@ function fieldFight(name, pack) {
   artifacts.push('ley-shard');
   log('▸ The rooted chest opens: LEY-SHARD (+10% ability damage). Artifacts: ' + artifacts.join(', '));
 
+  // ============ ACT IV.5 — BRAKKA ============
+  log('\n══════════ ACT IV½ — THE GUILD HALL, AGAIN ══════════');
+  say('BRAKKA', Companions.brakka.recruitAsk);
+  say('YOU', 'It\'s dead. The hollow is clear.');
+  say('BRAKKA', Companions.brakka.recruitYes);
+  log('▸ BRAKKA WALKS WITH YOU (♥3). He will fight beside you from here on.');
+  const withBrakka = () => combat.addAlly({ humanLook: Companions.brakka.look.o, col: Companions.brakka.look.col, nameTag: 'BRAKKA', hp: 60 + P.kills * 4, maxhp: 60 + P.kills * 4 });
+
   // ============ ACT V — TURN-IN ============
   log('\n══════════ ACT V — BACK TO KARRIDGE ══════════');
   for (const q of Quests.guildBoard) {
@@ -189,6 +198,7 @@ function fieldFight(name, pack) {
   log('\n══════════ ACT VI — THE CONSPIRACY (beats 3-5) ══════════');
   log('▸ West past the node: ' + Quests.cult.campSign);
   combat.setMods({ dmg: 1.1, maxhp: 1.1 }); // both artifacts now
+  setTimeout(withBrakka, 100); // he steps into the clearing with you
   const camp = await fieldFight('THE WAYSTATION WAKES', [
     { type: 'hook', hp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
     { type: 'hook', hp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
@@ -201,6 +211,7 @@ function fieldFight(name, pack) {
   log('▸ Journal: ROOTS THAT ROT → THE BUYER');
   say('THE VEILED WOMAN', Quests.cult.buyer.text2);
   log('  [choice: keep the vial — evidence]');
+  setTimeout(withBrakka, 100);
   const caravan = await fieldFight('ASH AND SILENCE', [
     { type: 'door', r: 26, hp: 320, maxhp: 320, spd: 52, col: '#3a3450', wpn: '#2a2438', dmgScale: 1.3 },
     { type: 'hook', hp: 120, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
