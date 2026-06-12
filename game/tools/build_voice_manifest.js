@@ -11,12 +11,13 @@ const { VoiceMan } = require(path.join(root, 'src/core/voice.js'));
 
 const lines = [];
 const seen = new Set();
-function add(speaker, text, note) {
+function add(speaker, text, note, opts) {
   if (!text || text.includes('{N}')) return; // nickname-templated lines can't be pre-recorded
-  speaker = speaker.toUpperCase();
+  // normalize EXACTLY like the runtime does (src/core/voice.js) so ids match in-game
+  speaker = VoiceMan.speakerFor(speaker.toUpperCase());
   const id = VoiceMan.hash(speaker + '|' + text);
   if (seen.has(id)) return; seen.add(id);
-  lines.push({ id, speaker, text, note: note || '' });
+  lines.push(Object.assign({ id, speaker, text, note: note || '' }, opts || {}));
 }
 
 // (Scope per Hiro: Bellow board taunts + death quotes stay TEXT-ONLY.)
@@ -28,7 +29,7 @@ if (bios) for (const m of bios[0].matchAll(/\w+:'((?:[^'\\]|\\.)*)'/g))
   add('NARRATOR', m[1].replace(/\\'/g, "'"), 'character intro bio');
 
 // ---- signposts & flavor reads: every signDialog('NAME','text') across the scenes ----
-for (const scene of ['CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene']) {
+for (const scene of ['CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene', 'MountainScene']) {
   const src = fs.readFileSync(path.join(root, 'src/scenes', scene + '.js'), 'utf8');
   for (const m of src.matchAll(/signDialog\('((?:[^'\\]|\\.)*)',\s*'((?:[^'\\]|\\.)*)'/g))
     add(m[1].replace(/\\'/g, "'"), m[2].replace(/\\'/g, "'"), 'flavor: ' + scene);
@@ -75,6 +76,34 @@ for (const [key, t] of Object.entries(Quests.optTable)) {
   }
 }
 
+// ---- THE SERAPHIM'S ROAD: Marlow variants, the Spine, five banners, the shrine ----
+const SE = Quests.seraph;
+// Marlow's seraph scenes mix narration with his lines -> force quote-splitting
+add('MARLOW', SE.marlow.greet, 'seraph marlow', { split: true });
+add('MARLOW', SE.marlow.answer, 'seraph marlow', { split: true });
+add('MARLOW', SE.marlow.done, 'seraph marlow', { split: true });
+add('THE TREATY STONE', SE.treatyStone.barred, 'spine trail');
+add('THE TREATY STONE', SE.treatyStone.opens, 'spine trail');
+add('THE SPINE TRAIL', SE.arrival, 'dragonspine arrival');
+for (const c of SE.candidates) {
+  add(c.name, c.intro, 'duel intro: ' + c.id);
+  add(c.name, c.win, 'duel win: ' + c.id);
+  add(c.name, c.recruited, 'recruited: ' + c.id);
+  add(c.name, c.recruited + ' (The Skyreach shrine waits at the peak.)', 'recruited revisit: ' + c.id);
+  add(c.name, 'The banner is already pledged elsewhere. The mountain knows it; so does this one. There is a kind of peace in losing to the WORTHIEST.', 'pledged elsewhere');
+  add('THE SKYREACH SHRINE', c.ending, 'ending: ' + c.id);
+}
+add('THE SKYREACH SHRINE', SE.shrine.closed, 'shrine');
+add('THE SKYREACH SHRINE', SE.shrine.frame, 'shrine');
+add('THE SKYREACH SHRINE', SE.shrine.closing, 'shrine');
+// the Seraphim's own spoken lines (quoted option labels only — actions stay silent)
+for (const t of [
+  SE.marlow.ask,
+  '"Gently, then. You have my word, innkeeper."',
+  '"To the peak."',
+  ...SE.candidates.flatMap(c => [c.challenge, c.recruit, c.spare]),
+]) if (t.trim().startsWith('"')) add('PLAYER-SERAPH', t, 'player line: seraph');
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -98,7 +127,7 @@ for (const [key, c] of Object.entries(Companions)) {
 const SPEAK_WHOLE = new Set(['NARRATOR', 'MARLOW', 'SIGNPOST']);
 function segment(l) {
   const src = l.vtext || l.text;
-  if (SPEAK_WHOLE.has(l.speaker) || l.speaker.startsWith('PLAYER-')) {
+  if ((SPEAK_WHOLE.has(l.speaker) && !l.split) || l.speaker.startsWith('PLAYER-')) {
     if (l.speaker.startsWith('PLAYER-')) {
       const t = src.replace(/\(.*?\)/g, '').replace(/^"|"$/g, '').trim();
       if (t !== src) l.segs = [{ sp: l.speaker, t }];
@@ -146,6 +175,8 @@ fs.writeFileSync(out, JSON.stringify({
     'FAELAR': 'Faelar', 'SYLVARA': 'Sylvara', 'PIPPA': 'Pippa',
     'COOKIE': 'Cookie', 'VERDANCE': 'Narrator', 'THE CAPTURE TEAM': 'Narrator',
     'PLAYER-RONIN': 'Kenji', 'PLAYER-DRUID': 'Druid', 'PLAYER-WARLOCK': 'Warlock',
+    'PLAYER-SERAPH': 'Seraphim',
+    'KARGOTH': 'Kargoth', 'SKARVA': 'Skarva', 'NIBNOB': 'Nibnob', 'AURVAETH': 'Aurvaeth',
     'GROVE KEEPER': 'Faelar',
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
