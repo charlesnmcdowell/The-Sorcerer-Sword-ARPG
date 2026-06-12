@@ -165,6 +165,11 @@ class WorldScene extends Phaser.Scene {
     CityUI.setIdentity(window.GameState.player.nickname);
     CityUI.setPurse(window.GameState.player.copper);
     CityUI.belt(window.GameState.player.belt);
+    // zone music + autosave heartbeat
+    const zoneTrack = { 'karridge-city': 'city', 'thorn-grove': 'grove', 'grove-dungeon': 'dungeon' }[window.GameState.world.zone];
+    if (zoneTrack) MusicMan.play(zoneTrack);
+    SaveSystem.save();
+    this.time.addEvent({ delay: 10000, loop: true, callback: () => { if (!this.encounterActive) SaveSystem.save(); } });
   }
 
   updatePlayer(dt) {
@@ -399,8 +404,18 @@ class WorldScene extends Phaser.Scene {
     if (this.encCombat.usePotion(it.type)) { P.belt.splice(i, 1); CityUI.belt(P.belt); }
   }
 
+  // mild field scaling: the world pushes back against a snowballed champion.
+  // Kits untouched (source is law) — only MY field enemies get tougher hides.
+  fieldScale() {
+    if (window.GAME_CONFIG && window.GAME_CONFIG.fieldScaling === false) return 1;
+    const k = window.GameState.player.kills || 0;
+    return Math.min(2.5, 1 + Math.max(0, k - 20) * 0.012);
+  }
+
   startEncounter(name, sub, pack, onEnd) {
     const GS = window.GameState, P = GS.player;
+    const fs = this.fieldScale();
+    pack = pack.map(e => Object.assign({}, e, { hp: Math.round(e.hp * fs), maxhp: Math.round((e.maxhp || e.hp) * fs) }));
     this.encounterActive = true;
     this.encImg.setVisible(true);
     this.encCombat.setPlayerSnapshot(P);

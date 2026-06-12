@@ -9,4 +9,7 @@ window.GAME_CONFIG = {
   anthropicApiKey: '',           // <- paste key here, e.g. 'sk-ant-...'
   aiModel: 'claude-sonnet-4-20250514',
   aiMaxTokens: 300,
+  // Field balance: grove/dungeon enemies gain HP as your kill count snowballs
+  // (combat kits untouched). Set false for the pure god-walk experience.
+  fieldScaling: true,
 };

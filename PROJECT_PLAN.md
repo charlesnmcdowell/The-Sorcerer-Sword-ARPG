@@ -24,4 +24,6 @@
 
 **Cut order if behind:** 4 companions→talk-only → forest dungeon → guild repeatables. **Never cut:** arena→city flow, Inn quest, 2 AI companions.
 
-**Hiro owes:** asset pack downloads (Bucket 3), story outlines (before Bucket 5 dialogue), music files + placements (Bucket 7), API key decision (Bucket 6).
+**Hiro owes:** music files into `game/assets/music/` (title/arena/city/grove/dungeon.mp3 — system ready, silent until then), API key into `game/config.js` if AI companions wanted.
+
+**STATUS (end of build, 2026-06-12):** Buckets 0–7 ALL COMPLETE, 5 days ahead of schedule. Full loop ships: char select → 20-fight gauntlet → Karridge City → Thorn Grove → Root-Hollow dungeon → conspiracy beats 1–5 → finale (+ Ronin-only easter-egg finale). Companions, artifacts, potions, guild contracts, save/load, world map, autopilot spectate (F10), field scaling. Next: QA days — playtests, bug triage, perf, publish prep.

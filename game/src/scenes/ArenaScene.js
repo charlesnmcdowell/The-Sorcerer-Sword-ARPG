@@ -165,13 +165,29 @@ class ArenaScene extends Phaser.Scene {
       this.scene.start('CityScene');
     });
 
-    // expose for save/load + city transition later
+    // continue from save
+    const cont = $('continueBtn');
+    if (SaveSystem.hasSave()) {
+      cont.style.display = 'block';
+      cont.addEventListener('pointerdown', () => {
+        const st = SaveSystem.load();
+        if (!st) { cont.style.display = 'none'; return; }
+        SaveSystem.apply(st);
+        for (const s of screens()) s.classList.remove('show');
+        ui.hud(false); ui.controls(false); ui.boss(false, '');
+        this.scene.start(SaveSystem.sceneForZone(st.world.zone));
+      });
+    }
+
     window.GameState.world.zone = 'pit-of-karridge';
+    MusicMan.play('title');
   }
 
   update(time, dtMs) {
     Autopilot.frame(this.combat, Math.min(0.05, dtMs / 1000));
     this.combat.frame(time);
     this.pitTex.refresh();
+    const m = this.combat.S.mode;
+    MusicMan.play(m === 'fight' || m === 'demo' ? 'arena' : 'title');
   }
 }
