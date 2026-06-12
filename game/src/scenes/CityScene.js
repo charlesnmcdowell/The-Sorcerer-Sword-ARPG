@@ -190,8 +190,8 @@ class CityScene extends Phaser.Scene {
       'fr-player': GSP.char === 'druid' ? { col: '#2c4430', o: { druid: true, wpnLen: 26, wpnCol: '#d8e4d0', twin: true } }
         : GSP.char === 'warlock' ? { col: '#241a30', o: { warlock: true, robe: true, wpnLen: 30, wpnCol: '#3a3046', staffTip: true, tipCol: '#b070f0', twoHand: false, headCol: '#9a9ab0' } }
         : { col: '#2c3440', o: { samurai: true, armor: GSP.bladeTier || 0, wpnLen: (GSP.bladeTier === 2 ? 62 : GSP.bladeTier === 1 ? 46 : 30), wpnCol: '#e7d9a8', thickWpn: GSP.bladeTier === 2 } },
-      'npc0': { col: '#4a3c30', o: {} }, 'npc1': { col: '#39414a', o: { hood: true } },
-      'npc2': { col: '#4a2f33', o: { robe: true, headCol: '#caa27a' } }, 'npc3': { col: '#3c4434', o: {} },
+      'fr-npc0': { col: '#4a3c30', o: {} }, 'fr-npc1': { col: '#39414a', o: { hood: true } },
+      'fr-npc2': { col: '#4a2f33', o: { robe: true, headCol: '#caa27a' } }, 'fr-npc3': { col: '#3c4434', o: {} },
     };
     const DIRS = 8, PH = 4;
     for (const [key, look] of Object.entries(looks)) {
