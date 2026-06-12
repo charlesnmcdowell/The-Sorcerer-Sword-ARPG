@@ -58,9 +58,15 @@ class ArenaScene extends Phaser.Scene {
       },
       demoCap: t => { els.demoCap.textContent = t; },
       intro: (v, data) => { els.intro.style.display = v ? 'flex' : 'none';
-        if (v && data) { els.introName.textContent = data.name; els.introBio.textContent = data.bio; } },
+        if (v && data) { els.introName.textContent = data.name; els.introBio.textContent = data.bio;
+          if (window.VoiceMan) VoiceMan.say('NARRATOR', data.bio); } },
       screen: (id, data) => {
         for (const s of screens()) s.classList.remove('show');
+        if (window.VoiceMan) {
+          if (id === 'board' && data) VoiceMan.say('BELLOW', data.foeTaunt.replace(/^"|"$/g, ''));
+          else if (id === 'death' && data) VoiceMan.say('NARRATOR', data.quote);
+          else VoiceMan.stop();
+        }
         if (!id) return;
         if (id === 'board' && data) {
           $('foeName').textContent = data.foeName; $('foeRec').textContent = data.foeRec;

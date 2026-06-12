@@ -17,6 +17,7 @@ const CityUI = {
   prompt(text) { this.els.prompt.style.display = text ? 'block' : 'none'; if (text) this.els.prompt.textContent = text; },
 
   dialog(name, text, options, portraitCanvas) {
+    if (window.VoiceMan && text && text !== '...') VoiceMan.say(name, text);
     this.els.dlg.style.display = 'flex';
     this.els.dlgName.textContent = name;
     this.els.dlgText.textContent = text;
