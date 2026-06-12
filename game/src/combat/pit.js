@@ -1104,6 +1104,9 @@ function computeNickname(){
   nickname=bk?bank.styles[bk][tier]:bank.fallback[tier];
   return nickname!==prev;}
 let encounterCb=null;
+function addAlly(o){ // companion fighting alongside — rides the wolf AI loyally
+  wolves.push(Object.assign({x:P.x+40,y:P.y+30,r:13,face:0,hp:60+P.kills*4,maxhp:60+P.kills*4,
+    life:9999,cool:rnd(.4,1),lungeT:0,bit:false,walkP:0},o));}
 function startEncounter(list,cb){
   encounterCb=cb||null;
   enemies=list.map(o=>mkEnemy(o));
@@ -1801,8 +1804,16 @@ function draw(){
       drawLimbShape(ctx,L);
       if(Math.random()<.35&&particles.length<240) // blood trail off flying limbs
         particles.push({x:L.x,y:L.y,vx:rnd(-20,20),vy:rnd(-20,20),t:rnd(.2,.4),col:'#8a1f1c',r:rnd(1.5,2.5)});}
-    // spirit wolves
+    // spirit wolves (and humanoid allies riding the same loyal AI)
     for(const w of wolves){
+      if(w.humanLook){
+        drawFighter(w.x,w.y,w.r,w.face,w.col||'#4a3c30',Object.assign({phase:w.walkP,moving:w._mv},w.humanLook));
+        if(w.nameTag){ctx.font='bold 10px "Courier New",monospace';ctx.textAlign='center';
+          ctx.fillStyle='#000';ctx.fillText(w.nameTag,w.x+1,w.y-w.r-14+1);
+          ctx.fillStyle='#e7b450';ctx.fillText(w.nameTag,w.x,w.y-w.r-14);}
+        ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(w.x-14,w.y-w.r-10,28,3);
+        ctx.fillStyle='#7fbf6a';ctx.fillRect(w.x-13,w.y-w.r-9,26*Math.max(0,w.hp/w.maxhp),1.5);
+        continue;}
       ctx.globalAlpha=Math.min(1,w.life/2)*0.85; // spectral, fade out at end
       drawFighter(w.x,w.y,w.r,w.face,'#5a6a5c',{quad:true,phase:w.walkP,moving:w._mv});
       ctx.globalAlpha=1;
@@ -2035,7 +2046,7 @@ const api={
   get nickname(){return nickname;},get FIGHTS(){return FIGHTS;},
   maxHP,lvl,diceN,stat,
   drawFighter, // render-only reuse: city NPCs/player share the arena art style
-  startEncounter,setMods,usePotion,mkEnemy,
+  startEncounter,setMods,usePotion,mkEnemy,addAlly,
   setPlayerSnapshot:(snap)=>{P.char=snap.char;P.kills=snap.kills;P.level=snap.level;
     P.bladeTier=snap.bladeTier||0;Object.assign(P.base,snap.base);nickname=snap.nickname;
     P.form='human';P.r=[16,19,23][P.bladeTier||0]||16;updateLabels();},

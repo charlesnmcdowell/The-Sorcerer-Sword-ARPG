@@ -56,6 +56,7 @@ class DungeonScene extends WorldScene {
 
     this.bakeFrames();
     this.spawnPlayer(5 * T, 4 * T);
+    if (window.GameState.world.activeFollower) this.spawnFollower(window.GameState.world.activeFollower);
     this.initEncounterHost(GROVE_THEME);
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);
     this.floatText(5 * T, 4 * T - 50, 'THE ROOT-HOLLOW', '#7fd0ff', 16);
@@ -99,6 +100,7 @@ class DungeonScene extends WorldScene {
     const dt = Math.min(0.05, dtMs / 1000);
     if (this.updateEncounter(time)) return;
     this.updatePlayer(dt);
+    this.updateFollower(dt);
     this.updatePrompt();
     this.updateAtmosphere(time, dt);
 

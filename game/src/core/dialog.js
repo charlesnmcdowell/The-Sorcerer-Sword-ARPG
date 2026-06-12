@@ -33,6 +33,33 @@ const CityUI = {
   closeDialog() { this.els.dlg.style.display = 'none'; },
   dialogOpen() { return this.els.dlg.style.display === 'flex'; },
 
+  dialogInput(name, text, onSend, portraitCanvas) { // free-text AI chat
+    this.dialog(name, text, [], portraitCanvas);
+    const wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;gap:6px;margin-top:10px';
+    const inp = document.createElement('input');
+    inp.style.cssText = 'flex:1;background:#0a0705;border:1px solid rgba(61,240,200,.35);color:#d8cdb8;font-family:Courier New,monospace;font-size:12px;padding:7px';
+    inp.placeholder = 'say something...'; inp.maxLength = 200;
+    const btn = document.createElement('div'); btn.className = 'dlgopt'; btn.style.marginTop = '0'; btn.textContent = 'Say';
+    const send = () => { const v = inp.value.trim(); if (!v) return;
+      this.dialog(name, '...', [], portraitCanvas); onSend(v); };
+    btn.addEventListener('pointerdown', send);
+    inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') send(); });
+    wrap.appendChild(inp); wrap.appendChild(btn);
+    this.els.dlgOpts.appendChild(wrap);
+    setTimeout(() => inp.focus(), 50);
+  },
+
+  companions(show, list) { // P panel
+    const el = document.getElementById('companions');
+    el.style.display = show ? 'block' : 'none';
+    if (!show) return;
+    let h = '';
+    for (const c of list)
+      h += `<div class="qtitle">${c.name} ${c.recruited ? '· companion' : c.met ? '· met' : '· unmet'} ${c.met ? '· ♥' + c.approval : ''} ${c.following ? '· walking with you' : ''}</div>
+            <div class="qtext">${c.blurb}${c.where ? ' — ' + c.where : ''}</div>`;
+    el.querySelector('#companionsBody').innerHTML = h || '<div class="qtext">No one yet. The inn, the guild, the alleys, the grove.</div>';
+  },
+
   belt(items) { // items: array up to 8 of {label} (null = empty)
     this.els.belt.innerHTML = '';
     for (let i = 0; i < 8; i++) {

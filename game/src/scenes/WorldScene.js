@@ -304,6 +304,83 @@ class WorldScene extends Phaser.Scene {
     this.input.mouse.disableContextMenu();
   }
 
+  // ---------- companions ----------
+  placeCompanions(zone) {
+    this._portraits = this._portraits || {};
+    for (const [key, c] of Object.entries(Companions)) {
+      if (c.where !== zone && c.where !== 'both') continue;
+      const st = CompanionEngine.state(key);
+      if (st.following) continue; // they're walking with you, not standing at their spot
+      const x = c.spot[0] * 32, y = c.spot[1] * 32;
+      const texKey = 'fr-comp-' + key;
+      if (!this.textures.exists(texKey)) this.bakeFrames({ [texKey]: c.look });
+      const spr = this.add.sprite(x, y, texKey, 0).setDepth(y);
+      this.add.text(x, y - 34, c.name, { fontFamily: 'Courier New', fontSize: '10px', color: '#e7b450', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(y);
+      this.interactables.push({ x, y, label: 'speak with ' + c.name, fn: () => CompanionEngine.talk(this, key) });
+    }
+    // active follower walks in with you
+    const fk = window.GameState.world.activeFollower;
+    if (fk) this.spawnFollower(fk);
+    this.input.keyboard.on('keydown-P', () => {
+      this.compOpen = !this.compOpen;
+      CityUI.companions(this.compOpen, Object.entries(Companions).map(([k, c]) => {
+        const st = CompanionEngine.state(k);
+        return { name: c.name, blurb: c.blurb, met: st.met, recruited: st.recruited, approval: st.approval,
+          following: st.following, where: c.where === 'both' ? 'roams' : c.where };
+      }));
+    });
+  }
+
+  portraitFor(key) {
+    this._portraits = this._portraits || {};
+    if (this._portraits[key]) return this._portraits[key];
+    const c = Companions[key];
+    const pc = document.createElement('canvas'); pc.width = pc.height = 72;
+    const r = createPitCombat({ width: 72, height: 72, ctx: pc.getContext('2d'), ui: {} });
+    r.drawFighter(36, 42, 15, -Math.PI / 2, c.look.col, c.look.o);
+    this._portraits[key] = pc;
+    return pc;
+  }
+
+  onRecruit(key) {
+    CompanionEngine.remember(key, 'joined you');
+    CompanionEngine.rememberAll(Companions[key].name + ' joined the company');
+    this.setFollower(key);
+    this.floatText(this.player.x, this.player.y - 56, Companions[key].name + ' WALKS WITH YOU', '#3df0c8', 15);
+  }
+
+  setFollower(key) {
+    const GS = window.GameState;
+    for (const k of Object.keys(GS.companions)) GS.companions[k].following = false;
+    if (this.followerSpr) { this.followerSpr.destroy(); this.followerSpr = null; this.followerKey = null; }
+    GS.world.activeFollower = key || null;
+    if (key) { CompanionEngine.state(key).following = true; this.spawnFollower(key); }
+  }
+
+  spawnFollower(key) {
+    const c = Companions[key];
+    const texKey = 'fr-comp-' + key;
+    if (!this.textures.exists(texKey)) this.bakeFrames({ [texKey]: c.look });
+    if (this.followerSpr) this.followerSpr.destroy();
+    this.followerKey = key;
+    this.followerSpr = this.add.sprite(this.player.x + 30, this.player.y + 20, texKey, 0).setDepth(this.player.y + 20);
+    this.followerWalkP = 0;
+  }
+
+  updateFollower(dt) {
+    if (!this.followerSpr) return;
+    const f = this.followerSpr;
+    const dx = this.player.x - f.x, dy = this.player.y - f.y, d = Math.hypot(dx, dy);
+    if (d > 46) {
+      const face = Math.atan2(dy, dx), spd = Math.min(260, 120 + d);
+      const nx = f.x + Math.cos(face) * spd * dt, ny = f.y + Math.sin(face) * spd * dt;
+      if (!this.collide(nx, ny, 8)) { f.x = nx; f.y = ny; } else { f.x += Math.cos(face) * spd * dt * 0.3; f.y += Math.sin(face) * spd * dt * 0.3; }
+      this.followerWalkP += spd * dt * 0.011;
+      f.setFrame(this.frameFor(face, this.followerWalkP, true));
+    } else f.setFrame(this.frameFor(this.face, 0, false));
+    f.setDepth(f.y);
+  }
+
   artifactMods() {
     const a = window.GameState.player.artifacts || [];
     return {
@@ -328,6 +405,11 @@ class WorldScene extends Phaser.Scene {
     this.encImg.setVisible(true);
     this.encCombat.setPlayerSnapshot(P);
     this.encCombat.setMods(this.artifactMods());
+    // the companion fights beside you
+    const fk = GS.world.activeFollower;
+    if (fk) { const c = Companions[fk];
+      this.encCombat.addAlly({ humanLook: c.look.o, col: c.look.col, nameTag: c.name });
+      CompanionEngine.remember(fk, 'fought beside you'); }
     this.encCombat.startEncounter(pack, win => {
       // sync the run back into the world snapshot (ronin snowball persists)
       P.kills = this.encCombat.P.kills;

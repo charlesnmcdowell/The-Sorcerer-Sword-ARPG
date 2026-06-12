@@ -158,6 +158,7 @@ class GroveScene extends WorldScene {
     GS.world.groveFromCity = false;
     this.spawnPlayer(spawn.x, spawn.y);
     this.gateSouth = { x: 31 * T, y: HPX - T * 1.5, w: 6 * T, h: T * 1.5 };
+    this.placeCompanions('grove');
     this.initEncounterHost(GROVE_THEME);
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);
     this.floatText(spawn.x, spawn.y - 60, 'THORN GROVE', '#7fbf6a', 18);
@@ -275,6 +276,7 @@ class GroveScene extends WorldScene {
     const dt = Math.min(0.05, dtMs / 1000);
     if (this.updateEncounter(time)) return;
     this.updatePlayer(dt);
+    this.updateFollower(dt);
     this.updatePrompt();
     this.updateAtmosphere(time, dt);
 
