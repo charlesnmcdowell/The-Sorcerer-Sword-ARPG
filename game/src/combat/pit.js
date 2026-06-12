@@ -1998,6 +1998,7 @@ const api={
   get demons(){return demons;},get wolves(){return wolves;},
   get nickname(){return nickname;},get FIGHTS(){return FIGHTS;},
   maxHP,lvl,diceN,stat,
+  drawFighter, // render-only reuse: city NPCs/player share the arena art style
 };
 return api;
 }

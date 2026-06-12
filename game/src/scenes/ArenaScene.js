@@ -4,7 +4,7 @@
 
 class ArenaScene extends Phaser.Scene {
   constructor() { super({ key: 'ArenaScene' }); }
-  static get PAYOUT_PER_KILL() { return 15; } // Bellow's rate — gold is score/flavor (no economy this build)
+  // Bellow's rate: 1 silver per kill (1g=10s=100c; money stored as copper — see core/money.js)
 
   create() {
     const W = this.scale.width, H = this.scale.height; // 1280x720 logical
@@ -78,7 +78,7 @@ class ArenaScene extends Phaser.Scene {
         if (id === 'victory' && data) {
           // ---- arena -> city handoff: the run's earnings follow the player out of the Pit ----
           const P = this.combat.P;
-          const gold = P.kills * ArenaScene.PAYOUT_PER_KILL;
+          const purse = P.kills * Money.PIT_PAYOUT_PER_KILL; // copper
           window.GameState.player = {
             char: P.char,
             kills: P.kills,
@@ -86,11 +86,11 @@ class ArenaScene extends Phaser.Scene {
             bladeTier: P.bladeTier || 0,
             base: Object.assign({}, P.base),
             nickname: this.combat.nickname,
-            gold,
+            copper: purse,
             belt: []
           };
           window.GameState.world.flags.pitChampion = true;
-          $('vicStats').textContent = data.stats + ' · Bellow pays out ' + gold + ' gold';
+          $('vicStats').textContent = data.stats + ' · Bellow pays out ' + Money.fmt(purse);
         }
         $(id).classList.add('show');
       }
@@ -143,8 +143,20 @@ class ArenaScene extends Phaser.Scene {
     $('againBtn').addEventListener('pointerdown', () => this.combat.fullReset());
     $('vicBtn').addEventListener('pointerdown', () => this.combat.fullReset());
     $('leaveBtn').addEventListener('pointerdown', () => {
-      // Bucket 3 replaces this stub with the real CityScene transition
-      ui.banner('KARRIDGE CITY', 'beyond the pit gate — built in Bucket 3', 2200, '#e7b450');
+      for (const s of screens()) s.classList.remove('show');
+      ui.hud(false); ui.controls(false); ui.boss(false, '');
+      this.scene.start('CityScene');
+    });
+    // DEV: F9 on the title screen skips straight to the city with a stock champion
+    this.input.keyboard.on('keydown-F9', () => {
+      if (!window.GameState.player) window.GameState.player = {
+        char: 'ronin', kills: 20, level: 1, bladeTier: 1,
+        base: { STR: 10, DEX: 10, CON: 10, ATK: 10 },
+        nickname: 'THE HEADSMAN', copper: 200, belt: []
+      };
+      for (const s of screens()) s.classList.remove('show');
+      ui.hud(false); ui.controls(false); ui.boss(false, '');
+      this.scene.start('CityScene');
     });
 
     // expose for save/load + city transition later

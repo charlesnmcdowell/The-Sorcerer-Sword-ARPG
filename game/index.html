@@ -69,6 +69,35 @@
   #banner .b1{font-size:clamp(22px,7vw,40px);letter-spacing:6px;color:var(--gold);text-transform:uppercase;text-shadow:0 0 24px rgba(240,168,61,.55),3px 3px 0 #1a0f04}
   #banner .b2{font-size:12px;letter-spacing:4px;color:var(--bone);text-transform:uppercase;margin-top:6px;opacity:.85}
   #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:7}
+  /* ---------- CITY UI ---------- */
+  #cityhud{position:fixed;top:0;left:0;right:0;padding:10px 14px;display:none;pointer-events:none;z-index:5}
+  #cityhud .row{display:flex;align-items:baseline;gap:14px}
+  #cityName{font-size:15px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;font-weight:bold;text-shadow:0 1px 0 #000}
+  #cityPurse{font-size:13px;color:var(--torch);font-family:monospace}
+  #cityHint{margin-left:auto;font-size:11px;color:var(--ash)}
+  #interactPrompt{position:fixed;left:50%;transform:translateX(-50%);bottom:120px;display:none;z-index:6;
+    font-size:13px;letter-spacing:2px;color:#3df0c8;background:rgba(4,2,8,.8);border:1px solid rgba(61,240,200,.5);
+    padding:8px 18px;text-transform:uppercase;pointer-events:none}
+  #belt{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;display:none;gap:6px;z-index:6}
+  .beltslot{width:44px;height:44px;border:2px solid #2c2118;background:rgba(15,11,8,.85);box-shadow:0 0 0 1px #000;
+    display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--bone)}
+  .beltslot.filled{border-color:rgba(231,180,80,.55)}
+  #dialog{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;width:min(92vw,560px);display:none;z-index:20;
+    background:linear-gradient(#15100b,#0f0b08);border:1px solid #2c2118;box-shadow:0 0 0 1px #000,0 10px 40px #000;
+    padding:16px;gap:14px;align-items:flex-start}
+  #dlgPortrait{flex:0 0 84px;height:84px;border:1px solid #2c2118;background:#0a0705;display:flex;align-items:center;justify-content:center}
+  #dlgPortrait canvas{width:80px;height:80px;image-rendering:pixelated}
+  #dlgName{font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+  #dlgText{font-size:13px;line-height:1.7;color:var(--bone)}
+  .dlgopt{margin-top:8px;font-size:12px;letter-spacing:1px;color:#3df0c8;cursor:pointer;padding:6px 10px;border:1px solid rgba(61,240,200,.35);background:rgba(61,240,200,.05)}
+  .dlgopt:hover{background:rgba(61,240,200,.15)}
+  .dlgopt.disabled{color:var(--ash);border-color:#2c2118;cursor:default}
+  #questlog,#guildboard{position:fixed;right:16px;top:54px;width:min(88vw,360px);display:none;z-index:20;
+    background:linear-gradient(#15100b,#0f0b08);border:1px solid #2c2118;box-shadow:0 0 0 1px #000,0 10px 40px #000;padding:16px}
+  .qhead{font-size:11px;letter-spacing:4px;color:var(--ash);text-transform:uppercase;margin-bottom:10px}
+  .qtitle{font-size:13px;letter-spacing:2px;color:var(--gold);margin-top:10px}
+  .qtext{font-size:12px;line-height:1.6;color:var(--bone);opacity:.9;margin-top:3px}
+  .qobj{font-size:11px;color:#3df0c8;margin-top:4px}
 </style>
 </head>
 <body>
@@ -100,6 +129,13 @@
 
 <div id="banner"><div class="b1"></div><div class="b2"></div></div>
 <div id="flash"></div>
+
+<div id="cityhud"><div class="row"><span id="cityName"></span><span id="cityPurse"></span><span id="cityHint">E — interact · J — journal · ESC — close</span></div></div>
+<div id="interactPrompt"></div>
+<div id="belt"></div>
+<div id="dialog" style="display:none"><div id="dlgPortrait"></div><div style="flex:1"><div id="dlgName"></div><div id="dlgText"></div><div id="dlgOpts"></div></div></div>
+<div id="questlog"><div class="qhead">Journal — the Ankuspawn thread</div><div id="questlogBody"></div></div>
+<div id="guildboard"><div class="qhead">Guild board — contracts</div><div id="guildboardBody"></div></div>
 
 <div class="screen show" id="title">
   <div class="eyebrow">The Pit of Karridge presents</div>
@@ -160,8 +196,14 @@
 </div>
 
 <script src="lib/phaser.min.js"></script>
+<script src="assets/embedded.js"></script>
+<script src="src/core/money.js"></script>
+<script src="src/core/dialog.js"></script>
+<script src="src/world/citymap.js"></script>
+<script src="src/world/quests.js"></script>
 <script src="src/combat/pit.js"></script>
 <script src="src/scenes/ArenaScene.js"></script>
+<script src="src/scenes/CityScene.js"></script>
 <script src="src/main.js"></script>
 </body>
 </html>
