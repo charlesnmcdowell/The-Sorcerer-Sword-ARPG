@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Sorcerer-Sword ARPG — Ankuspawn Conspiracy</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0a0808; height: 100%; overflow: hidden; }
+  #game-container { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  canvas { image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+<script src="lib/phaser.min.js"></script>
+<!-- Plain script tags (no ES modules) so the game runs from file:// with a double-click -->
+<script src="src/scenes/BootScene.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
