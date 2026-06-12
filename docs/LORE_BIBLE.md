@@ -42,4 +42,9 @@ The **Cult of Anku**, founded by **Lady Nyx** (the Lich Queen, wife of AnkuNyx).
 Brakka (orc mercenary — fits licensed merc lore exactly), Faelar (Deepwood wood elf, Thorn Grove), Dorian (disgraced knight, ⚑ former coalition standing army), Vexa (tiefling alchemist — ⚑ her black-market alchemy brushes the elixir trade, hook into beat 4), Sylvara (dark elf exile, ⚑ ex-Academy, knows Ashenveil rumors), Pippa (halfling treasure hunter). All six are original — no canon conflicts.
 
 ## 8. APPROVED RETCONS (Hiro, 2026-06-12) — paste into universe_campaign_framework changelog
-1. **The Druid is Amaris's daughter** (~24), conceived during Book 4's Ronin arc when Kenji, traveling unde
+1. **The Druid is Amaris's daughter** (~24), conceived during Book 4's Ronin arc when Kenji, traveling under an alias, passed through **Millhaven** (2 days from Thornfield) — one night, no names exchanged. **Amaris is alive, her epilogue untouched, and she never knew who the father was** — she told her daughter only when the girl's powers turned unnatural. The Druid is **Ankuspawn, Verdance Ember theme** (life-force — Nyx's most-prized harvest, the fertility-elixir source). Her game bio already fits: "seeking what nature could not teach her."
+2. **The arena Ronin is Kenji/AnkuNyx incognito** (Book 4 = "The Ronin arc"; the kit is his iaido kata). Implemented: Ronin-only finale where the Emperor never arrives in Karridge.
+3. Sibling dramatic irony: the Druid and the Ronin in the same character-select screen are father and daughter. Shen Sama (druid-only line) names her "sister." Cookie's Heartstring will recognize her hum (Varenholm arc).
+
+---
+*Sources: `ankuspawn_race.md`, `shared_world_continuity.md`, `universe_campaign_framework.md`, Cookie ch.1/5 + `character_world_state.json`, Book 4 ch.1/39, character trackers. Anything ⚑ becomes canon only when you approve it.*
