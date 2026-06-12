@@ -45,6 +45,22 @@ add('NARRATOR', C.buyer.choiceKeep, 'beat 4'); add('NARRATOR', C.buyer.choiceGiv
 for (const k of ['text1', 'text2', 'text3']) add('ANKUNYX', C.finale[k], 'finale');
 for (const k of ['text1', 'text2', 'text3']) add('NARRATOR', C.finaleRonin[k], 'ronin finale');
 
+// ---- Varenholm arc ----
+const V = Quests.varenholm;
+add('NARRATOR', V.coach, 'varenholm'); add('NARRATOR', V.performance1, 'varenholm');
+add('NARRATOR', V.performance2, 'varenholm'); add('NARRATOR', V.performance2druid, 'varenholm druid');
+add('NARRATOR', V.done, 'varenholm');
+const K = V.cookie;
+for (const k of ['greet', 'greetDruid', 'jobBrief', 'afterJob', 'afterCult', 'afterCultDruid']) add('COOKIE', K[k], 'cookie');
+
+// ---- druid heritage variants (appended strings hash differently — record the combos) ----
+const D = Quests.druid;
+add('MARLOW', I.rumorPaid + D.marlowBeat, 'druid variant');
+add('SHEN SAMA', C.shenSama.text + D.shenSamaAdd, 'druid variant');
+add('THE VEILED WOMAN', C.buyer.text1 + D.vialHum, 'druid variant');
+add('ANKUNYX', C.finale.text2 + ' ' + D.finaleGaze, 'druid variant');
+add('NARRATOR', D.captureSign, 'druid capture'); add('NARRATOR', D.captureAfter, 'druid capture');
+
 // ---- companions ----
 for (const [key, c] of Object.entries(Companions)) {
   add(c.name, c.greet, 'greet');
@@ -64,6 +80,8 @@ fs.writeFileSync(out, JSON.stringify({
     'THE QUARRY BOY': 'Quarry Boy', 'THE VEILED WOMAN': 'Veiled Woman',
     'BRAKKA': 'Brakka', 'VEXA': 'Vexa', 'DORIAN': 'Dorian',
     'FAELAR': 'Faelar', 'SYLVARA': 'Sylvara', 'PIPPA': 'Pippa',
+    'COOKIE': 'Cookie', 'VERDANCE': 'Narrator', 'THE CAPTURE TEAM': 'Narrator',
+    'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
   voiceHints: {
     'Bellow': 'booming gravel-voiced arena announcer, theatrical, middle-aged man',

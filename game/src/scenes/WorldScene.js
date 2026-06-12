@@ -59,7 +59,7 @@ class WorldScene extends Phaser.Scene {
       const shctx = sheet.getContext('2d');
       for (let d = 0; d < DIRS; d++) for (let p = 0; p < PH; p++) {
         sctx.clearRect(0, 0, 72, 72);
-        render.drawFighter(36, 40, 13, d / DIRS * Math.PI * 2, look.col,
+        render.drawFighter(36, 40, look.r || 13, d / DIRS * Math.PI * 2, look.col,
           Object.assign({ phase: p * (Math.PI / 2) + 0.7, moving: p > 0 }, look.o));
         shctx.drawImage(scratch, d * 72, p * 72);
       }

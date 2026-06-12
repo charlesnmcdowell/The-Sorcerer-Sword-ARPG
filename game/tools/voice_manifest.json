@@ -13,7 +13,13 @@
     "DORIAN": "Dorian",
     "FAELAR": "Faelar",
     "SYLVARA": "Sylvara",
-    "PIPPA": "Pippa"
+    "PIPPA": "Pippa",
+    "COOKIE": "Cookie",
+    "VERDANCE": "Narrator",
+    "THE CAPTURE TEAM": "Narrator",
+    "THE PERFORMANCE": "Narrator",
+    "THE COACH ROAD": "Narrator",
+    "THE ROAD SOUTH": "Narrator"
   },
   "voiceHints": {
     "Bellow": "booming gravel-voiced arena announcer, theatrical, middle-aged man",
@@ -26,8 +32,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 78,
-  "totalChars": 9769,
+  "count": 95,
+  "totalChars": 16505,
   "lines": [
     {
       "id": "c1229670",
@@ -334,6 +340,108 @@
       "speaker": "NARRATOR",
       "text": "You stand a while in the emptying plaza, the vial humming in your coat, the crowd's name for you drifting back and forth across the stones. There was no one to show the evidence to today. You tell yourself that's why you're smiling — half a smile, the kind a man keeps for his own secrets. The conspiracy holds. The hunt continues. And the Pit's champion polishes a blade that has worn three names, and answers, as ever, to none of them.",
       "note": "ronin finale"
+    },
+    {
+      "id": "05343e18",
+      "speaker": "NARRATOR",
+      "text": "Three days by coach, two changes of horses, one toll bridge where the guard waves you through when he recognizes the pit-name. Varenholm: spires, banners, streetlamps with GLASS in them. The Crown Quarter smells like money and rosin. Playbills on every post: ONE NIGHT — THE DANCER, V.E.A. MASTER OF VOICE — CIVIC AUDITORIUM.",
+      "note": "varenholm"
+    },
+    {
+      "id": "25c2d96e",
+      "speaker": "NARRATOR",
+      "text": "The Civic Auditorium is full past the fire-marshal's patience. She comes out small and the room gets smaller — a halfling in firebird red, scroll-marks on her shoulders catching the footlights gold. The dance is all gyration and joy and impossible precision, and then the EMOTION arrives: not heard, FELT, washing the tiers like warm water. Two thousand strangers grinning at once and none of them knowing why.",
+      "note": "varenholm"
+    },
+    {
+      "id": "5148e2e8",
+      "speaker": "NARRATOR",
+      "text": "You know why. You've felt a hum like this before — in a vial, in a node, under a grove. Hers is tuned to the heart where the grove's is tuned to the green, but it is the SAME instrument. Somewhere in this city, you'd wager a ledger has four small letters next to her name.",
+      "note": "varenholm"
+    },
+    {
+      "id": "9532b4c2",
+      "speaker": "NARRATOR",
+      "text": "You know why — and it is worse than knowing. Her hum reaches the tiers and BRUSHES YOURS, string against string, and for half a beat the dancer misses a step no one else notices. From the stage, mid-spin, two thousand faces deep, she finds you. Her grin does not falter. Her eyes say: huh.",
+      "note": "varenholm druid"
+    },
+    {
+      "id": "d414f8f8",
+      "speaker": "NARRATOR",
+      "text": "The coach south leaves at dawn. Varenholm's glass lamps go gold behind you. Somewhere in the Crown Quarter a dancer who is exactly as hunted as she is famous takes a third encore, because the best place to hide from the dark is the absolute center of the light.",
+      "note": "varenholm"
+    },
+    {
+      "id": "91ed3cf8",
+      "speaker": "COOKIE",
+      "text": "She's at the guild board before you are, still in the red, hair pinned with what is definitely a stolen quill. \"You're the pit one. Karridge. They do a CHANT about you, it's very dramatic.\" She doesn't wait for an answer. \"I'm Cookie. I'm taking the saltcellar job and I need a front line. You're hired. I pay in exposure and one (1) gold.\"",
+      "note": "cookie"
+    },
+    {
+      "id": "188e6080",
+      "speaker": "COOKIE",
+      "text": "She's at the guild board before you are — and she goes still the moment you're close, head tilting like a tuning fork. \"...Huh. There it IS. You were at the show. Third tier, left. You HUM.\" She looks you up and down with frank delight. \"Green-flavored. Mine's all heartstrings. Okay, two questions: saltcellar job, you in? And does dad know about YOU too, or is he still collecting us by accident?\"",
+      "note": "cookie"
+    },
+    {
+      "id": "97b2c046",
+      "speaker": "COOKIE",
+      "text": "\"Saltcellar by the canal. Something's chewing through the pork shipments and the warehouse boys won't go down past the third step. Guild says rats. Rats don't leave FROST on the railings. Probably wights. Possibly worse. Definitely fun.\"",
+      "note": "cookie"
+    },
+    {
+      "id": "eb7f25f8",
+      "speaker": "COOKIE",
+      "text": "\"See, THAT'S a front line.\" She flips a silver to the warehouse boy watching from the stairs. \"Drinks would be on me, except—\"",
+      "note": "cookie"
+    },
+    {
+      "id": "f2cedd04",
+      "speaker": "COOKIE",
+      "text": "\"—FOUR of you this time? I'm FLATTERED.\" She straightens her hair-quill, breathing hard, grinning harder. \"They keep sending little shopping parties. One day someone's going to explain to them what happened to the wererats.\" A beat — the grin banks down to something older. \"You broke one of their camps out east. I heard. They don't stop, you know. They just re-letter the ledger.\" She presses the promised gold into your hand and one extra. \"For the warning you didn't have to ride three days to give me. Tell the road I said hi.\"",
+      "note": "cookie"
+    },
+    {
+      "id": "aeff7e2c",
+      "speaker": "COOKIE",
+      "text": "\"—FOUR of you this time? I'm FLATTERED.\" She catches her breath, then looks at you — really looks. \"They had two cart-cages, cousin. TWO.\" The grin banks down to something older. \"Whatever we are, we're worth more to them alive, which means we never stop being worth it. So: rule one, never be boring. Rule two, never be ALONE when it matters.\" She presses the gold into your hand, plus one extra, plus — quickly, like it costs her — a squeeze of your wrist. \"Family discount. If you ever find out whether dad knows... I get the letter first.\"",
+      "note": "cookie"
+    },
+    {
+      "id": "fe00182a",
+      "speaker": "MARLOW",
+      "text": "Three more vanished off the trade road this season. A juggler, a hedge-witch, a quarry boy who could lift a cart. All GIFTED, you follow? And a guest upstairs keeps asking after your fights — what you do, how fast, how often. Asked after Dren the same way, the week before he vanished. I'd visit the guild before the road, champion. ...You'd know about gifted, I'd wager. The way the herb-pots on my sill lean toward you when you walk past. No offense, champion.",
+      "note": "druid variant"
+    },
+    {
+      "id": "7e0f9618",
+      "speaker": "SHEN SAMA",
+      "text": "Scales like cooling slag under a traveler's hood. Eyes too old for the face. \"You freed the wrong cargo, champion — they'll re-profile and restock within a season. They are SHOPPING. Specific gifts, specific blood. Mine most of all.\" He looks north, the way hunted things do. \"Don't follow me. Being near me is how people end up in crates.\" He is gone between one breath and the next. He stops, half-turned. Nostrils flare, like catching woodsmoke. \"...And yours, sister. Verdance, if I had to guess — life-magic gone loud. You don't even know what you're carrying, do you?\" Something almost gentle crosses the old eyes. \"Stay away from the Ashenveil. ESPECIALLY you. What they'd render you down for is the one thing they can't brew.\"",
+      "note": "druid variant"
+    },
+    {
+      "id": "d646c9ba",
+      "speaker": "THE VEILED WOMAN",
+      "text": "A back-alley meeting gone wrong the moment you aren't who she expected. She doesn't run. \"You broke the camp. Then you've killed her — the elixir was BOUGHT, paid in full. Out of the Ashenveil, they said. Grown, they said, not brewed.\" She shows you the vial — it hums against your teeth like the ley-node did. For you it is worse: the vial hums in your TEETH, in the wet of your blood, the way the grove node hums — the way, you realize with a cold drop, that YOU hum. You have always thought everyone could hear the green singing. They can't.",
+      "note": "druid variant"
+    },
+    {
+      "id": "9f4dc776",
+      "speaker": "ANKUNYX",
+      "text": "\"The pit-crowned.\" His voice is conversational, which is the frightening part. \"Karridge is louder about you than about its taxes. Good. Loud places stay honest.\" A breath. You hold a vial that hums, a ledger page, the names of three freed captives who begged you not to speak theirs. Accuse the Emperor's own house — with THIS? He is already turning away. The crowd is already rising. The moment is already over. And then he stops. Not on the vial. On YOU. For three heartbeats the Emperor of everything looks at you the way a man looks at a song he heard once, years ago, in a town whose name he traded away. He almost frowns. He moves on. He does not know what he is leaving in the plaza — and you, who have your mother's caution if not her contentment, do not tell him.",
+      "note": "druid variant"
+    },
+    {
+      "id": "a95f4827",
+      "speaker": "NARRATOR",
+      "text": "They knew your routes. They were waiting off the path with sedative oils, a reinforced cart, and a ledger page bearing one word in scribe's shorthand: VERDANCE. Underlined. Twice.",
+      "note": "druid capture"
+    },
+    {
+      "id": "2e6e0538",
+      "speaker": "NARRATOR",
+      "text": "The cart burns. The chains go into the river. But the ledger page is the part you keep: they did not come hunting a pit champion. They came shopping — and you are the listed item. The grove keeper was right. The line runs thin because something is drinking from it, and whatever it is has now tasted your name.",
+      "note": "druid capture"
     },
     {
       "id": "c1ccd16e",

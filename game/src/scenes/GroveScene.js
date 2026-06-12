@@ -242,7 +242,8 @@ class GroveScene extends WorldScene {
     this.addLight(sx, sy, 70, false);
     this.interactables.push({ x: sx, y: sy, label: 'approach the hooded stranger', fn: () => {
       const C = Quests.cult;
-      CityUI.dialog(C.shenSama.name, C.shenSama.text, [{ label: 'Let him go', fn: () => {
+      const shenText = C.shenSama.text + (window.GameState.player.char === 'druid' ? Quests.druid.shenSamaAdd : '');
+      CityUI.dialog(C.shenSama.name, shenText, [{ label: 'Let him go', fn: () => {
         CityUI.closeDialog(); flags['shen-sama-met'] = true;
         this.tweens.add({ targets: spr, alpha: 0, duration: 900, onComplete: () => spr.destroy() });
         this.interactables = this.interactables.filter(it => it.x !== sx || it.y !== sy);
@@ -312,6 +313,27 @@ class GroveScene extends WorldScene {
           }
         });
       }
+    }
+
+    // DRUID-ONLY: the cult comes for HER — capture team on the south path after the camp falls
+    const GS2 = window.GameState;
+    if (GS2.player.char === 'druid' && GS2.world.flags['q-mq3-roots-that-rot'] && !GS2.world.flags['druid-capture'] && !this.druidAmbushDone &&
+        Math.hypot(this.player.x - 20 * 32, this.player.y - 38 * 32) < 120) {
+      this.druidAmbushDone = true;
+      const D = Quests.druid;
+      this.startEncounter(D.captureBanner[0], D.captureBanner[1], [
+        { type: 'hook', x: 540, y: 280, hp: 130, maxhp: 130, spd: 155, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+        { type: 'hook', x: 740, y: 300, hp: 130, maxhp: 130, spd: 155, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+        { type: 'grave', x: 640, y: 230, hp: 280, maxhp: 280, spd: 105, r: 16, col: '#3a3450', stance: 'open', stanceT: 1, dmgScale: 1.3 },
+        { type: 'stitch', x: 640, y: 430, hp: 190, maxhp: 190, spd: 125, r: 13, col: '#5a4a66', dmgScale: 1.25 },
+      ], win => {
+        if (!win) { this.player.x = 34 * 32; this.player.y = 46 * 32;
+          this.floatText(this.player.x, this.player.y - 50, 'you wake by the treeline. unchained. this time.', '#c8443a'); return; }
+        GS2.world.flags['druid-capture'] = 'repelled';
+        CityUI.dialog('THE CAPTURE TEAM', D.captureSign, [{ label: 'Burn the cart', fn: () => {
+          CityUI.dialog('VERDANCE', D.captureAfter, [{ label: 'They tasted your name', fn: () => CityUI.closeDialog() }]);
+        }}]);
+      });
     }
 
     // south gate → city

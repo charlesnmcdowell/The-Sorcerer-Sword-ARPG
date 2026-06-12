@@ -10,6 +10,7 @@ const WorldMapUI = {
     const regions = [
       { id: 'karridge', name: 'KARRIDGE CITY', x: 46, y: 64, open: true, here: zone === 'karridge-city' },
       { id: 'grove', name: 'THORN GROVE', x: 46, y: 38, open: true, here: zone === 'thorn-grove' || zone === 'grove-dungeon' },
+      { id: 'varenholm', name: 'VARENHOLM', x: 20, y: 50, open: window.GameState.world.flags['q-mq5-ash-and-silence'] === 'done', here: zone === 'varenholm', note: 'the heartland — coach from Karridge' },
       { id: 'deepwood', name: 'DEEPWOOD INTERIOR', x: 38, y: 16, open: false, note: 'the Eldest do not invite' },
       { id: 'dragonspine', name: 'DRAGONSPINE', x: 72, y: 10, open: false, note: 'treaty lands — dragons' },
       { id: 'kharn', name: 'KHARN-DURAL', x: 14, y: 28, open: false, note: 'the undermountain' },

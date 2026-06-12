@@ -78,7 +78,21 @@ class CityScene extends WorldScene {
         this.addLight(wx, wy + 20, 55, false);
       }
       if (b.id === 'inn') this.interactables.push({ x: dx, y: dy - 10, label: 'enter THE LAST LANTERN', fn: () => this.innDialog() });
-      if (b.id === 'guild') this.interactables.push({ x: dx, y: dy - 10, label: 'enter the ADVENTURERS GUILD', fn: () => this.guildBoard() });
+      if (b.id === 'guild') {
+        this.interactables.push({ x: dx, y: dy - 10, label: 'enter the ADVENTURERS GUILD', fn: () => this.guildBoard() });
+        // post-finale: the heartland coach to Varenholm waits by the guild
+        if (GS.world.flags['q-mq5-ash-and-silence'] === 'done') {
+          const cy = dy + 40;
+          const cg = this.add.graphics().setDepth(cy);
+          cg.fillStyle(0x241a12); cg.fillRect(dx + 60, cy - 22, 56, 30);
+          cg.fillStyle(0x14100a); cg.fillCircle(dx + 72, cy + 10, 8); cg.fillCircle(dx + 104, cy + 10, 8);
+          this.addLight(dx + 88, cy, 70, false);
+          this.interactables.push({ x: dx + 88, y: cy, label: 'board the heartland coach to VARENHOLM', fn: () => {
+            if (!GS.world.flags['q-mq6-the-dancer']) GS.world.flags['q-mq6-the-dancer'] = 'active';
+            this.scene.start('VarenholmScene');
+          }});
+        }
+      }
       if (b.sign) {
         this.add.rectangle(dx + 36, dy - bh / 2 - 6, 46, 16, 0x15100b).setStrokeStyle(1, 0xe7b450, 0.6).setDepth(dy + 2);
         this.add.text(dx + 36, dy - bh / 2 - 6, b.sign, { fontFamily: 'Courier New', fontSize: '10px', color: '#e7b450' }).setOrigin(0.5).setDepth(dy + 2);
@@ -147,7 +161,8 @@ class CityScene extends WorldScene {
               this.floatText(this.player.x, this.player.y - 50, 'JOURNAL UPDATED — THE BUYER', '#3df0c8', 14);
             }}]);
         };
-        CityUI.dialog('THE VEILED WOMAN', C.buyer.text1, [
+        const t1 = C.buyer.text1 + (window.GameState.player.char === 'druid' ? Quests.druid.vialHum : '');
+        CityUI.dialog('THE VEILED WOMAN', t1, [
           { label: '"Who sells it?"', fn: () => CityUI.dialog('THE VEILED WOMAN', C.buyer.text2, [
             { label: 'Keep the vial (evidence)', fn: () => finish(true) },
             { label: 'Leave it with her (mercy)', fn: () => finish(false) }]) },
@@ -186,7 +201,8 @@ class CityScene extends WorldScene {
           if (P.copper < 50) { CityUI.dialog(I.name, I.broke, [{ label: 'Leave', fn: close }], this.portraitInn); return; }
           P.copper -= 50; CityUI.setPurse(P.copper);
           flags['q-mq2-listening-room'] = 'active';
-          CityUI.dialog(I.name, I.rumorPaid, [{ label: '"The guild, then."', fn: close }], this.portraitInn);
+          const rumor = I.rumorPaid + (P.char === 'druid' ? Quests.druid.marlowBeat : '');
+          CityUI.dialog(I.name, rumor, [{ label: '"The guild, then."', fn: close }], this.portraitInn);
         }},
         { label: 'Not yet', fn: close }], this.portraitInn);
     };
@@ -258,8 +274,9 @@ class CityScene extends WorldScene {
       this.floatText(ax, ay - 60, 'THE ANKUSPAWN CONSPIRACY — it holds. for now.', '#e7b450', 16);
       this.floatText(ax, ay - 30, 'epilogue in your journal (J) · the hunt continues in the campaigns', '#9a8f80', 12);
     };
+    const t2 = C.finale.text2 + (window.GameState.player.char === 'druid' ? ' ' + Quests.druid.finaleGaze : '');
     CityUI.dialog(C.finale.title, C.finale.text1, [{ label: 'Kneel — or don\'t', fn: () =>
-      CityUI.dialog(C.finale.title, C.finale.text2, [{ label: 'Hold your tongue. Hold the vial.', fn: () =>
+      CityUI.dialog(C.finale.title, t2, [{ label: 'Hold your tongue. Hold the vial.', fn: () =>
         CityUI.dialog(C.finale.title, C.finale.text3, [{ label: 'The story has barely begun', fn: done }]) }]) }]);
   }
 
