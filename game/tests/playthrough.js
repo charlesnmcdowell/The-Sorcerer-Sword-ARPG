@@ -169,6 +169,35 @@ function fieldFight(name, pack) {
     if ((counts[q.id] || 0) >= q.need) { purse.copper += q.copper; beltItems.push(q.potionLabel);
       log(`✓ ${q.title} paid: ${Money.fmt(q.copper)} + ${q.potionLabel}`); }
   }
+  // ============ ACT VI — THE ANKUSPAWN CONSPIRACY ============
+  log('\n══════════ ACT VI — THE CONSPIRACY (beats 3-5) ══════════');
+  log('▸ West past the node: ' + Quests.cult.campSign);
+  combat.setMods({ dmg: 1.1, maxhp: 1.1 }); // both artifacts now
+  const camp = await fieldFight('THE WAYSTATION WAKES', [
+    { type: 'hook', hp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
+    { type: 'hook', hp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
+    { type: 'grave', hp: 240, spd: 105, r: 16, col: '#3a3450', stance: 'open', stanceT: 1, dmgScale: 1.25 },
+    { type: 'stitch', hp: 160, spd: 125, r: 13, col: '#5a4a66', dmgScale: 1.2 }]);
+  log(`⚔ THE WAYSTATION WAKES — ${camp.win ? 'cleared' : 'LOST'} in ${camp.secs.toFixed(1)}s · kills ${P.kills}`);
+  if (!camp.win) process.exit(1);
+  say(Quests.cult.captive.name, Quests.cult.captive.freed);
+  say(Quests.cult.shenSama.name, Quests.cult.shenSama.text);
+  log('▸ Journal: ROOTS THAT ROT → THE BUYER');
+  say('THE VEILED WOMAN', Quests.cult.buyer.text2);
+  log('  [choice: keep the vial — evidence]');
+  const caravan = await fieldFight('ASH AND SILENCE', [
+    { type: 'door', r: 26, hp: 320, maxhp: 320, spd: 52, col: '#3a3450', wpn: '#2a2438', dmgScale: 1.3 },
+    { type: 'hook', hp: 120, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+    { type: 'hook', hp: 120, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+    { type: 'grave', hp: 260, spd: 105, r: 16, col: '#3a3450', stance: 'open', stanceT: 1, dmgScale: 1.3 },
+    { type: 'stitch', hp: 180, spd: 125, r: 13, col: '#5a4a66', dmgScale: 1.25 }]);
+  log(`⚔ ASH AND SILENCE (night shipment) — ${caravan.win ? 'cleared' : 'LOST'} in ${caravan.secs.toFixed(1)}s · kills ${P.kills}`);
+  if (!caravan.win) process.exit(1);
+  log('▸ Three captives freed. The camp erased behind you.');
+  say('ANKUNYX', Quests.cult.finale.text2);
+  log('▸ ' + Quests.cult.finale.text3);
+  log('▸ Journal: ASH AND SILENCE ✓ — the conspiracy holds. The campaigns continue it.');
+
   log('\n══════════ CHECKPOINT REACHED ══════════');
   log(`THE ${CHAR.toUpperCase()} "${combat.nickname}" — LV ${combat.lvl()} · ${combat.diceN()}d8 · ${P.kills} kills`);
   log(`Purse: ${Money.fmt(purse.copper)} · Belt: ${beltItems.join(', ') || 'empty'} · Artifacts: ${artifacts.join(', ')}`);

@@ -150,6 +150,9 @@ class GroveScene extends WorldScene {
       }});
     }
 
+    // ---------- main quest: cult camp / Shen Sama / caravan ----------
+    this.buildConspiracy(T);
+
     // ---------- player + travel ----------
     const spawn = GS.world.groveFromCity !== false ? { x: 34 * T, y: (MH - 4) * T } : { x: 34 * T, y: (MH - 4) * T };
     GS.world.groveFromCity = false;
@@ -158,6 +161,94 @@ class GroveScene extends WorldScene {
     this.initEncounterHost(GROVE_THEME);
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);
     this.floatText(spawn.x, spawn.y - 60, 'THORN GROVE', '#7fbf6a', 18);
+  }
+
+  buildConspiracy(T) {
+    const GS = window.GameState, flags = GS.world.flags, C = Quests.cult;
+
+    // --- BEAT 3: the cult waystation, west past the node ---
+    if (flags['q-mq2-listening-room'] === 'active' && !flags['q-mq3-roots-that-rot']) {
+      const cx = 6 * T, cy = 19 * T;
+      const g = this.add.graphics().setDepth(cy);
+      for (const [tx, ty] of [[cx - 40, cy - 10], [cx + 44, cy + 6]]) {     // fast-fold tents
+        g.fillStyle(0x241c2e); g.fillTriangle(tx - 26, ty + 18, tx + 26, ty + 18, tx, ty - 22);
+        g.lineStyle(2, 0x120d16); g.strokeTriangle(tx - 26, ty + 18, tx + 26, ty + 18, tx, ty - 22);
+      }
+      g.fillStyle(0x1a1410); g.fillRect(cx - 14, cy + 24, 28, 22);          // crate with air-holes
+      g.fillStyle(0x000000); for (let i = 0; i < 3; i++) g.fillRect(cx - 8 + i * 8, cy + 30, 3, 3);
+      g.lineStyle(2, 0x3a3a40);                                             // the cage, bars bent
+      for (let i = -20; i <= 20; i += 8) g.lineBetween(cx + 40 + i, cy - 40, cx + 40 + i + (i === 4 ? 6 : 0), cy - 6);
+      this.addLight(cx, cy, 90, false);
+      this.interactables.push({ x: cx, y: cy, label: 'search the camp', fn: () => {
+        CityUI.dialog('THE WAYSTATION', C.campSign, [
+          { label: 'Kick over the tents', fn: () => { CityUI.closeDialog();
+            this.startEncounter('THE WAYSTATION WAKES', 'they fold camps and people alike', [
+              { type: 'hook', x: 540, y: 280, hp: 110, maxhp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
+              { type: 'hook', x: 740, y: 300, hp: 110, maxhp: 110, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.2 },
+              { type: 'grave', x: 640, y: 240, hp: 240, maxhp: 240, spd: 105, r: 16, col: '#3a3450', stance: 'open', stanceT: 1, dmgScale: 1.25 },
+              { type: 'stitch', x: 640, y: 420, hp: 160, maxhp: 160, spd: 125, r: 13, col: '#5a4a66', dmgScale: 1.2 },
+            ], win => {
+              if (!win) { this.player.x = 34 * 32; this.player.y = 46 * 32;
+                this.floatText(this.player.x, this.player.y - 50, 'the camp stands. you, barely.', '#c8443a'); return; }
+              flags['q-mq2-listening-room'] = 'done';
+              flags['q-mq3-roots-that-rot'] = 'active';
+              this.interactables = this.interactables.filter(it => !(it.x === cx && it.y === cy));
+              CityUI.dialog(C.captive.name, C.captive.freed, [{ label: 'Let him run', fn: () => {
+                CityUI.closeDialog();
+                this.floatText(this.player.x, this.player.y - 50, 'JOURNAL UPDATED — ROOTS THAT ROT', '#3df0c8', 14);
+                this.spawnShenSama();
+              }}]);
+            }); } },
+          { label: 'Not yet', fn: () => CityUI.closeDialog() }]);
+      }});
+    }
+
+    // --- BEAT 5 stage: the night shipment, west edge (after the buyer) ---
+    if (flags['q-mq4-the-buyer'] === 'active' && !flags['q-mq5-ash-and-silence']) {
+      const wx = 4 * T, wy = 27 * T;
+      const g = this.add.graphics().setDepth(wy);
+      g.fillStyle(0x241a12); g.fillRect(wx - 30, wy - 18, 60, 36);          // the wagon
+      g.fillStyle(0x14100a); g.fillCircle(wx - 20, wy + 20, 9); g.fillCircle(wx + 20, wy + 20, 9);
+      g.lineStyle(2, 0x3a3a40); for (let i = -18; i <= 18; i += 7) g.lineBetween(wx + i, wy - 18, wx + i, wy + 8);
+      this.addLight(wx, wy, 80, false);
+      this.interactables.push({ x: wx, y: wy, label: 'stop the night shipment', fn: () => {
+        CityUI.dialog('THE NIGHT SHIPMENT', C.caravanSign, [
+          { label: 'Break the wheel', fn: () => { CityUI.closeDialog();
+            this.startEncounter('ASH AND SILENCE', 'free what breathes in the crates', [
+              { type: 'door', x: 640, y: 250, r: 26, hp: 320, maxhp: 320, spd: 52, col: '#3a3450', wpn: '#2a2438', dmgScale: 1.3 },
+              { type: 'hook', x: 520, y: 320, hp: 120, maxhp: 120, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+              { type: 'hook', x: 760, y: 320, hp: 120, maxhp: 120, spd: 150, r: 14, col: '#4a3c5a', dmgScale: 1.25 },
+              { type: 'grave', x: 560, y: 220, hp: 260, maxhp: 260, spd: 105, r: 16, col: '#3a3450', stance: 'open', stanceT: 1, dmgScale: 1.3 },
+              { type: 'stitch', x: 720, y: 220, hp: 180, maxhp: 180, spd: 125, r: 13, col: '#5a4a66', dmgScale: 1.25 },
+            ], win => {
+              if (!win) { this.player.x = 34 * 32; this.player.y = 46 * 32;
+                this.floatText(this.player.x, this.player.y - 50, 'the shipment rolls on. tonight you lost.', '#c8443a'); return; }
+              flags['q-mq4-the-buyer'] = 'done';
+              flags['q-mq5-ash-and-silence'] = 'active';
+              this.interactables = this.interactables.filter(it => !(it.x === wx && it.y === wy));
+              this.signDialog('THE CRATES OPEN', 'Three captives, sedated, breathing. A juggler. A hedge-witch. A girl nobody reported missing. They wake on the forest floor free, terrified, and ALIVE — and they beg you, each one, not to speak their names to anyone. By the time you look back at the wagon, the cult\'s dead have already been dragged away by someone you never saw. JOURNAL UPDATED — the Dragon Emperor passes through Karridge. Go to the plaza.');
+            }); } },
+          { label: 'Wait', fn: () => CityUI.closeDialog() }]);
+      }});
+    }
+  }
+
+  spawnShenSama() {
+    const flags = window.GameState.world.flags;
+    if (flags['shen-sama-met']) return;
+    const sx = 14 * 32, sy = 13 * 32; // by the node
+    const spr = this.add.sprite(sx, sy, 'fr-npc1', 0).setDepth(sy).setTint(0x9a8060);
+    this.addLight(sx, sy, 70, false);
+    this.interactables.push({ x: sx, y: sy, label: 'approach the hooded stranger', fn: () => {
+      const C = Quests.cult;
+      CityUI.dialog(C.shenSama.name, C.shenSama.text, [{ label: 'Let him go', fn: () => {
+        CityUI.closeDialog(); flags['shen-sama-met'] = true;
+        this.tweens.add({ targets: spr, alpha: 0, duration: 900, onComplete: () => spr.destroy() });
+        this.interactables = this.interactables.filter(it => it.x !== sx || it.y !== sy);
+        this.floatText(sx, sy - 40, 'gone between one breath and the next', '#9a8f80', 12);
+      }}]);
+    }});
+    this.floatText(sx, sy - 44, 'someone watches from the treeline', '#9a8f80', 12);
   }
 
   grantLoot(loot, x, y) {

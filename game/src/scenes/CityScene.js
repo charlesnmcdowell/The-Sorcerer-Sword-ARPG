@@ -120,7 +120,7 @@ class CityScene extends WorldScene {
     }
 
     // characters
-    this.bakeFrames();
+    this.bakeFrames({ 'fr-ankunyx': { col: '#1a1622', o: { samurai: true, armor: 2, wpnLen: 62, thickWpn: true, wpnCol: '#f0e2b0', headCol: '#0d0a12' } } });
     const spawn = GS.world.cityFromGrove ? { x: 35 * T, y: 3 * T } : M.spawn;
     GS.world.cityFromGrove = false;
     this.spawnPlayer(spawn.x, spawn.y);
@@ -128,6 +128,32 @@ class CityScene extends WorldScene {
     for (const z of M.npcZones) for (let i = 0; i < z.n; i++)
       this.addNPC(palettes[Math.floor(Math.random() * palettes.length)],
         (z.x + Math.random() * z.w) * T, (z.y + Math.random() * z.h) * T, z);
+
+    // --- BEAT 4: the buyer, back alley by the west wall (after the camp falls) ---
+    const flags = GS.world.flags, C = Quests.cult;
+    if (flags['q-mq3-roots-that-rot'] === 'active' && !flags['q-mq4-the-buyer']) {
+      const bx = 12 * T, by = 36 * T;
+      const spr = this.add.sprite(bx, by, 'fr-npc2', 0).setDepth(by);
+      this.addLight(bx, by, 60, false);
+      this.interactables.push({ x: bx, y: by, label: 'approach the veiled woman', fn: () => {
+        const finish = kept => {
+          flags['q-mq3-roots-that-rot'] = 'done';
+          flags['q-mq4-the-buyer'] = 'active';
+          flags['vial-kept'] = kept;
+          CityUI.dialog('THE VEILED WOMAN', kept ? C.buyer.choiceKeep : C.buyer.choiceGive,
+            [{ label: 'Walk away', fn: () => { CityUI.closeDialog();
+              this.tweens.add({ targets: spr, alpha: 0, duration: 900, onComplete: () => spr.destroy() });
+              this.interactables = this.interactables.filter(it => it.x !== bx || it.y !== by);
+              this.floatText(this.player.x, this.player.y - 50, 'JOURNAL UPDATED — THE BUYER', '#3df0c8', 14);
+            }}]);
+        };
+        CityUI.dialog('THE VEILED WOMAN', C.buyer.text1, [
+          { label: '"Who sells it?"', fn: () => CityUI.dialog('THE VEILED WOMAN', C.buyer.text2, [
+            { label: 'Keep the vial (evidence)', fn: () => finish(true) },
+            { label: 'Leave it with her (mercy)', fn: () => finish(false) }]) },
+          { label: 'Leave', fn: () => CityUI.closeDialog() }]);
+      }});
+    }
 
     this.initEncounterHost(null); // city uses default pit theme (no city fights yet, but host is uniform)
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);
@@ -198,6 +224,25 @@ class CityScene extends WorldScene {
     CityUI.guildBoard(true, live, note);
   }
 
+  runFinale() {
+    const C = Quests.cult, flags = window.GameState.world.flags;
+    const ax = CityMap.well.x * 32, ay = (CityMap.well.y - 4) * 32;
+    const em = this.add.sprite(ax, ay, 'fr-ankunyx', 0).setDepth(ay).setScale(1.35);
+    this.addLight(ax, ay, 160, false);
+    for (const n of this.npcs) { n.pauseT = 9999; n.spr.setFrame(this.frameFor(Math.atan2(ay - n.spr.y, ax - n.spr.x), 0, false)); }
+    const done = () => {
+      flags['q-mq5-ash-and-silence'] = 'done';
+      CityUI.closeDialog();
+      this.tweens.add({ targets: em, alpha: 0, duration: 1600, onComplete: () => em.destroy() });
+      for (const n of this.npcs) n.pauseT = 1 + Math.random() * 2;
+      this.floatText(ax, ay - 60, 'THE ANKUSPAWN CONSPIRACY — it holds. for now.', '#e7b450', 16);
+      this.floatText(ax, ay - 30, 'epilogue in your journal (J) · the hunt continues in the campaigns', '#9a8f80', 12);
+    };
+    CityUI.dialog(C.finale.title, C.finale.text1, [{ label: 'Kneel — or don\'t', fn: () =>
+      CityUI.dialog(C.finale.title, C.finale.text2, [{ label: 'Hold your tongue. Hold the vial.', fn: () =>
+        CityUI.dialog(C.finale.title, C.finale.text3, [{ label: 'The story has barely begun', fn: done }]) }]) }]);
+  }
+
   update(time, dtMs) {
     const dt = Math.min(0.05, dtMs / 1000);
     if (this.updateEncounter(time)) return;
@@ -205,6 +250,14 @@ class CityScene extends WorldScene {
     this.updateNPCs(dt);
     this.updatePrompt();
     this.updateAtmosphere(time, dt);
+
+    // --- BEAT 5 finale: the Dragon Emperor in the plaza ---
+    const flags = window.GameState.world.flags;
+    if (flags['q-mq5-ash-and-silence'] === 'active' && !this.finaleRan &&
+        Math.hypot(this.player.x - CityMap.well.x * 32, this.player.y - CityMap.well.y * 32) < 170) {
+      this.finaleRan = true;
+      this.runFinale();
+    }
 
     // north gate travel
     if (this.player.y < this.gateNorth.y + this.gateNorth.h + 10 &&
