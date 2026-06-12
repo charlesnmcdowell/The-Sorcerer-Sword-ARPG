@@ -46,7 +46,23 @@ function botFrame() {
         if (P.channel.t >= want) combat.heavyRelease(); }
       if (P.hp / combat.maxHP() < 0.35 && P.rollCD <= 0 && dist(P, nearest) < 80) combat.doRoll();
     }
-  } else { // ronin/druid fallback: simple flank bot
+  } else if (CHAR === 'druid') {
+    const tooClose = dFoe < 90, tooFar = dFoe > 165;
+    if (tooClose) moveTo(P.x + (P.x - foe.x), P.y + (P.y - foe.y));
+    else if (tooFar) moveTo(foe.x, foe.y);
+    if (P.form === 'human') {
+      combat.doSlash();
+      if (foes.some(e => dist(P, e) < 160) && P.cdVines <= 0) combat.doHeavy();
+      if (combat.lvl() >= 6 && P.hp / combat.maxHP() < 0.5 && P.humanCD <= 0) { combat.doParry(); combat.doParry(); }
+    } else if (P.form === 'wolf') {
+      if (P.cdHowl <= 0) combat.doHeavy();
+      combat.doSlash();
+    } else {
+      if (dFoe < 130 && P.cdRoar <= 0) combat.doHeavy();
+      if (dFoe < 95) combat.doSlash(); else combat.doParry();
+    }
+    if (foe.attacking && foe.tele < 0.15 && dFoe < 100 && P.rollCD <= 0) combat.doRoll();
+  } else { // ronin: flank bot
     moveTo(foe.x - Math.cos(foe.face) * 55, foe.y - Math.sin(foe.face) * 55);
     if (foe.attacking && foe.tele > 0 && dFoe < 140) combat.doParry();
     if (dFoe < 95) { if (P.heavyCD <= 0 && Math.random() < 0.25) combat.doHeavy(); else combat.doSlash(); }
@@ -201,6 +217,6 @@ function fieldFight(name, pack) {
   log('\n══════════ CHECKPOINT REACHED ══════════');
   log(`THE ${CHAR.toUpperCase()} "${combat.nickname}" — LV ${combat.lvl()} · ${combat.diceN()}d8 · ${P.kills} kills`);
   log(`Purse: ${Money.fmt(purse.copper)} · Belt: ${beltItems.join(', ') || 'empty'} · Artifacts: ${artifacts.join(', ')}`);
-  log(`Journal: EMPTY CELL ✓ done · LISTENING ROOM active → the grove keeper points west of the node (Bucket 5)`);
+  log(`Journal: EMPTY CELL ✓ · LISTENING ROOM ✓ · ROOTS THAT ROT ✓ · THE BUYER ✓ · ASH AND SILENCE ✓ — the conspiracy holds; the campaigns inherit it`);
   log(`Total played: ${(simMs / 60000).toFixed(1)} sim-minutes`);
 })();
