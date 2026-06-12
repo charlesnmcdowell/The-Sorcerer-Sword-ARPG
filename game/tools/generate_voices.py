@@ -45,6 +45,10 @@ BRIEFS = {
     "Skarva":       "Orc swordswoman, low rasping alto, dry military precision, every sentence a clean cut, faint professional relish.",
     "Nibnob":       "Goblin king, shrill gleeful rapid-fire tenor, theatrical royal pomp collapsing into squeaks, real cunning under the comedy.",
     "Aurvaeth":     "Ancient dragon wearing a human shape, vast slow baritone with geological patience, faint amusement, words chosen across centuries.",
+    "Haldric":      "Paladin commander, 40s, court-room calm baritone, polished righteous certainty, every sentence a verdict already signed.",
+    "Sallow":       "Inquisitor, thin dry voice like paper turning, clipped and bloodless, a small terrible smile audible at the edges.",
+    "Pale Courier": "Elegant bloodless woman, low velvet alto, funeral-parlor poise, amused by everything and warmed by nothing.",
+    "Nyx":          "The Lich Queen — a beloved portrait that moves. Regal warm contralto over something centuries-cold, perfect courtesy, absolute power, faintly amused.",
 }
 
 def http(method, path, key, payload=None, timeout=180):
