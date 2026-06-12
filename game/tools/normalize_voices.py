@@ -14,16 +14,14 @@ RAW = VOICE / "_raw"
 TARGET = "I=-19:TP=-1.5:LRA=9"  # dialog-appropriate loudness, slightly under music
 
 def loudnorm(src, dst):
-    p1 = subprocess.run(["ffmpeg", "-y", "-loglevel", "info", "-i", str(src),
-                         "-af", f"loudnorm={TARGET}:print_format=json", "-f", "null", "-"],
-                        capture_output=True, text=True)
-    tail = p1.stderr[p1.stderr.rfind("{"):p1.stderr.rfind("}") + 1]
-    m = json.loads(tail)
-    af = (f"loudnorm={TARGET}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
-          f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
-          f"offset={m['target_offset']}:linear=true")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src),
-                    "-af", af, "-b:a", "128k", str(dst)], check=True)
+    # stitched clips have mp3 seams: decode to wav first (ignore seam errors), then normalize
+    import tempfile, os
+    wav = tempfile.mktemp(suffix=".wav")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-err_detect", "ignore_err",
+                    "-i", str(src), "-ar", "44100", wav], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav,
+                    "-af", f"loudnorm={TARGET}", "-b:a", "128k", str(dst)], check=True)
+    os.unlink(wav)
 
 def main():
     clips = sorted(VOICE.glob("*.mp3"))
