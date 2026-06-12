@@ -17,6 +17,10 @@
     "COOKIE": "Cookie",
     "VERDANCE": "Narrator",
     "THE CAPTURE TEAM": "Narrator",
+    "PLAYER-RONIN": "Kenji",
+    "PLAYER-DRUID": "Druid",
+    "PLAYER-WARLOCK": "Warlock",
+    "GROVE KEEPER": "Faelar",
     "THE PERFORMANCE": "Narrator",
     "THE COACH ROAD": "Narrator",
     "THE ROAD SOUTH": "Narrator"
@@ -33,8 +37,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 78,
-  "totalChars": 17708,
+  "count": 114,
+  "totalChars": 19734,
   "lines": [
     {
       "id": "0a8752aa",
@@ -375,6 +379,222 @@
       "text": "The cart burns. The chains go into the river. But the ledger page is the part you keep: they did not come hunting a pit champion. They came shopping — and you are the listed item. The grove keeper was right. The line runs thin because something is drinking from it, and whatever it is has now tasted your name.",
       "note": "druid capture",
       "vtext": "The cart burns. The chains go into the river. [short pause] But the ledger page is the part you keep: they did not come hunting a pit champion. They came SHOPPING — and you are the listed item. [quietly] The grove keeper was right. The line runs thin because something is drinking from it... and whatever it is has now tasted your name."
+    },
+    {
+      "id": "b99e04c0",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Champions don't leave their boots behind. Tell me about Dren.\"",
+      "note": "player line: marlowAsk"
+    },
+    {
+      "id": "c077abd0",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"People are going missing quietly out here. Start with him.\"",
+      "note": "player line: marlowAsk"
+    },
+    {
+      "id": "0af883b8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Dead men leave echoes. His is still warm in this room — speak.\"",
+      "note": "player line: marlowAsk"
+    },
+    {
+      "id": "24396bbc",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"A fair price for a fair truth.\" (pay 5s)",
+      "note": "player line: marlowPay"
+    },
+    {
+      "id": "aafc4534",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"For the missing, then.\" (pay 5s)",
+      "note": "player line: marlowPay"
+    },
+    {
+      "id": "afa3950b",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Knowledge has a price. Here is yours.\" (pay 5s)",
+      "note": "player line: marlowPay"
+    },
+    {
+      "id": "0d05c46c",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Five silver. Cheaper than the other ways I ask questions.\" (pay 5s)",
+      "note": "player line: marlowPay"
+    },
+    {
+      "id": "851bf2c2",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"No banner on these tents. Cut them down.\"",
+      "note": "player line: campStrike"
+    },
+    {
+      "id": "cae5e44e",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"The grove wants them gone. So do I.\"",
+      "note": "player line: campStrike"
+    },
+    {
+      "id": "92df6ae0",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Fold their camp the way they fold people.\"",
+      "note": "player line: campStrike"
+    },
+    {
+      "id": "1ff48568",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Wake them first. I want this heard.\"",
+      "note": "player line: campStrike"
+    },
+    {
+      "id": "23cbac7e",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Run far, boy. Don't look back at anything.\"",
+      "note": "player line: captiveGo"
+    },
+    {
+      "id": "b0781cf8",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"Go. And learn to stop being SEEN.\"",
+      "note": "player line: captiveGo"
+    },
+    {
+      "id": "3e877258",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Run. You're worth more to me as a rumor.\"",
+      "note": "player line: captiveGo"
+    },
+    {
+      "id": "b0999546",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Roads keep secrets better than men. Go.\"",
+      "note": "player line: shenGo"
+    },
+    {
+      "id": "dd79e3d8",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"Then run well... brother.\"",
+      "note": "player line: shenGo"
+    },
+    {
+      "id": "6358a0b8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Go. Hunted things make the finest debts.\"",
+      "note": "player line: shenGo"
+    },
+    {
+      "id": "b9881c64",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Evidence outlives sentiment. I keep it.\"",
+      "note": "player line: buyerKeep"
+    },
+    {
+      "id": "2bcbfb70",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"It hums like ME. I need to know why. ...I'm sorry.\"",
+      "note": "player line: buyerKeep"
+    },
+    {
+      "id": "9e73a2b8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"It's safer in my hands than in your veins.\"",
+      "note": "player line: buyerKeep"
+    },
+    {
+      "id": "7caeba8c",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Mine now. Miracles rot in weak hands.\"",
+      "note": "player line: buyerKeep"
+    },
+    {
+      "id": "370bc49c",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"A blade knows when not to cut. Keep it.\"",
+      "note": "player line: buyerGive"
+    },
+    {
+      "id": "ff44eb68",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"Keep it. But NO ONE sells you hope again.\"",
+      "note": "player line: buyerGive"
+    },
+    {
+      "id": "d0887698",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Keep your bottled miracle. Your debt amuses me more.\"",
+      "note": "player line: buyerGive"
+    },
+    {
+      "id": "7373f864",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"One cut for the wheel. The rest for whoever minds.\"",
+      "note": "player line: caravanBreak"
+    },
+    {
+      "id": "8f07f514",
+      "speaker": "PLAYER-DRUID",
+      "text": "\"Nothing rides in cages tonight.\"",
+      "note": "player line: caravanBreak"
+    },
+    {
+      "id": "31873e24",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Stop the wagon. What spills, spills.\"",
+      "note": "player line: caravanBreak"
+    },
+    {
+      "id": "c336dcd8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Open the crates. Then the crews.\"",
+      "note": "player line: caravanBreak"
+    },
+    {
+      "id": "bf03feb8",
+      "speaker": "PLAYER-DRUID",
+      "text": "Kneel with the rest. Watch him like a question.",
+      "note": "player line: finale1"
+    },
+    {
+      "id": "bf6f8f22",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "Watch the weather pass.",
+      "note": "player line: finale1"
+    },
+    {
+      "id": "67d013e2",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "Stand. Power should see power coming.",
+      "note": "player line: finale1"
+    },
+    {
+      "id": "51f97e6c",
+      "speaker": "PLAYER-DRUID",
+      "text": "Say nothing. Your mother's caution wins.",
+      "note": "player line: finale2"
+    },
+    {
+      "id": "7dcb00d8",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Not yet. Patience is also a weapon.\"",
+      "note": "player line: finale2"
+    },
+    {
+      "id": "c2e0c42c",
+      "speaker": "PLAYER-RONIN",
+      "text": "Wait with the crowd. (You don't kneel. Habit.)",
+      "note": "player line: roninWait1"
+    },
+    {
+      "id": "c3f8974c",
+      "speaker": "GROVE KEEPER",
+      "text": "A wood elf with bark-braided hair sizes you up. \"The pit-crowned. Word outruns you.\" \"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood's shade. You might.\" (The trail sharpens in the next stretch of the hunt — Bucket 5.)",
+      "note": "keeper"
+    },
+    {
+      "id": "cda62886",
+      "speaker": "GROVE KEEPER",
+      "text": "A wood elf with bark-braided hair sizes you up. \"The pit-crowned. Word outruns you.\" \"Wolves grow bold and something fouls the dead. The guild posts coin for both. Earn the grove's trust, champion.\"",
+      "note": "keeper"
     },
     {
       "id": "c1ccd16e",

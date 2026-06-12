@@ -38,6 +38,8 @@ BRIEFS = {
     "Faelar":       "Wood-elf grove keeper, serene ageless tenor, unhurried, dry wit arriving a beat late, speaks like deep water.",
     "Sylvara":      "Dark-elf exiled noble, cold precise aristocratic alto, cutting consonants, contempt as default register with one buried wound.",
     "Pippa":        "Halfling treasure hunter, bright cheerful quick woman, relentlessly upbeat, mid-sentence laughs, zero despair.",
+    "Druid":        "Young woman early 20s, warm earthy low alto, frontier-raised plainspoken cadence, blunt but kind, a listening quality as if she hears something underneath every room.",
+    "Warlock":      "Dark elf man, silken ominous baritone, unhurried and precise, faint amusement like a knife being admired, every sentence a quiet contract.",
 }
 
 def http(method, path, key, payload=None, timeout=180):

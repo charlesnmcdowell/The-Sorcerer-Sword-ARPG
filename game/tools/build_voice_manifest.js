@@ -66,6 +66,20 @@ add('THE VEILED WOMAN', C.buyer.text1 + D.vialHum, 'druid variant');
 add('ANKUNYX', C.finale.text2 + ' ' + D.finaleGaze, 'druid variant');
 add('NARRATOR', D.captureSign, 'druid capture'); add('NARRATOR', D.captureAfter, 'druid capture');
 
+// ---- player character voices: their chosen lines, spoken on click ----
+// Ronin deliberately uses Kenji's voice id (the egg, audible). Druid/Warlock designed.
+for (const [key, t] of Object.entries(Quests.optTable)) {
+  for (const [ch, sp] of [['ronin', 'PLAYER-RONIN'], ['druid', 'PLAYER-DRUID'], ['warlock', 'PLAYER-WARLOCK']]) {
+    const v = t[ch]; if (!v) continue;
+    for (const label of (Array.isArray(v) ? v : [v])) add(sp, label, 'player line: ' + key);
+  }
+}
+
+// ---- grove keeper (template-built in GroveScene; both variants) ----
+const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
+add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
+add('GROVE KEEPER', kBase + '"Wolves grow bold and something fouls the dead. The guild posts coin for both. Earn the grove\'s trust, champion."', 'keeper');
+
 // ---- companions ----
 for (const [key, c] of Object.entries(Companions)) {
   add(c.name, c.greet, 'greet');
@@ -92,6 +106,8 @@ fs.writeFileSync(out, JSON.stringify({
     'BRAKKA': 'Brakka', 'VEXA': 'Vexa', 'DORIAN': 'Dorian',
     'FAELAR': 'Faelar', 'SYLVARA': 'Sylvara', 'PIPPA': 'Pippa',
     'COOKIE': 'Cookie', 'VERDANCE': 'Narrator', 'THE CAPTURE TEAM': 'Narrator',
+    'PLAYER-RONIN': 'Kenji', 'PLAYER-DRUID': 'Druid', 'PLAYER-WARLOCK': 'Warlock',
+    'GROVE KEEPER': 'Faelar',
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
   voiceHints: {
