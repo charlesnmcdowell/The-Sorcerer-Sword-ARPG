@@ -40,6 +40,11 @@ BRIEFS = {
     "Pippa":        "Halfling treasure hunter, bright cheerful quick woman, relentlessly upbeat, mid-sentence laughs, zero despair.",
     "Druid":        "Young woman early 20s, warm earthy low alto, frontier-raised plainspoken cadence, blunt but kind, a listening quality as if she hears something underneath every room.",
     "Warlock":      "Dark elf man, silken ominous baritone, unhurried and precise, faint amusement like a knife being admired, every sentence a quiet contract.",
+    "Seraphim":     "Celestial angel with three heads, resonant layered voice, calm absolute authority, warm like distant trumpets, faintly choral undertone.",
+    "Kargoth":      "Ogre warchief, colossal slow bass like falling rock, unhurried and amused, simple heavy words.",
+    "Skarva":       "Orc swordswoman, low rasping alto, dry military precision, every sentence a clean cut, faint professional relish.",
+    "Nibnob":       "Goblin king, shrill gleeful rapid-fire tenor, theatrical royal pomp collapsing into squeaks, real cunning under the comedy.",
+    "Aurvaeth":     "Ancient dragon wearing a human shape, vast slow baritone with geological patience, faint amusement, words chosen across centuries.",
 }
 
 def http(method, path, key, payload=None, timeout=180):

@@ -98,7 +98,7 @@ for (const f of ['assets/embedded.js', 'src/core/money.js', 'src/core/dialog.js'
   'src/core/autopilot.js', 'src/core/questnav.js', 'src/core/touchstick.js', 'src/core/save.js',
   'src/core/music.js', 'src/core/voice.js', 'src/world/citymap.js', 'src/world/quests.js',
   'src/world/companions.js', 'src/core/companionAI.js', 'src/combat/pit.js']) load(f);
-for (const f of ['WorldScene', 'CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene'])
+for (const f of ['WorldScene', 'CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene', 'MountainScene'])
   (0, eval)(fs.readFileSync(path.join(root, 'src/scenes', f + '.js'), 'utf8') + ';global.' + f + '=' + f + ';');
 
 // ---------- world state: champion fresh out of the Pit, AUTO FULL ----------
@@ -111,7 +111,7 @@ global.GameState = {
 };
 
 // ---------- scene host with zone swapping ----------
-const CLASSES = { CityScene, GroveScene, DungeonScene, VarenholmScene };
+const CLASSES = { CityScene, GroveScene, DungeonScene, VarenholmScene, MountainScene };
 let pendingScene = null, scene = null, sceneTimers = [];
 function plumb(s) {
   Object.assign(s, {
@@ -146,7 +146,7 @@ function log(msg) { console.log(`  [${(simNow / 1000).toFixed(0).padStart(4)}s] 
 console.log(`NAVSIM — ${CHAR.toUpperCase()} on AUTO FULL, target: complete the main quest\n`);
 startScene('CityScene');
 
-const PASSFLAG = CHAR === 'druid' ? 'q-mq6-the-dancer' : 'q-mq5-ash-and-silence';
+const PASSFLAG = CHAR === 'druid' ? 'q-mq6-the-dancer' : CHAR === 'seraph' ? 'q-sq4-the-chosen' : 'q-mq5-ash-and-silence';
 let result = 'TIMEOUT';
 while (simNow < MAXMIN * 60 * 1000) {
   simNow += 1000 / 60;
@@ -157,7 +157,7 @@ while (simNow < MAXMIN * 60 * 1000) {
   catch (e) { console.error('\n=== CRASH ==='); console.error(e.stack); process.exit(1); }
   // flag transition log
   for (const [k, v] of Object.entries(GameState.world.flags))
-    if (seenFlags[k] !== v && /^q-mq|^druid-|varenholm-show/.test(k)) { seenFlags[k] = v; log(`flag ${k} = ${v}`); }
+    if (seenFlags[k] !== v && /^q-mq|^q-sq|^druid-|^duel-|seraph-recruit|varenholm-show/.test(k)) { seenFlags[k] = v; log(`flag ${k} = ${v}`); }
   if (pendingScene) { const n = pendingScene; pendingScene = null; startScene(n); }
   if (simNow - (global._dbgT || 0) > 30000) { global._dbgT = simNow;
     log(`dbg pos=(${Math.round(scene.player.x)},${Math.round(scene.player.y)}) track=${QuestNav.tracking} path=${QuestNav.path.length} tgt=${QuestNav.target ? Math.round(QuestNav.target.x) + ',' + Math.round(QuestNav.target.y) : '-'} dlg=${CityUI.dialogOpen()} enc=${scene.encounterActive} autoDlg=${QuestNav.autoDialog}`); }
