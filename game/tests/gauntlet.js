@@ -90,7 +90,12 @@ function run(ch) {
           if (P.parryCD <= 0 && (crowd >= 2 || (P.hp / combat.maxHP() < 0.45 && dFoe < 100))) combat.doParry();
           if (foe.attacking && foe.tele < 0.15 && dFoe < 100 && P.rollCD <= 0 && !(P.ascendT > 0)) combat.doRoll();
         } else { // warlock
-          if (P.devilT > 0) { combat.doSlash(); }               // arch devil claw frenzy
+          if (P.lich) { // fade, scythe, hold the channel back to the living
+            if (dFoe < 95 && !P.channel && P.fadeT <= 0) combat.doSlash();
+            if (P.parryCD <= 0 && P.fadeT <= 0 && !P.channel) combat.doParry();
+            if (!P.channel) combat.doHeavy();
+            if (dFoe < 140 && !P.channel) moveTo(P.x + (P.x - foe.x), P.y + (P.y - foe.y));
+          } else if (P.devilT > 0) { combat.doSlash(); }        // arch devil claw frenzy
           else {
             moveTo(foe.x, foe.y);                               // press the focus target
             const nearest = foes.sort((a, b) => dist(P, a) - dist(P, b))[0];
