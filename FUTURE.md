@@ -12,8 +12,4 @@
 ## Deferred during build (append as we go)
 - **Lords of Pain isometric dungeon zone** — the LoP demo (in assets/packs) is true Diablo-style pre-rendered iso; if the full pack is bought, skin a future dungeon as its own zone (don't mix perspectives within a zone).
 - Inn interior as a walkable room (currently: door → dialog overlay with Marlow).
-- Playable Ankuspawn character class with Ember theme mechanics (lore-rich, big scope).
-- The Ashenveil / Academy lower levels as a playable raid zone (current build: locked teaser + finale references).
-- Portal-network fast travel (player lore-appropriately lacks access in this build).
-- Cookie performance minigame at the inn cameo.
-- **Perspective branches** (Hiro, post-B8): the three endings deliberately diverge — Ronin's empty road, Warlock's plaza, Druid's Varenholm coach. A future build could open each road into its own campaign perspective. The credits' "three roads" line plants the seed.
+- Playable Ankuspawn characte
