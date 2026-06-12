@@ -146,7 +146,10 @@ function log(msg) { console.log(`  [${(simNow / 1000).toFixed(0).padStart(4)}s] 
 console.log(`NAVSIM — ${CHAR.toUpperCase()} on AUTO FULL, target: complete the main quest\n`);
 startScene('CityScene');
 
-const PASSFLAG = CHAR === 'druid' ? 'q-mq6-the-dancer' : CHAR === 'seraph' ? 'q-sq4-the-chosen' : 'q-mq5-ash-and-silence';
+// druid PASS now requires the credits to actually roll (coach home after Cookie) —
+// catches the post-Cookie "nowhere to go" dead end, not just reaching mq6.
+const PASSED = () => CHAR === 'druid' ? !!GameState.world.flags['credits-rolled']
+  : GameState.world.flags[CHAR === 'seraph' ? 'q-sq4-the-chosen' : 'q-mq5-ash-and-silence'] === 'done';
 let result = 'TIMEOUT';
 while (simNow < MAXMIN * 60 * 1000) {
   simNow += 1000 / 60;
@@ -161,7 +164,7 @@ while (simNow < MAXMIN * 60 * 1000) {
   if (pendingScene) { const n = pendingScene; pendingScene = null; startScene(n); }
   if (simNow - (global._dbgT || 0) > 30000) { global._dbgT = simNow;
     log(`dbg pos=(${Math.round(scene.player.x)},${Math.round(scene.player.y)}) track=${QuestNav.tracking} path=${QuestNav.path.length} tgt=${QuestNav.target ? Math.round(QuestNav.target.x) + ',' + Math.round(QuestNav.target.y) : '-'} dlg=${CityUI.dialogOpen()} enc=${scene.encounterActive} autoDlg=${QuestNav.autoDialog}`); }
-  if (GameState.world.flags[PASSFLAG] === 'done') { result = 'PASS'; break; }
+  if (PASSED()) { result = 'PASS'; break; }
 }
 console.log(`\n${result === 'PASS' ? '✅' : '❌'} ${CHAR.toUpperCase()} main quest: ${result} in ${(simNow / 60000).toFixed(1)} sim-minutes`);
 console.log(`   final flags: ${Object.entries(seenFlags).map(([k, v]) => k.replace('q-mq', 'mq') + ':' + v).join(' · ')}`);
