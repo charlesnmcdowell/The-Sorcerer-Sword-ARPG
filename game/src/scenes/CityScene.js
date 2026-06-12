@@ -228,6 +228,25 @@ class CityScene extends WorldScene {
   runFinale() {
     const C = Quests.cult, flags = window.GameState.world.flags;
     const ax = CityMap.well.x * 32, ay = (CityMap.well.y - 4) * 32;
+
+    // RONIN-ONLY: the Emperor never arrives. (Book 4 readers know why.)
+    if (window.GameState.player.char === 'ronin') {
+      const F = C.finaleRonin;
+      for (const n of this.npcs) { n.pauseT = 14; n.spr.setFrame(this.frameFor(Math.atan2(0 - n.spr.y, ax - n.spr.x), 0, false)); }
+      const done = () => {
+        flags['q-mq5-ash-and-silence'] = 'done';
+        CityUI.closeDialog();
+        for (const n of this.npcs) n.pauseT = 1 + Math.random() * 2;
+        this.floatText(ax, ay - 60, 'THE ANKUSPAWN CONSPIRACY — it holds. for now.', '#e7b450', 16);
+        this.floatText(ax, ay - 30, 'the Emperor was never where anyone expected · the hunt continues in the campaigns', '#9a8f80', 12);
+      };
+      CityUI.dialog(F.title, F.text1, [{ label: 'Wait with the crowd', fn: () =>
+        CityUI.dialog(F.title, F.text2, [{ label: 'Stay until the plaza empties', fn: () =>
+          CityUI.dialog(F.title, F.text3, [{ label: 'Half a smile. Walk on.', fn: done }]) }]) }]);
+      return;
+    }
+
+
     const em = this.add.sprite(ax, ay, 'fr-ankunyx', 0).setDepth(ay).setScale(1.35);
     this.addLight(ax, ay, 160, false);
     for (const n of this.npcs) { n.pauseT = 9999; n.spr.setFrame(this.frameFor(Math.atan2(ay - n.spr.y, ax - n.spr.x), 0, false)); }

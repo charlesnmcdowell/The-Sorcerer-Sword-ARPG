@@ -58,6 +58,13 @@ const Quests = {
       choiceGive: 'You leave her the vial. Whatever it is, whoever it was — tonight it\'s mercy. The trail is still the trail.',
     },
     caravanSign: 'Wheel ruts where no wagon should fit between the trees. The ruts are deep. The cargo is heavy, or alive, or both.',
+    // Ronin-only finale: the Emperor never arrives. Readers of Book 4 know why.
+    finaleRonin: {
+      title: 'AN EMPTY ROAD',
+      text1: 'Word ran ahead of itself for two days: the Dragon Emperor passes through Karridge. The plaza fills at dawn. Criers clear the road. The guild polishes its ledger table. Bellow, for the first time in living memory, wears a clean shirt.',
+      text2: 'He does not come. The road north stays empty past noon, past the bells, past the point where the crowd stops pretending it isn\'t cold. A steward\'s rider finally trots in with the official word: the Emperor\'s itinerary has changed. No reason given. There never is. The crowd grumbles and disperses, and a hundred wagers die unpaid. Somewhere behind you, Bellow mutters: "Twenty-five years, and that man has never once been where anyone expects him to be."',
+      text3: 'You stand a while in the emptying plaza, the vial humming in your coat, the crowd\'s name for you drifting back and forth across the stones. There was no one to show the evidence to today. You tell yourself that\'s why you\'re smiling — half a smile, the kind a man keeps for his own secrets. The conspiracy holds. The hunt continues. And the Pit\'s champion polishes a blade that has worn three names, and answers, as ever, to none of them.',
+    },
     finale: {
       title: 'THE DRAGON EMPEROR',
       text1: 'He comes through Karridge the way weather comes — the plaza kneels in a wave, the pit-criers go silent mid-shout. ANKUNYX. The Dragon Emperor. He is exactly as tall as the stories and somehow worse: calm. His eyes pass over the crowd and stop, briefly, on you.',
