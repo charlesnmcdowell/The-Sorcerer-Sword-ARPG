@@ -155,6 +155,10 @@ class WorldScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-J', () => { if (this.encounterActive) return;
       this.qlogOpen = !this.qlogOpen; CityUI.questlog(this.qlogOpen, Quests.main, window.GameState.world.flags); });
     this.input.keyboard.on('keydown-M', () => { if (!this.encounterActive) WorldMapUI.toggle(); });
+    this.input.keyboard.on('keydown-F10', () => {
+      const on = Autopilot.toggle();
+      this.floatText(this.player.x, this.player.y - 56, on ? 'AUTOPILOT — fights play themselves' : 'MANUAL', on ? '#3df0c8' : '#9a8f80', 14);
+    });
     this.input.keyboard.on('keydown-ESC', () => { CityUI.closeDialog(); CityUI.guildBoard(false);
       WorldMapUI.hide(); this.qlogOpen = false; CityUI.questlog(false); });
     CityUI.init(); CityUI.hud(true);
@@ -345,6 +349,7 @@ class WorldScene extends Phaser.Scene {
 
   updateEncounter(time) {
     if (!this.encounterActive) return false;
+    Autopilot.frame(this.encCombat, 1 / 60);
     this.encCombat.frame(time);
     this.encTex.refresh();
     return true;

@@ -147,6 +147,12 @@ class ArenaScene extends Phaser.Scene {
       ui.hud(false); ui.controls(false); ui.boss(false, '');
       this.scene.start('CityScene');
     });
+    // F10: spectate — the test-harness bot plays the gauntlet on screen
+    this.input.keyboard.on('keydown-F10', () => {
+      const on = Autopilot.toggle();
+      ui.banner(on ? 'AUTOPILOT' : 'MANUAL', on ? 'the pit plays itself — F10 to take over' : 'your hands now', 1800, '#3df0c8');
+      if (on && this.combat.S.mode === 'title') this.combat.fullReset('warlock');
+    });
     // DEV: F9 on the title screen skips straight to the city with a stock champion
     this.input.keyboard.on('keydown-F9', () => {
       if (!window.GameState.player) window.GameState.player = {
@@ -163,7 +169,8 @@ class ArenaScene extends Phaser.Scene {
     window.GameState.world.zone = 'pit-of-karridge';
   }
 
-  update(time) {
+  update(time, dtMs) {
+    Autopilot.frame(this.combat, Math.min(0.05, dtMs / 1000));
     this.combat.frame(time);
     this.pitTex.refresh();
   }
