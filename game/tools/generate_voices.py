@@ -88,6 +88,8 @@ def main():
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--yes", action="store_true")
+    ap.add_argument("--design", action="store_true",
+        help="design missing voices automatically (costs voice slots + credits). Default: ask Hiro for ids instead.")
     ap.add_argument("--only")
     args = ap.parse_args()
 
@@ -127,7 +129,16 @@ def main():
     if not args.yes and input("Proceed? [y/N] ").strip().lower() != "y": sys.exit("aborted")
 
     print("[4/4] generating...")
-    skipped = set()  # voices we couldn't design (e.g. account voice-slot limit) — their lines wait, everything else proceeds
+    skipped = set()  # voices without ids — their lines wait, everything else proceeds
+    if need and not args.design:
+        # the account hit its custom-voice limit once already: never auto-design.
+        # Ask for ids from the existing ElevenLabs library instead.
+        print("  NEED VOICE IDS (auto-design is OFF — your account hit the voice-slot limit before).")
+        print("  Paste ids from your ElevenLabs voice library into voice_config.json under \"voices\":")
+        for slot in need:
+            print(f'    "{slot}": "<voice_id>"   <- {BRIEFS.get(slot, "")[:100]}')
+        print("  Then rerun this same command. (Or rerun with --design to spend voice slots designing them.)")
+        skipped = set(need); need = []
     for slot in need:
         sample = BRIEFS[slot]
         for l in todo:
