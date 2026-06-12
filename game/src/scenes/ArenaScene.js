@@ -125,10 +125,14 @@ class ArenaScene extends Phaser.Scene {
     });
     this.input.on('pointermove', p => this.combat.pointerMove(p.x, p.y));
     this.input.on('pointerdown', p => {
+      const ev = p.event;
+      if (ev && (ev.pointerType === 'touch' || ev.pointerType === 'pen')) return; // TouchStick handles touch
       if (p.rightButtonDown()) this.combat.doRoll();
       else this.combat.pointerAttack(p.x, p.y);
     });
     this.input.mouse.disableContextMenu();
+    // mobile: left-half stick feeds the sim's stick (same math as the source HTML)
+    TouchStick.attach(this, p => this.combat.pointerAttack(p.x, p.y));
 
     // touch buttons (mobile parity with source)
     const bindBtn = (id, fn, upFn) => { const el = $(id); if (!el) return;
@@ -191,6 +195,7 @@ class ArenaScene extends Phaser.Scene {
 
   update(time, dtMs) {
     Autopilot.frame(this.combat, Math.min(0.05, dtMs / 1000));
+    this.combat.stick.dx = TouchStick.dx; this.combat.stick.dy = TouchStick.dy; this.combat.stick.mag = TouchStick.mag;
     this.combat.frame(time);
     this.pitTex.refresh();
     const m = this.combat.S.mode;

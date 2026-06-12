@@ -9,6 +9,8 @@ const CityUI = {
       dlg: $('dialog'), dlgName: $('dlgName'), dlgText: $('dlgText'), dlgOpts: $('dlgOpts'), dlgPortrait: $('dlgPortrait'),
       belt: $('belt'), prompt: $('interactPrompt'), qlog: $('questlog'), qlogBody: $('questlogBody'),
       board: $('guildboard'), boardBody: $('guildboardBody') };
+    if (!this._promptBound) { this._promptBound = true;
+      this.els.prompt.addEventListener('pointerdown', () => { if (this._onPrompt) this._onPrompt(); }); }
   },
   hud(show) { this.els.hud.style.display = show ? 'block' : 'none'; },
   setIdentity(nickname) { this.els.name.textContent = nickname; },
@@ -76,7 +78,9 @@ const CityUI = {
       const s = document.createElement('div'); s.className = 'beltslot';
       const it = items[i];
       if (it) { s.classList.add('filled'); s.title = it.label;
-        s.textContent = it.type === 'potion-health' ? '❤' : it.type.startsWith('potion') ? '⚗' : '◈'; }
+        s.textContent = it.type === 'potion-health' ? '❤' : it.type.startsWith('potion') ? '⚗' : '◈';
+        const idx = i;
+        s.addEventListener('pointerdown', () => { if (this._onBelt) this._onBelt(idx); }); }
       this.els.belt.appendChild(s);
     }
     this.els.belt.style.display = 'flex';

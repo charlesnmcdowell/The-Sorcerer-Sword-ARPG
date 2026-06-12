@@ -165,6 +165,10 @@ class WorldScene extends Phaser.Scene {
     CityUI.setIdentity(window.GameState.player.nickname);
     CityUI.setPurse(window.GameState.player.copper);
     CityUI.belt(window.GameState.player.belt);
+    // mobile: stick moves, tapping the prompt interacts, tapping belt slots drinks
+    TouchStick.attach(this, p => { if (this.encounterActive) this.encCombat.pointerAttack(p.x, p.y); });
+    CityUI._onPrompt = () => { if (!this.encounterActive) this.tryInteract(); };
+    CityUI._onBelt = i => this.useBeltSlot(i, this.encounterActive);
     // zone music + autosave heartbeat
     const zoneTrack = { 'karridge-city': 'city', 'thorn-grove': 'grove', 'grove-dungeon': 'dungeon' }[window.GameState.world.zone];
     if (zoneTrack) MusicMan.play(zoneTrack);
@@ -179,6 +183,7 @@ class WorldScene extends Phaser.Scene {
     const spd = 185 + (DEX - 10) * 4;
     let mx = (this.keys.A.isDown ? -1 : 0) + (this.keys.D.isDown ? 1 : 0);
     let my = (this.keys.W.isDown ? -1 : 0) + (this.keys.S.isDown ? 1 : 0);
+    if (TouchStick.mag > 0.15) { mx = TouchStick.dx; my = TouchStick.dy; }
     const m = Math.hypot(mx, my);
     if (m > 0) {
       this.face = Math.atan2(my, mx);
@@ -282,6 +287,7 @@ class WorldScene extends Phaser.Scene {
     this.encImg = this.add.image(0, 0, texKey).setOrigin(0).setScrollFactor(0).setDepth(95)
       .setDisplaySize(W, H).setVisible(false);
 
+    // encounter touch: stick feeds the sim each frame (see updateEncounter)
     // combat input routed only while an encounter runs
     this.input.keyboard.on('keydown', e => {
       if (!this.encounterActive) {
@@ -447,6 +453,7 @@ class WorldScene extends Phaser.Scene {
   updateEncounter(time) {
     if (!this.encounterActive) return false;
     Autopilot.frame(this.encCombat, 1 / 60);
+    this.encCombat.stick.dx = TouchStick.dx; this.encCombat.stick.dy = TouchStick.dy; this.encCombat.stick.mag = TouchStick.mag;
     this.encCombat.frame(time);
     this.encTex.refresh();
     return true;

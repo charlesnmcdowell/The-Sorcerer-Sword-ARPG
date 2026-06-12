@@ -11,7 +11,8 @@
     --blood:#8a1f1c; --bone:#d8cdb8; --ash:#6b5d4f;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'Courier New',monospace;color:var(--bone)}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'Courier New',monospace;color:var(--bone);touch-action:none}
+  input{user-select:text;-webkit-user-select:text}
   #game-container{position:fixed;inset:0}
   #game-container canvas{image-rendering:pixelated}
   /* ---------- HUD ---------- */
@@ -37,9 +38,10 @@
   #bHeavy{right:124px;bottom:max(20px,env(safe-area-inset-bottom));width:66px;height:66px}
   #bRoll{right:34px;bottom:calc(max(26px,env(safe-area-inset-bottom)) + 104px);width:66px;height:66px}
   #bParry{right:124px;bottom:calc(max(20px,env(safe-area-inset-bottom)) + 82px);width:66px;height:66px}
-  #stickBase{position:absolute;width:110px;height:110px;border-radius:50%;border:2px solid rgba(216,205,184,.25);
-             background:rgba(20,14,9,.35);display:none}
-  #stickNub{position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(216,205,184,.45);display:none}
+  #stickBase{position:fixed;width:110px;height:110px;border-radius:50%;border:2px solid rgba(216,205,184,.25);
+             background:rgba(20,14,9,.35);display:none;pointer-events:none}
+  #stickNub{position:fixed;width:48px;height:48px;border-radius:50%;background:rgba(216,205,184,.45);display:none;pointer-events:none}
+  #interactPrompt{pointer-events:auto !important;cursor:pointer}
   /* ---------- SCREENS ---------- */
   .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
           background:radial-gradient(ellipse at 50% 30%,#1a120b 0%,#0d0a08 70%);z-index:10;padding:24px;text-align:center}
@@ -119,8 +121,8 @@
 </div>
 <div id="bossw"><div id="bossname"></div><div id="bosshpw"><div id="bosshp" style="width:100%"></div></div></div>
 
+<div id="stickBase" style="z-index:7"></div><div id="stickNub" style="z-index:7"></div>
 <div id="controls">
-  <div id="stickBase"></div><div id="stickNub"></div>
   <div class="btn" id="bSlash">SLASH<div class="cd"></div></div>
   <div class="btn" id="bHeavy">HEAVY<div class="cd"></div></div>
   <div class="btn" id="bRoll">ROLL<div class="cd"></div></div>
@@ -227,6 +229,7 @@
 <script src="src/core/dialog.js"></script>
 <script src="src/core/worldmap.js"></script>
 <script src="src/core/autopilot.js"></script>
+<script src="src/core/touchstick.js"></script>
 <script src="src/core/save.js"></script>
 <script src="src/core/music.js"></script>
 <script src="src/core/voice.js"></script>
