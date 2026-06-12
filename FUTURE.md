@@ -10,7 +10,6 @@
 - **Equipment system** — belt consumables + passive artifacts only; no gear slots.
 
 ## Deferred during build (append as we go)
-- Playable Ankuspawn character class with Ember theme mechanics (lore-rich, big scope).
-- The Ashenveil / Academy lower levels as a playable raid zone (current build: locked teaser + finale references).
-- Portal-network fast travel (player lore-appropriately lacks access in this build).
-- Cookie performance minigame at the inn cameo.
+- **Lords of Pain isometric dungeon zone** — the LoP demo (in assets/packs) is true Diablo-style pre-rendered iso; if the full pack is bought, skin a future dungeon as its own zone (don't mix perspectives within a zone).
+- Inn interior as a walkable room (currently: door → dialog overlay with Marlow).
+- Playable Ankuspawn characte

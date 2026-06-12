@@ -41,5 +41,5 @@ The **Cult of Anku**, founded by **Lady Nyx** (the Lich Queen, wife of AnkuNyx).
 ## 7. Companions vs canon
 Brakka (orc mercenary — fits licensed merc lore exactly), Faelar (Deepwood wood elf, Thorn Grove), Dorian (disgraced knight, ⚑ former coalition standing army), Vexa (tiefling alchemist — ⚑ her black-market alchemy brushes the elixir trade, hook into beat 4), Sylvara (dark elf exile, ⚑ ex-Academy, knows Ashenveil rumors), Pippa (halfling treasure hunter). All six are original — no canon conflicts.
 
----
-*Sources: `ankuspawn_race.md`, `shared_world_continuity.md`, `universe_campaign_framework.md`, Cookie ch.1/5, Book 4 ch.39, character trackers. Anything ⚑ becomes canon only when you approve it.*
+## 8. APPROVED RETCONS (Hiro, 2026-06-12) — paste into universe_campaign_framework changelog
+1. **The Druid is Amaris's daughter** (~24), conceived during Book 4's Ronin arc when Kenji, traveling unde
