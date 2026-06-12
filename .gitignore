@@ -1,3 +1,4 @@
 node_modules/
 *.log
 site-neverendingnarratives/
+game/tools/voice_config.json
