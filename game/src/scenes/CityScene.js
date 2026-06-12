@@ -80,8 +80,8 @@ class CityScene extends WorldScene {
       if (b.id === 'inn') this.interactables.push({ x: dx, y: dy - 10, label: 'enter THE LAST LANTERN', fn: () => this.innDialog() });
       if (b.id === 'guild') {
         this.interactables.push({ x: dx, y: dy - 10, label: 'enter the ADVENTURERS GUILD', fn: () => this.guildBoard() });
-        // post-finale: the heartland coach to Varenholm waits by the guild
-        if (GS.world.flags['q-mq5-ash-and-silence'] === 'done') {
+        // DRUID-ONLY post-finale: the heartland coach — her secret road north
+        if (GS.world.flags['q-mq5-ash-and-silence'] === 'done' && P.char === 'druid') {
           const cy = dy + 40;
           const cg = this.add.graphics().setDepth(cy);
           cg.fillStyle(0x241a12); cg.fillRect(dx + 60, cy - 22, 56, 30);
@@ -255,6 +255,7 @@ class CityScene extends WorldScene {
         for (const n of this.npcs) n.pauseT = 1 + Math.random() * 2;
         this.floatText(ax, ay - 60, 'THE ANKUSPAWN CONSPIRACY — it holds. for now.', '#e7b450', 16);
         this.floatText(ax, ay - 30, 'the Emperor was never where anyone expected · the hunt continues in the campaigns', '#9a8f80', 12);
+        setTimeout(() => CityUI.credits('THE RONIN\'S ROAD — he was never where anyone expected'), 2600);
       };
       CityUI.dialog(F.title, F.text1, [{ label: 'Wait with the crowd', fn: () =>
         CityUI.dialog(F.title, F.text2, [{ label: 'Stay until the plaza empties', fn: () =>
@@ -273,6 +274,10 @@ class CityScene extends WorldScene {
       for (const n of this.npcs) n.pauseT = 1 + Math.random() * 2;
       this.floatText(ax, ay - 60, 'THE ANKUSPAWN CONSPIRACY — it holds. for now.', '#e7b450', 16);
       this.floatText(ax, ay - 30, 'epilogue in your journal (J) · the hunt continues in the campaigns', '#9a8f80', 12);
+      if (window.GameState.player.char === 'warlock')
+        setTimeout(() => CityUI.credits('THE WARLOCK\'S ROAD — what follows him should not fit through doors'), 2600);
+      else if (window.GameState.player.char === 'druid')
+        setTimeout(() => this.floatText(ax, ay, 'a coach has arrived by the guild. it seems to be waiting for someone GIFTED.', '#3df0c8', 13), 2800);
     };
     const t2 = C.finale.text2 + (window.GameState.player.char === 'druid' ? ' ' + Quests.druid.finaleGaze : '');
     CityUI.dialog(C.finale.title, C.finale.text1, [{ label: 'Kneel — or don\'t', fn: () =>

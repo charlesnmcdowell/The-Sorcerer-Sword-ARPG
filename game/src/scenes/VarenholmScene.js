@@ -93,8 +93,16 @@ class VarenholmScene extends WorldScene {
 
     // coach home
     this.interactables.push({ x: 28 * T, y: (MH - 2) * T, label: 'take the coach back to Karridge', fn: () => {
-      if (window.GameState.world.flags['q-mq6-the-dancer'] === 'done') this.signDialog('THE ROAD SOUTH', Quests.varenholm.done);
-      setTimeout(() => { window.GameState.world.cityFromGrove = false; this.scene.start('CityScene'); }, window.GameState.world.flags['q-mq6-the-dancer'] === 'done' ? 1200 : 0);
+      const doneQ = window.GameState.world.flags['q-mq6-the-dancer'] === 'done';
+      if (doneQ && !window.GameState.world.flags['credits-rolled']) {
+        window.GameState.world.flags['credits-rolled'] = true;
+        CityUI.dialog('THE ROAD SOUTH', Quests.varenholm.done, [{ label: 'Go home the long way', fn: () => {
+          CityUI.closeDialog();
+          CityUI.credits('THE DRUID\'S ROAD — the green keeps singing, and she keeps the letter ready');
+        }}]);
+        return;
+      }
+      window.GameState.world.cityFromGrove = false; this.scene.start('CityScene');
     }});
   }
 

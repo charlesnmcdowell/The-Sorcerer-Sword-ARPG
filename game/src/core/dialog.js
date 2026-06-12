@@ -50,6 +50,15 @@ const CityUI = {
     setTimeout(() => inp.focus(), 50);
   },
 
+  credits(endingLine) {
+    const el = document.getElementById('credits');
+    document.getElementById('creditsEnding').textContent = endingLine || '';
+    el.classList.add('show');
+    const btn = document.getElementById('creditsBtn');
+    const close = () => { el.classList.remove('show'); btn.removeEventListener('pointerdown', close); };
+    btn.addEventListener('pointerdown', close);
+  },
+
   companions(show, list) { // P panel
     const el = document.getElementById('companions');
     el.style.display = show ? 'block' : 'none';
