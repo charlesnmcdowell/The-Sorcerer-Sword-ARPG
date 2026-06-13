@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Sorcerer-Sword 3D — Karridge City</title>
+<!-- 3D UPLIFT · B3: Karridge City hub, built from the REAL ../game/src/world/citymap.js + quests.js data.
+     Walk the city (3/4 cam, stick/WASD), meet wandering folk, read signs, open the guild board (real
+     contracts + ranks), and step through the south gate into the Pit. Models embedded → file:// works. -->
+<style>
+  html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8;user-select:none;touch-action:none}
+  #c{display:block;width:100vw;height:100vh}
+  #tint{position:fixed;inset:0;pointer-events:none;z-index:2;mix-blend-mode:soft-light;background:linear-gradient(180deg,rgba(60,40,110,.28),rgba(0,0,0,0) 45%,rgba(0,0,0,0) 62%,rgba(150,70,30,.28))}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 40%,rgba(0,0,0,.6) 100%)}
+  #title{position:fixed;left:16px;top:12px;font-family:Georgia,serif;font-size:18px;color:#e7d4a0;letter-spacing:2px;z-index:6}
+  #sub{position:fixed;left:16px;top:38px;font-size:11px;color:#9a8aa0;letter-spacing:1px;z-index:6}
+  #prompt{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);z-index:7;display:none;
+    background:rgba(20,12,30,.85);border:1px solid #e7b450;color:#e7d4a0;padding:8px 16px;border-radius:6px;font-size:13px;letter-spacing:1px}
+  #float{position:fixed;left:0;right:0;top:30%;text-align:center;z-index:6;pointer-events:none;opacity:0;transition:opacity .4s;font-size:13px;color:#cbb0d0;letter-spacing:1px}
+  #float.show{opacity:1}
+  #stickBase{position:fixed;width:110px;height:110px;border-radius:50%;border:2px solid rgba(231,180,80,.4);background:rgba(20,12,30,.4);display:none;z-index:9;pointer-events:none}
+  #stickNub{position:fixed;width:48px;height:48px;border-radius:50%;background:rgba(231,180,80,.5);display:none;z-index:9;pointer-events:none}
+  #ebtn{position:fixed;right:24px;bottom:30px;width:78px;height:78px;border-radius:50%;background:rgba(20,12,30,.82);border:2px solid #e7b450;color:#e7d4a0;
+    display:none;align-items:center;justify-content:center;font-size:13px;letter-spacing:1px;z-index:9;cursor:pointer;touch-action:none}
+  #ebtn.on{display:flex}
+  #khint{position:fixed;right:16px;bottom:14px;font-size:10px;color:#6a5a7a;letter-spacing:1px;text-align:right;line-height:1.6;z-index:6}
+  #dlg{position:fixed;inset:0;z-index:13;display:none;align-items:center;justify-content:center;background:rgba(8,5,16,.7);padding:20px}
+  #dlg .box{max-width:600px;width:100%;background:rgba(16,10,26,.97);border:1px solid #5a3a6a;border-radius:10px;padding:22px}
+  #dlg h2{font-family:Georgia,serif;color:#e7c98a;margin:0 0 12px;letter-spacing:1px;font-size:20px}
+  #dlg .body{color:#cdbed8;font-size:14px;line-height:1.7;white-space:pre-wrap}
+  #dlg .opt{margin-top:10px;padding:10px 14px;background:rgba(40,24,52,.8);border:1px solid #6a4a8a;border-radius:6px;color:#e7d4a0;cursor:pointer;font-size:13px}
+  #dlg .opt:hover{background:rgba(231,180,80,.2);border-color:#e7b450}
+  .contract{margin:8px 0;padding:10px 12px;background:rgba(30,18,40,.7);border-left:3px solid #e7b450;border-radius:4px}
+  .contract .nm{color:#e7c98a;font-size:13px;letter-spacing:1px}
+  .contract .ob{color:#a294b0;font-size:11px;margin-top:4px;line-height:1.5}
+  .contract .pay{color:#7fd07f;font-size:11px;margin-top:4px}
+  #load{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0712;z-index:14;transition:opacity .5s}
+  #load h1{font-family:Georgia,serif;color:#d8c9a3;font-size:clamp(22px,5vw,40px);margin:0;text-shadow:0 0 24px rgba(200,146,58,.4)}
+  #load .sub{color:#8a2f2f;letter-spacing:.4em;font-size:12px;margin-top:8px}
+  #err{display:none;position:fixed;left:12px;right:12px;top:12px;z-index:30;background:rgba(30,6,10,.95);border:1px solid #c8443a;color:#f0c8c0;font:12px/1.5 'Courier New',monospace;padding:12px;white-space:pre-wrap;max-height:62vh;overflow:auto}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="tint"></div><div id="vig"></div>
+<div id="title">KARRIDGE CITY</div><div id="sub"></div>
+<div id="prompt"></div>
+<div id="float"></div>
+<div id="stickBase"></div><div id="stickNub"></div>
+<div id="ebtn">USE</div>
+<div id="khint">WASD / arrows / drag-left — move · E or USE — interact · drag — camera</div>
+<div id="dlg"><div class="box"><h2></h2><div class="body"></div><div class="opts"></div></div></div>
+<div id="err"></div>
+<div id="load"><h1>KARRIDGE CITY</h1><div class="sub">3D &mdash; the lamps are lit</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="assets/embedded3d.js"></script>
+<script src="champions.js"></script>
+<script>
+window.GameState=window.GameState||{player:null,world:{flags:{}},meta:{}};
+(function(){const RA=window.Audio;function A(s){return new RA(typeof s==='string'&&/^assets\/(voice|music)\//.test(s)?'../game/'+s:s);}A.prototype=RA.prototype;window.Audio=A;})();
+</script>
+<script src="../game/src/core/music.js"></script>
+<script src="../game/src/core/voice.js"></script>
+<script src="../game/src/world/citymap.js"></script>
+<script src="../game/src/world/quests.js"></script>
+<script>
+(function(){
+"use strict";
+const errEl=document.getElementById('err'),loadEl=document.getElementById('load');
+function showErr(m){errEl.style.display='block';errEl.textContent='⚠ '+m;loadEl.style.display='none';}
+window.addEventListener('error',ev=>showErr((ev.message||'error')+'  ['+(((ev.filename||'')+'').split('/').pop())+':'+(ev.lineno||'?')+']'));
+window.addEventListener('unhandledrejection',ev=>showErr('promise: '+((ev.reason&&(ev.reason.message||ev.reason))||'?')));
+const THREE=window.THREE,$=id=>document.getElementById(id),W=()=>innerWidth,H=()=>innerHeight;
+if(!THREE)return showErr('needs internet to load Three.js');
+if(!window.CHAMP)return showErr('champions.js failed to load');
+if(!window.CityMap)return showErr('could not load ../game/src/world/citymap.js');
+const EMB=window.EMB3D,CM=window.CityMap,Q=window.Quests;
+const charKey=(new URLSearchParams(location.search).get('char'))||(GameState.player&&GameState.player.char)||'ronin';
+
+const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.setSize(W(),H());
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x140a1e,0.016);
+const camera=new THREE.PerspectiveCamera(52,W()/H(),0.1,500);
+const M=CHAMP.M,addGlow=CHAMP.addGlow;
+
+// ---- coordinate mapping: city px -> world units ----
+const TILE=CM.TILE,MAPW=CM.W*TILE,MAPH=CM.H*TILE,S=0.05;
+const wx=px=>(px-MAPW/2)*S, wz=py=>(py-MAPH/2)*S;
+const tileW=p=>wx(p*TILE), tileD=p=>wz(p*TILE);
+
+// sky
+(function(){const cv=document.createElement('canvas');cv.width=4;cv.height=256;const x=cv.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#140a26');g.addColorStop(.5,'#241433');g.addColorStop(.8,'#4a2030');g.addColorStop(1,'#8a4520');
+  x.fillStyle=g;x.fillRect(0,0,4,256);const t=new THREE.CanvasTexture(cv);
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(220,24,16),new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false})));})();
+scene.add(new THREE.HemisphereLight(0x5a5a8a,0x18101c,0.55));
+const moon=new THREE.DirectionalLight(0x9ab0ff,0.5);moon.position.set(-20,40,10);moon.castShadow=true;
+moon.shadow.mapSize.set(2048,2048);const sc=60;moon.shadow.camera.left=-sc;moon.shadow.camera.right=sc;moon.shadow.camera.top=sc;moon.shadow.camera.bottom=-sc;moon.shadow.bias=-0.0005;scene.add(moon);
+
+// ground (cobble) sized to the map
+const groundW=MAPW*S,groundH=MAPH*S;
+const ground=new THREE.Mesh(new THREE.BoxGeometry(groundW+8,0.6,groundH+8),M(0x1f1a26,{roughness:1}));ground.position.y=-0.3;ground.receiveShadow=true;scene.add(ground);
+// plaza tint
+const pz=CM.plaza;const plaza=new THREE.Mesh(new THREE.BoxGeometry(pz.w*TILE*S,0.62,pz.h*TILE*S),M(0x2a2336,{roughness:1}));
+plaza.position.set(wx((pz.x+pz.w/2)*TILE),-0.28,wz((pz.y+pz.h/2)*TILE));plaza.receiveShadow=true;scene.add(plaza);
+
+// city wall ring (with south + north gate gaps)
+const WALLH=3.2,wallMat=M(0x2a2030,{roughness:.9});
+function wallSeg(x1,z1,x2,z2){const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz);const m=new THREE.Mesh(new THREE.BoxGeometry(len,WALLH,0.5),wallMat);
+  m.position.set((x1+x2)/2,WALLH/2-0.2,(z1+z2)/2);m.rotation.y=Math.atan2(dz,dx)*-1;m.castShadow=true;m.receiveShadow=true;scene.add(m);}
+const L=wx(0),R=wx(MAPW),Tp=wz(0),B=wz(MAPH);
+const gS=CM.gates.south,gN=CM.gates.north;const gSx1=tileW(gS.x),gSx2=tileW(gS.x+gS.w),gNx1=tileW(gN.x),gNx2=tileW(gN.x+gN.w);
+wallSeg(L,Tp,gNx1,Tp);wallSeg(gNx2,Tp,R,Tp);          // north wall (gate gap)
+wallSeg(L,B,gSx1,B);wallSeg(gSx2,B,R,B);              // south wall (gate gap)
+wallSeg(L,Tp,L,B);wallSeg(R,Tp,R,B);                  // east/west walls
+// gate posts + arches
+function gatePost(x,z,col){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.6,4.4,8),M(0x35283f));p.position.set(x,1.8,z);p.castShadow=true;scene.add(p);
+  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.35,0.9,7),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:1.6,flatShading:true}));fl.position.set(x,4.3,z);scene.add(fl);addGlow(fl,col,3,.8);
+  const pl=new THREE.PointLight(col,0.9,18,2);pl.position.set(x,4.4,z);scene.add(pl);}
+gatePost(gSx1,B,0xff9a4a);gatePost(gSx2,B,0xff9a4a);gatePost(gNx1,Tp,0x6a7aff);gatePost(gNx2,Tp,0x6a7aff);
+
+// buildings
+const buildRects=[]; // world-space rects for collision {x0,z0,x1,z1}
+function makeSign(text,x,y,z){const cv=document.createElement('canvas');cv.width=256;cv.height=64;const c=cv.getContext('2d');
+  c.fillStyle='#e7c98a';c.font='bold 30px Georgia';c.textAlign='center';c.fillText(text,128,42);
+  const t=new THREE.CanvasTexture(cv);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:false}));
+  sp.scale.set(3.2,0.8,1);sp.position.set(x,y,z);scene.add(sp);}
+for(const b of CM.buildings){
+  const x0=tileW(b.x),z0=tileD(b.y),x1=tileW(b.x+b.w),z1=tileD(b.y+b.h);
+  const cx=(x0+x1)/2,cz=(z0+z1)/2,bw=x1-x0,bd=z1-z0;
+  const named=!!b.name;const h=named?3.6:2.8;
+  const wallC=named?0x4a3a52:0x3a3040;
+  const body=new THREE.Mesh(new THREE.BoxGeometry(bw,h,bd),M(wallC,{roughness:.9}));body.position.set(cx,h/2-0.2,cz);body.castShadow=true;body.receiveShadow=true;scene.add(body);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(bw,bd)*0.62,1.4,4),M(named?0x6a3a2a:0x4a2a22,{roughness:1}));roof.position.set(cx,h+0.4,cz);roof.rotation.y=Math.PI/4;roof.castShadow=true;scene.add(roof);
+  buildRects.push({x0,z0,x1,z1});
+  // lit windows
+  for(let i=0;i<2;i++){const win=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.6),new THREE.MeshBasicMaterial({color:0xffcf7a,fog:false}));
+    win.position.set(cx+(i?bw*0.25:-bw*0.25),h*0.55,cz+bd/2+0.01);scene.add(win);}
+  if(b.sign){makeSign(b.sign,cx,h+1.6,cz);}
+}
+
+// well (plaza center)
+const well=new THREE.Group();const wbase=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.1,0.9,12),M(0x4a4452));wbase.position.y=0.25;wbase.castShadow=true;well.add(wbase);
+const wroofP=new THREE.Mesh(new THREE.ConeGeometry(1.3,0.9,7),M(0x3a2a22));wroofP.position.y=2.2;well.add(wroofP);
+for(const sx of[-1,1]){const post=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.7,6),M(0x3a2a18));post.position.set(sx*0.9,1.2,0);well.add(post);}
+well.position.set(wx(CM.well.x*TILE),0,wz(CM.well.y*TILE));scene.add(well);
+
+// torches / braziers from CityMap.lights (cap real point lights, glow the rest)
+let litCount=0;const braziers=[];
+for(const lt of CM.lights){const x=tileW(lt.x),z=tileD(lt.y);
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.14,2.0,6),M(0x2a2018));post.position.set(x,0.8,z);post.castShadow=true;scene.add(post);
+  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.22,0.6,7),new THREE.MeshStandardMaterial({color:0xff9a3a,emissive:0xff7a20,emissiveIntensity:1.6,flatShading:true}));fl.position.set(x,2.0,z);scene.add(fl);
+  addGlow(fl,0xffae5a,2.2,.8);braziers.push(fl);
+  if(litCount<8){const pl=new THREE.PointLight(0xffae5a,0.8,12,2);pl.position.set(x,2.1,z);scene.add(pl);litCount++;}}
+
+// signposts + chests (interactables added below)
+for(const s of CM.signs){const x=tileW(s.x),z=tileD(s.y);const post=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,1.6,6),M(0x4a3a22));post.position.set(x,0.6,z);scene.add(post);
+  const board=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.5,0.08),M(0x6a4a2a));board.position.set(x,1.4,z);scene.add(board);}
+for(const c of CM.chests){const x=tileW(c.x),z=tileD(c.y);const box=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.5),M(0x7a5a2a,{metalness:.3}));box.position.set(x,0.05,z);box.castShadow=true;scene.add(box);}
+
+// ---------------- dialog ----------------
+function closeDlg(){$('dlg').style.display='none';}
+function say(title,body,opts){const d=$('dlg');d.querySelector('h2').textContent=title;d.querySelector('.body').innerHTML=body;
+  const o=d.querySelector('.opts');o.innerHTML='';(opts||[{label:'Leave',fn:closeDlg}]).forEach(op=>{const b=document.createElement('div');b.className='opt';b.textContent=op.label;b.onclick=op.fn;o.appendChild(b);});
+  d.style.display='flex';if(window.VoiceMan&&title&&body)VoiceMan.say(title,(''+body).replace(/<[^>]+>/g,'').slice(0,400));}
+function guildBoard(){if(!Q){say('ADVENTURERS GUILD','The board is bare tonight.');return;}
+  const rank=Q.rankFor?Q.rankFor(0):{name:'IRON',mult:1};
+  let html='<div style="color:#e7b450;margin-bottom:10px">GUILD RANK: '+rank.name+' · payouts ×'+rank.mult+'</div>';
+  (Q.guildBoard||[]).forEach(q=>{html+='<div class="contract"><div class="nm">'+(q.name||q.title||'CONTRACT')+'</div>'+(q.objective?'<div class="ob">'+q.objective+'</div>':'')+(q.copper?'<div class="pay">reward: '+q.copper+' copper</div>':'')+'</div>';});
+  say('ADVENTURERS GUILD',html||'The board is bare tonight.');}
+
+// ---------------- player + NPCs ----------------
+const loader=new THREE.GLTFLoader();let CLIPS=[];
+let player=null;const npcs=[];
+function clipName(w,fb){return CLIPS.find(c=>c.name===w)?w:fb;}
+function setAnim(rec,name,opt){opt=opt||{};if(!rec.mixer||!name)return;let a=rec.acts[name];if(a===undefined){const cl=CLIPS.find(c=>c.name===name)||null;a=cl?rec.mixer.clipAction(cl):null;rec.acts[name]=a;}
+  if(!a||(rec.cur===a&&!opt.force))return;a.reset();a.setLoop(THREE.LoopRepeat,Infinity);a.timeScale=opt.speed||1;a.fadeIn(0.18).play();if(rec.cur&&rec.cur!==a)rec.cur.fadeOut(0.18);rec.cur=a;}
+function tint(m,hex){const c=new THREE.Color(hex);m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();if(o.material.color)o.material.color.lerp(c,0.5);}});}
+function buildPlayer(){const map={ronin:'ronin',druid:'druid',warlock:'warlock',seraph:'seraphim',seraphim:'seraphim'};
+  CHAMP.makeChampion(loader,EMB,map[charKey]||'ronin',(model)=>{CHAMP.groundModel(model,2.0);
+    const sp=CM.spawn;model.position.set(wx(sp.x),0,wz(sp.y));scene.add(model);
+    player={model,mixer:new THREE.AnimationMixer(model),acts:{},cur:null,facing:Math.PI};setAnim(player,clipName('Idle_A',CLIPS[0]&&CLIPS[0].name));
+  },e=>showErr('player: '+e));}
+const NPC_COLS=[0x8a8aa0,0x9a7a6a,0x6a8a7a,0xa08a6a];
+for(const z of CM.npcZones)for(let i=0;i<z.n;i++){(function(zone){
+  CHAMP.makeKnight(loader,EMB,(m)=>{CHAMP.groundModel(m,1.85);tint(m,NPC_COLS[Math.floor(Math.random()*NPC_COLS.length)]);
+    const hx=(zone.x+Math.random()*zone.w)*TILE,hy=(zone.y+Math.random()*zone.h)*TILE;m.position.set(wx(hx),0,wz(hy));scene.add(m);
+    const rec={model:m,mixer:new THREE.AnimationMixer(m),acts:{},cur:null,zone,tx:wx(hx),tz:wz(hy),wait:Math.random()*3,facing:0};
+    setAnim(rec,clipName('Idle_A',CLIPS[0]&&CLIPS[0].name));npcs.push(rec);},()=>{});
+})(z);}
+
+// ---------------- interactables ----------------
+const interacts=[]; // {x,z,r,label,fn}
+function addInteract(tilex,tiley,r,label,fn){interacts.push({x:tileW(tilex),z:tileD(tiley),r:r||2.2,label,fn});}
+for(const b of CM.buildings){const doorX=b.x+(b.door||Math.floor(b.w/2)),doorY=b.y+b.h+0.5;
+  if(b.id==='inn')addInteract(doorX,doorY,2.6,'enter THE LAST LANTERN',()=>say('THE LAST LANTERN','A warm hearth, sour ale, and a hundred rumors. The innkeeper sizes up your blood-crusted boots.\n\n"You\'re the one from the Pit. Sit. Drink. The road north\'s gone quiet — travelers vanishing past Thorn Grove. The guild knows more than they post."'));
+  if(b.id==='guild')addInteract(doorX,doorY,2.6,'enter the ADVENTURERS GUILD',guildBoard);}
+addInteract(CM.well.x,CM.well.y,2.4,'look into the well',()=>say('THE WELL','Coins glint far below. Most are offerings. Some are bribes. The well keeps every secret it is paid.'));
+for(const s of CM.signs)addInteract(s.x,s.y,2.2,'read the sign',()=>say('SIGNPOST',s.text));
+for(const c of CM.chests)addInteract(c.x,c.y,2.0,'open the chest',()=>say('A CHEST',(c.loot&&c.loot.label?'You find: '+c.loot.label+'.':'Empty — someone got here first.')));
+// south gate -> the Pit
+addInteract(CM.gates.south.x+CM.gates.south.w/2,CM.H,3.2,'↓ enter THE PIT',()=>{location.href='pit.html';});
+addInteract(CM.gates.north.x+CM.gates.north.w/2,0,3.2,'↑ the north gate',()=>say('NORTH GATE','THORN GROVE lies beyond. The way is barred — guild escort required. (The grove zone opens next in the 3D build.)'));
+
+// ---------------- input ----------------
+let camYaw=Math.PI,camPitch=0.74,camDist=14;
+const stick={dx:0,dy:0,mag:0,id:null,ox:0,oy:0};const sb=$('stickBase'),sn=$('stickNub');
+let drag=false,dragId=null,px=0,py=0;const keys={};
+const isTouch=e=>e.pointerType==='touch'||e.pointerType==='pen';
+let curInteract=null;
+function doInteract(){if(curInteract&&$('dlg').style.display==='none')curInteract.fn();}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+  if(k==='e'||k==='enter'||k===' ')doInteract();if(k==='escape')closeDlg();});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+addEventListener('pointerdown',e=>{if(e.target&&e.target.closest&&e.target.closest('#ebtn,#dlg'))return;
+  if(isTouch(e)&&e.clientX<innerWidth*0.55&&stick.id===null){stick.id=e.pointerId;stick.ox=e.clientX;stick.oy=e.clientY;stick.dx=stick.dy=stick.mag=0;
+    sb.style.display=sn.style.display='block';sb.style.left=(e.clientX-55)+'px';sb.style.top=(e.clientY-55)+'px';sn.style.left=(e.clientX-24)+'px';sn.style.top=(e.clientY-24)+'px';return;}
+  drag=true;dragId=e.pointerId;px=e.clientX;py=e.clientY;});
+addEventListener('pointermove',e=>{if(stick.id===e.pointerId){let dx=e.clientX-stick.ox,dy=e.clientY-stick.oy;const m=Math.hypot(dx,dy),cap=52;if(m>cap){dx*=cap/m;dy*=cap/m;}
+    stick.dx=dx/cap;stick.dy=dy/cap;stick.mag=Math.min(1,m/cap);sn.style.left=(stick.ox+dx-24)+'px';sn.style.top=(stick.oy+dy-24)+'px';return;}
+  if(drag&&dragId===e.pointerId){camYaw-=(e.clientX-px)*0.006;camPitch=Math.max(0.4,Math.min(1.2,camPitch-(e.clientY-py)*0.005));px=e.clientX;py=e.clientY;}});
+function endStick(e){if(stick.id===e.pointerId){stick.id=null;stick.dx=stick.dy=stick.mag=0;sb.style.display=sn.style.display='none';return true;}return false;}
+addEventListener('pointerup',e=>{if(endStick(e))return;if(drag&&dragId===e.pointerId){drag=false;dragId=null;}});
+addEventListener('pointercancel',e=>{endStick(e);drag=false;});
+addEventListener('wheel',e=>{camDist=Math.max(7,Math.min(26,camDist+e.deltaY*0.012));},{passive:true});
+addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
+$('ebtn').addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();doInteract();});
+$('dlg').addEventListener('pointerdown',e=>{if(e.target===$('dlg'))closeDlg();});
+
+// ---------------- collision (push player circle out of building rects) ----------------
+function collide(p){const pr=0.5;for(const r of buildRects){if(p.x>r.x0-pr&&p.x<r.x1+pr&&p.z>r.z0-pr&&p.z<r.z1+pr){
+  const dl=Math.abs(p.x-(r.x0-pr)),dr=Math.abs(p.x-(r.x1+pr)),dt=Math.abs(p.z-(r.z0-pr)),db=Math.abs(p.z-(r.z1+pr));
+  const mn=Math.min(dl,dr,dt,db);if(mn===dl)p.x=r.x0-pr;else if(mn===dr)p.x=r.x1+pr;else if(mn===dt)p.z=r.z0-pr;else p.z=r.z1+pr;}}}
+
+// ---------------- loop ----------------
+const clock=new THREE.Clock();
+function frame(){requestAnimationFrame(frame);const dt=Math.min(0.05,clock.getDelta());
+  for(const fl of braziers)fl.scale.y=.85+Math.random()*.4;
+  if(window.MusicMan)MusicMan.play('city');
+  if(player){player.mixer.update(dt);
+    let mx=0,mz=0;if(keys['w']||keys['arrowup'])mz-=1;if(keys['s']||keys['arrowdown'])mz+=1;if(keys['a']||keys['arrowleft'])mx-=1;if(keys['d']||keys['arrowright'])mx+=1;
+    if(stick.mag>0.05){mx+=stick.dx;mz+=stick.dy;}
+    // camera-relative
+    const cfx=player.model.position.x-camera.position.x,cfz=player.model.position.z-camera.position.z;const fl=Math.hypot(cfx,cfz)||1;const fwdx=cfx/fl,fwdz=cfz/fl;const rgtx=-fwdz,rgtz=fwdx;
+    let dx=fwdx*(-mz)+rgtx*mx,dz=fwdz*(-mz)+rgtz*mx;const ml=Math.hypot(dx,dz);
+    const moving=ml>0.05;
+    if(moving){dx/=ml;dz/=ml;const sp=6.5;player.model.position.x+=dx*sp*dt;player.model.position.z+=dz*sp*dt;player.facing=Math.atan2(dx,dz);
+      // clamp to map
+      const mr=groundW/2-0.5,md=groundH/2-0.5;player.model.position.x=Math.max(-mr,Math.min(mr,player.model.position.x));player.model.position.z=Math.max(-md,Math.min(md,player.model.position.z));
+      collide(player.model.position);}
+    player.model.rotation.y=player.facing;
+    setAnim(player,moving?clipName('Running_A','Walking_A'):clipName('Idle_A',CLIPS[0].name),{speed:moving?1.1:1});
+    // nearest interactable
+    let best=null,bd=99;for(const it of interacts){const d=Math.hypot(it.x-player.model.position.x,it.z-player.model.position.z);if(d<it.r&&d<bd){bd=d;best=it;}}
+    curInteract=best;const pr=$('prompt'),eb=$('ebtn');
+    if(best){pr.style.display='block';pr.textContent='[E] '+best.label;eb.classList.add('on');}else{pr.style.display='none';eb.classList.remove('on');}
+  }
+  // NPC wander
+  for(const n of npcs){n.mixer.update(dt);n.wait-=dt;
+    const d=Math.hypot(n.tx-n.model.position.x,n.tz-n.model.position.z);
+    if(d<0.4){if(n.wait<=0){const z=n.zone;n.tx=wx((z.x+Math.random()*z.w)*TILE);n.tz=wz((z.y+Math.random()*z.h)*TILE);n.wait=2+Math.random()*4;}setAnim(n,clipName('Idle_A',CLIPS[0].name));}
+    else{const a=Math.atan2(n.tx-n.model.position.x,n.tz-n.model.position.z);n.model.position.x+=Math.sin(a)*1.6*dt;n.model.position.z+=Math.cos(a)*1.6*dt;n.model.rotation.y=a;setAnim(n,clipName('Walking_A','Running_A'),{speed:1});}}
+  // camera follow
+  const tx=player?player.model.position.x:0,tz=player?player.model.position.z:0;
+  const cx=tx+camDist*Math.sin(camPitch)*Math.sin(camYaw),cy=2+camDist*Math.cos(camPitch),cz=tz+camDist*Math.sin(camPitch)*Math.cos(camYaw);
+  camera.position.lerp(new THREE.Vector3(cx,cy,cz),0.1);camera.lookAt(tx,1.2,tz);
+  renderer.render(scene,camera);}
+
+// boot
+$('sub').textContent='the '+charKey.toUpperCase()+' walks the streets · find the guild, or the south gate to the Pit';
+CHAMP.loadClips(loader,EMB,clips=>{CLIPS=clips;if(!CLIPS.length)return showErr('no animation clips');buildPlayer();
+  loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',500);frame();});
+})();
+</script>
+</body>
+</html>
