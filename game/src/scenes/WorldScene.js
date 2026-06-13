@@ -498,6 +498,11 @@ class WorldScene extends Phaser.Scene {
     this.encounterActive = true;
     if (window.IS_PHONE) this.cameras.main.setZoom(1); // the arena frame needs the full window
     this.encImg.setVisible(true);
+    // The combat overlay sits at depth 95, but field sprites use setDepth(y) (hundreds+),
+    // so non-combat monsters/NPCs would otherwise draw on top of the fight. Hide every
+    // currently-visible field object for the duration of the encounter; restored in onEnd.
+    this._hiddenForEnc = this.children.list.filter(o => o !== this.encImg && o.visible);
+    this._hiddenForEnc.forEach(o => o.setVisible(false));
     this.encCombat.setPlayerSnapshot(P);
     this.encCombat.setMods(this.artifactMods());
     // the companion fights beside you
@@ -514,6 +519,8 @@ class WorldScene extends Phaser.Scene {
       CityUI.setIdentity(P.nickname); CityUI.belt(P.belt);
       this.encounterActive = false;
       this.encImg.setVisible(false);
+      // restore the field sprites we hid when the encounter began
+      if (this._hiddenForEnc) { this._hiddenForEnc.forEach(o => o.setVisible(true)); this._hiddenForEnc = null; }
       if (window.IS_PHONE) this.cameras.main.setZoom(1.18); // lean back in for the road
       document.getElementById('hud').style.display = 'none';
       document.getElementById('controls').style.display = 'none';

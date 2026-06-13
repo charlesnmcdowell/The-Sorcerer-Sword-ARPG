@@ -33,4 +33,14 @@ The optional companion-chat feature calls the Anthropic API at runtime if a key 
 
 ## Action checklist before monetizing
 
-- [ ] Screenshot the Cainos license box
+- [ ] Screenshot the Cainos license box (itch.io) and save it here.
+- [ ] Confirm + save the invoice for the **music** tool's commercial plan covering the track creation dates.
+- [ ] Confirm + save the **ElevenLabs paid-plan** invoice covering the voice-generation dates.
+- [ ] Confirm no ElevenLabs voice ID is an unconsented clone of a real person.
+- [ ] Keep Phaser's MIT notice in the repo.
+- [ ] (If you add any new asset later: add a row here BEFORE shipping it.)
+
+## Maintenance rule
+Any new third-party asset (art pack, font, sound, library) gets a row in this table **before** it ships. If you can't fill in a clear license, don't ship it commercially.
+
+Sources consulted (June 2026): [Cainos — Pixel Art Top Down: Basic](https://cainos.itch.io/pixel-art-top-down-basic), [ElevenLabs Commercial Rights & Output Ownership 2026 (Terms.Law)](https://terms.law/ai-output-rights/elevenlabs/), [ElevenLabs Terms of Use](https://elevenlabs.io/terms-of-use).
