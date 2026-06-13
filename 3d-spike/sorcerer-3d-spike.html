@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorcerer-Sword — Procedural 3D Look Test (Ronin) v2</title>
+<!-- THROWAWAY SPIKE v2. Standalone. Needs internet (Three.js from CDN).
+     Fixes: faces the target (no more backward walk), blade is AIMED (correct direction),
+     richer armor + arena + color. Drag to orbit · scroll to zoom · auto-loops. -->
+<style>
+  html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8}
+  #c{display:block;width:100vw;height:100vh}
+  #cap{position:fixed;left:0;right:0;bottom:8%;text-align:center;pointer-events:none;z-index:5}
+  #cap .t{display:inline-block;background:rgba(8,5,16,.6);padding:8px 20px;border:1px solid rgba(231,180,80,.45);
+    font-size:15px;letter-spacing:3px;color:#e7b450;text-transform:uppercase;text-shadow:0 2px 6px #000}
+  #eyebrow{position:fixed;top:14px;left:0;right:0;text-align:center;font-size:11px;letter-spacing:5px;color:#7a6a8a;z-index:5}
+  #hint{position:fixed;bottom:14px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;color:#5a4a6a;z-index:5}
+  #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4;transition:opacity .35s}
+  /* cinematic post: color grade + vignette over the canvas */
+  #tint{position:fixed;inset:0;pointer-events:none;z-index:2;mix-blend-mode:soft-light;
+    background:linear-gradient(180deg, rgba(80,40,120,.30), rgba(0,0,0,0) 42%, rgba(0,0,0,0) 62%, rgba(170,70,25,.30))}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:2;
+    background:radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 36%, rgba(0,0,0,.6) 100%)}
+  #bars{position:fixed;inset:0;pointer-events:none;z-index:3}
+  #bars div{position:absolute;left:0;right:0;height:0;background:#000;transition:height .4s}
+  #bars .top{top:0}#bars .bot{bottom:0}
+</style>
+</head>
+<body>
+<div id="eyebrow">PROCEDURAL 3D LOOK TEST v2 · built entirely in code · the Ronin</div>
+<canvas id="c"></canvas>
+<div id="bars"><div class="top"></div><div class="bot"></div></div>
+<div id="tint"></div><div id="vig"></div>
+<div id="flash"></div>
+<div id="cap"><span class="t" id="capt">…</span></div>
+<div id="hint">drag to orbit · scroll to zoom · auto-loops</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+if(!window.THREE){document.getElementById('capt').textContent='needs internet to load 3D';return;}
+const THREE=window.THREE;
+const W=()=>innerWidth,H=()=>innerHeight;
+
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(Math.min(2,devicePixelRatio));
+renderer.setSize(W(),H());
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.18; // filmic color
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x140a1e,0.026); // denser, moodier depth
+const camera=new THREE.PerspectiveCamera(48,W()/H(),0.1,300);
+
+// ---------- gradient dusk sky (adds color depth) ----------
+(function(){const cv=document.createElement('canvas');cv.width=4;cv.height=256;const x=cv.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,'#1a1030');g.addColorStop(0.45,'#2a1538');g.addColorStop(0.75,'#5a2030');g.addColorStop(1,'#b8581f');
+  x.fillStyle=g;x.fillRect(0,0,4,256);
+  const tex=new THREE.CanvasTexture(cv);
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(140,24,16),new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide,fog:false}));
+  scene.add(sky);})();
+
+// ---------- lights (warm key, cool rim, colored accents) ----------
+scene.add(new THREE.HemisphereLight(0x6a6a9a,0x201018,0.6));
+const key=new THREE.DirectionalLight(0xffe2b0,1.2); key.position.set(7,13,6);
+key.castShadow=true; key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-14;key.shadow.camera.right=14;key.shadow.camera.top=14;key.shadow.camera.bottom=-14;
+key.shadow.bias=-0.0004; scene.add(key);
+const rim=new THREE.DirectionalLight(0x6aa0ff,0.7); rim.position.set(-8,6,-7); scene.add(rim);
+scene.add(Object.assign(new THREE.PointLight(0xff4a8c,0.7,30,2),{position:new THREE.Vector3(8,4,6)}));   // magenta accent
+scene.add(Object.assign(new THREE.PointLight(0x3ad0c0,0.6,30,2),{position:new THREE.Vector3(-8,4,-6)})); // teal accent
+
+// ---------- material palette (more color) ----------
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.72,metalness:.12,flatShading:true},o));
+const STEEL=M(0xd2dae8,{metalness:.65,roughness:.3});
+const GOLD=M(0xf0be4e,{metalness:.6,roughness:.32,emissive:0x3a2606,emissiveIntensity:.6});
+const ARMOR=M(0x2f3a52);      // indigo-blue lacquer
+const ARMOR2=M(0x3f5278);     // lighter blue plate
+const TEAL=M(0x2c6e64,{emissive:0x0a201c,emissiveIntensity:.5});
+const CLOTH=M(0x8c1f24);      // crimson
+const CLOTH2=M(0x5a1418);
+const SKIN=M(0xcaa27a);
+const WOOD=M(0x3a2a18); const STRAW=M(0xc6a25a); const DARK=M(0x140d12);
+
+// soft radial glow texture → cheap, reliable "bloom" on every light source
+const glowTex=(function(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');
+  g.addColorStop(0.35,'rgba(255,255,255,0.55)');g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
+function addGlow(parent,color,size,op){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:color,
+  transparent:true,opacity:op==null?0.7:op,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+  s.scale.set(size,size,1);parent.add(s);return s;}
+function box(w,h,d,mat){return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);}
+function cyl(rt,rb,h,mat,seg){return new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||8),mat);}
+function joint(p,x,y,z){const g=new THREE.Group();g.position.set(x,y,z);p.add(g);return g;}
+function castAll(o){o.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});}
+
+// ---------- arena: floor, rune ring, tiered stands + spectators, banners ----------
+const floor=new THREE.Mesh(new THREE.CylinderGeometry(13,13,0.6,56,1),M(0x17121f,{roughness:1}));
+floor.position.y=-0.3; floor.receiveShadow=true; scene.add(floor);
+// emissive rune ring + radial spokes
+const rune=new THREE.Mesh(new THREE.TorusGeometry(10.5,0.16,8,64),M(0x2ad0c0,{emissive:0x1aa090,emissiveIntensity:1.3,metalness:0}));
+rune.rotation.x=Math.PI/2; rune.position.y=0.06; scene.add(rune);
+for(let i=0;i<20;i++){const a=i/20*Math.PI*2;const gl=addGlow(scene,0x2ad0c0,2.2,0.5);gl.position.set(Math.cos(a)*10.5,0.3,Math.sin(a)*10.5);}
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(13,0.3,8,56),M(0xff5a8c,{emissive:0x801030,emissiveIntensity:1.1}));
+ring2.rotation.x=Math.PI/2; ring2.position.y=0.08; scene.add(ring2);
+for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const sp=box(0.12,0.04,9,M(0x241a30));
+  sp.position.set(Math.cos(a)*5.2,0.04,Math.sin(a)*5.2);sp.rotation.y=-a;scene.add(sp);}
+// sand specks
+const sandGeo=new THREE.CircleGeometry(0.2,5),sandMat=M(0x201828,{roughness:1});
+for(let i=0;i<140;i++){const m=new THREE.Mesh(sandGeo,sandMat);const a=Math.random()*7,r=Math.random()*12.2;
+  m.rotation.x=-Math.PI/2;m.position.set(Math.cos(a)*r,0.012,Math.sin(a)*r);scene.add(m);}
+// tiered stands with spectators (color via varied cloth)
+const specCols=[0x6a2030,0x304a78,0x2c5a4a,0x6a5020,0x4a2c5a];
+for(let t=0;t<3;t++){const rad=14.5+t*1.8, y=0.6+t*1.3;
+  const tier=new THREE.Mesh(new THREE.CylinderGeometry(rad+0.9,rad+0.9,1.0,56,1,true),M(0x1c1626,{side:THREE.DoubleSide}));
+  tier.position.y=y; scene.add(tier);
+  const n=40+t*8;
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
+    const body=cyl(0.16,0.22,0.7,M(specCols[(i+t)%specCols.length]),6);
+    body.position.set(Math.cos(a)*rad,y+0.7,Math.sin(a)*rad);
+    const hd=new THREE.Mesh(new THREE.SphereGeometry(0.13,6,5),M(0xb88a64));hd.position.y=0.48;body.add(hd);
+    scene.add(body);}
+}
+// banners (colored flags on poles)
+function banner(x,z,col){const g=new THREE.Group();const pole=cyl(0.08,0.1,6,WOOD,6);pole.position.y=3;g.add(pole);
+  const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.6,2.4,1,1),M(col,{side:THREE.DoubleSide,emissive:col,emissiveIntensity:.15}));
+  flag.position.set(0.85,4.2,0);g.add(flag);
+  const disc=cyl(0.3,0.3,0.05,GOLD,12);disc.rotation.x=Math.PI/2;disc.position.set(0.85,4.2,0.03);g.add(disc);
+  g.position.set(x,0,z);castAll(g);scene.add(g);return g;}
+banner(-11,-9,0x8c1f24);banner(11,-9,0x304a78);banner(-11,9,0x2c6e64);banner(11,9,0x6a3a8a);
+// torches
+const pillars=[];
+function pillar(x,z,col){const g=new THREE.Group();
+  const p=cyl(0.22,0.32,4.4,M(0x241b14),7);p.position.y=2.2;p.castShadow=true;g.add(p);
+  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.3,7),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:1.6,flatShading:true}));
+  fl.position.y=4.8;g.add(fl);g.userData.flame=fl;
+  addGlow(fl,col,4.5,0.9); // bloom halo on the flame
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(1.7,5.2,14,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.05,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+  cone.position.y=2.6;g.add(cone); // volumetric light shaft
+  const l=new THREE.PointLight(col,1.1,22,2);l.position.set(0,4.9,0);g.add(l);g.userData.light=l;
+  g.position.set(x,0,z);scene.add(g);pillars.push(g);}
+pillar(-9.5,-6,0xff8a3a);pillar(9.5,-6,0xff8a3a);pillar(-9.5,6,0xffae5a);pillar(9.5,6,0xffae5a);
+// drifting embers
+const ember=new THREE.Mesh(new THREE.SphereGeometry(0.05,4,4),new THREE.MeshBasicMaterial({color:0xffb060}));
+const embers=[];for(let i=0;i<60;i++){const e=ember.clone();e.position.set((Math.random()-0.5)*26,Math.random()*10,(Math.random()-0.5)*26);
+  e.userData.vy=0.3+Math.random()*0.6;scene.add(e);embers.push(e);}
+
+// ---------- the Ronin (richer armor, sashimono banner) ----------
+function katana(){const g=new THREE.Group();
+  const blade=box(0.075,1.55,0.03,STEEL);blade.position.y=0.8;g.add(blade);
+  const edge=box(0.02,1.5,0.012,M(0xeef3ff,{emissive:0x223044,emissiveIntensity:.5}));edge.position.set(0.03,0.8,0);g.add(edge);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.22,4),STEEL);tip.position.y=1.62;g.add(tip);
+  const tsuba=cyl(0.15,0.15,0.04,GOLD,8);tsuba.rotation.x=Math.PI/2;tsuba.position.y=0.02;g.add(tsuba);
+  const handle=box(0.07,0.38,0.07,M(0x14110a));handle.position.y=-0.2;g.add(handle);
+  for(let i=0;i<4;i++){const wrap=box(0.085,0.04,0.085,GOLD);wrap.position.y=-0.08-i*0.09;handle.add(wrap);}
+  g.userData.tip=tip;return g;}
+
+function buildRonin(){
+  const root=new THREE.Group();const body=new THREE.Group();root.add(body);
+  const hips=joint(body,0,1.05,0);
+  function leg(side){const j=joint(hips,0.28*side,0,0);
+    const thigh=box(0.36,0.72,0.38,ARMOR);thigh.position.y=-0.36;j.add(thigh);
+    const knee=cyl(0.2,0.2,0.12,ARMOR2,8);knee.position.y=-0.72;j.add(knee);
+    const shin=box(0.32,0.72,0.34,ARMOR2);shin.position.y=-1.05;j.add(shin);
+    const guard=box(0.36,0.5,0.06,GOLD);guard.position.set(0,-1.05,0.2);j.add(guard);
+    const foot=box(0.36,0.18,0.54,DARK);foot.position.set(0,-1.46,0.1);j.add(foot);return j;}
+  const lLeg=leg(1),rLeg=leg(-1);
+  // kusazuri (skirt plates) — layered, crimson + gold trim
+  const skirtG=joint(body,0,0.55,0);
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const pl=box(0.34,0.5,0.05,i%2?CLOTH:CLOTH2);
+    pl.position.set(Math.cos(a)*0.5,0,Math.sin(a)*0.5);pl.rotation.y=-a;pl.rotation.x=0.18;skirtG.add(pl);}
+  const torso=joint(body,0,1.1,0);
+  const chest=box(0.96,1.0,0.58,ARMOR);chest.position.y=0.46;torso.add(chest);
+  for(const ox of [-0.32,0,0.32]){const pl=box(0.03,0.9,0.52,ARMOR2);pl.position.set(ox,0.46,0.3);torso.add(pl);}
+  // chest emblem (teal disc + gold ring)
+  const emblem=cyl(0.16,0.16,0.06,TEAL,12);emblem.rotation.x=Math.PI/2;emblem.position.set(0,0.6,0.32);torso.add(emblem);
+  const emRing=new THREE.Mesh(new THREE.TorusGeometry(0.18,0.03,6,16),GOLD);emRing.position.set(0,0.6,0.33);torso.add(emRing);
+  const belt=box(1.0,0.18,0.6,GOLD);belt.position.y=-0.02;torso.add(belt);
+  const knot=box(0.18,0.3,0.18,CLOTH);knot.position.set(0,-0.05,0.34);torso.add(knot);
+  // sashimono back banner
+  const bpole=cyl(0.04,0.05,2.4,WOOD,6);bpole.position.set(0,1.0,-0.34);torso.add(bpole);
+  const bflag=new THREE.Mesh(new THREE.PlaneGeometry(0.7,1.1),M(0x8c1f24,{side:THREE.DoubleSide,emissive:0x3a0a0c,emissiveIntensity:.4}));
+  bflag.position.set(0,1.5,-0.34);torso.add(bflag);
+  const bdisc=cyl(0.18,0.18,0.03,GOLD,12);bdisc.rotation.x=Math.PI/2;bdisc.position.set(0,1.5,-0.32);torso.add(bdisc);
+  function arm(side){const sh=joint(torso,0.62*side,0.84,0);
+    const pauld=new THREE.Mesh(new THREE.SphereGeometry(0.3,8,6,0,Math.PI*2,0,Math.PI*0.65),ARMOR2);sh.add(pauld);
+    for(let i=0;i<3;i++){const lame=new THREE.Mesh(new THREE.SphereGeometry(0.3-i*0.02,8,4,0,Math.PI*2,Math.PI*0.4,Math.PI*0.25),GOLD);
+      lame.position.y=-0.1-i*0.07;sh.add(lame);}
+    const upper=box(0.26,0.6,0.28,CLOTH);upper.position.y=-0.36;sh.add(upper);
+    const el=joint(sh,0,-0.66,0);
+    const fore=box(0.24,0.58,0.26,ARMOR2);fore.position.y=-0.3;el.add(fore);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(0.17,7,5),SKIN);hand.position.y=-0.62;el.add(hand);
+    const grip=joint(el,0,-0.66,0);return {sh,el,hand,grip};}
+  const lArm=arm(1),rArm=arm(-1);
+  const neck=joint(torso,0,0.98,0);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.31,10,8),SKIN);head.position.y=0.18;neck.add(head);
+  // menpo (face guard) + kabuto
+  const menpo=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,6,0,Math.PI*2,Math.PI*0.55,Math.PI*0.45),M(0x241a2e));
+  menpo.position.y=0.14;neck.add(menpo);
+  const kab=new THREE.Mesh(new THREE.SphereGeometry(0.35,12,7,0,Math.PI*2,0,Math.PI*0.58),ARMOR2);kab.position.y=0.26;neck.add(kab);
+  const fukigaeshi=cyl(0.42,0.42,0.04,GOLD,16,1);fukigaeshi.position.y=0.2;fukigaeshi.scale.set(1,1,0.5);neck.add(fukigaeshi);
+  const crestL=box(0.06,0.5,0.06,GOLD);crestL.position.set(-0.1,0.55,0.04);crestL.rotation.z=0.25;neck.add(crestL);
+  const crestR=crestL.clone();crestR.position.x=0.1;crestR.rotation.z=-0.25;neck.add(crestR);
+  for(const ox of [-0.1,0.1]){const e=box(0.07,0.035,0.02,new THREE.MeshStandardMaterial({color:0xffd34a,emissive:0xffae1a,emissiveIntensity:2.2}));
+    e.position.set(ox,0.2,0.3);neck.add(e);addGlow(e,0xffc24a,0.5,0.85);} // glowing eyes bloom
+  // sheath on left hip + drawable hand sword
+  const sheath=new THREE.Group();const saya=box(0.11,1.55,0.07,M(0x14110a));saya.position.y=0.72;sheath.add(saya);
+  const sayaTip=cyl(0.06,0.02,0.1,GOLD,6);sayaTip.position.y=1.5;sheath.add(sayaTip);
+  const sheathBlade=katana();sheath.add(sheathBlade);
+  body.add(sheath);sheath.position.set(0.52,0.92,-0.04);sheath.rotation.z=0.45;sheath.rotation.x=0.35;
+  const handSword=katana();rArm.grip.add(handSword);handSword.visible=false;
+  castAll(root);
+  return {root,body,hips,torso,neck,head,lArm,rArm,lLeg,rLeg,sheath,sheathBlade,handSword,tipObj:handSword.userData.tip};
+}
+const ronin=buildRonin();scene.add(ronin.root);
+
+// ---------- dummy (in FRONT of the ronin now: +Z) ----------
+function buildDummy(){const g=new THREE.Group();
+  const post=cyl(0.13,0.17,2.2,WOOD,7);post.position.y=1.1;g.add(post);
+  const top=new THREE.Group();g.add(top);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.34,8,6),STRAW);head.position.y=1.98;top.add(head);
+  const torso=cyl(0.42,0.34,1.05,STRAW,8);torso.position.y=1.32;top.add(torso);
+  const arms=box(0.74,0.17,0.17,STRAW);arms.position.y=1.58;top.add(arms);
+  const band=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.05,6,12),CLOTH);band.rotation.x=Math.PI/2;band.position.y=1.5;top.add(band);
+  castAll(g);return {g,top};}
+const dummy=buildDummy();scene.add(dummy.g);
+const DUMMY_Z=3.6; dummy.g.position.set(0,0,DUMMY_Z);
+
+// ---------- blade aim (deterministic world orientation) + arc + trail ----------
+const _pq=new THREE.Quaternion(),_e=new THREE.Euler(),_q=new THREE.Quaternion();
+function aimSword(ex,ey,ez){ // set the blade's WORLD orientation regardless of arm pose
+  if(!ronin.handSword.visible)return;
+  ronin.rArm.grip.getWorldQuaternion(_pq);
+  _q.setFromEuler(_e.set(ex,ey,ez));
+  ronin.handSword.quaternion.copy(_pq.invert().multiply(_q));
+}
+const arcMat=new THREE.MeshBasicMaterial({color:0xeef3ff,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false});
+const arc=new THREE.Mesh(new THREE.RingGeometry(0.7,2.6,28,1,0,Math.PI*0.95),arcMat);scene.add(arc);
+const TRAIL=24;const trailPos=new Float32Array(TRAIL*2*3);
+const trailGeo=new THREE.BufferGeometry();trailGeo.setAttribute('position',new THREE.BufferAttribute(trailPos,3));
+const trailMat=new THREE.MeshBasicMaterial({color:0xbfe0ff,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false});
+const trail=new THREE.Mesh(trailGeo,trailMat);scene.add(trail);
+const tipHist=[];const tmpV=new THREE.Vector3();
+const tipGlow=addGlow(scene,0xcfe8ff,2.6,0); // bright bloom riding the blade tip during the cut
+
+// ---------- poses (rig euler targets) ----------
+function P(x,y,z){return [x,y,z];}
+const POSES={
+  idle:{hips:P(0,0,0),torso:P(0,0,0),neck:P(0.05,0,0),lArm_sh:P(0.2,0,0.22),lArm_el:P(-0.4,0,0),
+    rArm_sh:P(0.2,0,-0.22),rArm_el:P(-0.4,0,0),lLeg:P(0,0,0.04),rLeg:P(0,0,-0.04),ry:0},
+  // pre-draw ninja stance: left knife-hand forward, right hand hovering at the saya, weight low — facing the target (+Z)
+  emote:{hips:P(0.15,0,0),torso:P(0.05,0.15,0.04),neck:P(0.18,0,0),
+    lArm_sh:P(-1.3,0,0.2),lArm_el:P(-0.5,0,0),rArm_sh:P(0.7,0.4,-0.3),rArm_el:P(-1.7,0,0),
+    lLeg:P(0.5,0.3,0.3),rLeg:P(-0.4,-0.3,-0.3),ry:0},
+  // jodan no kamae — both arms raised, blade held high after the draw
+  ready:{hips:P(0.05,0,0),torso:P(-0.15,0.05,0),neck:P(-0.05,0,0),
+    lArm_sh:P(-2.2,0,0.3),lArm_el:P(-0.8,0,0),rArm_sh:P(-2.4,0,-0.2),rArm_el:P(-0.7,0,0),
+    lLeg:P(0.1,0.05,0.18),rLeg:P(-0.1,-0.05,-0.18),ry:0},
+  zanshin:{hips:P(0.02,0,0),torso:P(0.06,-0.08,0),neck:P(-0.05,0.05,0),
+    lArm_sh:P(0.2,0,0.22),lArm_el:P(-0.4,0,0),rArm_sh:P(0.2,0,-0.22),rArm_el:P(-0.4,0,0),ry:0,
+    lLeg:P(0,0,0.04),rLeg:P(0,0,-0.04)},
+};
+function applyPose(p,k){const set=(jt,key)=>{const t=p[key];if(!t)return;
+  jt.rotation.x+=(t[0]-jt.rotation.x)*k;jt.rotation.y+=(t[1]-jt.rotation.y)*k;jt.rotation.z+=(t[2]-jt.rotation.z)*k;};
+  set(ronin.hips,'hips');set(ronin.torso,'torso');set(ronin.neck,'neck');
+  set(ronin.lArm.sh,'lArm_sh');set(ronin.lArm.el,'lArm_el');set(ronin.rArm.sh,'rArm_sh');set(ronin.rArm.el,'rArm_el');
+  set(ronin.lLeg,'lLeg');set(ronin.rLeg,'rLeg');
+  if(p.ry!==undefined)ronin.body.rotation.y+=(p.ry-ronin.body.rotation.y)*k;}
+
+// ---------- camera director ----------
+const cam={r:11,theta:0.5,phi:1.12,tx:0,ty:1.7,tz:1.0,dr:11,dtheta:0.5,dphi:1.12,dtx:0,dty:1.7,dtz:1.0,auto:true};
+let dragging=false,px=0,py=0;
+addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;cam.auto=false;});
+addEventListener('pointerup',()=>dragging=false);
+addEventListener('pointermove',e=>{if(!dragging)return;cam.dtheta-=(e.clientX-px)*0.005;
+  cam.dphi=Math.max(0.25,Math.min(1.45,cam.dphi-(e.clientY-py)*0.004));px=e.clientX;py=e.clientY;});
+addEventListener('wheel',e=>{cam.dr=Math.max(4,Math.min(22,cam.dr+e.deltaY*0.01));},{passive:true});
+function camGoal(r,th,ph,tx,ty,tz){cam.dr=r;cam.dtheta=th;cam.dphi=ph;cam.dtx=tx;cam.dty=ty;cam.dtz=tz;}
+
+// ---------- timeline ----------
+const capt=document.getElementById('capt'),flashEl=document.getElementById('flash');
+const barT=document.querySelector('#bars .top'),barB=document.querySelector('#bars .bot');
+const setBars=on=>barT.style.height=barB.style.height=on?'9vh':'0';
+const doFlash=o=>{flashEl.style.opacity=o;requestAnimationFrame(()=>flashEl.style.opacity=0);};
+let phase=0,pt=0,timeScale=1;
+const TL=[
+  {name:'idle',dur:2.4,cap:'THE RONIN',pose:'idle',cam:[11,0.5,1.12,0,1.7,0.6],bars:false},
+  {name:'orbit',dur:3.0,cap:'a free, rotatable camera',pose:'idle',orbit:true,bars:false},
+  {name:'emote',dur:3.2,cap:'EMOTE — the iaido stance',pose:'emote',cam:[6.8,-0.7,1.0,0.2,1.6,0.9],bars:true},
+  {name:'draw',dur:1.3,cap:'DRAW',pose:'ready',cam:[6,0.4,0.92,0,2.0,0.6],bars:true,draw:true},
+  {name:'approach',dur:1.5,cap:'…',pose:'ready',cam:[7.5,0.9,1.02,0,1.7,2.0],bars:true,approach:true},
+  {name:'finish',dur:2.8,cap:'BULLET TIME — the finishing cut',pose:'ready',bars:true,finisher:true},
+  {name:'after',dur:3.2,cap:'ZANSHIN — sheathe, and breathe',pose:'zanshin',cam:[10,-0.5,1.08,0,1.5,1.2],bars:false,sheathe:true},
+];
+function enter(i){const t=TL[i];capt.textContent=t.cap;setBars(!!t.bars);if(t.cam)camGoal.apply(null,t.cam);
+  if(t.name==='draw'){ronin.sheathBlade.visible=false;ronin.handSword.visible=true;doFlash(0.55);}
+  if(t.name==='emote')doFlash(0.12);
+  if(t.name==='idle'){ronin.handSword.visible=false;ronin.sheathBlade.visible=true;
+    dummy.top.position.set(0,0,0);dummy.top.rotation.set(0,0,0);dummy.top.visible=true;dummy._hit=false;
+    ronin.root.position.set(0,0,0);ronin.body.rotation.y=0;arc.visible=false;trailMat.opacity=0;tipHist.length=0;}
+}
+enter(0);
+
+const clock=new THREE.Clock();
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=Math.min(0.05,clock.getDelta());const T=TL[phase];
+  timeScale+=(((T.finisher&&pt>0.40&&pt<0.85)?0.16:1)-timeScale)*0.2;
+  const sdt=dt*timeScale; pt+=dt/T.dur; const tnow=clock.elapsedTime;
+
+  if(T.pose)applyPose(POSES[T.pose],1-Math.pow(0.0015,dt));
+  ronin.torso.rotation.x+=Math.sin(tnow*1.6)*0.0012;
+
+  // aim the drawn blade so it ALWAYS points correctly
+  if(ronin.handSword.visible && !T.finisher) aimSword(-0.35,0,0.25); // high guard: up, slight diagonal
+
+  if(T.orbit)cam.auto=true;
+  if(T.approach){ronin.root.position.z=2.6*Math.min(1,pt); // FORWARD toward the dummy (+Z)
+    const s=Math.sin(pt*Math.PI*4)*0.4;ronin.lLeg.rotation.x=s;ronin.rLeg.rotation.x=-s;}
+  if(T.finisher){
+    const p=pt;
+    if(p<0.40)camGoal(5.2,1.4,1.3,0,1.7,2.4); // low, in front, looking up at the windup
+    const sw=Math.min(1,Math.max(0,(p-0.40)/0.42));
+    const e=sw<0.5?2*sw*sw:1-Math.pow(-2*sw+2,2)/2;
+    // overhead diagonal kesa cut: arms swing down-forward together
+    ronin.rArm.sh.rotation.x=-2.4+e*3.4; ronin.lArm.sh.rotation.x=-2.2+e*3.2;
+    ronin.torso.rotation.x=-0.15+e*0.5; ronin.body.rotation.y=0;
+    // aim the blade from high-back to down-forward across the body (a real cut)
+    aimSword(-0.5+e*2.7, 0, 0.5-e*1.0);
+    if(p>0.40&&p<0.86){
+      arc.visible=true;arcMat.opacity=Math.sin(sw*Math.PI)*0.85;
+      ronin.tipObj.getWorldPosition(tmpV);
+      arc.position.set(ronin.root.position.x,1.7,ronin.root.position.z+0.5);
+      arc.rotation.set(Math.PI/2-0.4, 0, -0.6 - e*2.2);
+      camGoal(4.4,0.7,1.0, tmpV.x*0.4, 1.5, ronin.root.position.z+1.4); // ride the blade
+      tipGlow.position.copy(tmpV); tipGlow.material.opacity=Math.sin(sw*Math.PI)*0.95;
+      tipHist.unshift(tmpV.clone());if(tipHist.length>TRAIL)tipHist.pop();
+      trailMat.opacity=0.9;
+      if(sw>0.5&&dummy.top.visible&&!dummy._hit){dummy._hit=true;doFlash(0.6);}
+    }else{arc.visible=false;}
+    if(p>=0.86&&dummy._hit){dummy.top.position.x+=sdt*1.6;dummy.top.position.y-=sdt*2.4;
+      dummy.top.rotation.z-=sdt*3.2;if(dummy.top.position.y<-1.3)dummy.top.visible=false;}
+  }else{if(trailMat.opacity>0)trailMat.opacity*=0.82;}
+  if(!T.finisher && tipGlow.material.opacity>0) tipGlow.material.opacity*=0.8;
+  if(T.sheathe){ronin.handSword.visible=false;ronin.sheathBlade.visible=true;}
+
+  if(tipHist.length>1){for(let i=0;i<TRAIL;i++){const a=tipHist[Math.min(i,tipHist.length-1)],w=0.06*(1-i/TRAIL);
+    trailPos[i*6]=a.x;trailPos[i*6+1]=a.y+w;trailPos[i*6+2]=a.z;trailPos[i*6+3]=a.x;trailPos[i*6+4]=a.y-w;trailPos[i*6+5]=a.z;}
+    trailGeo.attributes.position.needsUpdate=true;trailGeo.setDrawRange(0,TRAIL*2);}
+
+  for(const pl of pillars){const f=0.85+Math.random()*0.45;pl.userData.light.intensity=f;pl.userData.flame.scale.y=0.85+Math.random()*0.4;}
+  for(const e of embers){e.position.y+=e.userData.vy*dt;if(e.position.y>11){e.position.y=0;e.position.x=(Math.random()-0.5)*26;e.position.z=(Math.random()-0.5)*26;}}
+
+  if(cam.auto)cam.dtheta+=sdt*0.22;
+  cam.r+=(cam.dr-cam.r)*0.06;cam.theta+=(cam.dtheta-cam.theta)*0.06;cam.phi+=(cam.dphi-cam.phi)*0.06;
+  cam.tx+=(cam.dtx-cam.tx)*0.06;cam.ty+=(cam.dty-cam.ty)*0.06;cam.tz+=(cam.dtz-cam.tz)*0.06;
+  camera.position.set(cam.tx+cam.r*Math.sin(cam.phi)*Math.sin(cam.theta),cam.ty+cam.r*Math.cos(cam.phi),cam.tz+cam.r*Math.sin(cam.phi)*Math.cos(cam.theta));
+  camera.lookAt(cam.tx,cam.ty,cam.tz);
+  renderer.render(scene,camera);
+  if(pt>=1){phase=(phase+1)%TL.length;pt=0;if(!TL[phase].orbit)cam.auto=false;enter(phase);}
+}
+addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
+tick();
+})();
+</script>
+</body>
+</html>

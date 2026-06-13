@@ -20,19 +20,17 @@ Only a small set of third-party assets are embedded in the build. Most of the ol
 | 6 | **Fonts** (Courier New, Georgia, Times — CSS font stacks) | All UI text | System fonts (not bundled) | System fonts referenced by name; not embedded/redistributed | ✅ | No action — you reference them, you don't ship the font files. |
 | 7 | **Podcast / book links** (credits screen) | Cross-promo to your own podcast + Amazon books | Your own IP | Your content | ✅ | None — your own. |
 
+## 3D uplift assets (the `game3d/` project — in progress)
+
+| # | Asset | Used for | Source | License | Status | VERIFY |
+|---|---|---|---|---|---|---|
+| 8 | **Three.js** r128 + GLTFLoader | 3D engine + model loading | threejs.org (CDN) | **MIT** — free commercial use | ✅ | Keep the MIT notice. |
+| 9 | **KayKit — Character Pack: Adventurers** (+ Skeletons, Animations) | 3D champion + monster models and animations | kaylousberg.itch.io | **CC0** (public domain) — commercial use, modify, no attribution; cannot resell the raw pack | ✅ | Screenshot the CC0 statement on the itch.io page; you ship the models *in the game*, never the raw pack. |
+| 10 | **Mixamo** (if used later) | Extra humanoid mocap animations | mixamo.com (Adobe, free) | Royalty-free for commercial games; **cannot redistribute the raw animation files** | 🟡 | Only embed clips in the build; never ship raw files. Free Adobe account. |
+
 ## Anthropic API (companion AI) — runtime service, not a shipped asset
 The optional companion-chat feature calls the Anthropic API at runtime if a key is set in `config.js`. This is a **paid service you call**, not an asset you ship. If you ever ship a build with a key, that's a cost + key-exposure issue (the publisher strips the key from `config.js` — keep it that way). No content-license concern; just don't bill yourself by leaking a key.
 
 ## Action checklist before monetizing
 
-- [ ] Screenshot the Cainos license box (itch.io) and save it here.
-- [ ] Confirm + save the invoice for the **music** tool's commercial plan covering the track creation dates.
-- [ ] Confirm + save the **ElevenLabs paid-plan** invoice covering the voice-generation dates.
-- [ ] Confirm no ElevenLabs voice ID is an unconsented clone of a real person.
-- [ ] Keep Phaser's MIT notice in the repo.
-- [ ] (If you add any new asset later: add a row here BEFORE shipping it.)
-
-## Maintenance rule
-Any new third-party asset (art pack, font, sound, library) gets a row in this table **before** it ships. If you can't fill in a clear license, don't ship it commercially.
-
-Sources consulted (June 2026): [Cainos — Pixel Art Top Down: Basic](https://cainos.itch.io/pixel-art-top-down-basic), [ElevenLabs Commercial Rights & Output Ownership 2026 (Terms.Law)](https://terms.law/ai-output-rights/elevenlabs/), [ElevenLabs Terms of Use](https://elevenlabs.io/terms-of-use).
+- [ ] Screenshot the Cainos license box

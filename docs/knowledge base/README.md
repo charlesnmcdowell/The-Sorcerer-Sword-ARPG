@@ -61,5 +61,4 @@ The Sorcerer Sword ARPG/
 
 1. **Game won't load / frozen title** → almost always a truncated `index.html` (OneDrive) or stale browser cache. See `02-build-and-deploy.md → "Recovering a broken file"` and `→ "Cache problems"`.
 2. **Voice not playing on the website but fine locally** → stale cached code on the visitor's browser; hard-refresh. The build self-heal (02) prevents recurrence after one load.
-3. **A change broke combat / quests** → run `node game/tests/gauntlet.js` and `node game/tests/navsim.js <char>` (section 03). They tell you what broke.
-4. **Don't know how the code is organized** → `01-architecture.md`.
+3. **A change broke combat / quests** → run `node game/tests/gauntlet.js` and `node game/tests/navsim.js
