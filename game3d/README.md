@@ -2,16 +2,20 @@
 
 This is the **3D remake** project, separate from the finished 2D game in `../game/`. It is **local-only** (not deployed) until it's trailer-ready. The 2D game stays live and is the rollback (git tag `v2d-1.0`, branch `3d-uplift`).
 
-## ⚠ HOW TO RUN IT (must use a local server)
-Chrome/Edge **block loading 3D models (`.glb`) from `file://`** for security, so double-clicking `index.html` shows a frozen loading screen. Run a one-line local server instead:
+## HOW TO RUN IT — just double-click `index.html`
+The 3D models are **base64-embedded** in `assets/embedded3d.js`, so the look-test runs straight from `file://` with no server (same trick the 2D game uses for its art). You only need an internet connection — the Three.js + GLTFLoader libraries load from a CDN.
 
+> Why the embed: Chrome/Edge block *fetching* `.glb` files from `file://` for security. Embedding the models as base64 sidesteps that — the browser never fetches a file, it decodes the bytes already in the page. This is a **dev-convenience stopgap for the look-test**; it loads everything up-front, so the real streaming build (B3) will switch back to fetched/streamed models served over http.
+
+### Optional: run it served (needed once we add streaming)
 ```
 cd "C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG"
 py -m http.server 8000          (or: python -m http.server 8000)
 ```
-Then open **http://localhost:8000/game3d/** in Chrome. (Stop the server with Ctrl+C when done.)
+Then open **http://localhost:8000/game3d/**. The loader auto-detects: if `embedded3d.js` is present it parses the embedded models; otherwise it fetches the `.glb` files over http. (`localhost` is still 100% your own machine — nothing goes online except the CDN libraries.)
 
-Alternatives: VS Code's "Live Server" extension, or `npx serve`. The 2D game in `../game/` doesn't need this (its art is embedded) — only the 3D build, because it streams real model files.
+`assets/embedded3d.js` is regenerated from the raw `.glb`s with:
+`base64 -w0 Knight.glb` (etc.) wrapped into `window.EMB3D={...}`.
 
 ## What B0 gives you
 `index.html` is a standalone Three.js scene (no build step; needs internet for the CDN libraries):

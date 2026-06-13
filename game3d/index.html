@@ -43,6 +43,7 @@
   <div id="bar"><div id="barf"></div></div><div id="loadtip">building the arena…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="assets/embedded3d.js"></script><!-- base64 models so file:// double-click works (no server) -->
 <script>
 (function(){
 "use strict";
@@ -76,8 +77,8 @@ scene.add(new THREE.HemisphereLight(0x6a6a9a,0x201018,0.6));
 const key=new THREE.DirectionalLight(0xffe2b0,1.2);key.position.set(7,13,6);key.castShadow=true;
 key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-14;key.shadow.camera.right=14;key.shadow.camera.top=14;key.shadow.camera.bottom=-14;key.shadow.bias=-0.0004;scene.add(key);
 const rim=new THREE.DirectionalLight(0x6aa0ff,0.7);rim.position.set(-8,6,-7);scene.add(rim);
-scene.add(Object.assign(new THREE.PointLight(0xff4a8c,0.7,30,2),{position:new THREE.Vector3(8,4,6)}));
-scene.add(Object.assign(new THREE.PointLight(0x3ad0c0,0.6,30,2),{position:new THREE.Vector3(-8,4,-6)}));
+const accA=new THREE.PointLight(0xff4a8c,0.7,30,2);accA.position.set(8,4,6);scene.add(accA);
+const accB=new THREE.PointLight(0x3ad0c0,0.6,30,2);accB.position.set(-8,4,-6);scene.add(accB);
 
 const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.72,metalness:.12,flatShading:true},o));
 const glowTex=(function(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
@@ -95,7 +96,7 @@ const sandGeo=new THREE.CircleGeometry(0.2,5),sandMat=M(0x201828,{roughness:1});
 for(let i=0;i<120;i++){const m=new THREE.Mesh(sandGeo,sandMat);const a=Math.random()*7,r=Math.random()*12.2;m.rotation.x=-Math.PI/2;m.position.set(Math.cos(a)*r,0.012,Math.sin(a)*r);scene.add(m);}
 const specCols=[0x6a2030,0x304a78,0x2c5a4a,0x6a5020,0x4a2c5a];
 for(let t=0;t<3;t++){const rad=14.5+t*1.8,y=0.6+t*1.3;
-  scene.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(rad+0.9,rad+0.9,1,56,1,true),M(0x1c1626,{side:THREE.DoubleSide})),{position:new THREE.Vector3(0,y,0)}));
+  const tierMesh=new THREE.Mesh(new THREE.CylinderGeometry(rad+0.9,rad+0.9,1,56,1,true),M(0x1c1626,{side:THREE.DoubleSide}));tierMesh.position.y=y;scene.add(tierMesh);
   const n=36+t*8;for(let i=0;i<n;i++){const a=i/n*Math.PI*2;const b=cyl(0.16,0.22,0.7,M(specCols[(i+t)%5]),6);b.position.set(Math.cos(a)*rad,y+0.7,Math.sin(a)*rad);const hd=new THREE.Mesh(new THREE.SphereGeometry(0.13,6,5),M(0xb88a64));hd.position.y=0.48;b.add(hd);scene.add(b);}}
 const WOOD=M(0x3a2a18),GOLD=M(0xf0be4e,{metalness:.6,roughness:.32,emissive:0x3a2606,emissiveIntensity:.6});
 function banner(x,z,col){const g=new THREE.Group();const pole=cyl(0.08,0.1,6,WOOD,6);pole.position.y=3;g.add(pole);
@@ -137,25 +138,24 @@ function frameModel(obj){let box=new THREE.Box3().setFromObject(obj);const s=new
   const h=s.y||2;const k=2.1/h; obj.scale.setScalar(k); // normalize to ~2.1 units tall
   box=new THREE.Box3().setFromObject(obj);box.getCenter(camTarget);camTarget.y=h*k*0.5;}
 if(THREE.GLTFLoader){
-  const loader=new THREE.GLTFLoader();
-  loadtip.textContent='loading the Knight + animation libraries…';
-  loader.load(CHAR_URL,gltf=>{
-    scene.remove(placeholder);
+  const loader=new THREE.GLTFLoader();const seen={};
+  const EMB=window.EMB3D; // base64 models embedded → no server needed
+  function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
+  function collect(ag){(ag.animations||[]).forEach(cl=>{if(cl.name==='T-Pose'||seen[cl.name])return;seen[cl.name]=1;clips.push(cl);});}
+  function ready(){
+    if(clips.length){buildClipUI();const idle=clips.find(c=>/idle_a/i.test(c.name))||clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
+      note.textContent='Knight loaded · '+clips.length+' animations — click any to preview · '+(idle?idle.name:'')+' playing';}
+    else note.textContent='Knight loaded but no animation clips found';}
+  function onChar(gltf){scene.remove(placeholder);
     model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}if(o.frustumCulled!==undefined)o.frustumCulled=false;});
-    scene.add(model);frameModel(model);
-    mixer=new THREE.AnimationMixer(model);
-    // pull animation clips out of the rig libraries and bind them to this character
-    let pending=ANIM_URLS.length;const seen={};
-    const done=()=>{ if(--pending>0)return;
-      if(clips.length){buildClipUI();const idle=clips.find(c=>/idle_a/i.test(c.name))||clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
-        note.textContent='Knight loaded · '+clips.length+' animations — click any to preview · '+(idle?idle.name:'')+' playing';}
-      else note.textContent='Knight loaded but no animation clips found';};
-    ANIM_URLS.forEach(u=>loader.load(u,ag=>{
-      (ag.animations||[]).forEach(cl=>{if(cl.name==='T-Pose'||seen[cl.name])return;seen[cl.name]=1;clips.push(cl);});
-      done();
-    },undefined,()=>{note.textContent='couldn\'t load '+u;done();}));
-  },xhr=>{if(xhr.total)barf.style.width=(xhr.loaded/xhr.total*100)+'%';},
-  err=>{note.textContent='couldn\'t load assets/Knight.glb — is it in game3d/assets/? (showing placeholder)';});
+    scene.add(model);frameModel(model);mixer=new THREE.AnimationMixer(model);
+    let pending=2;const step=()=>{if(--pending<=0)ready();};
+    if(EMB){loader.parse(b64buf(EMB.anim_general),'',ag=>{collect(ag);step();},e=>{showErr('anim_general: '+e);step();});
+      loader.parse(b64buf(EMB.anim_movement),'',ag=>{collect(ag);step();},e=>{showErr('anim_movement: '+e);step();});}
+    else{loader.load(ANIM_URLS[0],ag=>{collect(ag);step();},undefined,step);loader.load(ANIM_URLS[1],ag=>{collect(ag);step();},undefined,step);}}
+  loadtip.textContent='loading the Knight…';
+  if(EMB){loader.parse(b64buf(EMB.knight),'',onChar,e=>showErr('parse Knight: '+e));}
+  else loader.load(CHAR_URL,onChar,xhr=>{if(xhr.total)barf.style.width=(xhr.loaded/xhr.total*100)+'%';},()=>showErr('couldn\'t load Knight.glb — embed missing and not served. See README.'));
 } else note.textContent='GLTFLoader failed to load from CDN';
 
 // ---------- orbit camera ----------
