@@ -30,6 +30,10 @@
   .clip:hover{background:rgba(61,240,200,.18)} .clip.on{background:rgba(231,180,80,.25);border-color:#e7b450;color:#e7b450}
   #note{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11px;color:#7a6a8a;z-index:6}
   #hint{position:fixed;bottom:30px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;color:#4a3a5a;z-index:6}
+  #pit{position:fixed;right:14px;bottom:48px;z-index:7;text-decoration:none;font-family:Georgia,serif;letter-spacing:2px;
+    font-size:15px;color:#e7d4a0;background:rgba(40,16,20,.85);border:1px solid #e7b450;border-radius:6px;padding:11px 18px;
+    box-shadow:0 0 22px rgba(231,80,40,.35)}
+  #pit:hover{background:rgba(231,80,40,.28)}
 </style>
 </head>
 <body>
@@ -40,6 +44,7 @@
 <div id="note">—</div>
 <div id="err" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:30;background:rgba(30,6,10,.95);border:1px solid #c8443a;color:#f0c8c0;font:12px/1.5 'Courier New',monospace;padding:12px;white-space:pre-wrap;max-height:60vh;overflow:auto"></div>
 <div id="hint">drag to orbit · scroll to zoom</div>
+<a id="pit" href="pit.html">ENTER THE PIT ▶</a>
 <div id="load"><h1>THE SORCERER&#8209;SWORD</h1><div class="sub">3D &mdash; FOUNDATION</div>
   <div id="bar"><div id="barf"></div></div><div id="loadtip">building the arena…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
