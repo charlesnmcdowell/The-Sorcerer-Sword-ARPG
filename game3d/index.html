@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Sorcerer-Sword 3D — B0 scaffold</title>
-<!-- 3D UPLIFT · Bucket 0 scaffold. Local-only (not deployed). Needs internet (Three.js + GLTFLoader from CDN).
-     Drop a KayKit character at  game3d/assets/character.glb  and reload — it loads, lists every animation
-     clip as a button, and plays them in the lit arena. No file yet = a placeholder figure so the scene runs.
-     Drag to orbit · scroll to zoom. This is the foundation B1 builds on. -->
+<title>The Sorcerer-Sword 3D — B1 character pipeline</title>
+<!-- 3D UPLIFT · Bucket 1. Local-only (not deployed). Needs internet (Three.js + GLTFLoader from CDN).
+     Models are base64-embedded in assets/embedded3d.js, so this runs from a plain file:// double-click.
+     Hybrid hero: a custom Ronin is built ON the KayKit rig (Knight mesh hidden) so the bought animation
+     clips drive our own character. Toggle Ronin/Knight top-right. Drag to orbit · scroll to zoom. -->
 <style>
   html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8}
   #c{display:block;width:100vw;height:100vh}
@@ -29,13 +29,16 @@
   .clip:hover{background:rgba(61,240,200,.18)} .clip.on{background:rgba(231,180,80,.25);border-color:#e7b450;color:#e7b450}
   #note{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11px;color:#7a6a8a;z-index:6}
   #hint{position:fixed;bottom:30px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;color:#4a3a5a;z-index:6}
+  #who{position:fixed;right:10px;top:46px;z-index:6;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+  #who .lbl{font-size:9px;letter-spacing:2px;color:#5a4a6a;margin-bottom:2px}
 </style>
 </head>
 <body>
-<div id="eyebrow">THE SORCERER-SWORD 3D · B0 scaffold · KayKit-ready</div>
+<div id="eyebrow">THE SORCERER-SWORD 3D · B1 · hybrid hero on KayKit rig</div>
 <canvas id="c"></canvas>
 <div id="tint"></div><div id="vig"></div>
 <div id="clips"></div>
+<div id="who"><div class="lbl">CHARACTER</div><div class="clip" data-who="ronin">Ronin · custom</div><div class="clip" data-who="knight">Knight · KayKit</div></div>
 <div id="note">—</div>
 <div id="err" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:30;background:rgba(30,6,10,.95);border:1px solid #c8443a;color:#f0c8c0;font:12px/1.5 'Courier New',monospace;padding:12px;white-space:pre-wrap;max-height:60vh;overflow:auto"></div>
 <div id="hint">drag to orbit · scroll to zoom</div>
@@ -55,7 +58,7 @@ function showErr(m){if(errEl){errEl.style.display='block';errEl.textContent='⚠
 window.addEventListener('error',ev=>showErr((ev.message||'error')+'  ['+(((ev.filename||'')+'').split('/').pop())+':'+(ev.lineno||'?')+']'));
 window.addEventListener('unhandledrejection',ev=>showErr('promise: '+((ev.reason&&(ev.reason.message||ev.reason))||'?')));
 setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},4500); // splash can never hang
-if(location.protocol==='file:')note.textContent='note: opened as file:// — if the character never appears, Chrome is blocking the .glb. Run a local server (see README) and use http://localhost:8000/game3d/';
+if(location.protocol==='file:'&&!window.EMB3D)note.textContent='note: opened as file:// with no embedded models — run a local server (see README).';
 if(!window.THREE.GLTFLoader)showErr('GLTFLoader did not load from the CDN — check your connection, then reload.');
 const THREE=window.THREE,W=()=>innerWidth,H=()=>innerHeight;
 
@@ -122,7 +125,7 @@ let placeholder=new THREE.Group();
   placeholder.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(placeholder);})();
 
 // ---------- character + animation loader (plug-and-play KayKit) ----------
-let mixer=null,clips=[],current=null,model=null;
+let mixer=null,clips=[],current=null,model=null,roninParts=[];
 const clock=new THREE.Clock();
 // KayKit Adventurers (CC0): the character mesh has NO animations; the clips live in
 // separate rig libraries that share the "Rig_Medium" skeleton, so they retarget by bone name.
@@ -137,15 +140,72 @@ function buildClipUI(){const box=document.getElementById('clips');box.innerHTML=
 function frameModel(obj){let box=new THREE.Box3().setFromObject(obj);const s=new THREE.Vector3();box.getSize(s);
   const h=s.y||2;const k=2.1/h; obj.scale.setScalar(k); // normalize to ~2.1 units tall
   box=new THREE.Box3().setFromObject(obj);box.getCenter(camTarget);camTarget.y=h*k*0.5;}
+
+// ---------- HYBRID HERO: build a custom champion ON the KayKit skeleton ----------
+// The bought rig (shared "Rig_Medium") carries every animation. We hide the Knight's
+// own meshes and parent procedural low-poly geometry to its bones, so the SAME clips
+// (walk/idle/run/jump/hit…) drive a character that looks like our Ronin. Free motion,
+// custom look — and the supporting cast keeps using the bought KayKit meshes as-is.
+function buildRonin(){
+  if(roninParts.length||!model)return;
+  const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const P={armor:M(0x2b3340,{roughness:.7,metalness:.18}),under:M(0x363d49,{roughness:.82}),
+    hakama:M(0x6e1f2a,{roughness:.85,metalness:.04}),obi:M(0xc8a24e,{metalness:.45,roughness:.5,emissive:0x2a1c04,emissiveIntensity:.5}),
+    skin:M(0xcaa17a,{roughness:.7}),dark:M(0x14171d,{roughness:.6}),steel:M(0xd2dae4,{roughness:.26,metalness:.85,emissive:0x0e1218,emissiveIntensity:.35})};
+  const bn=n=>model.getObjectByName(n);
+  function attach(boneName,mesh,pos,rot){const b=bn(boneName);if(!b)return null;if(pos)mesh.position.copy(pos);if(rot)mesh.rotation.set(rot.x||0,rot.y||0,rot.z||0);mesh.castShadow=true;b.add(mesh);roninParts.push(mesh);return mesh;}
+  const bx=(boneName,w,h,d,mat,pos,rot)=>attach(boneName,new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat),pos,rot);
+  const cy=(boneName,rt,rb,h,mat,pos,sg)=>attach(boneName,new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,sg||10),mat),pos);
+  function seg(parent,child,w,d,mat){const p=bn(parent),c=bn(child);if(!p||!c)return;const len=c.position.length()||0.2;
+    const box=new THREE.Mesh(new THREE.BoxGeometry(w,len*0.96,d),mat);box.quaternion.setFromUnitVectors(V(0,1,0),c.position.clone().normalize());
+    box.position.copy(c.position).multiplyScalar(0.5);box.castShadow=true;p.add(box);roninParts.push(box);}
+  // torso + waist
+  bx('spine',0.30,0.42,0.19,P.armor,V(0,0.19,0));
+  bx('chest',0.34,0.18,0.21,P.armor,V(0,0.06,0));
+  bx('hips',0.30,0.09,0.23,P.obi,V(0,0.20,0));          // obi belt
+  cy('hips',0.16,0.25,0.36,P.hakama,V(0,-0.06,0),12);    // hakama skirt
+  bx('hips',0.26,0.16,0.20,P.under,V(0,0.06,0));         // pelvis
+  // head
+  bx('head',0.20,0.22,0.20,P.skin,V(0,0.12,0));
+  bx('head',0.215,0.055,0.215,P.dark,V(0,0.17,0));       // headband
+  bx('head',0.17,0.08,0.10,P.dark,V(0,0.05,0.07));       // mempo (lower-face mask)
+  cy('head',0.05,0.07,0.12,P.dark,V(0,0.30,-0.02),8);    // topknot
+  // limbs (both sides)
+  for(const s of['l','r']){
+    bx('upperarm.'+s,0.16,0.12,0.20,P.armor,V(0,0.03,0));// pauldron
+    seg('upperarm.'+s,'lowerarm.'+s,0.10,0.10,P.under);
+    seg('lowerarm.'+s,'wrist.'+s,0.085,0.085,P.under);
+    bx('hand.'+s,0.09,0.10,0.09,P.dark,V(0,0.04,0));
+    seg('upperleg.'+s,'lowerleg.'+s,0.14,0.14,P.under);
+    seg('lowerleg.'+s,'foot.'+s,0.115,0.115,P.under);
+    bx('foot.'+s,0.115,0.07,0.22,P.dark,V(0,0.05,0.06));
+  }
+  // katana in the right hand slot
+  const kat=new THREE.Group();
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.6,0.05),P.steel);blade.position.y=0.42;blade.castShadow=true;kat.add(blade);
+  const tsuba=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.02,12),P.dark);tsuba.position.y=0.11;tsuba.rotation.x=Math.PI/2;kat.add(tsuba);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.16,0.04),P.dark);grip.position.y=0.02;kat.add(grip);
+  attach('handslot.r',kat);
+  // saya (sheath) slung on the left hip
+  bx('hips',0.035,0.5,0.05,P.dark,V(-0.17,-0.02,-0.05),{z:-0.25});
+}
+function showRonin(on){
+  if(on)buildRonin();
+  if(model)model.traverse(o=>{if(o.isMesh&&/^Knight_/.test(o.name))o.visible=!on;});
+  roninParts.forEach(p=>{p.visible=on;});
+  for(const b of document.querySelectorAll('#who .clip'))b.classList.toggle('on',(b.dataset.who==='ronin')===on);
+}
+document.querySelectorAll('#who .clip').forEach(b=>b.onclick=()=>{if(model)showRonin(b.dataset.who==='ronin');});
 if(THREE.GLTFLoader){
   const loader=new THREE.GLTFLoader();const seen={};
   const EMB=window.EMB3D; // base64 models embedded → no server needed
   function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
   function collect(ag){(ag.animations||[]).forEach(cl=>{if(cl.name==='T-Pose'||seen[cl.name])return;seen[cl.name]=1;clips.push(cl);});}
   function ready(){
+    showRonin(true); // default to our custom Ronin built on the bought rig
     if(clips.length){buildClipUI();const idle=clips.find(c=>/idle_a/i.test(c.name))||clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
-      note.textContent='Knight loaded · '+clips.length+' animations — click any to preview · '+(idle?idle.name:'')+' playing';}
-    else note.textContent='Knight loaded but no animation clips found';}
+      note.textContent='Ronin (custom) on the KayKit rig · '+clips.length+' shared animations — click a clip to preview, or switch character top-right';}
+    else note.textContent='rig loaded but no animation clips found';}
   function onChar(gltf){scene.remove(placeholder);
     model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}if(o.frustumCulled!==undefined)o.frustumCulled=false;});
     scene.add(model);frameModel(model);mixer=new THREE.AnimationMixer(model);
