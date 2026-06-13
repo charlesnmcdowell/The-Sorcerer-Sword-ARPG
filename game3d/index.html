@@ -37,16 +37,25 @@
 <div id="tint"></div><div id="vig"></div>
 <div id="clips"></div>
 <div id="note">—</div>
+<div id="err" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:30;background:rgba(30,6,10,.95);border:1px solid #c8443a;color:#f0c8c0;font:12px/1.5 'Courier New',monospace;padding:12px;white-space:pre-wrap;max-height:60vh;overflow:auto"></div>
 <div id="hint">drag to orbit · scroll to zoom</div>
 <div id="load"><h1>THE SORCERER&#8209;SWORD</h1><div class="sub">3D &mdash; FOUNDATION</div>
   <div id="bar"><div id="barf"></div></div><div id="loadtip">building the arena…</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function(){
 "use strict";
 const note=document.getElementById('note'),loadEl=document.getElementById('load'),barf=document.getElementById('barf'),loadtip=document.getElementById('loadtip');
 if(!window.THREE){note.textContent='needs internet to load the 3D library';loadEl.style.display='none';return;}
+// --- self-reporting + never-freeze guards ---
+const errEl=document.getElementById('err');
+function showErr(m){if(errEl){errEl.style.display='block';errEl.textContent='⚠ '+m;}loadEl.style.display='none';}
+window.addEventListener('error',ev=>showErr((ev.message||'error')+'  ['+(((ev.filename||'')+'').split('/').pop())+':'+(ev.lineno||'?')+']'));
+window.addEventListener('unhandledrejection',ev=>showErr('promise: '+((ev.reason&&(ev.reason.message||ev.reason))||'?')));
+setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},4500); // splash can never hang
+if(location.protocol==='file:')note.textContent='note: opened as file:// — if the character never appears, Chrome is blocking the .glb. Run a local server (see README) and use http://localhost:8000/game3d/';
+if(!window.THREE.GLTFLoader)showErr('GLTFLoader did not load from the CDN — check your connection, then reload.');
 const THREE=window.THREE,W=()=>innerWidth,H=()=>innerHeight;
 
 const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
@@ -114,32 +123,39 @@ let placeholder=new THREE.Group();
 // ---------- character + animation loader (plug-and-play KayKit) ----------
 let mixer=null,clips=[],current=null,model=null;
 const clock=new THREE.Clock();
-const CHAR_URL='assets/character.glb'; // <-- drop a KayKit .glb/.gltf here (see README)
-function play(name){if(!mixer)return;const clip=THREE.AnimationClip.findByName(clips,name)||clips.find(c=>c.name===name);if(!clip)return;
-  const next=mixer.clipAction(clip);if(current===next)return;next.reset().fadeIn(0.3).play();if(current)current.fadeOut(0.3);current=next;
+// KayKit Adventurers (CC0): the character mesh has NO animations; the clips live in
+// separate rig libraries that share the "Rig_Medium" skeleton, so they retarget by bone name.
+const CHAR_URL='assets/Knight.glb';
+const ANIM_URLS=['assets/anim_general.glb','assets/anim_movement.glb'];
+function play(name){if(!mixer)return;const clip=clips.find(c=>c.name===name);if(!clip)return;
+  const next=mixer.clipAction(clip);if(current===next)return;
+  next.reset().fadeIn(0.3).play();if(current)current.fadeOut(0.3);current=next;
   for(const b of document.querySelectorAll('.clip'))b.classList.toggle('on',b.textContent===name);}
 function buildClipUI(){const box=document.getElementById('clips');box.innerHTML='';
   clips.forEach(c=>{const b=document.createElement('div');b.className='clip';b.textContent=c.name;b.onclick=()=>play(c.name);box.appendChild(b);});}
-function frameModel(obj){const box=new THREE.Box3().setFromObject(obj);const s=new THREE.Vector3();box.getSize(s);
-  const h=s.y||2;const k=2.0/h; obj.scale.setScalar(k); // normalize to ~2 units tall
-  const box2=new THREE.Box3().setFromObject(obj);box2.getCenter(camTarget);camTarget.y=h*k*0.5;}
+function frameModel(obj){let box=new THREE.Box3().setFromObject(obj);const s=new THREE.Vector3();box.getSize(s);
+  const h=s.y||2;const k=2.1/h; obj.scale.setScalar(k); // normalize to ~2.1 units tall
+  box=new THREE.Box3().setFromObject(obj);box.getCenter(camTarget);camTarget.y=h*k*0.5;}
 if(THREE.GLTFLoader){
-  const manager=new THREE.LoadingManager();
-  const loader=new THREE.GLTFLoader(manager);
-  loadtip.textContent='looking for assets/character.glb …';
+  const loader=new THREE.GLTFLoader();
+  loadtip.textContent='loading the Knight + animation libraries…';
   loader.load(CHAR_URL,gltf=>{
     scene.remove(placeholder);
-    model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}if(o.frustumCulled!==undefined)o.frustumCulled=false;});
     scene.add(model);frameModel(model);
-    clips=gltf.animations||[];
-    if(clips.length){mixer=new THREE.AnimationMixer(model);buildClipUI();
-      const idle=clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
-      note.textContent='loaded '+clips.length+' clips — click any to preview · idle auto-playing';}
-    else note.textContent='model loaded, but it has no animation clips (need the KayKit animation file)';
+    mixer=new THREE.AnimationMixer(model);
+    // pull animation clips out of the rig libraries and bind them to this character
+    let pending=ANIM_URLS.length;const seen={};
+    const done=()=>{ if(--pending>0)return;
+      if(clips.length){buildClipUI();const idle=clips.find(c=>/idle_a/i.test(c.name))||clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
+        note.textContent='Knight loaded · '+clips.length+' animations — click any to preview · '+(idle?idle.name:'')+' playing';}
+      else note.textContent='Knight loaded but no animation clips found';};
+    ANIM_URLS.forEach(u=>loader.load(u,ag=>{
+      (ag.animations||[]).forEach(cl=>{if(cl.name==='T-Pose'||seen[cl.name])return;seen[cl.name]=1;clips.push(cl);});
+      done();
+    },undefined,()=>{note.textContent='couldn\'t load '+u;done();}));
   },xhr=>{if(xhr.total)barf.style.width=(xhr.loaded/xhr.total*100)+'%';},
-  err=>{ // no file yet — keep the placeholder, explain
-    note.textContent='no assets/character.glb yet — drop a KayKit .glb there and reload (showing placeholder)';
-  });
+  err=>{note.textContent='couldn\'t load assets/Knight.glb — is it in game3d/assets/? (showing placeholder)';});
 } else note.textContent='GLTFLoader failed to load from CDN';
 
 // ---------- orbit camera ----------
