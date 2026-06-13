@@ -43,6 +43,9 @@ def main():
     shutil.copytree(GAME / "src", PLAY / "src")
     (PLAY / "assets").mkdir()
     shutil.copy2(GAME / "assets" / "embedded.js", PLAY / "assets" / "embedded.js")
+    # social-share preview image — lives at play/og-image.png (referenced by the OG meta tags)
+    og = GAME / "assets" / "og-image.png"
+    if og.exists(): shutil.copy2(og, PLAY / "og-image.png")
     for sub in ("music", "voice"):
         d = GAME / "assets" / sub
         if d.exists(): shutil.copytree(d, PLAY / "assets" / sub,
