@@ -28,7 +28,7 @@ function run(ch) {
   const fightTimes = [];
   let fightStart = 0, maxFight = 0, crashed = null;
 
-  const LIMIT = 30 * 60 * 1000; // 30 sim-minutes hard cap
+  const LIMIT = 50 * 60 * 1000; // 50 sim-minutes hard cap (raised: enemies have 2x HP after fight 3, so the weak assist-bot needs longer)
   while (simMs < LIMIT) {
     simMs += 1000 / 60;
     for (let i = tq.length - 1; i >= 0; i--) if (tq[i].at <= simMs) { const f = tq[i].fn; tq.splice(i, 1); f(); }
@@ -41,7 +41,7 @@ function run(ch) {
 
       maxFight = Math.max(maxFight, S.fight);
       // assist: source-demo-style keep-alive, scaled up late where one-shots exceed 45% of max HP
-      if (MODE === 'assist' && P.hp < combat.maxHP() * (S.fight >= 12 ? 0.85 : 0.45)) P.hp = combat.maxHP();
+      if (MODE === 'assist' && P.hp < combat.maxHP() * 0.85) P.hp = combat.maxHP(); // enemies hit 2x after fight 3 — keep the weak bot alive to exercise content
 
       const foes = combat.enemies.filter(e => !e.dead);
       // focus support enemies first (healers out-heal kiting bots), then nearest
