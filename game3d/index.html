@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Sorcerer-Sword 3D — B1 character pipeline</title>
-<!-- 3D UPLIFT · Bucket 1. Local-only (not deployed). Needs internet (Three.js + GLTFLoader from CDN).
-     Models are base64-embedded in assets/embedded3d.js, so this runs from a plain file:// double-click.
-     Hybrid hero: a custom Ronin is built ON the KayKit rig (Knight mesh hidden) so the bought animation
-     clips drive our own character. Toggle Ronin/Knight top-right. Drag to orbit · scroll to zoom. -->
+<title>The Sorcerer-Sword 3D — B1 champions</title>
+<!-- 3D UPLIFT · Bucket 1. Local-only. Needs internet (Three.js + GLTFLoader from CDN).
+     Models base64-embedded in assets/embedded3d.js → runs from a plain file:// double-click.
+     HYBRID HERO: each of the 4 champions is a custom procedural body parented onto its own
+     copy of the KayKit "Rig_Medium" skeleton (Knight mesh hidden), so the bought animation
+     clips drive our own characters. Click a clip (left) to drive all four. Drag to orbit. -->
 <style>
   html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8}
   #c{display:block;width:100vw;height:100vh}
@@ -23,22 +24,19 @@
   #bar{width:min(60vw,360px);height:5px;background:#1b1322;border:1px solid #2c2118}
   #barf{height:100%;width:0;background:linear-gradient(#e7b450,#b8821f);transition:width .2s}
   #loadtip{margin-top:14px;font-size:11px;color:#5a4a6a;letter-spacing:1px}
-  #clips{position:fixed;left:10px;top:46px;z-index:6;max-height:80vh;overflow:auto;display:flex;flex-direction:column;gap:4px}
+  #clips{position:fixed;left:10px;top:46px;z-index:6;max-height:84vh;overflow:auto;display:flex;flex-direction:column;gap:4px}
   .clip{font-size:11px;letter-spacing:1px;color:#3df0c8;background:rgba(8,5,16,.7);border:1px solid rgba(61,240,200,.35);
     padding:4px 9px;cursor:pointer;text-transform:none}
   .clip:hover{background:rgba(61,240,200,.18)} .clip.on{background:rgba(231,180,80,.25);border-color:#e7b450;color:#e7b450}
   #note{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11px;color:#7a6a8a;z-index:6}
   #hint{position:fixed;bottom:30px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;color:#4a3a5a;z-index:6}
-  #who{position:fixed;right:10px;top:46px;z-index:6;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-  #who .lbl{font-size:9px;letter-spacing:2px;color:#5a4a6a;margin-bottom:2px}
 </style>
 </head>
 <body>
-<div id="eyebrow">THE SORCERER-SWORD 3D · B1 · hybrid hero on KayKit rig</div>
+<div id="eyebrow">THE SORCERER-SWORD 3D · B1 · four champions on the KayKit rig</div>
 <canvas id="c"></canvas>
 <div id="tint"></div><div id="vig"></div>
 <div id="clips"></div>
-<div id="who"><div class="lbl">CHARACTER</div><div class="clip" data-who="ronin">Ronin · custom</div><div class="clip" data-who="knight">Knight · KayKit</div></div>
 <div id="note">—</div>
 <div id="err" style="display:none;position:fixed;left:12px;right:12px;top:12px;z-index:30;background:rgba(30,6,10,.95);border:1px solid #c8443a;color:#f0c8c0;font:12px/1.5 'Courier New',monospace;padding:12px;white-space:pre-wrap;max-height:60vh;overflow:auto"></div>
 <div id="hint">drag to orbit · scroll to zoom</div>
@@ -52,13 +50,11 @@
 "use strict";
 const note=document.getElementById('note'),loadEl=document.getElementById('load'),barf=document.getElementById('barf'),loadtip=document.getElementById('loadtip');
 if(!window.THREE){note.textContent='needs internet to load the 3D library';loadEl.style.display='none';return;}
-// --- self-reporting + never-freeze guards ---
 const errEl=document.getElementById('err');
 function showErr(m){if(errEl){errEl.style.display='block';errEl.textContent='⚠ '+m;}loadEl.style.display='none';}
 window.addEventListener('error',ev=>showErr((ev.message||'error')+'  ['+(((ev.filename||'')+'').split('/').pop())+':'+(ev.lineno||'?')+']'));
 window.addEventListener('unhandledrejection',ev=>showErr('promise: '+((ev.reason&&(ev.reason.message||ev.reason))||'?')));
-setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},4500); // splash can never hang
-if(location.protocol==='file:'&&!window.EMB3D)note.textContent='note: opened as file:// with no embedded models — run a local server (see README).';
+setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},5000);
 if(!window.THREE.GLTFLoader)showErr('GLTFLoader did not load from the CDN — check your connection, then reload.');
 const THREE=window.THREE,W=()=>innerWidth,H=()=>innerHeight;
 
@@ -66,7 +62,7 @@ const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),anti
 renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.setSize(W(),H());
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;
-const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x140a1e,0.024);
+const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x140a1e,0.02);
 const camera=new THREE.PerspectiveCamera(46,W()/H(),0.1,300);
 
 // gradient dusk sky
@@ -78,19 +74,20 @@ const camera=new THREE.PerspectiveCamera(46,W()/H(),0.1,300);
 // lights
 scene.add(new THREE.HemisphereLight(0x6a6a9a,0x201018,0.6));
 const key=new THREE.DirectionalLight(0xffe2b0,1.2);key.position.set(7,13,6);key.castShadow=true;
-key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-14;key.shadow.camera.right=14;key.shadow.camera.top=14;key.shadow.camera.bottom=-14;key.shadow.bias=-0.0004;scene.add(key);
+key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-16;key.shadow.camera.right=16;key.shadow.camera.top=16;key.shadow.camera.bottom=-16;key.shadow.bias=-0.0004;scene.add(key);
 const rim=new THREE.DirectionalLight(0x6aa0ff,0.7);rim.position.set(-8,6,-7);scene.add(rim);
 const accA=new THREE.PointLight(0xff4a8c,0.7,30,2);accA.position.set(8,4,6);scene.add(accA);
 const accB=new THREE.PointLight(0x3ad0c0,0.6,30,2);accB.position.set(-8,4,-6);scene.add(accB);
 
 const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.72,metalness:.12,flatShading:true},o));
+const EMISS=(c,e,i)=>new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:i,flatShading:true,roughness:.4});
 const glowTex=(function(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');
   x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
 function addGlow(p,col,size,op){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:col,transparent:true,opacity:op==null?.7:op,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));s.scale.set(size,size,1);p.add(s);return s;}
 const cyl=(rt,rb,h,m,s)=>new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,s||8),m);
 
-// arena floor + rune ring + stands + banners + torches (same atmosphere language as the spike)
+// arena floor + rune ring + stands + banners + torches
 const floor=new THREE.Mesh(new THREE.CylinderGeometry(13,13,0.6,56),M(0x17121f,{roughness:1}));floor.position.y=-0.3;floor.receiveShadow=true;scene.add(floor);
 const rune=new THREE.Mesh(new THREE.TorusGeometry(10.5,0.16,8,64),M(0x2ad0c0,{emissive:0x1aa090,emissiveIntensity:1.3}));rune.rotation.x=Math.PI/2;rune.position.y=0.06;scene.add(rune);
 for(let i=0;i<20;i++){const a=i/20*Math.PI*2;addGlow(scene,0x2ad0c0,2.2,.5).position.set(Math.cos(a)*10.5,0.3,Math.sin(a)*10.5);}
@@ -108,7 +105,7 @@ function banner(x,z,col){const g=new THREE.Group();const pole=cyl(0.08,0.1,6,WOO
 banner(-11,-9,0x8c1f24);banner(11,-9,0x304a78);banner(-11,9,0x2c6e64);banner(11,9,0x6a3a8a);
 const pillars=[];
 function pillar(x,z,col){const g=new THREE.Group();const p=cyl(0.22,0.32,4.4,M(0x241b14),7);p.position.y=2.2;p.castShadow=true;g.add(p);
-  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.3,7),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:1.6,flatShading:true}));fl.position.y=4.8;g.add(fl);g.userData.flame=fl;
+  const fl=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.3,7),EMISS(col,col,1.6));fl.position.y=4.8;g.add(fl);g.userData.flame=fl;
   addGlow(fl,col,4.5,.9);
   const cone=new THREE.Mesh(new THREE.ConeGeometry(1.7,5.2,14,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.05,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));cone.position.y=2.6;g.add(cone);
   const l=new THREE.PointLight(col,1.1,22,2);l.position.set(0,4.9,0);g.add(l);g.userData.light=l;g.position.set(x,0,z);scene.add(g);pillars.push(g);}
@@ -116,125 +113,230 @@ pillar(-9.5,-6,0xff8a3a);pillar(9.5,-6,0xff8a3a);pillar(-9.5,6,0xffae5a);pillar(
 const embers=[];const eGeo=new THREE.SphereGeometry(0.05,4,4),eMat=new THREE.MeshBasicMaterial({color:0xffb060});
 for(let i=0;i<60;i++){const e=new THREE.Mesh(eGeo,eMat);e.position.set((Math.random()-.5)*26,Math.random()*10,(Math.random()-.5)*26);e.userData.vy=.3+Math.random()*.6;scene.add(e);embers.push(e);}
 
-// ---------- placeholder figure (shown until a real character is dropped in) ----------
+// placeholder figure (shown until the champions are built)
 let placeholder=new THREE.Group();
 (function(){const m=M(0x2f3a52);const body=cyl(0.4,0.5,1.4,m,8);body.position.y=1.5;placeholder.add(body);
   const head=new THREE.Mesh(new THREE.SphereGeometry(0.35,10,8),M(0xcaa27a));head.position.y=2.5;placeholder.add(head);
-  for(const sx of[-1,1]){const arm=cyl(0.13,0.13,1.0,m,6);arm.position.set(sx*0.5,1.6,0);placeholder.add(arm);
-    const leg=cyl(0.16,0.16,1.1,M(0x222a3a),6);leg.position.set(sx*0.22,0.55,0);placeholder.add(leg);}
   placeholder.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(placeholder);})();
 
-// ---------- character + animation loader (plug-and-play KayKit) ----------
-let mixer=null,clips=[],current=null,model=null,roninParts=[];
+// ======================================================================
+//  CHAMPIONS — custom procedural bodies on copies of the KayKit rig
+// ======================================================================
+let mixers=[],clips=[],current=null;
 const clock=new THREE.Clock();
-// KayKit Adventurers (CC0): the character mesh has NO animations; the clips live in
-// separate rig libraries that share the "Rig_Medium" skeleton, so they retarget by bone name.
+const camTarget=new THREE.Vector3(0,1.05,0);
 const CHAR_URL='assets/Knight.glb';
 const ANIM_URLS=['assets/anim_general.glb','assets/anim_movement.glb'];
-function play(name){if(!mixer)return;const clip=clips.find(c=>c.name===name);if(!clip)return;
-  const next=mixer.clipAction(clip);if(current===next)return;
-  next.reset().fadeIn(0.3).play();if(current)current.fadeOut(0.3);current=next;
+const EMB=window.EMB3D;
+function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
+
+// build helpers bound to one rig's bones. Limb lengths are the rig's measured bone offsets.
+const LEN={upperarm:0.242,lowerarm:0.26,upperleg:0.227,lowerleg:0.149};
+function makeApi(model){
+  const bn=n=>model.getObjectByName(n);
+  const parts=[],missing=[];
+  function add(bone,mesh,pos,rot){const b=bn(bone);if(!b){if(missing.indexOf(bone)<0)missing.push(bone);return null;}
+    if(pos)mesh.position.set(pos[0],pos[1],pos[2]);if(rot)mesh.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);
+    mesh.castShadow=true;mesh.receiveShadow=true;b.add(mesh);parts.push(mesh);return mesh;}
+  const api={
+    bn,parts,missing,add,
+    box:(bone,w,h,d,mat,pos,rot)=>add(bone,new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat),pos,rot),
+    cyl:(bone,rt,rb,h,mat,pos,rot,sg)=>add(bone,new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,sg||12),mat),pos,rot),
+    sph:(bone,r,mat,pos)=>add(bone,new THREE.Mesh(new THREE.SphereGeometry(r,14,12),mat),pos),
+    cone:(bone,r,h,mat,pos,rot,sg)=>add(bone,new THREE.Mesh(new THREE.ConeGeometry(r,h,sg||16),mat),pos,rot),
+    torus:(bone,r,t,mat,pos,rot)=>add(bone,new THREE.Mesh(new THREE.TorusGeometry(r,t,10,28),mat),pos,rot),
+    octa:(bone,r,mat,pos,rot)=>add(bone,new THREE.Mesh(new THREE.OctahedronGeometry(r),mat),pos,rot),
+    limb:(bone,key,w,d,mat)=>add(bone,new THREE.Mesh(new THREE.BoxGeometry(w,LEN[key]*0.98,d),mat),[0,LEN[key]/2,0]),
+    glow:(bone,col,size,op,pos)=>{const b=bn(bone);if(!b)return;const s=addGlow(b,col,size,op);if(pos)s.position.set(pos[0],pos[1],pos[2]);parts.push(s);return s;}
+  };
+  return api;
+}
+// shared chunky humanoid arms+legs
+function baseLimbs(a,mat,o){o=o||{};
+  for(const s of['l','r']){
+    a.sph('upperarm.'+s,0.12,o.shoulderMat||mat,[0,0,0]);
+    a.limb('upperarm.'+s,'upperarm',0.17,0.17,mat);
+    a.limb('lowerarm.'+s,'lowerarm',0.15,0.15,mat);
+    a.box('hand.'+s,0.15,0.15,0.15,o.handMat||mat,[0,0.06,0]);
+    if(!o.noLegs){
+      a.limb('upperleg.'+s,'upperleg',0.21,0.22,o.legMat||mat);
+      a.limb('lowerleg.'+s,'lowerleg',0.18,0.19,o.legMat||mat);
+      a.box('foot.'+s,0.18,0.16,0.24,o.footMat||mat,[0,0.05,0.05]);
+    }
+  }
+}
+function eyes(a,mat){a.box('head',0.05,0.07,0.03,mat,[-0.08,0.12,0.155]);a.box('head',0.05,0.07,0.03,mat,[0.08,0.12,0.155]);}
+function handProp(a,bone,group,pos){a.add(bone,group,pos);}
+
+// ---- RONIN ----
+function buildRonin(a){
+  const armor=M(0x2b3340,{metalness:.2}),under=M(0x39414e),hakama=M(0x7a2230),obi=M(0xc8a24e,{metalness:.45,emissive:0x2a1c04,emissiveIntensity:.5}),
+        skin=M(0xcaa17a),dark=M(0x14171d),steel=M(0xd6dee8,{metalness:.85,roughness:.24,emissive:0x0e1218,emissiveIntensity:.35});
+  a.box('spine',0.48,0.46,0.31,armor,[0,0.18,0]);
+  a.box('chest',0.50,0.20,0.32,armor,[0,0.07,0]);
+  a.box('hips',0.44,0.18,0.32,under,[0,0.06,0]);
+  a.box('hips',0.50,0.09,0.36,obi,[0,0.18,0]);
+  a.cone('hips',0.36,0.52,hakama,[0,-0.14,0],null,14);
+  a.box('head',0.32,0.34,0.32,skin,[0,0.12,0]); eyes(a,dark);
+  a.box('head',0.345,0.08,0.345,dark,[0,0.20,0]);
+  a.box('head',0.26,0.10,0.16,dark,[0,0.04,0.11]);
+  a.cyl('head',0.06,0.085,0.16,dark,[0,0.33,-0.05],null,8);
+  baseLimbs(a,under,{legMat:dark,footMat:dark,shoulderMat:armor,handMat:dark});
+  a.box('upperarm.l',0.22,0.14,0.24,armor,[0,0.02,0]); a.box('upperarm.r',0.22,0.14,0.24,armor,[0,0.02,0]);
+  const kat=new THREE.Group();
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.7,0.06),steel);blade.position.y=0.5;blade.castShadow=true;kat.add(blade);
+  const tsuba=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.02,12),dark);tsuba.position.y=0.13;tsuba.rotation.x=Math.PI/2;kat.add(tsuba);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.2,0.05),dark);grip.position.y=0.02;kat.add(grip);
+  handProp(a,'handslot.r',kat);
+  a.box('hips',0.045,0.6,0.06,dark,[-0.22,-0.04,-0.07],[0,0,-0.22]);
+}
+// ---- DRUID ----
+function buildDruid(a){
+  const robe=M(0x3c5a34),bark=M(0x5a4326),skin=M(0xc8a47a),leaf=M(0x6fae3a,{emissive:0x163008,emissiveIntensity:.35}),
+        dark=M(0x232c1c),horn=M(0xcfc0a0),beard=M(0xc6bb96);
+  a.box('spine',0.48,0.48,0.32,robe,[0,0.18,0]);
+  a.box('chest',0.46,0.20,0.30,robe,[0,0.06,0]);
+  a.box('hips',0.44,0.18,0.32,robe,[0,0.05,0]);
+  a.cone('hips',0.38,0.66,robe,[0,-0.20,0],null,12);
+  a.box('hips',0.50,0.08,0.36,bark,[0,0.16,0]);
+  a.box('chest',0.62,0.12,0.36,leaf,[0,0.17,0]);
+  a.box('head',0.32,0.34,0.32,skin,[0,0.12,0]); eyes(a,dark);
+  a.box('head',0.42,0.22,0.42,robe,[0,0.20,-0.02]);
+  a.box('head',0.12,0.18,0.07,beard,[0,-0.03,0.13]);
+  for(const sx of[-1,1]){
+    a.cyl('head',0.028,0.04,0.28,horn,[sx*0.13,0.27,0.02],[-0.25,0,sx*0.55],8);
+    a.cyl('head',0.02,0.028,0.18,horn,[sx*0.24,0.40,0.02],[-0.15,0,sx*0.95],6);
+    a.cyl('head',0.018,0.024,0.14,horn,[sx*0.05,0.42,0.0],[-0.5,0,sx*0.2],6);
+  }
+  baseLimbs(a,robe,{legMat:bark,footMat:dark,handMat:skin,shoulderMat:leaf});
+  const staff=new THREE.Group();
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.038,1.15,8),bark);shaft.position.y=0.42;shaft.castShadow=true;staff.add(shaft);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,10),EMISS(0x9bf25a,0x4ea020,1.5));orb.position.y=1.02;staff.add(orb);
+  addGlow(staff,0x8ef25a,1.7,.95).position.y=1.02;
+  handProp(a,'handslot.r',staff);
+}
+// ---- WARLOCK ----
+function buildWarlock(a){
+  const robe=M(0x1b1726),trim=M(0x4a2c6a,{emissive:0x180a2a,emissiveIntensity:.5}),skin=M(0xcfc6cc),dark=M(0x0c0a12),
+        bookcov=M(0x3a1c1c);
+  a.box('spine',0.46,0.50,0.30,robe,[0,0.18,0]);
+  a.box('chest',0.44,0.22,0.30,robe,[0,0.06,0]);
+  a.cone('hips',0.42,0.98,robe,[0,-0.34,0],null,12);
+  a.box('hips',0.46,0.08,0.32,trim,[0,0.14,0]);
+  a.box('chest',0.60,0.18,0.30,trim,[0,0.2,-0.02]);
+  a.box('head',0.30,0.32,0.30,skin,[0,0.12,0]); eyes(a,EMISS(0x9a5cff,0x5a10c0,1.6));
+  a.cone('head',0.30,0.42,robe,[0,0.24,-0.04],null,10);
+  a.box('head',0.34,0.22,0.30,robe,[0,0.08,-0.11]);
+  baseLimbs(a,robe,{noLegs:true,handMat:skin,shoulderMat:trim});
+  const staff=new THREE.Group();
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.034,1.25,8),dark);shaft.position.y=0.44;shaft.castShadow=true;staff.add(shaft);
+  const cryst=new THREE.Mesh(new THREE.OctahedronGeometry(0.13),EMISS(0xb070ff,0x6a20c0,1.7));cryst.position.y=1.12;staff.add(cryst);
+  addGlow(staff,0xb070ff,1.9,.95).position.y=1.12;
+  handProp(a,'handslot.r',staff);
+  const book=new THREE.Group();
+  const p1=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.022,0.22),bookcov);p1.position.x=-0.095;p1.rotation.z=0.18;book.add(p1);
+  const p2=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.022,0.22),bookcov);p2.position.x=0.095;p2.rotation.z=-0.18;book.add(p2);
+  const pages=new THREE.Mesh(new THREE.PlaneGeometry(0.32,0.21),EMISS(0xe8dcc0,0x6a4aa0,.6));pages.rotation.x=-Math.PI/2;pages.position.y=0.03;book.add(pages);
+  addGlow(book,0xb070ff,0.8,.6).position.y=0.12;
+  handProp(a,'handslot.l',book,[0,0.05,0]);
+}
+// ---- SERAPHIM ----
+function buildSeraphim(a){
+  const robe=M(0xeae0c8),gold=M(0xe7c24e,{metalness:.5,roughness:.34,emissive:0x3a2a06,emissiveIntensity:.5}),
+        skin=M(0xf0e0cc),feather=M(0xf6f0e2,{emissive:0x2a2a3a,emissiveIntensity:.12}),dark=M(0x2a2436);
+  a.box('spine',0.48,0.46,0.30,robe,[0,0.18,0]);
+  a.box('chest',0.50,0.22,0.32,gold,[0,0.07,0]);
+  a.cone('hips',0.38,0.74,robe,[0,-0.24,0],null,12);
+  a.box('hips',0.50,0.08,0.36,gold,[0,0.16,0]);
+  // three heads
+  a.box('head',0.30,0.32,0.30,skin,[0,0.13,0]); eyes(a,EMISS(0x4aa0d0,0x2a80b0,1.1));
+  a.box('head',0.20,0.22,0.20,skin,[-0.27,0.03,0]); a.box('head',0.20,0.22,0.20,skin,[0.27,0.03,0]);
+  // halo
+  a.torus('head',0.27,0.03,gold,[0,0.36,0],[Math.PI/2,0,0]);
+  a.glow('head',0xffe6a0,2.1,.85,[0,0.36,0]);
+  // wings off the chest, swept back and up
+  for(const sx of[-1,1]){
+    for(let f=0;f<4;f++){
+      a.box('chest',0.52-f*0.09,0.11,0.06,feather,[sx*(0.30+f*0.21),0.16+f*0.17,-0.16-f*0.03],[0,0,sx*(0.42+f*0.14)]);
+    }
+  }
+  baseLimbs(a,robe,{legMat:robe,footMat:gold,handMat:skin,shoulderMat:gold});
+  const spear=new THREE.Group();
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.026,1.55,8),gold);shaft.position.y=0.52;shaft.castShadow=true;spear.add(shaft);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(0.065,0.28,10),EMISS(0xfff0c0,0xe7c24e,1.3));tip.position.y=1.38;spear.add(tip);
+  addGlow(spear,0x8fe6ff,1.3,.75).position.y=1.38;
+  handProp(a,'handslot.r',spear);
+}
+
+const CHAMPS=[
+  {name:'RONIN',    build:buildRonin},
+  {name:'DRUID',    build:buildDruid},
+  {name:'WARLOCK',  build:buildWarlock},
+  {name:'SERAPHIM', build:buildSeraphim}
+];
+const SPAN=2.45;
+function nameLabel(text,x){const c=document.createElement('canvas');c.width=256;c.height=64;const x2=c.getContext('2d');
+  x2.font='bold 30px Georgia';x2.fillStyle='#e7d4a0';x2.textAlign='center';x2.shadowColor='rgba(0,0,0,.8)';x2.shadowBlur=6;x2.fillText(text,128,42);
+  const t=new THREE.CanvasTexture(c);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:false}));
+  sp.scale.set(1.7,0.42,1);sp.position.set(x,2.55,0);scene.add(sp);}
+
+function play(name){const clip=clips.find(c=>c.name===name);if(!clip)return;current=name;
+  mixers.forEach(mx=>{const act=mx.clipAction(clip);if(mx._cur===act)return;act.reset().fadeIn(0.3).play();if(mx._cur)mx._cur.fadeOut(0.3);mx._cur=act;});
   for(const b of document.querySelectorAll('.clip'))b.classList.toggle('on',b.textContent===name);}
 function buildClipUI(){const box=document.getElementById('clips');box.innerHTML='';
   clips.forEach(c=>{const b=document.createElement('div');b.className='clip';b.textContent=c.name;b.onclick=()=>play(c.name);box.appendChild(b);});}
-function frameModel(obj){let box=new THREE.Box3().setFromObject(obj);const s=new THREE.Vector3();box.getSize(s);
-  const h=s.y||2;const k=2.1/h; obj.scale.setScalar(k); // normalize to ~2.1 units tall
-  box=new THREE.Box3().setFromObject(obj);box.getCenter(camTarget);camTarget.y=h*k*0.5;}
 
-// ---------- HYBRID HERO: build a custom champion ON the KayKit skeleton ----------
-// The bought rig (shared "Rig_Medium") carries every animation. We hide the Knight's
-// own meshes and parent procedural low-poly geometry to its bones, so the SAME clips
-// (walk/idle/run/jump/hit…) drive a character that looks like our Ronin. Free motion,
-// custom look — and the supporting cast keeps using the bought KayKit meshes as-is.
-function buildRonin(){
-  if(roninParts.length||!model)return;
-  const V=(x,y,z)=>new THREE.Vector3(x,y,z);
-  const P={armor:M(0x2b3340,{roughness:.7,metalness:.18}),under:M(0x363d49,{roughness:.82}),
-    hakama:M(0x6e1f2a,{roughness:.85,metalness:.04}),obi:M(0xc8a24e,{metalness:.45,roughness:.5,emissive:0x2a1c04,emissiveIntensity:.5}),
-    skin:M(0xcaa17a,{roughness:.7}),dark:M(0x14171d,{roughness:.6}),steel:M(0xd2dae4,{roughness:.26,metalness:.85,emissive:0x0e1218,emissiveIntensity:.35})};
-  const bn=n=>model.getObjectByName(n);
-  function attach(boneName,mesh,pos,rot){const b=bn(boneName);if(!b)return null;if(pos)mesh.position.copy(pos);if(rot)mesh.rotation.set(rot.x||0,rot.y||0,rot.z||0);mesh.castShadow=true;b.add(mesh);roninParts.push(mesh);return mesh;}
-  const bx=(boneName,w,h,d,mat,pos,rot)=>attach(boneName,new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat),pos,rot);
-  const cy=(boneName,rt,rb,h,mat,pos,sg)=>attach(boneName,new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,sg||10),mat),pos);
-  function seg(parent,child,w,d,mat){const p=bn(parent),c=bn(child);if(!p||!c)return;const len=c.position.length()||0.2;
-    const box=new THREE.Mesh(new THREE.BoxGeometry(w,len*0.96,d),mat);box.quaternion.setFromUnitVectors(V(0,1,0),c.position.clone().normalize());
-    box.position.copy(c.position).multiplyScalar(0.5);box.castShadow=true;p.add(box);roninParts.push(box);}
-  // torso + waist
-  bx('spine',0.30,0.42,0.19,P.armor,V(0,0.19,0));
-  bx('chest',0.34,0.18,0.21,P.armor,V(0,0.06,0));
-  bx('hips',0.30,0.09,0.23,P.obi,V(0,0.20,0));          // obi belt
-  cy('hips',0.16,0.25,0.36,P.hakama,V(0,-0.06,0),12);    // hakama skirt
-  bx('hips',0.26,0.16,0.20,P.under,V(0,0.06,0));         // pelvis
-  // head
-  bx('head',0.20,0.22,0.20,P.skin,V(0,0.12,0));
-  bx('head',0.215,0.055,0.215,P.dark,V(0,0.17,0));       // headband
-  bx('head',0.17,0.08,0.10,P.dark,V(0,0.05,0.07));       // mempo (lower-face mask)
-  cy('head',0.05,0.07,0.12,P.dark,V(0,0.30,-0.02),8);    // topknot
-  // limbs (both sides)
-  for(const s of['l','r']){
-    bx('upperarm.'+s,0.16,0.12,0.20,P.armor,V(0,0.03,0));// pauldron
-    seg('upperarm.'+s,'lowerarm.'+s,0.10,0.10,P.under);
-    seg('lowerarm.'+s,'wrist.'+s,0.085,0.085,P.under);
-    bx('hand.'+s,0.09,0.10,0.09,P.dark,V(0,0.04,0));
-    seg('upperleg.'+s,'lowerleg.'+s,0.14,0.14,P.under);
-    seg('lowerleg.'+s,'foot.'+s,0.115,0.115,P.under);
-    bx('foot.'+s,0.115,0.07,0.22,P.dark,V(0,0.05,0.06));
-  }
-  // katana in the right hand slot
-  const kat=new THREE.Group();
-  const blade=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.6,0.05),P.steel);blade.position.y=0.42;blade.castShadow=true;kat.add(blade);
-  const tsuba=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.02,12),P.dark);tsuba.position.y=0.11;tsuba.rotation.x=Math.PI/2;kat.add(tsuba);
-  const grip=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.16,0.04),P.dark);grip.position.y=0.02;kat.add(grip);
-  attach('handslot.r',kat);
-  // saya (sheath) slung on the left hip
-  bx('hips',0.035,0.5,0.05,P.dark,V(-0.17,-0.02,-0.05),{z:-0.25});
-}
-function showRonin(on){
-  if(on)buildRonin();
-  if(model)model.traverse(o=>{if(o.isMesh&&/^Knight_/.test(o.name))o.visible=!on;});
-  roninParts.forEach(p=>{p.visible=on;});
-  for(const b of document.querySelectorAll('#who .clip'))b.classList.toggle('on',(b.dataset.who==='ronin')===on);
-}
-document.querySelectorAll('#who .clip').forEach(b=>b.onclick=()=>{if(model)showRonin(b.dataset.who==='ronin');});
 if(THREE.GLTFLoader){
   const loader=new THREE.GLTFLoader();const seen={};
-  const EMB=window.EMB3D; // base64 models embedded → no server needed
-  function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
   function collect(ag){(ag.animations||[]).forEach(cl=>{if(cl.name==='T-Pose'||seen[cl.name])return;seen[cl.name]=1;clips.push(cl);});}
+  function parseChar(cb,err){if(EMB)loader.parse(b64buf(EMB.knight),'',cb,err);else loader.load(CHAR_URL,cb,undefined,err);}
+  let built=0,allMissing={};
+  function spawnAll(){
+    if(placeholder){scene.remove(placeholder);placeholder=null;}
+    loadtip.textContent='shaping the champions…';
+    CHAMPS.forEach((ch,i)=>{
+      parseChar(gltf=>{
+        const m=gltf.scene;
+        m.traverse(o=>{if(o.isMesh){if(/^Knight_/.test(o.name)){o.visible=false;}else{o.castShadow=true;o.receiveShadow=true;}}if(o.frustumCulled!==undefined)o.frustumCulled=false;});
+        const api=makeApi(m);ch.build(api);
+        if(api.missing.length)allMissing[ch.name]=api.missing.slice();
+        let bb=new THREE.Box3().setFromObject(m);const h=(bb.max.y-bb.min.y)||2;const k=2.0/h;m.scale.setScalar(k);
+        m.position.set((i-(CHAMPS.length-1)/2)*SPAN,0,0);
+        bb=new THREE.Box3().setFromObject(m);m.position.y-=bb.min.y; // feet on floor
+        scene.add(m);
+        nameLabel(ch.name,m.position.x);
+        const mx=new THREE.AnimationMixer(m);mixers.push(mx);
+        if(++built===CHAMPS.length)ready();
+      },e=>showErr(ch.name+' rig parse: '+e));
+    });
+  }
   function ready(){
-    showRonin(true); // default to our custom Ronin built on the bought rig
     if(clips.length){buildClipUI();const idle=clips.find(c=>/idle_a/i.test(c.name))||clips.find(c=>/idle/i.test(c.name))||clips[0];play(idle.name);
-      note.textContent='Ronin (custom) on the KayKit rig · '+clips.length+' shared animations — click a clip to preview, or switch character top-right';}
-    else note.textContent='rig loaded but no animation clips found';}
-  function onChar(gltf){scene.remove(placeholder);
-    model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}if(o.frustumCulled!==undefined)o.frustumCulled=false;});
-    scene.add(model);frameModel(model);mixer=new THREE.AnimationMixer(model);
-    let pending=2;const step=()=>{if(--pending<=0)ready();};
-    if(EMB){loader.parse(b64buf(EMB.anim_general),'',ag=>{collect(ag);step();},e=>{showErr('anim_general: '+e);step();});
-      loader.parse(b64buf(EMB.anim_movement),'',ag=>{collect(ag);step();},e=>{showErr('anim_movement: '+e);step();});}
-    else{loader.load(ANIM_URLS[0],ag=>{collect(ag);step();},undefined,step);loader.load(ANIM_URLS[1],ag=>{collect(ag);step();},undefined,step);}}
-  loadtip.textContent='loading the Knight…';
-  if(EMB){loader.parse(b64buf(EMB.knight),'',onChar,e=>showErr('parse Knight: '+e));}
-  else loader.load(CHAR_URL,onChar,xhr=>{if(xhr.total)barf.style.width=(xhr.loaded/xhr.total*100)+'%';},()=>showErr('couldn\'t load Knight.glb — embed missing and not served. See README.'));
+      let n='4 champions on the KayKit rig · '+clips.length+' shared animations — click a clip to drive all four';
+      const miss=Object.keys(allMissing);if(miss.length)n+=' · ⚠ missing bones: '+JSON.stringify(allMissing);
+      note.textContent=n;}
+    else note.textContent='champions built but no animation clips found';}
+  loadtip.textContent='loading the rig + animations…';
+  let ap=2;const ad=()=>{if(--ap<=0)spawnAll();};
+  if(EMB){loader.parse(b64buf(EMB.anim_general),'',ag=>{collect(ag);ad();},e=>{showErr('anim_general: '+e);ad();});
+    loader.parse(b64buf(EMB.anim_movement),'',ag=>{collect(ag);ad();},e=>{showErr('anim_movement: '+e);ad();});}
+  else{loader.load(ANIM_URLS[0],ag=>{collect(ag);ad();},undefined,ad);loader.load(ANIM_URLS[1],ag=>{collect(ag);ad();},undefined,ad);}
 } else note.textContent='GLTFLoader failed to load from CDN';
 
 // ---------- orbit camera ----------
-const camTarget=new THREE.Vector3(0,1.4,0);
-const cam={r:6.5,theta:0.6,phi:1.15,auto:true};let drag=false,px=0,py=0;
+const cam={r:11,theta:0.0,phi:1.12,auto:true};let drag=false,px=0,py=0;
 addEventListener('pointerdown',e=>{drag=true;px=e.clientX;py=e.clientY;cam.auto=false;});
 addEventListener('pointerup',()=>drag=false);
-addEventListener('pointermove',e=>{if(!drag)return;cam.theta-=(e.clientX-px)*0.006;cam.phi=Math.max(0.25,Math.min(1.45,cam.phi-(e.clientY-py)*0.005));px=e.clientX;py=e.clientY;});
-addEventListener('wheel',e=>{cam.r=Math.max(2.5,Math.min(16,cam.r+e.deltaY*0.008));},{passive:true});
-
-// hide the loading splash after first frames
-setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},700);
+addEventListener('pointermove',e=>{if(!drag)return;cam.theta-=(e.clientX-px)*0.006;cam.phi=Math.max(0.35,Math.min(1.45,cam.phi-(e.clientY-py)*0.005));px=e.clientX;py=e.clientY;});
+addEventListener('wheel',e=>{cam.r=Math.max(4,Math.min(22,cam.r+e.deltaY*0.01));},{passive:true});
+setTimeout(()=>{loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',650);},900);
 
 function tick(){requestAnimationFrame(tick);const dt=Math.min(0.05,clock.getDelta());
-  if(mixer)mixer.update(dt);
-  if(!model){placeholder.rotation.y+=dt*0.4;placeholder.position.y=Math.sin(clock.elapsedTime*1.5)*0.04;}
+  for(const mx of mixers)mx.update(dt);
+  if(placeholder){placeholder.rotation.y+=dt*0.4;placeholder.position.y=Math.sin(clock.elapsedTime*1.5)*0.04;}
   for(const pl of pillars){const f=.85+Math.random()*.45;pl.userData.light.intensity=f;pl.userData.flame.scale.y=.85+Math.random()*.4;}
   for(const e of embers){e.position.y+=e.userData.vy*dt;if(e.position.y>11){e.position.y=0;e.position.x=(Math.random()-.5)*26;e.position.z=(Math.random()-.5)*26;}}
-  if(cam.auto)cam.theta+=dt*0.18;
+  if(cam.auto)cam.theta+=dt*0.16;
   camera.position.set(camTarget.x+cam.r*Math.sin(cam.phi)*Math.sin(cam.theta),camTarget.y+cam.r*Math.cos(cam.phi),camTarget.z+cam.r*Math.sin(cam.phi)*Math.cos(cam.theta));
   camera.lookAt(camTarget);renderer.render(scene,camera);}
 addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
