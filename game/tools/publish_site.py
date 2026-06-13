@@ -32,7 +32,11 @@ def main():
     if not html.rstrip().endswith("</html>"):
         sys.exit("ABORT: game/index.html is TRUNCATED (OneDrive flap?) — re-sync the file and rerun. Nothing was published.")
     html = re.sub(r'(src="(?!https?:)[^"?]+\.js)"', r'\1?v=' + stamp + '"', html)
+    # stamp this build so a stale (cached) index.html can detect itself and self-reload.
+    # build.txt is fetched uncached on every load; main.js compares it to window.__BUILD.
+    html = html.replace("</head>", '<script>window.__BUILD="' + stamp + '";</script>\n</head>', 1)
     (PLAY / "index.html").write_text(html, encoding="utf-8")
+    (PLAY / "build.txt").write_text(stamp, encoding="utf-8")
     if not (PLAY / "index.html").read_text(encoding="utf-8").rstrip().endswith("</html>"):
         sys.exit("ABORT: written play/index.html failed verification — do not push.")
     shutil.copytree(GAME / "lib", PLAY / "lib")
