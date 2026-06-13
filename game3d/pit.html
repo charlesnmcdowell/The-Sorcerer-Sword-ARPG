@@ -2,47 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Sorcerer-Sword 3D — The Pit</title>
 <!-- 3D UPLIFT · B2: the Pit, driven by the REAL 2D game.
-     This page loads the actual createPitCombat() sim + VoiceMan + MusicMan + Autopilot from ../game/,
-     and renders the sim's state in 3D. Same controls / abilities / balance / tutorial / voice / music
-     as the 2D game — only the view is 3D. Models embedded → runs from a file:// double-click.
-     Voice/music audio lives in ../game/assets (see the Audio path shim below). -->
+     Loads the actual createPitCombat() sim + VoiceMan + MusicMan + Autopilot from ../game/, renders
+     the sim's state in 3D. Same controls (keyboard + mobile stick & ability buttons), abilities,
+     balance, tutorial-intro voice, per-character music, auto-play, and Bellow's board + leave offer
+     as the 2D game. Models embedded → file:// double-click works. Audio loads from ../game/assets. -->
 <style>
-  html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8;user-select:none}
+  html,body{margin:0;height:100%;background:#0a0712;overflow:hidden;font-family:'Courier New',monospace;color:#d8cdb8;user-select:none;touch-action:none}
   #c{display:block;width:100vw;height:100vh}
   #tint{position:fixed;inset:0;pointer-events:none;z-index:2;mix-blend-mode:soft-light;
     background:linear-gradient(180deg,rgba(80,40,120,.30),rgba(0,0,0,0) 42%,rgba(0,0,0,0) 62%,rgba(170,70,25,.30))}
   #vig{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 36%,rgba(0,0,0,.62) 100%)}
   #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4;mix-blend-mode:screen}
   #hud{position:fixed;inset:0;pointer-events:none;z-index:6;display:none}
-  #pname{position:fixed;left:18px;top:14px;font-family:Georgia,serif;font-size:18px;color:#e7d4a0;letter-spacing:1px}
-  #pstats{position:fixed;left:18px;top:40px;font-size:11px;color:#9a8aa0;letter-spacing:1px}
-  #hpwrap{position:fixed;left:18px;bottom:18px;width:320px;max-width:46vw}
-  #hpwrap .bar{height:16px;background:#2a1014;border:1px solid #6a2a2a;border-radius:3px;overflow:hidden}
+  #pname{position:fixed;left:16px;top:12px;font-family:Georgia,serif;font-size:17px;color:#e7d4a0;letter-spacing:1px}
+  #pstats{position:fixed;left:16px;top:36px;font-size:11px;color:#9a8aa0;letter-spacing:1px}
+  /* HP and toggles live at the TOP (matching the 2D layout) */
+  #hpwrap{position:fixed;left:16px;top:60px;width:300px;max-width:44vw}
+  #hpwrap .bar{height:15px;background:#2a1014;border:1px solid #6a2a2a;border-radius:3px;overflow:hidden}
   #hpbar{height:100%;width:100%;background:linear-gradient(#e7503a,#a01f1f);transition:width .12s}
-  #bosswrap{position:fixed;left:50%;top:16px;transform:translateX(-50%);width:46vw;display:none}
+  #bosswrap{position:fixed;left:50%;top:14px;transform:translateX(-50%);width:46vw;display:none}
   #bosswrap .nm{text-align:center;font-size:12px;letter-spacing:2px;color:#e7a0a0;margin-bottom:3px}
   #bosswrap .bar{height:13px;background:#2a0a0a;border:1px solid #7a2a2a}
   #bossbar{height:100%;width:100%;background:linear-gradient(#c83a3a,#7a1010);transition:width .12s}
-  #cds{position:fixed;left:18px;bottom:46px;font-size:11px;color:#7fd;letter-spacing:1px}
-  #ctrls{position:fixed;right:16px;bottom:14px;font-size:10px;letter-spacing:1px;color:#6a5a7a;text-align:right;line-height:1.7}
-  #auto{position:fixed;right:16px;top:14px;font-size:12px;letter-spacing:2px;color:#7fd;text-align:right}
-  #demoCap{position:fixed;left:0;right:0;bottom:120px;text-align:center;font-size:14px;color:#e7c98a;letter-spacing:1px;z-index:6;display:none}
-  #banner{position:fixed;left:0;right:0;top:26%;text-align:center;z-index:7;pointer-events:none;opacity:0;transition:opacity .3s}
+  #khint{position:fixed;left:16px;bottom:120px;font-size:10px;letter-spacing:1px;color:#6a5a7a;line-height:1.6}
+  #demoCap{position:fixed;left:0;right:0;bottom:130px;text-align:center;font-size:14px;color:#e7c98a;letter-spacing:1px;z-index:6;display:none}
+  #banner{position:fixed;left:0;right:0;top:24%;text-align:center;z-index:7;pointer-events:none;opacity:0;transition:opacity .3s}
   #banner.show{opacity:1}
   #banner .b1{font-family:Georgia,serif;font-size:clamp(28px,7vw,64px);color:#f0d49a;text-shadow:0 0 30px rgba(231,160,60,.6),0 3px 0 #3a1a06;letter-spacing:.05em}
   #banner .b2{font-size:14px;color:#d8b0c0;letter-spacing:1px;margin-top:6px}
-  .screen{position:fixed;inset:0;z-index:12;display:none;flex-direction:column;align-items:center;justify-content:center;
-    background:rgba(8,5,16,.82);text-align:center;padding:22px}
+  /* ---- on-screen controls (mobile parity with the 2D game) ---- */
+  #controls{position:fixed;right:16px;bottom:18px;z-index:9;display:none;grid-template-columns:repeat(2,68px);grid-gap:12px;gap:12px}
+  .abtn{position:relative;width:68px;height:68px;border-radius:50%;background:rgba(20,12,30,.82);border:2px solid #6a4a8a;color:#e7d4a0;
+    display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:1px;cursor:pointer;touch-action:none;-webkit-user-select:none}
+  .abtn.held{background:rgba(231,180,80,.32);border-color:#e7b450}
+  .abtn .cd{position:absolute;bottom:5px;font-size:9px;color:#f0709a}
+  #stickBase{position:fixed;width:110px;height:110px;border-radius:50%;border:2px solid rgba(231,180,80,.4);background:rgba(20,12,30,.4);display:none;z-index:9;pointer-events:none}
+  #stickNub{position:fixed;width:48px;height:48px;border-radius:50%;background:rgba(231,180,80,.5);display:none;z-index:9;pointer-events:none}
+  #topbtns{position:fixed;right:16px;top:12px;z-index:9;display:flex;gap:8px}
+  .tbtn{background:rgba(20,12,30,.82);border:1px solid #6a4a8a;color:#7fd;padding:8px 12px;border-radius:5px;font-size:12px;letter-spacing:1px;cursor:pointer;touch-action:none}
+  .tbtn:hover{background:rgba(231,180,80,.2)}
+  .screen{position:fixed;inset:0;z-index:12;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,5,16,.82);text-align:center;padding:22px}
   .screen.show{display:flex}
   .screen h1{font-family:Georgia,serif;color:#e7c98a;font-size:clamp(24px,6vw,50px);margin:0 0 6px;text-shadow:0 0 28px rgba(231,160,60,.5)}
   .screen .taunt{color:#d8b0c0;font-style:italic;max-width:560px;font-size:15px;line-height:1.6;margin:6px 0}
   .screen .meta{color:#9a8aa0;font-size:12px;letter-spacing:1px;margin:4px 0 12px}
   .screen p{color:#a294b0;max-width:560px;font-size:13px;line-height:1.7}
-  .btn{margin:8px;padding:12px 24px;background:rgba(40,24,52,.9);border:1px solid #e7b450;color:#e7d4a0;cursor:pointer;
-    font-family:'Courier New',monospace;letter-spacing:2px;font-size:14px;border-radius:5px}
+  .btn{margin:8px;padding:12px 24px;background:rgba(40,24,52,.9);border:1px solid #e7b450;color:#e7d4a0;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:2px;font-size:14px;border-radius:5px}
   .btn:hover{background:rgba(231,180,80,.22)}
   .btn.alt{border-color:#5a6a8a;color:#aab8d0}
   .picks{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:16px}
@@ -62,11 +70,18 @@
 <div id="hud">
   <div id="pname">—</div><div id="pstats"></div>
   <div id="bosswrap"><div class="nm"></div><div class="bar"><div id="bossbar"></div></div></div>
-  <div id="cds"></div>
+  <div id="khint">WASD/arrows move · J slash · Q heavy(hold) · K parry · Space roll · click attack · right-click roll</div>
   <div id="hpwrap"><div class="bar"><div id="hpbar"></div></div></div>
-  <div id="ctrls">WASD / arrows &mdash; move<br><b>J</b> slash &middot; <b>Q</b> heavy (hold) &middot; <b>K</b> parry &middot; <b>Space</b> roll<br>Left-click attack &middot; Right-click roll &middot; <b>F10</b> auto-play<br>drag &mdash; camera</div>
-  <div id="auto">AUTO: OFF</div>
 </div>
+<!-- mobile controls: stick (left) + ability buttons (right) + auto/music (top) -->
+<div id="controls">
+  <div class="abtn" id="bSlash">SLASH<div class="cd"></div></div>
+  <div class="abtn" id="bHeavy">HEAVY<div class="cd"></div></div>
+  <div class="abtn" id="bRoll">ROLL<div class="cd"></div></div>
+  <div class="abtn" id="bParry">PARRY<div class="cd"></div></div>
+</div>
+<div id="stickBase"></div><div id="stickNub"></div>
+<div id="topbtns"><div class="tbtn" id="autoBtn">AUTO: OFF</div><div class="tbtn" id="musicBtn">♪ ON</div></div>
 <div id="demoCap"></div>
 <div id="banner"><div class="b1"></div><div class="b2"></div></div>
 <div id="err"></div>
@@ -76,18 +91,16 @@
 <div id="scSelect" class="screen show"><h1>THE PIT</h1><p>Choose your champion. This is the real game &mdash; same abilities, balance, voice and music as the 2D Pit, rendered in 3D. After three fights, Bellow offers you the door.</p><div class="picks" id="picks"></div></div>
 <div id="load"><h1>THE PIT</h1><div class="sub">3D &mdash; loading the arena</div></div>
 
-<!-- 3D libs + our champion builders (local to game3d) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="assets/embedded3d.js"></script>
 <script src="champions.js"></script>
 <script>
-// --- stubs + audio path shim BEFORE the real game modules run ---
-window.GameState=window.GameState||{player:null,world:{flags:{}}};
+// stubs + audio-path shim BEFORE the real game modules run (their audio lives in ../game/assets)
+window.GameState=window.GameState||{player:null,world:{flags:{}},meta:{}};
 window.Money=window.Money||{PIT_PAYOUT_PER_KILL:8};
-(function(){const RA=window.Audio;window.Audio=function(s){if(typeof s==='string'&&/^assets\/(voice|music)\//.test(s))s='../game/'+s;return new RA(s);};window.Audio.prototype=RA.prototype;})();
+(function(){const RA=window.Audio;function A(s){return new RA(typeof s==='string'&&/^assets\/(voice|music)\//.test(s)?'../game/'+s:s);}A.prototype=RA.prototype;window.Audio=A;})();
 </script>
-<!-- the REAL 2D game systems (the source of truth) -->
 <script src="../game/src/core/music.js"></script>
 <script src="../game/src/core/voice.js"></script>
 <script src="../game/src/core/autopilot.js"></script>
@@ -102,11 +115,10 @@ window.addEventListener('unhandledrejection',ev=>showErr('promise: '+((ev.reason
 const THREE=window.THREE;
 if(!THREE)return showErr('needs internet to load Three.js');
 if(!window.CHAMP)return showErr('champions.js failed to load');
-if(!window.createPitCombat)return showErr('could not load ../game/src/combat/pit.js — run from inside the project so the 2D game is reachable.');
+if(!window.createPitCombat)return showErr('could not load ../game/src/combat/pit.js');
 if(!THREE.GLTFLoader)return showErr('GLTFLoader failed to load from CDN');
 const EMB=window.EMB3D,W=()=>innerWidth,H=()=>innerHeight,$=id=>document.getElementById(id);
 
-// ---------------- 3D scene + arena ----------------
 const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
 renderer.setPixelRatio(Math.min(2,devicePixelRatio));renderer.setSize(W(),H());
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -123,7 +135,6 @@ scene.add(new THREE.HemisphereLight(0x6a6a9a,0x201018,0.6));
 const klight=new THREE.DirectionalLight(0xffe2b0,1.2);klight.position.set(8,16,7);klight.castShadow=true;
 klight.shadow.mapSize.set(2048,2048);klight.shadow.camera.left=-18;klight.shadow.camera.right=18;klight.shadow.camera.top=18;klight.shadow.camera.bottom=-18;klight.shadow.bias=-0.0004;scene.add(klight);
 const rim=new THREE.DirectionalLight(0x6aa0ff,0.6);rim.position.set(-8,6,-7);scene.add(rim);
-// sim arena: center (640,360), r = min(1280,720)*0.42 = 302.4 px.  Map px -> world.
 const SIM_W=1280,SIM_H=720,SIM_CX=SIM_W/2,SIM_CY=SIM_H/2,SIM_R=Math.min(SIM_W,SIM_H)*0.42;
 const ARENA_R=11,SCALE=ARENA_R/SIM_R;
 const wx=px=>(px-SIM_CX)*SCALE, wz=py=>(py-SIM_CY)*SCALE;
@@ -142,7 +153,7 @@ const PR=ARENA_R+1;pillar(-PR*0.7,-PR*0.7,0xff8a3a);pillar(PR*0.7,-PR*0.7,0xff8a
 const embers=[];const eGeo=new THREE.SphereGeometry(0.05,4,4),eMat=new THREE.MeshBasicMaterial({color:0xffb060});
 for(let i=0;i<48;i++){const e=new THREE.Mesh(eGeo,eMat);e.position.set((Math.random()-.5)*28,Math.random()*9,(Math.random()-.5)*28);e.userData.vy=.3+Math.random()*.6;scene.add(e);embers.push(e);}
 
-// ---------------- animation helpers ----------------
+// ---------------- animation ----------------
 let CLIPS=[];
 function clipName(want,fb){return CLIPS.find(c=>c.name===want)?want:fb;}
 function setAnim(rec,name,opt){opt=opt||{};if(!rec.mixer||!name)return;let a=rec.acts[name];if(a===undefined){const cl=CLIPS.find(c=>c.name===name)||null;a=cl?rec.mixer.clipAction(cl):null;rec.acts[name]=a;}
@@ -150,194 +161,169 @@ function setAnim(rec,name,opt){opt=opt||{};if(!rec.mixer||!name)return;let a=rec
   a.fadeIn(opt.fade==null?0.16:opt.fade).play();if(rec.cur&&rec.cur!==a)rec.cur.fadeOut(opt.fade==null?0.16:opt.fade);rec.cur=a;rec.curName=name;}
 const IDLE='Idle_A',RUN='Running_A',ATK='Throw',DEATH='Death_A',ROLLC='Jump_Idle';
 
-// ---------------- entity 3D records ----------------
+// ---------------- entity records ----------------
 const loader=new THREE.GLTFLoader();
-let playerRec=null;
-const mobs=[]; // {ent,kind,model,mixer,acts,cur,prevX,prevZ,bar}
+let playerRec=null;const mobs=[];
 function tintModel(m,colHex){let c;try{c=new THREE.Color(colHex||'#8a2522');}catch(e){c=new THREE.Color(0x8a2522);}
   m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();if(o.material.color)o.material.color.lerp(c,0.6);o.material.emissive=c.clone().multiplyScalar(0.35);o.material.emissiveIntensity=0.4;}});}
 function makeBar(){const g=new THREE.Group();
   const bg=new THREE.Sprite(new THREE.SpriteMaterial({color:0x200a0a,depthTest:false,fog:false}));bg.scale.set(1.0,0.11,1);g.add(bg);
   const fg=new THREE.Sprite(new THREE.SpriteMaterial({color:0xe7503a,depthTest:false,fog:false}));fg.scale.set(1.0,0.11,1);g.add(fg);
   g.renderOrder=999;g.userData={bg,fg};scene.add(g);return g;}
-function spawnMob(ent,kind){
-  ent.__spawning=true;
-  CHAMP.makeKnight(loader,EMB,(m)=>{
-    const r=ent.r||14;CHAMP.groundModel(m,Math.max(1.4,r*0.115));
-    tintModel(m,ent.col);scene.add(m);
-    const mixer=new THREE.AnimationMixer(m);
-    const rec={ent,kind,model:m,mixer,acts:{},cur:null,curName:'',prevX:ent.x,prevZ:ent.y,bar:makeBar()};
+function spawnMob(ent,kind){ent.__spawning=true;
+  CHAMP.makeKnight(loader,EMB,(m)=>{const r=ent.r||14;CHAMP.groundModel(m,Math.max(1.4,r*0.115));tintModel(m,ent.col);scene.add(m);
+    const mixer=new THREE.AnimationMixer(m);const rec={ent,kind,model:m,mixer,acts:{},cur:null,prevX:ent.x,prevZ:ent.y,bar:makeBar()};
     setAnim(rec,clipName(IDLE,CLIPS[0]&&CLIPS[0].name));mobs.push(rec);ent.__rec=rec;ent.__spawning=false;
-  },e=>{ent.__spawning=false;});
-}
-function syncMob(rec,dt){const e=rec.ent,m=rec.model;
-  m.position.set(wx(e.x),m.position.y,wz(e.y));
-  let face=e.face;if(face==null){face=Math.atan2(e.y-rec.prevZ,e.x-rec.prevX);}
+  },e=>{ent.__spawning=false;});}
+function syncMob(rec,dt){const e=rec.ent,m=rec.model;m.position.set(wx(e.x),m.position.y,wz(e.y));
+  let face=e.face;if(face==null)face=Math.atan2(e.y-rec.prevZ,e.x-rec.prevX);
   m.rotation.y=Math.atan2(Math.cos(face),Math.sin(face));
-  const sp=Math.hypot(e.x-rec.prevX,e.y-rec.prevY||0);const moved=Math.hypot(e.x-rec.prevX,e.y-rec.prevZ);
-  if(e.dead||e.hp<=0){setAnim(rec,clipName(DEATH,'Hit_A'),{once:true,fade:0.1});}
+  const moved=Math.hypot(e.x-rec.prevX,e.y-rec.prevZ);
+  if(e.dead||e.hp<=0)setAnim(rec,clipName(DEATH,'Hit_A'),{once:true,fade:0.1});
   else setAnim(rec,moved>0.6?clipName(RUN,'Walking_A'):clipName(IDLE,CLIPS[0].name),{speed:1.1});
   rec.prevX=e.x;rec.prevZ=e.y;
-  if(rec.bar){if(e.maxhp){const r=Math.max(0,(e.hp||0)/e.maxhp);rec.bar.visible=r>0&&r<1;rec.bar.position.set(wx(e.x),Math.max(1.6,(e.r||14)*0.115)+0.7,wz(e.y));rec.bar.userData.fg.scale.x=1.0*r;rec.bar.userData.fg.position.x=-(1-r)*0.5;}else rec.bar.visible=false;}}
+  if(rec.bar){if(e.maxhp){const r=Math.max(0,(e.hp||0)/e.maxhp);rec.bar.visible=r>0&&r<1;rec.bar.position.set(wx(e.x),Math.max(1.6,(e.r||14)*0.115)+0.7,wz(e.y));rec.bar.userData.fg.scale.x=r;rec.bar.userData.fg.position.x=-(1-r)*0.5;}else rec.bar.visible=false;}}
 function removeRec(rec){scene.remove(rec.model);if(rec.bar)scene.remove(rec.bar);}
-
-// ---------------- player record + animation from sim state ----------------
-function buildPlayer(charKey){
-  const map={ronin:'ronin',druid:'druid',warlock:'warlock',seraph:'seraphim'};
-  CHAMP.makeChampion(loader,EMB,map[charKey]||'ronin',(model)=>{
-    CHAMP.groundModel(model,2.0);scene.add(model);
-    const mixer=new THREE.AnimationMixer(model);
-    playerRec={model,mixer,acts:{},cur:null,curName:'',prevAtk:0,prevX:0,prevZ:0};
-    setAnim(playerRec,clipName(IDLE,CLIPS[0]&&CLIPS[0].name));
-  },e=>showErr('player rig: '+e));
-}
-function syncPlayer(dt){if(!playerRec||!combat)return;const P=combat.P,rec=playerRec,m=rec.model;
+function buildPlayer(charKey){const map={ronin:'ronin',druid:'druid',warlock:'warlock',seraph:'seraphim'};
+  CHAMP.makeChampion(loader,EMB,map[charKey]||'ronin',(model)=>{CHAMP.groundModel(model,2.0);scene.add(model);
+    const mixer=new THREE.AnimationMixer(model);playerRec={model,mixer,acts:{},cur:null,prevAtk:0,prevX:0,prevZ:0};
+    setAnim(playerRec,clipName(IDLE,CLIPS[0]&&CLIPS[0].name));},e=>showErr('player rig: '+e));}
+function syncPlayer(){if(!playerRec||!combat)return;const P=combat.P,rec=playerRec,m=rec.model;
   m.position.set(wx(P.x),m.position.y,wz(P.y));
   const face=P.face!=null?P.face:0;m.rotation.y=Math.atan2(Math.cos(face),Math.sin(face));
   const moved=Math.hypot(P.x-rec.prevX,P.y-rec.prevZ);
-  const atkEdge=(P.atkRecover||0)>(rec.prevAtk||0)+0.02; rec.prevAtk=P.atkRecover||0;
+  const atkEdge=(P.atkRecover||0)>(rec.prevAtk||0)+0.02;rec.prevAtk=P.atkRecover||0;
   if(P.dead)setAnim(rec,clipName(DEATH,'Hit_A'),{once:true,fade:0.12});
   else if((P.rollT||0)>0)setAnim(rec,clipName(ROLLC,'Running_A'),{once:true,speed:1.4,fade:0.05});
   else if(atkEdge)setAnim(rec,clipName(ATK,'Interact'),{once:true,speed:1.5,fade:0.05,force:true});
-  else if((P.parryT||0)>0)setAnim(rec,clipName('Interact',IDLE),{});
   else setAnim(rec,moved>0.4?clipName(RUN,'Walking_A'):clipName(IDLE,CLIPS[0].name),{speed:moved>0.4?1.1:1});
   rec.prevX=P.x;rec.prevZ=P.y;}
 
-// ---------------- HUD via the sim's ui callbacks ----------------
+// ---------------- ui callbacks (drive HUD + voice, same contract as ArenaScene) ----------------
 let bannerT=0;
+function setCd(id,v){const el=$(id);if(!el)return;const cd=el.querySelector('.cd');if(cd)cd.textContent=v>0?(v.toFixed(1)):'';}
 const ui={
-  stats:(dice,kills)=>{$('pstats').textContent=dice+'   '+kills;},
+  stats:(dice,kills)=>{$('pstats').textContent=(dice||'')+'   '+(kills||'');},
   name:(t)=>{$('pname').textContent=t||'';},
-  btnLabel:(id,txt)=>{}, // ability names are shown in the controls strip
+  btnLabel:(id,txt)=>{const el=$(id);if(el&&el.firstChild)el.firstChild.nodeValue=txt;},
   flash:(o)=>{const f=$('flash');f.style.opacity=Math.min(0.7,o||0);setTimeout(()=>f.style.opacity=0,90);},
   banner:(t1,t2,ms,col)=>{const b=$('banner');b.querySelector('.b1').textContent=t1||'';b.querySelector('.b2').textContent=t2||'';if(col)b.querySelector('.b1').style.color=col;b.classList.add('show');bannerT=(ms||1800)/1000;},
   hud:(v)=>{$('hud').style.display=v?'block':'none';},
-  controls:(v)=>{$('ctrls').style.display=v?'block':'none';},
+  controls:(v)=>{$('controls').style.display=v?'grid':'none';},
   hpbar:(f)=>{$('hpbar').style.width=Math.max(0,Math.min(1,f))*100+'%';},
   boss:(v,name)=>{$('bosswrap').style.display=v?'block':'none';if(name)$('bosswrap').querySelector('.nm').textContent=name;},
   bossbar:(f)=>{$('bossbar').style.width=Math.max(0,Math.min(1,f))*100+'%';},
-  cds:(c)=>{if(!c)return;const k=Object.keys(c).map(n=>n+(c[n]>0?' '+c[n].toFixed(1):'')).join('  ');$('cds').textContent=k;},
+  cds:(c)=>{if(!c)return;setCd('bRoll',c.roll);setCd('bSlash',c.slash);setCd('bHeavy',c.heavy);setCd('bParry',c.parry);},
   demoCap:(txt)=>{const d=$('demoCap');if(txt){d.textContent=txt;d.style.display='block';}else d.style.display='none';},
-  intro:(v,data)=>{const s=$('scIntro');if(v){$('introName').textContent=(data&&data.name)||'';$('introBio').textContent=(data&&data.bio)||'';s.classList.add('show');
-      if(window.VoiceMan&&data&&data.bio)VoiceMan.say('NARRATOR',data.bio);}else s.classList.remove('show');},
+  intro:(v,data)=>{const s=$('scIntro');if(v){$('introName').textContent=(data&&data.name)||'';$('introBio').textContent=(data&&data.bio)||'';s.classList.add('show');if(window.VoiceMan&&data&&data.bio)VoiceMan.say('NARRATOR',data.bio);}else s.classList.remove('show');},
   screen:(id,data)=>showScreen(id,data)
 };
-
 function hideScreens(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));}
 function showScreen(id,data){
   if(id==='board'){const s=$('scBoard');data=data||{};
-    s.innerHTML='<h1>'+(data.foeName||'NEXT FIGHT')+'</h1>'+
-      (data.foeRec?'<div class="meta">'+data.foeRec+'</div>':'')+
-      (data.foeTaunt?'<div class="taunt">'+data.foeTaunt+'</div>':'')+
-      (data.odds?'<div class="meta">odds: '+data.odds+(data.crowd?'  ·  '+data.crowd:'')+'</div>':'');
+    s.innerHTML='<h1>'+(data.foeName||'NEXT FIGHT')+'</h1>'+(data.foeRec?'<div class="meta">'+data.foeRec+'</div>':'')+(data.foeTaunt?'<div class="taunt">'+data.foeTaunt+'</div>':'')+(data.odds?'<div class="meta">odds: '+data.odds+(data.crowd?'  ·  '+data.crowd:'')+'</div>':'');
     const fight=document.createElement('div');fight.className='btn';fight.textContent='FIGHT ▶';fight.onclick=()=>{hideScreens();combat.startFight();};s.appendChild(fight);
     if(data.canLeave){const lv=document.createElement('div');lv.className='btn alt';lv.textContent='TAKE 15 SILVER & LEAVE';lv.onclick=()=>leaveArena();s.appendChild(lv);}
-    s.classList.add('show');
-    if(window.VoiceMan&&data.foeTaunt)VoiceMan.say('BELLOW',(''+data.foeTaunt).replace(/^"|"$/g,''));
-  } else if(id==='death'||id==='victory'){const s=$('scEnd');data=data||{};
-    const win=id==='victory';
-    s.innerHTML='<h1>'+(win?'PIT CHAMPION':'DOWNED')+'</h1>'+
-      (data.quote?'<div class="taunt">'+data.quote+'</div>':'')+
-      (data.stats?'<div class="meta">'+data.stats+'</div>':'')+
-      (data.hints?'<p>'+(Array.isArray(data.hints)?data.hints.join('<br>'):data.hints)+'</p>':'');
+    s.classList.add('show');if(window.VoiceMan&&data.foeTaunt)VoiceMan.say('BELLOW',(''+data.foeTaunt).replace(/^"|"$/g,''));
+  }else if(id==='death'||id==='victory'){const s=$('scEnd');data=data||{};const win=id==='victory';
+    s.innerHTML='<h1>'+(win?'PIT CHAMPION':'DOWNED')+'</h1>'+(data.quote?'<div class="taunt">'+data.quote+'</div>':'')+(data.stats?'<div class="meta">'+data.stats+'</div>':'')+(data.hints?'<p>'+(Array.isArray(data.hints)?data.hints.join('<br>'):data.hints)+'</p>':'');
     const again=document.createElement('div');again.className='btn';again.textContent='FIGHT AGAIN';again.onclick=()=>location.reload();s.appendChild(again);
     const back=document.createElement('div');back.className='btn alt';back.textContent='← CHAMPIONS';back.onclick=()=>location.href='index.html';s.appendChild(back);
-    s.classList.add('show');
-    if(window.VoiceMan&&data.quote)VoiceMan.say('NARRATOR',(''+data.quote).replace(/^"|"$/g,''));
-  }
+    s.classList.add('show');if(window.VoiceMan&&data.quote)VoiceMan.say('NARRATOR',(''+data.quote).replace(/^"|"$/g,''));}
 }
-function leaveArena(){hideScreens();ui.hud(false);if(window.VoiceMan)VoiceMan.stop&&VoiceMan.stop();
+function leaveArena(){hideScreens();ui.hud(false);ui.controls(false);if(window.VoiceMan&&VoiceMan.stop)VoiceMan.stop();
   const s=$('scEnd');s.innerHTML='<h1>YOU WALKED</h1><div class="taunt">You took Bellow\'s 15 silver and left the Pit on your feet. The road to the city awaits.</div>';
   const again=document.createElement('div');again.className='btn';again.textContent='BACK TO THE PIT';again.onclick=()=>location.reload();s.appendChild(again);
   const back=document.createElement('div');back.className='btn alt';back.textContent='← CHAMPIONS';back.onclick=()=>location.href='index.html';s.appendChild(back);s.classList.add('show');}
 
 // ---------------- the real sim ----------------
 let combat=null;
-function nowMs(){return performance.now();}
-function startGame(charKey){
-  $('scSelect').classList.remove('show');
-  if(!combat){
-    combat=createPitCombat({width:SIM_W,height:SIM_H,ctx:null,dctx:null,now:nowMs,vibrate:(ms)=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}},ui:ui,theme:{}});
-    window._combat=combat;
-  }
-  buildPlayer(charKey);
-  combat.startIntro(charKey); // plays the bio + tutorial demo, same as the 2D game
-}
+function startGame(charKey){$('scSelect').classList.remove('show');
+  if(!combat){combat=createPitCombat({width:SIM_W,height:SIM_H,ctx:null,dctx:null,now:()=>performance.now(),vibrate:(ms)=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}},ui:ui,theme:{}});window._combat=combat;}
+  buildPlayer(charKey);combat.startIntro(charKey);}
 
-// ---------------- input (matches the 2D bindings) ----------------
+// ---------------- input: keyboard (2D bindings) ----------------
 const keymap={'arrowup':'w','arrowdown':'s','arrowleft':'a','arrowright':'d'};
 addEventListener('keydown',e=>{if(!combat)return;const k=e.key.toLowerCase();const mk=keymap[k]||k;combat.keys[mk]=true;
   if(['w','a','s','d',' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
-  if(k==='j')combat.doSlash();
-  if(k==='q')combat.doHeavy();
-  if(k==='k')combat.doParry();
-  if(k===' ')combat.doRoll();
-  if(k==='f10'){e.preventDefault();if(window.Autopilot){const on=Autopilot.toggle();$('auto').textContent='AUTO: '+(on?'ON':'OFF');$('auto').style.color=on?'#e7b450':'#7fd';}}});
+  if(k==='j')combat.doSlash();if(k==='q')combat.doHeavy();if(k==='k')combat.doParry();if(k===' ')combat.doRoll();
+  if(k==='f10'){e.preventDefault();cycleAuto();}});
 addEventListener('keyup',e=>{if(!combat)return;const k=e.key.toLowerCase();const mk=keymap[k]||k;combat.keys[mk]=false;if(k==='q')combat.heavyRelease();});
-let drag=false,px=0,py=0,moved3=0;
-addEventListener('pointerdown',e=>{if(e.button===2)return;drag=true;moved3=0;px=e.clientX;py=e.clientY;});
-addEventListener('pointerup',e=>{drag=false;if(combat&&combat.S&&combat.S.mode==='fight'&&e.button===2)combat.doRoll();});
-addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-px,dy=e.clientY-py;moved3+=Math.abs(dx)+Math.abs(dy);
-  camYaw-=dx*0.006;camPitch=Math.max(0.3,Math.min(1.25,camPitch-dy*0.005));px=e.clientX;py=e.clientY;});
+
+// ---------------- input: pointer (mouse camera + touch stick + taps) ----------------
+let camYaw=Math.PI,camPitch=0.62,camDist=12;
+const stick={dx:0,dy:0,mag:0,id:null,ox:0,oy:0};const sb=$('stickBase'),sn=$('stickNub');
+let drag=false,dragId=null,px=0,py=0,moved3=0;
+const isTouch=e=>e.pointerType==='touch'||e.pointerType==='pen';
+const ray=new THREE.Raycaster(),groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3();
+function groundPoint(cx,cy){ray.setFromCamera(new THREE.Vector2(cx/W()*2-1,-(cy/H())*2+1),camera);ray.ray.intersectPlane(groundPlane,hit);return hit;}
+addEventListener('pointerdown',e=>{
+  if(e.target&&e.target.closest&&e.target.closest('#controls,#topbtns,.screen,.btn,.pick'))return; // UI handles itself
+  if(combat&&isTouch(e)&&e.clientX<innerWidth*0.55&&stick.id===null){stick.id=e.pointerId;stick.ox=e.clientX;stick.oy=e.clientY;stick.dx=stick.dy=stick.mag=0;
+    sb.style.display=sn.style.display='block';sb.style.left=(e.clientX-55)+'px';sb.style.top=(e.clientY-55)+'px';sn.style.left=(e.clientX-24)+'px';sn.style.top=(e.clientY-24)+'px';return;}
+  if(combat&&isTouch(e)){if(combat.S&&combat.S.mode==='fight')combat.doSlash();return;}
+  drag=true;dragId=e.pointerId;moved3=0;px=e.clientX;py=e.clientY;});
+addEventListener('pointermove',e=>{
+  if(stick.id===e.pointerId){let dx=e.clientX-stick.ox,dy=e.clientY-stick.oy;const m=Math.hypot(dx,dy),cap=52;if(m>cap){dx*=cap/m;dy*=cap/m;}
+    stick.dx=dx/cap;stick.dy=dy/cap;stick.mag=Math.min(1,m/cap);sn.style.left=(stick.ox+dx-24)+'px';sn.style.top=(stick.oy+dy-24)+'px';return;}
+  if(drag&&dragId===e.pointerId){const dx=e.clientX-px,dy=e.clientY-py;moved3+=Math.abs(dx)+Math.abs(dy);camYaw-=dx*0.006;camPitch=Math.max(0.3,Math.min(1.25,camPitch-dy*0.005));px=e.clientX;py=e.clientY;}});
+function endStick(e){if(stick.id===e.pointerId){stick.id=null;stick.dx=stick.dy=stick.mag=0;sb.style.display=sn.style.display='none';return true;}return false;}
+addEventListener('pointerup',e=>{if(endStick(e))return;
+  if(drag&&dragId===e.pointerId){drag=false;dragId=null;
+    if(combat&&combat.S&&combat.S.mode==='fight'){if(e.button===2)combat.doRoll();else if(moved3<6){const p=groundPoint(e.clientX,e.clientY);combat.pointerAttack(SIM_CX+p.x/SCALE,SIM_CY+p.z/SCALE);}}}});
+addEventListener('pointercancel',e=>{endStick(e);drag=false;});
 addEventListener('wheel',e=>{camDist=Math.max(6,Math.min(20,camDist+e.deltaY*0.01));},{passive:true});
 addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('resize',()=>{renderer.setSize(W(),H());camera.aspect=W()/H();camera.updateProjectionMatrix();});
-// approximate screen->sim coords for click-to-attack (project ground plane)
-const ray=new THREE.Raycaster(),groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3();
-function groundPoint(cx,cy){ray.setFromCamera(new THREE.Vector2(cx/W()*2-1,-(cy/H())*2+1),camera);ray.ray.intersectPlane(groundPlane,hit);return hit;}
-function simX(cx,cy){const p=groundPoint(cx,arguments.length>1?cy:0);return SIM_CX+p.x/SCALE;}
-function simY(cy){return SIM_CY;} // pointerAttack mainly needs a direction; refined below in handler
 
-// ---------------- camera ----------------
-let camYaw=Math.PI,camPitch=0.62,camDist=12;
+// ---------------- on-screen ability buttons (mobile parity) ----------------
+function bindBtn(id,fn,up){const el=$(id);if(!el)return;
+  el.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();el.classList.add('held');if(combat)fn();});
+  const u=()=>{el.classList.remove('held');if(up&&combat)up();};
+  el.addEventListener('pointerup',u);el.addEventListener('pointercancel',u);el.addEventListener('pointerleave',u);}
+bindBtn('bSlash',()=>combat.doSlash());
+bindBtn('bHeavy',()=>combat.doHeavy(),()=>combat.heavyRelease());
+bindBtn('bRoll',()=>combat.doRoll());
+bindBtn('bParry',()=>combat.doParry());
 
-// ---------------- main loop ----------------
-let last=performance.now();
+// ---------------- AUTO toggle (button + F10) ----------------
+function cycleAuto(){if(!window.Autopilot)return;const on=Autopilot.toggle();const el=$('autoBtn');
+  el.textContent='AUTO: '+(on?'ON':'OFF');el.style.color=on?'#e7b450':'#7fd';
+  ui.banner(on?'AUTO: ON':'AUTO: OFF',on?'the pit plays itself':'your hands now',1500,'#3df0c8');}
+$('autoBtn').addEventListener('pointerdown',e=>{e.stopPropagation();cycleAuto();});
+
+// ---------------- camera + loop ----------------
+let last=performance.now(),autoLeaveT=0;
 function frame(){requestAnimationFrame(frame);const t=performance.now();let dt=Math.min(0.05,(t-last)/1000);last=t;
   for(const e of embers){e.position.y+=e.userData.vy*dt;if(e.position.y>9){e.position.y=0;e.position.x=(Math.random()-.5)*28;e.position.z=(Math.random()-.5)*28;}}
   for(const pl of pillars){pl.userData.light.intensity=.85+Math.random()*.45;pl.userData.flame.scale.y=.85+Math.random()*.4;}
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').classList.remove('show');}
-  if(combat){
-    try{
-      if(window.Autopilot)Autopilot.frame(combat,dt);
-      combat.stick.dx=0;combat.stick.dy=0;combat.stick.mag=0;
-      combat.frame(t);
-      // music exactly like ArenaScene
-      const ch=combat.P&&combat.P.char;const m=combat.S.mode;
-      if(window.MusicMan){const pit=ch==='warlock'?'dungeon':ch==='druid'&&!MusicMan._missing['pit-druid']?'pit-druid':ch==='seraph'&&!MusicMan._missing['pit-seraph']?'pit-seraph':'arena';
-        MusicMan.play(m==='fight'||m==='demo'||m==='board'?pit:'title');}
-      // AUTO buy-out after fight 3 (leaving is the default), mirrors ArenaScene
-      if(window.Autopilot&&Autopilot.on&&combat.S.mode==='board'&&combat.S.canLeave){autoLeaveT+=dt;if(autoLeaveT>2.4){autoLeaveT=0;leaveArena();}}else autoLeaveT=0;
-      // render entities
-      syncPlayer(dt);
-      const live=new Set();const lists=[combat.enemies||[],combat.demons||[],combat.wolves||[]];const kinds=['enemy','demon','wolf'];
-      lists.forEach((arr,ki)=>{for(const e of arr){live.add(e);if(!e.__rec&&!e.__spawning)spawnMob(e,kinds[ki]);}});
-      for(let i=mobs.length-1;i>=0;i--){const rec=mobs[i];if(!live.has(rec.ent)){removeRec(rec);mobs.splice(i,1);rec.ent.__rec=null;}else{rec.mixer.update(dt);syncMob(rec,dt);}}
-      if(playerRec)playerRec.mixer.update(dt);
-    }catch(err){showErr('loop: '+(err&&err.message||err));throw err;}
-  }
-  // camera follow the player (or arena center pre-spawn)
-  const tx=playerRec?playerRec.model.position.x:0, tz=playerRec?playerRec.model.position.z:0;
+  if(combat){try{
+    if(window.Autopilot)Autopilot.frame(combat,dt);
+    combat.stick.dx=stick.dx;combat.stick.dy=stick.dy;combat.stick.mag=stick.mag; // mobile joystick feeds the sim
+    combat.frame(t);
+    const ch=combat.P&&combat.P.char,m=combat.S.mode;
+    if(window.MusicMan){const pit=ch==='warlock'?'dungeon':ch==='druid'&&!MusicMan._missing['pit-druid']?'pit-druid':ch==='seraph'&&!MusicMan._missing['pit-seraph']?'pit-seraph':'arena';
+      MusicMan.play(m==='fight'||m==='demo'||m==='board'?pit:'title');}
+    if(window.Autopilot&&Autopilot.on&&m==='board'&&combat.S.canLeave){autoLeaveT+=dt;if(autoLeaveT>2.4){autoLeaveT=0;leaveArena();}}else autoLeaveT=0;
+    syncPlayer();
+    const live=new Set();const lists=[combat.enemies||[],combat.demons||[],combat.wolves||[]],kinds=['enemy','demon','wolf'];
+    lists.forEach((arr,ki)=>{for(const e of arr){live.add(e);if(!e.__rec&&!e.__spawning)spawnMob(e,kinds[ki]);}});
+    for(let i=mobs.length-1;i>=0;i--){const rec=mobs[i];if(!live.has(rec.ent)){removeRec(rec);mobs.splice(i,1);rec.ent.__rec=null;}else{rec.mixer.update(dt);syncMob(rec,dt);}}
+    if(playerRec)playerRec.mixer.update(dt);
+  }catch(err){showErr('loop: '+(err&&err.message||err));throw err;}}
+  const tx=playerRec?playerRec.model.position.x:0,tz=playerRec?playerRec.model.position.z:0;
   const cx=tx+camDist*Math.sin(camPitch)*Math.sin(camYaw),cy=1.0+camDist*Math.cos(camPitch),cz=tz+camDist*Math.sin(camPitch)*Math.cos(camYaw);
   camera.position.lerp(new THREE.Vector3(cx,cy,cz),0.12);camera.lookAt(tx,1.1,tz);
-  renderer.render(scene,camera);
-}
-let autoLeaveT=0;
-
-// refine pointerAttack: face the ground click and slash (fight mode)
-addEventListener('pointerup',e=>{if(combat&&combat.S&&combat.S.mode==='fight'&&e.button===0&&moved3<6){
-  const p=groundPoint(e.clientX,e.clientY);combat.pointerAttack(SIM_CX+p.x/SCALE,SIM_CY+p.z/SCALE);}},true);
+  renderer.render(scene,camera);}
 
 // ---------------- boot ----------------
 $('enterBtn').onclick=()=>{if(combat){hideScreens();combat.endIntro();}};
-CHAMP.loadClips(loader,EMB,clips=>{
-  CLIPS=clips;if(!CLIPS.length)return showErr('no animation clips loaded');
+CHAMP.loadClips(loader,EMB,clips=>{CLIPS=clips;if(!CLIPS.length)return showErr('no animation clips loaded');
   const picks=$('picks');CHAMP.CHAMPS.forEach(ch=>{const map={ronin:'ronin',druid:'druid',warlock:'warlock',seraphim:'seraph'};
     const d=document.createElement('div');d.className='pick';d.innerHTML='<div class="nm">'+ch.name+'</div><div class="bl">'+ch.blurb+'</div>';
     d.onclick=()=>startGame(map[ch.key]);picks.appendChild(d);});
-  loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',500);
-  frame();
-});
+  loadEl.style.opacity=0;setTimeout(()=>loadEl.style.display='none',500);frame();});
 })();
 </script>
 </body>
