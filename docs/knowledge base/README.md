@@ -27,6 +27,7 @@ A single-player, browser-based, top-down dark-fantasy action-RPG built in **Phas
 | `09-feature-list.md` | Everything the game currently does. |
 | `10-future-features.md` | Features the author has alluded to / planned but not built. |
 | `11-recommended-features.md` | Features NOT planned that are recommended based on top browser ARPGs. |
+| `12-asset-license-register.md` | Every third-party asset + its commercial-use status. **Check before monetizing.** |
 | `wiki/` | **Auto-generated** quest / character / monster / location reference. Regenerate with `node game/tools/gen_wiki.js`. Never hand-edit. |
 
 ## Folder layout (where everything lives)
