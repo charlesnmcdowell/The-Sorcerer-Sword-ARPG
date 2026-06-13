@@ -838,7 +838,16 @@ function killEnemy(e,heavy){
   if(dismembered)dismember(e,fatality);
   kwIdx=(kwIdx+1)%KILLWORDS.length;
   const word=dismembered&&Math.random()<.5?'DECAPITATED':KILLWORDS[kwIdx];
-  if(!e.minion){
+  if(e.boss){
+    // pure VISUAL death cinematic — no banner text, no dialogue (Hiro: monster expansion)
+    S.slow=2.4;S.fatal=true;
+    camFocus(e.x,e.y,2.5,2.2);
+    flashFx(.45);S.shake=Math.max(S.shake,22);vib([60,80,140]);
+    const dc=e.deathCol||'#ffffff';
+    for(let k=0;k<54&&particles.length<240;k++){const a=rnd(0,6.3),s=rnd(120,420);
+      particles.push({x:e.x,y:e.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:rnd(.5,1.3),col:dc,r:rnd(2,5.5),noG:true});}
+    dismember(e,true);
+  }else if(!e.minion){
     popup(e.x,e.y-66,word,fatality?'#ff3d5a':'#f0a83d',fatality?26:20);
     if(fatality){
       S.slow=1.6;S.fatal=true;
@@ -1699,6 +1708,21 @@ function tick(now){
         for(const e of enemies){if(e.dead)continue;
           if(dist(z,e)<z.r){e.stunT=Math.max(e.stunT||0,2);
             dotDamage(e,1,'#7fd05a');}}}
+      if(z.life<=0)zones.splice(i,1);}
+    else if(z.type==='venom'){z.life-=dt; // lingering poison pool: DoT, and ROOTS you if you linger (Hiro boss)
+      if(dist(z,P)<z.r&&P.rollT<=0){z.tick=(z.tick||0)-dt;
+        if(z.tick<=0){z.tick=.5;hurtPlayer(3*(z.dmgScale||1),null);popup(P.x,P.y-40,'POISONED','#7fd05a',11);}
+        z.dwell=(z.dwell||0)+dt;
+        if(z.dwell>=1.2&&P.paralyzeT<=0&&!(P.wardT>0)){P.paralyzeT=1.1;if(P.channel)P.channel=null;
+          popup(P.x,P.y-46,'ROOTED','#3a7a2c',14);vib(50);z.dwell=0;}}
+      else z.dwell=0;
+      if(z.life<=0)zones.splice(i,1);}
+    else if(z.type==='frost'){z.life-=dt; // lingering rime field: slows, then FREEZES if you camp it (Hiro boss)
+      if(dist(z,P)<z.r&&P.rollT<=0){P.slowT=Math.max(P.slowT,1.2);
+        z.dwell=(z.dwell||0)+dt;
+        if(z.dwell>=1.4&&P.paralyzeT<=0&&!(P.wardT>0)){P.paralyzeT=1.0;if(P.channel)P.channel=null;
+          popup(P.x,P.y-46,'FROZEN','#5ad2ff',14);vib(50);z.dwell=0;}}
+      else z.dwell=0;
       if(z.life<=0)zones.splice(i,1);}}
   // bullets
   for(let i=bullets.length-1;i>=0;i--){const b=bullets[i];
@@ -2130,7 +2154,8 @@ function draw(){
   // zones
   for(const z of zones){
     if(z.tele>0){
-      const zc=z.type==='fire'?'220,110,40':(z.type==='ice'?'90,210,255':(z.type==='bolt'?'240,224,90':'200,68,58'));
+      const zcMap={fire:'220,110,40',ice:'90,210,255',bolt:'240,224,90',venom:'127,208,90',frost:'120,200,255'};
+      const zc=zcMap[z.type]||'200,68,58';
       ctx.strokeStyle='rgba('+zc+',.85)';
       ctx.lineWidth=3;ctx.setLineDash([6,6]);
       ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,7);ctx.stroke();ctx.setLineDash([]);
@@ -2146,7 +2171,17 @@ function draw(){
       ctx.fillStyle='rgba(220,110,40,'+(0.25+0.1*Math.sin(S.time*14))+')';
       ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,7);ctx.fill();
       for(let i=0;i<2;i++)if(particles.length<240)particles.push({x:z.x+rnd(-z.r,z.r)*.7,y:z.y+rnd(-z.r,z.r)*.7,
-        vx:0,vy:-rnd(30,70),t:rnd(.2,.5),col:'#e08030',r:rnd(1.5,3)});}}
+        vx:0,vy:-rnd(30,70),t:rnd(.2,.5),col:'#e08030',r:rnd(1.5,3)});}
+    else if(z.type==='venom'){
+      ctx.fillStyle='rgba(127,208,90,'+(0.20+0.08*Math.sin(S.time*6))+')';
+      ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,7);ctx.fill();
+      if(particles.length<240&&Math.random()<.3)particles.push({x:z.x+rnd(-z.r,z.r)*.7,y:z.y+rnd(-z.r,z.r)*.7,
+        vx:0,vy:-rnd(15,40),t:rnd(.3,.6),col:'#7fd05a',r:rnd(1.5,3),noG:true});}
+    else if(z.type==='frost'){
+      ctx.fillStyle='rgba(120,200,255,'+(0.18+0.07*Math.sin(S.time*5))+')';
+      ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,7);ctx.fill();
+      if(particles.length<240&&Math.random()<.25)particles.push({x:z.x+rnd(-z.r,z.r)*.7,y:z.y+rnd(-z.r,z.r)*.7,
+        vx:0,vy:-rnd(10,30),t:rnd(.3,.6),col:'#bfe6ff',r:rnd(1.5,3),noG:true});}}
   // enemies
   for(const e of enemies){
     if(e.dead&&e.deathT>2)continue;
