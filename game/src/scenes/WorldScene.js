@@ -307,6 +307,19 @@ class WorldScene extends Phaser.Scene {
 
   // ---------- clearing encounters (pit combat host) ----------
   initEncounterHost(theme) {
+    // touch attack buttons must drive the ACTIVE overworld encounter (bound once; Hiro mobile fix)
+    window.__activeWorld = this;
+    if (!window.__worldBtnsBound) {
+      window.__worldBtnsBound = true;
+      const cur = () => window.__activeWorld;
+      const tap = (id, down, up) => { const el = document.getElementById(id); if (!el) return;
+        el.addEventListener('pointerdown', e => { e.preventDefault(); const w = cur(); if (w && w.encounterActive && w.encCombat) down(w.encCombat); });
+        if (up) el.addEventListener('pointerup', () => { const w = cur(); if (w && w.encounterActive && w.encCombat) up(w.encCombat); }); };
+      tap('bSlash', c => c.doSlash());
+      tap('bHeavy', c => c.doHeavy(), c => c.heavyRelease());
+      tap('bRoll', c => c.doRoll());
+      tap('bParry', c => c.doParry());
+    }
     const W = 1280, H = 720, DPR = 0.55;
     const texKey = 'enc-frame-' + this.scene.key;
     if (this.textures.exists(texKey)) this.textures.remove(texKey);
