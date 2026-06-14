@@ -139,7 +139,7 @@ function doSlash(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.atkRecover>0|
     P.x+=Math.cos(ba)*66;P.y+=Math.sin(ba)*66;clampArena(P);
     P.parryT=2.3*MODS.parryWin;P.parryCD=0;            // auto-parry stance on the retreat
     popup(P.x,P.y-46,'ZANSHIN — guard up','#e7b450',12);}}
-function doParry(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.rollT>0||P.heavyWind>0||P.channel||P.paralyzeT>0)return;
+function doParry(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.rollT>0||P.heavyWind>0||P.channel||P.paralyzeT>0||P.silenceT>0)return;
   if(P.char==='druid'){cycleForm();return;}
   if(P.parryCD>0)return;
   if(P.char==='warlock'){if(P.lich){fade();return;}portal();return;}
@@ -739,7 +739,7 @@ function updWolves(dt){
     clampArena(w);
     const mv=Math.hypot(w.x-(w._lx??w.x),w.y-(w._ly??w.y));
     w.walkP+=mv*.2;w._mv=mv>0.2;w._lx=w.x;w._ly=w.y;}}
-function doHeavy(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.heavyWind>0||P.rollT>0||P.paralyzeT>0)return;
+function doHeavy(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.heavyWind>0||P.rollT>0||P.paralyzeT>0||P.silenceT>0)return;
   if(P.char==='druid'){autoFace();druidHeavy();return;} // druid uses per-form cooldowns
   if(P.heavyCD>0)return;
   if(P.char==='warlock'){
@@ -769,6 +769,9 @@ function strike(a,arc,range,dmg,heavy){
     if(Math.abs(da)>arc/2)continue;
     hitEnemy(e,dmg,heavy,a);}}
 function hitEnemy(e,dmg,heavy,a){
+  // Warden's ward: untouchable until every totem is broken (Hiro boss puzzle)
+  if(e.type==='warden'&&enemies.some(t=>t.type==='totem'&&!t.dead)){
+    popup(e.x,e.y-30,'WARDED - break the totems','#5ad2ff',12);return;}
   // Door's shield: frontal block (heavy strikes break the guard)
   if(e.type==='door'&&!(e.brokenT>0)){
     let fd=Math.atan2(P.y-e.y,P.x-e.x)-e.face;
@@ -957,7 +960,8 @@ const FIGHTS=[
  {name:'THE FORMER CHAMPION',rec:'112 — 1. The 1 was retirement.',taunt:'"I know what the Pit gave you, nobody. It gave it to me first."',
   spawn:i=>[mkEnemy({type:'champ',hp:200*i,maxhp:200*i,spd:115,r:20,col:'#8a3a3a',feeds:0,thrallT:2})]},
  {name:"BELLOW'S SECRET",rec:'Undefeated. Unfed. Unwise.',taunt:'Bellow, sweating: "You weren\'t supposed to get this far."',
-  spawn:i=>[mkEnemy({type:'beast',hp:340*i,maxhp:340*i,spd:88,r:30,col:'#3f3a44',phase:1})]}
+  spawn:i=>[mkEnemy({type:'beast',hp:340*i,maxhp:340*i,spd:88,r:30,col:'#3f3a44',phase:1}),
+            mkEnemy({type:'grave',boss:true,deathCol:'#c8443a',x:arena.x+150,hp:280*i,maxhp:280*i,spd:110,r:22,col:'#5a2a34',wpn:'#c8443a',dmgScale:1.2,stance:'open',stanceT:1})]}
 ];
 function spawnFight(){
   const i=1+S.fight*0.30; // difficulty scale
@@ -976,7 +980,7 @@ function spawnFight(){
     for(const e of enemies){e.hp=Math.round(e.hp*2);e.maxhp=Math.round(e.maxhp*2);} // Hiro: DOUBLE all enemy HP after fight 3
   }
   zones=[];swings=[];particles=[];popups=[];bullets=[];limbs=[];wolves=[];P.wolfCD=0;P.glaive=null;
-  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;
+  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;
   if(P.devilT>0){P.devilT=0;P.r=16;updateLabels();}
   if(P.char==='druid'){P.form='human';P.r=16;P.formT=0;P.humanCD=0;updateLabels();}
   cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;
@@ -1297,6 +1301,60 @@ function updEnemyVs(e,dt,P){
           e.cool=2.2;showBanner('','',1);popup(e.x,e.y-50,'!','#c8443a',26);}
         else if(dToP<e.r+95)beginAttack(.62);}}
     break;
+   case 'rotwarden': // Heartrot (Grove): poison pools + root slam + self-regen
+    e.regenT=(e.regenT===undefined?1:e.regenT)-dt;
+    if(e.regenT<=0){e.regenT=1;
+      if(e.flash<=0&&e.hp<e.maxhp){const amt=Math.round(e.maxhp*0.012);
+        e.hp=Math.min(e.maxhp,e.hp+amt);popup(e.x,e.y-e.r-10,'+'+amt,'#7fbf6a',11);}}
+    if(e.attacking){e.tele-=dt;
+      if(e.tele<=0){e.attacking=false;e.cool=2.4;S.shake=Math.max(S.shake,7);
+        zones.push({x:P.x,y:P.y,r:70,tele:.7,life:.1,type:'bolt'});
+        for(let i2=0;i2<12&&particles.length<240;i2++)particles.push({x:e.x,y:e.y,vx:rnd(-80,80),vy:rnd(-80,40),t:.4,col:'#3a5a2c',r:2.5});}}
+    else{chase(.7,e.r+P.r+30);
+      e.spitT=(e.spitT===undefined?2.4:e.spitT)-dt;
+      if(e.spitT<=0){e.spitT=rnd(2.6,3.6);
+        zones.push({x:P.x,y:P.y,r:58,tele:.6,life:4.5,type:'venom',dmgScale:e.dmgScale});}
+      if(e.cool<=0&&dToP<e.r+90)beginAttack(.8);}
+    break;
+   case 'frostdrake': // Aurgelm (Mountain): kites, frost fields + ice volley
+    {const a=ang(e,P);e.face=a;
+     if(e.castT>0){e.castT-=dt;
+       if(Math.random()<.4&&particles.length<240)particles.push({x:e.x+rnd(-14,14),y:e.y+rnd(-10,10),vx:0,vy:-20,t:.3,col:'#bfe6ff',r:2,noG:true});
+       if(e.castT<=0){e.cool=2.4;zones.push({x:P.x,y:P.y,r:66,tele:.7,life:4,type:'frost'});}
+       break;}
+     if(dToP<200){e.x-=Math.cos(a)*e.spd*dt;e.y-=Math.sin(a)*e.spd*dt;}
+     else if(dToP>340){e.x+=Math.cos(a)*e.spd*.7*dt;e.y+=Math.sin(a)*e.spd*.7*dt;}
+     if(e.cool<=0){
+       if(Math.random()<.5){e.castT=1.1;popup(e.x,e.y-e.r-8,'RIME BREATH','#5ad2ff',11);}
+       else{e.cool=1.5;zones.push({x:P.x,y:P.y,r:54,tele:.6,life:.1,type:'ice',dmg:5*e.dmgScale});}}}
+    break;
+   case 'warden': // Provost Mortain (Ashenveil): immune until totems break; raises dead + bolts
+    {const a=ang(e,P);e.face=a;
+     if(dToP<200){e.x-=Math.cos(a)*e.spd*dt;e.y-=Math.sin(a)*e.spd*dt;}
+     e.raiseT=(e.raiseT===undefined?2:e.raiseT)-dt;
+     if(e.raiseT<=0){e.raiseT=3;
+       const skels=enemies.filter(x=>x.type==='skel'&&!x.dead).length;
+       if(skels<6){const ra=rnd(0,Math.PI*2),sx=e.x+Math.cos(ra)*60,sy=e.y+Math.sin(ra)*60;
+         enemies.push(mkEnemy({type:'skel',minion:true,x:sx,y:sy,hp:40*e.dmgScale,maxhp:40*e.dmgScale,spd:120,r:11,col:'#c8c2b0',dmgScale:e.dmgScale}));
+         popup(sx,sy-20,'RISE','#9af0c0',12);}}
+     e.castT=(e.castT===undefined?3:e.castT)-dt;
+     if(e.castT<=0){e.castT=4;zones.push({x:P.x,y:P.y,r:60,tele:.7,life:.1,type:'bolt'});}}
+    break;
+   case 'totem': // Mortain's wards - inert anchors; break them all to drop his immunity
+    break;
+   case 'collector': // The Collector (Varenholm): silence + slow control caster
+    {const a=ang(e,P);e.face=a;e.meleeCD=(e.meleeCD||0)-dt;
+     if(dToP<160){e.x-=Math.cos(a)*e.spd*dt;e.y-=Math.sin(a)*e.spd*dt;}
+     else if(dToP>260){e.x+=Math.cos(a)*e.spd*dt;e.y+=Math.sin(a)*e.spd*dt;}
+     if(e.castT>0){e.castT-=dt;
+       if(Math.random()<.4&&particles.length<240)particles.push({x:e.x+rnd(-12,12),y:e.y+rnd(-12,12),vx:0,vy:-18,t:.3,col:'#b070f0',r:2,noG:true});
+       if(e.castT<=0){e.cool=3.0;
+         if(dToP<300&&P.rollT<=0&&!(P.wardT>0)){P.silenceT=3.2;P.slowT=Math.max(P.slowT,2);
+           popup(P.x,P.y-46,'SILENCED','#b070f0',14);vib(40);}}
+       break;}
+     if(dToP<e.r+P.r+30&&e.meleeCD<=0){e.meleeCD=1.4;if(P.rollT<=0)hurtPlayer(rnd(6,9)*e.dmgScale,e);}
+     if(e.cool<=0){e.castT=.9;popup(e.x,e.y-e.r-8,'HEXING','#b070f0',11);}}
+    break;
   }
   clampArena(e);
   // separation
@@ -1406,7 +1464,7 @@ function startEncounter(list,cb){
   encounterCb=cb||null;
   enemies=list.map(o=>mkEnemy(o));
   zones=[];swings=[];particles=[];popups=[];bullets=[];limbs=[];wolves=[];P.wolfCD=0;P.glaive=null;
-  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;
+  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;
   if(P.devilT>0){P.devilT=0;P.r=16;updateLabels();}
   if(P.char==='druid'){P.form='human';P.r=16;P.formT=0;P.humanCD=0;updateLabels();}
   cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;
@@ -1567,7 +1625,7 @@ function endIntro(){
 function fullReset(ch){
   S.fight=0;P.kills=0;prevKills=0;nickname='NOBODY';S.declinedPot=false;S.canLeave=false;
   if(ch)P.char=ch;
-  P.form='human';P.r=16;P.wolfCD=0;P.formT=0;P.humanCD=0;P.bladeTier=0;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.devilT=0;P.hexCD=0;P.level=1;P.unlockMsg=null;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;wolves=[];demons=[];fireballs=[];P.channel=null;P.glaive=null;P.ascendT=0;rays=[];P.kneelT=0;P.graceUsed=false;P.lich=false;P.fadeT=0;P.fadeCD=0;P.lichRiseT=0;
+  P.form='human';P.r=16;P.wolfCD=0;P.formT=0;P.humanCD=0;P.bladeTier=0;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;P.devilT=0;P.hexCD=0;P.level=1;P.unlockMsg=null;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;wolves=[];demons=[];fireballs=[];P.channel=null;P.glaive=null;P.ascendT=0;rays=[];P.kneelT=0;P.graceUsed=false;P.lich=false;P.fadeT=0;P.fadeCD=0;P.lichRiseT=0;
   styleScore={untouched:0,headsman:0,quicksand:0,breath:0,corpse:0,mirror:0};
   updateLabels();
   dctx.clearRect(0,0,W,H);toBoard();}
@@ -1607,6 +1665,7 @@ function tick(now){
     P.parryT=Math.max(0,P.parryT-dt);P.parryCD=Math.max(0,P.parryCD-dt);
     P.formCD=Math.max(0,P.formCD-dt);P.wolfCD=Math.max(0,P.wolfCD-dt);
     P.slowT=Math.max(0,(P.slowT||0)-dt);P.wardT=Math.max(0,(P.wardT||0)-dt);P.hexCD=Math.max(0,(P.hexCD||0)-dt);
+    P.silenceT=Math.max(0,(P.silenceT||0)-dt); // Collector's hex: abilities locked (Hiro boss)
     if(P.lichRiseT>0){P.lichRiseT-=dt; // the kneel: three seconds where death watches him change
       if(Math.random()<.4&&particles.length<240)particles.push({x:P.x+rnd(-16,16),y:P.y-6+rnd(-18,8),
         vx:rnd(-15,15),vy:rnd(-50,-15),t:rnd(.3,.5),col:'#9af0c0',r:2,noG:true});
@@ -2199,14 +2258,14 @@ function draw(){
       phase:e.walkP,moving:e._mv,
       shield:T==='door'&&!e.dead&&!(e.brokenT>0),
       twoHand:(T==='door'||T==='brute'||T==='hook')?false:undefined,
-      thickWpn:T==='door'||T==='brute'||T==='chain',
-      wpnLen:(T==='hound'||T==='beast'||T==='gunner'||T==='thrall'||T==='stitch')?0:
+      thickWpn:T==='door'||T==='brute'||T==='chain'||T==='rotwarden',
+      wpnLen:(T==='hound'||T==='beast'||T==='gunner'||T==='thrall'||T==='stitch'||T==='frostdrake'||T==='totem')?0:
         (T==='necro'?e.r*1.6:e.r*1.2),
       wpnCol:T==='grave'&&e.stance==='parry'?'#e7b450':
         (T==='necro'?'#5a4a3a':(T==='skel'?'#b8b0a0':e.wpn)),
       wpnSwing:e.attacking?Math.sin(S.time*26)*.18-.4:0,
-      gun:T==='gunner',robe:T==='necro'||T==='stitch',hood:T==='necro',
-      quad:T==='hound',hulk:T==='beast',skull:T==='skel',
+      gun:T==='gunner',robe:T==='necro'||T==='stitch'||T==='warden'||T==='collector',hood:T==='necro'||T==='warden'||T==='collector',
+      quad:T==='hound'||T==='frostdrake',hulk:T==='beast'||T==='rotwarden',skull:T==='skel'||T==='totem',
       headCol:T==='beast'?'#2a2030':(T==='champ'?'#3a1c1c':null)});
     // champ aura
     if(e.type==='champ'&&e.feeds>0&&!e.dead){

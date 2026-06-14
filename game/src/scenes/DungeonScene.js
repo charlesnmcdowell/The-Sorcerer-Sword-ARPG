@@ -77,6 +77,9 @@ class DungeonScene extends WorldScene {
       [{ type: 'brute', x: 640, y: 260, hp: 220, maxhp: 220, spd: 72, r: 21, col: '#3a4a44', dmgScale: 1.3 },
        { type: 'skel', x: 520, y: 340, hp: 60, maxhp: 60, spd: 125, r: 11, col: '#b8b0a0', dmgScale: 1 },
        { type: 'skel', x: 760, y: 340, hp: 60, maxhp: 60, spd: 125, r: 11, col: '#b8b0a0', dmgScale: 1 }]);
+    // --- BOSS: Ossuar, the Marrow Throne (Hiro monster expansion) ---
+    mk(38, 27, 'dg-boss-ossuar', 'OSSUAR, THE MARROW THRONE', 'the thing the Keeper was set to guard',
+      [{ type: 'necro', boss: true, deathCol: '#7fd0ff', x: 640, y: 260, r: 20, hp: 700, maxhp: 700, spd: 70, col: '#b8b0a0', wpn: '#7fd0ff', dmgScale: 1.35 }]);
 
     // the artifact chest — guarded by the keeper ambush
     const propsTex = this.textures.get('cainos-props');

@@ -441,6 +441,15 @@ class CityScene extends WorldScene {
         Math.hypot(this.player.x - CityMap.well.x * 32, this.player.y - CityMap.well.y * 32) < 170)
       this.startWhiteWrit();
 
+    // --- BOSS: The Tithe-Knight (Hiro) - one-time plaza ambush; avoidable, auto-full crosses it ---
+    if (!flags['city-boss-tithe'] && !this.encounterActive && !CityUI.dialogOpen() &&
+        Math.hypot(this.player.x - (CityMap.well.x * 32 - 160), this.player.y - CityMap.well.y * 32) < 130) {
+      flags['city-boss-tithe'] = 'active';
+      this.startEncounter('THE TITHE-KNIGHT', 'the cult sends its collector', [
+        { type: 'grave', boss: true, deathCol: '#c8c2b0', x: 640, y: 270, r: 20, hp: 620, maxhp: 620, spd: 135, col: '#8a8f98', wpn: '#c0c0c8', stance: 'open', stanceT: 1, dmgScale: 1.3 }
+      ], win => { flags['city-boss-tithe'] = win ? 'cleared' : false; });
+    }
+
     // north gate travel
     if (this.player.y < this.gateNorth.y + this.gateNorth.h + 10 &&
         this.player.x > this.gateNorth.x - 8 && this.player.x < this.gateNorth.x + this.gateNorth.w + 8) {

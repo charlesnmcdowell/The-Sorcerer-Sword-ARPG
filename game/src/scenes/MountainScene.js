@@ -135,10 +135,13 @@ class MountainScene extends WorldScene {
           hp: 300, maxhp: 300, spd: 215, r: 14, col: '#b89a5a', dmgScale: 1.4 })) },
       drake: { tex: 'fr-drake', n: 1, name: 'A YOUNG DRAKE', sub: 'not the brood-mother. bad enough.',
         spawn: () => [{ type: 'pyre', x: 640, y: 270, r: 16, hp: 520, maxhp: 520, spd: 110, col: '#8a3a2c', dmgScale: 1.5 }] },
+      // --- BOSS: Aurgelm, the Frostforge Drake (Hiro monster expansion) ---
+      boss_aurgelm: { tex: 'fr-drake', n: 1, name: 'AURGELM, THE FROSTFORGE DRAKE', sub: 'it breathes the cold of the dead vents',
+        spawn: () => [{ type: 'frostdrake', boss: true, deathCol: '#bfe6ff', x: 640, y: 270, r: 22, hp: 640, maxhp: 640, spd: 110, col: '#6aa8d0', wpn: '#cfe2ff', dmgScale: 1.3 }] },
     };
     for (const [kind, spots] of Object.entries({ goblins: [[40, 20], [18, 24]], orcs: [[26, 34], [46, 36]],
       ogres: [[10, 18], [50, 38]], slimes: [[52, 24], [20, 12]], wyverns: [[44, 8], [12, 8]], firele: [[34, 28], [22, 40]],
-      rockgolem: [[8, 30]], frostele: [[56, 16]], troll: [[28, 12]], griffon: [[48, 26]], drake: [[16, 38]] }))
+      rockgolem: [[8, 30]], frostele: [[56, 16]], troll: [[28, 12]], griffon: [[48, 26]], drake: [[16, 38]], boss_aurgelm: [[26, 40]] }))
       for (const [sx, sy] of spots) mkPack(sx * T, sy * T, W_DEFS[kind]);
 
     // ---------- chests ----------

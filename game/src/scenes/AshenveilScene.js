@@ -142,10 +142,18 @@ class AshenveilScene extends WorldScene {
       gravewights: { tex: 'fr-gravewight', n: 2, name: 'GRAVE WIGHTS', sub: 'they remember how to fence',
         spawn: n => Array.from({ length: n }, (_, i) => ({ type: 'grave', x: 640 + Math.cos(i * 3.1) * 180, y: 300 + Math.sin(i * 3.1) * 110,
           hp: 320, maxhp: 320, spd: 130, r: 14, col: '#4a4452', stance: 'open', stanceT: 1, dmgScale: 1.4 })) },
+      // --- BOSS: Provost Mortain (Hiro) - immune until his 3 totems are broken ---
+      boss_mortain: { tex: 'fr-darkmage', n: 1, name: 'PROVOST MORTAIN', sub: 'break his wards before you can touch him',
+        spawn: () => [
+          { type: 'warden', boss: true, deathCol: '#9af0c0', x: 640, y: 268, r: 22, hp: 700, maxhp: 700, spd: 95, col: '#5a6a4a', wpn: '#9af0c0', dmgScale: 1.4 },
+          { type: 'totem', x: 470, y: 360, r: 16, hp: 120, maxhp: 120, spd: 0, col: '#cfc6b4', wpn: '#9a9080', dmgScale: 1 },
+          { type: 'totem', x: 810, y: 360, r: 16, hp: 120, maxhp: 120, spd: 0, col: '#cfc6b4', wpn: '#9a9080', dmgScale: 1 },
+          { type: 'totem', x: 640, y: 200, r: 16, hp: 120, maxhp: 120, spd: 0, col: '#cfc6b4', wpn: '#9a9080', dmgScale: 1 },
+        ] },
     };
     for (const [kind, spots] of Object.entries({ skeletons: [[10, 18], [34, 26]], zombies: [[18, 26], [40, 16]],
       vampires: [[8, 7]], werewolves: [[42, 30]], darkmages: [[16, 12]],
-      wraiths: [[30, 8]], ghouls: [[22, 28]], bonegolem: [[44, 22]], banshees: [[6, 24]], gravewights: [[38, 10]] }))
+      wraiths: [[30, 8]], ghouls: [[22, 28]], bonegolem: [[44, 22]], banshees: [[6, 24]], gravewights: [[38, 10]], boss_mortain: [[24, 32]] }))
       for (const [sx, sy] of spots) mkPack(sx * T, sy * T, A_DEFS[kind]);
 
     this.initEncounterHost(null);

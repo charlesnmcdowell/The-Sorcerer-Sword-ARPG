@@ -80,6 +80,7 @@ class VarenholmScene extends WorldScene {
     // ---------- characters ----------
     this.bakeFrames({ 'fr-cookie': { col: '#8a2f3a', o: { headCol: '#b8884a', wpnLen: 0 }, r: 10 } });
     this.spawnPlayer(28 * T, (MH - 4) * T);
+    this.collectorSpot = { x: 28 * T, y: (MH - 10) * T }; // BOSS: The Collector trigger (Hiro)
     const palettes = ['fr-npc0', 'fr-npc1', 'fr-npc2', 'fr-npc3'];
     for (let i = 0; i < 10; i++)
       this.addNPC(palettes[i % 4], (6 + Math.random() * (MW - 12)) * T, (12 + Math.random() * 18) * T,
@@ -205,5 +206,16 @@ class VarenholmScene extends WorldScene {
     this.updateNPCs(dt);
     this.updatePrompt();
     this.updateAtmosphere(time, dt);
+
+    // --- BOSS: The Collector (Hiro) - one-time street ambush; avoidable, auto-full walks into it ---
+    const _vf = window.GameState.world.flags;
+    if (!_vf['varenholm-boss-collector'] && !this.encounterActive &&
+        (typeof CityUI === 'undefined' || !CityUI.dialogOpen()) &&
+        Math.hypot(this.player.x - this.collectorSpot.x, this.player.y - this.collectorSpot.y) < 130) {
+      _vf['varenholm-boss-collector'] = 'active';
+      this.startEncounter('THE COLLECTOR', 'it has come to add you to the set', [
+        { type: 'collector', boss: true, deathCol: '#b070f0', x: 640, y: 270, r: 20, hp: 640, maxhp: 640, spd: 140, col: '#4a3c5a', wpn: '#b070f0', dmgScale: 1.35 }
+      ], win => { _vf['varenholm-boss-collector'] = win ? 'cleared' : false; });
+    }
   }
 }

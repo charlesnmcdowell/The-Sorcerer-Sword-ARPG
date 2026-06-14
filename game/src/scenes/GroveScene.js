@@ -153,6 +153,9 @@ class GroveScene extends WorldScene {
         wisp: { tex: 'fr-wisp', n: 2, name: 'WILL-O-WISPS', sub: 'follow the lights and you drown',
           spawn: n => Array.from({ length: n }, (_, i) => ({ type: 'pyre', x: 640 + Math.cos(i * 2.6) * 190, y: 300 + Math.sin(i * 2.6) * 110,
             hp: 90, maxhp: 90, spd: 110, r: 11, col: '#3a7faf', dmgScale: 1.1 })) },
+        // --- BOSS: Heartrot, the Hollow Warden (Hiro monster expansion) ---
+        boss_heartrot: { tex: 'fr-treant', n: 1, name: 'HEARTROT, THE HOLLOW WARDEN', sub: 'the ley-rot given a body',
+          spawn: () => [{ type: 'rotwarden', boss: true, deathCol: '#7fbf6a', x: 640, y: 300, r: 30, hp: 720, maxhp: 720, spd: 64, col: '#3a5a2c', wpn: '#2c4420', dmgScale: 1.3 }] },
       };
       const d = defs[kind];
       const sprs = [];
@@ -164,7 +167,7 @@ class GroveScene extends WorldScene {
     };
     const packSpots = { wolves: [[20, 26], [36, 10], [8, 44]], hounds: [[44, 34], [24, 40]], rotshaman: [[30, 22]],
       goblins: [[14, 18], [48, 26]], vines: [[40, 42], [6, 30]], insects: [[24, 8], [54, 40]], bandits: [[46, 18]],
-      boar: [[16, 40]], treant: [[58, 16]], spider: [[10, 24]], harpy: [[50, 8]], wisp: [[30, 44]] };
+      boar: [[16, 40]], treant: [[58, 16]], spider: [[10, 24]], harpy: [[50, 8]], wisp: [[30, 44]], boss_heartrot: [[24, 34]] };
     for (const [kind, spots] of Object.entries(packSpots))
       for (const [sx, sy] of spots) {
         const id = 'pack-' + kind + '-' + sx + '-' + sy;
