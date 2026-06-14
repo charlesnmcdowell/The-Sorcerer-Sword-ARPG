@@ -91,6 +91,25 @@ class AshenveilScene extends WorldScene {
     this.interactables.push({ x: 38 * T, y: 24 * T, label: 'read the boundary stone', fn: () =>
       this.signDialog('THE BOUNDARY STONE', 'ASHENVEIL PROVING GROUNDS — VISITORS REGISTER AT THE ACADEMY. The letters are carved deep and recent. Below them, older, almost worn away: a name the rumors only whisper, and below THAT, scratched by some long-dead student: "the lower levels are NOT a metaphor."') });
 
+    // ---------- WARLOCK HUNT (wq4): Whisper, the Ninth Ward ----------
+    // Only the warlock, with Nyx's hunt active and Whisper not yet caged, sees the
+    // blindfolded listener standing in a fallow row. tryHuntCapture('whisper') runs
+    // the approach -> capture-fight (collector boss). Placed in the open lower-middle
+    // field, clear of the Academy (x28-43/y5-13), the hedge blocks ([8,10],[34,18],
+    // [14,22]), and the other interactables (working dead 10,14 / boundary 38,24 /
+    // carriage 24,30).
+    if (this.huntActive() && !flags['cap-whisper']) {
+      const wsX = 16 * T, wsY = 28 * T;
+      const wsG = this.add.graphics().setDepth(wsY);
+      wsG.lineStyle(2, 0x2a2430, 0.8); wsG.lineBetween(wsX - 34, wsY + 10, wsX + 34, wsY + 6); // the fallow row
+      wsG.fillStyle(0x6a6470, 1); wsG.fillRect(wsX - 6, wsY - 8, 12, 22);   // grey shift
+      wsG.fillStyle(0xc8c2b8, 1); wsG.fillCircle(wsX, wsY - 14, 7);         // pale head, cocked to listen
+      wsG.fillStyle(0x9af0c0, 0.95); wsG.fillRect(wsX - 7, wsY - 15, 14, 3); // bound eyes (academy green)
+      for (let i = 0; i < 4; i++) { wsG.lineStyle(1, 0x9af0c0, 0.35 - i * 0.07); wsG.strokeCircle(wsX, wsY - 14, 16 + i * 9); } // what she hears
+      this.addLight(wsX, wsY, 70, false);
+      this.interactables.push({ x: wsX, y: wsY, label: 'a blindfolded woman listens to an empty field', fn: () => this.tryHuntCapture('whisper') });
+    }
+
     // ---------- player + the carriage home ----------
     this.spawnPlayer(24 * T, (MH - 4) * T);
     this.territoryHpMult = 4; // undead tier (Hiro HP ladder)
@@ -168,29 +187,55 @@ class AshenveilScene extends WorldScene {
   }
 
   nyxDialog() {
-    const W = Quests.warlockEpilogue, flags = window.GameState.world.flags, N = W.nyx;
+    const W = Quests.warlockEpilogue, H = Quests.warlockHunt, flags = window.GameState.world.flags, N = W.nyx;
     if (window.GameState.player.char !== 'warlock') { // the Matron receives exactly one champion
       const refusal = 'A registrar with no pulse takes your name without writing it down. "The Academy is not receiving. The proving grounds are THAT way." Behind the cold doors, something pauses — weighs you the way a ledger weighs a number it does not need yet — and moves on.';
       this.signDialog('THE ASHENVEIL ACADEMY', refusal); return;
     }
-    if (flags['q-wq3-the-matron'] === 'done') {
-      this.signDialog('THE ASHENVEIL ACADEMY', 'The great hall is empty. The cold is not. Somewhere below — and the lower levels are not a metaphor — the web is already drafting your first contract.'); return;
-    }
     const portrait = this.nyxPortrait();
-    const done = () => {
+    const cagedCount = () => H.targets.reduce((n, t) => n + (flags[t.flag] ? 1 : 0), 0) + (flags[H.varenholm.flag] ? 1 : 0);
+
+    // the hunt is delivered and done: the great hall, and the web's next name
+    if (flags[H.huntFlag] === 'done') {
+      this.signDialog('THE ASHENVEIL ACADEMY', 'The great hall is empty. The cold is not. Somewhere below — and the lower levels are not a metaphor — the web is already drafting your next contract.'); return;
+    }
+
+    // the hunt is on: DELIVER when all five are caged, otherwise send the warlock back out
+    if (flags[H.huntFlag] === 'active') {
+      const caged = cagedCount();
+      if (caged >= 5) {
+        const D = H.deliver;
+        flags[H.huntFlag] = 'done';
+        flags['credits-rolled'] = true;
+        CityUI.dialog(D.name, D.line, [{ label: D.go[0], fn: () => {
+          CityUI.closeDialog();
+          this.floatText(this.player.x, this.player.y - 60, 'THE WARLOCK\'S ROAD — complete', '#9af0c0', 16);
+          setTimeout(() => CityUI.credits(D.credits), 2200);
+        }}], portrait);
+      } else {
+        const left = 5 - caged;
+        const midHunt = 'The Matron does not rise. She reads the empty floor where the cages will stand, and finds it wanting. "' + caged + ' of five, warlock. The web does not pay on credit." A pause, precise as a ledger line. "Bring me the rest — ' + left + ' still breathing, still loose — and the Order may scream your name into a pillow forever. The black carriage knows the way back out."';
+        CityUI.dialog(N.name, midHunt, [{ label: '"' + left + ' to go. The hunt continues."', fn: () => CityUI.closeDialog() }], portrait);
+      }
+      return;
+    }
+
+    // first meeting: the reveal, the offer, and the LAUNCH of the hunt (no credits yet)
+    const launch = () => {
       flags['q-wq3-the-matron'] = 'done';
-      flags['credits-rolled'] = true;
-      CityUI.dialog(N.name, N.done, [{ label: 'The hunt continues. It hunts for the web now.', fn: () => {
-        CityUI.closeDialog();
-        this.floatText(this.player.x, this.player.y - 60, 'THE WARLOCK\'S ROAD — complete', '#9af0c0', 16);
-        setTimeout(() => CityUI.credits(N.credits), 2200);
-      }}], portrait);
+      flags[H.huntFlag] = 'active';
+      const L = H.launch;
+      CityUI.dialog(L.name, L.brief, [{ label: 'Read the five names.', fn: () =>
+        CityUI.dialog(L.name, L.charge, [{ label: L.go[0], fn: () => {
+          CityUI.closeDialog();
+          this.floatText(this.player.x, this.player.y - 60, 'THE HUNT — bring back five, breathing', '#9af0c0', 16);
+        }}], portrait) }], portrait);
     };
     CityUI.dialog(N.name, N.reveal1, [{ label: '"You keep meticulous books, Matron."', fn: () =>
       CityUI.dialog(N.name, N.reveal2, [{ label: '"I see the shape. Name the terms."', fn: () =>
         CityUI.dialog(N.name, N.offer, [
-          { label: '"Protection for procurement. Clean arithmetic. Accepted."', fn: done },
-          { label: '"Point the web at the prey. I\'ll mind the bruising."', fn: done }], portrait) }], portrait) }], portrait);
+          { label: '"Protection for procurement. Clean arithmetic. Accepted."', fn: launch },
+          { label: '"Point the web at the prey. I\'ll mind the bruising."', fn: launch }], portrait) }], portrait) }], portrait);
   }
 
   nyxPortrait() {

@@ -73,6 +73,23 @@ const QuestNav = {
         return at('ashenveil', 1136, 416, true, 'the Ashenveil academy — Lady Nyx');
       }
     }
+    // the warlock's hunt (wq4): five cages in order, then deliver them to Nyx. Dragonspine
+    // and Varenholm are reachable only via the cult coach in the city (1538,744).
+    if (warlock && f['q-wq4-the-hunt'] === 'active') {
+      const hunt = [
+        ['cap-briar', 'thorn-grove', 18 * T, 42 * T, 'Briar in the thorn-grove'],
+        ['cap-ossuary', 'grove-dungeon', 7 * T, 14 * T, 'Ossuary in the dungeon'],
+        ['cap-cinder', 'dragonspine', 34 * T, 18 * T, 'Cinder on the Dragonspine'],
+        ['cap-whisper', 'ashenveil', 16 * T, 28 * T, 'Whisper at the Academy'],
+        ['cap-cookie', 'varenholm', 16 * T, 24 * T, 'Cookie in Varenholm'],
+      ];
+      const next = hunt.find(h => !f[h[0]]);
+      if (!next) return at('ashenveil', 1136, 416, true, 'Lady Nyx — deliver the five cages');
+      const gated = next[1] === 'dragonspine' || next[1] === 'varenholm';
+      if (gated && GS.world.zone !== next[1]) // gated zones: only the city's cult coach can get the warlock there
+        return at('karridge-city', 1538, 744, true, 'the cult coach — ' + next[4]);
+      return at(next[1], next[2], next[3], true, next[4]);
+    }
     return null;
   },
 
@@ -80,10 +97,10 @@ const QuestNav = {
   nextHop(from, to) {
     const HOPS = {
       'karridge-city': { 'thorn-grove': { x: 1120, y: 24, interact: false }, 'grove-dungeon': { x: 1120, y: 24, interact: false }, 'varenholm': { x: 1656, y: 744, interact: true }, 'dragonspine': { x: 1120, y: 24, interact: false }, 'ashenveil': { x: 1656, y: 744, interact: true } },
-      'thorn-grove': { 'karridge-city': { x: 1088, y: 1572, interact: false }, 'varenholm': { x: 1088, y: 1572, interact: false }, 'grove-dungeon': { x: 1984, y: 1344, interact: true }, 'dragonspine': { x: 2216, y: 320, interact: false } },
+      'thorn-grove': { 'karridge-city': { x: 1088, y: 1572, interact: false }, 'varenholm': { x: 1088, y: 1572, interact: false }, 'grove-dungeon': { x: 1984, y: 1344, interact: true }, 'dragonspine': { x: 2216, y: 320, interact: false }, 'ashenveil': { x: 1088, y: 1572, interact: false } },
       'grove-dungeon': { 'thorn-grove': { x: 160, y: 96, interact: true }, 'karridge-city': { x: 160, y: 96, interact: true }, 'varenholm': { x: 160, y: 96, interact: true }, 'dragonspine': { x: 160, y: 96, interact: true } },
-      'varenholm': { 'karridge-city': { x: 896, y: 1088, interact: true }, 'thorn-grove': { x: 896, y: 1088, interact: true }, 'grove-dungeon': { x: 896, y: 1088, interact: true }, 'dragonspine': { x: 896, y: 1088, interact: true } },
-      'dragonspine': { 'thorn-grove': { x: 864, y: 1380, interact: false }, 'karridge-city': { x: 864, y: 1380, interact: false }, 'grove-dungeon': { x: 864, y: 1380, interact: false }, 'varenholm': { x: 864, y: 1380, interact: false } },
+      'varenholm': { 'karridge-city': { x: 896, y: 1088, interact: true }, 'thorn-grove': { x: 896, y: 1088, interact: true }, 'grove-dungeon': { x: 896, y: 1088, interact: true }, 'dragonspine': { x: 896, y: 1088, interact: true }, 'ashenveil': { x: 896, y: 1088, interact: true } },
+      'dragonspine': { 'thorn-grove': { x: 864, y: 1380, interact: false }, 'karridge-city': { x: 864, y: 1380, interact: false }, 'grove-dungeon': { x: 864, y: 1380, interact: false }, 'varenholm': { x: 864, y: 1380, interact: false }, 'ashenveil': { x: 864, y: 1380, interact: false } },
       'ashenveil': { 'karridge-city': { x: 738, y: 992, interact: true }, 'thorn-grove': { x: 738, y: 992, interact: true }, 'grove-dungeon': { x: 738, y: 992, interact: true }, 'varenholm': { x: 738, y: 992, interact: true }, 'dragonspine': { x: 738, y: 992, interact: true } },
     };
     return (HOPS[from] || {})[to] || null;

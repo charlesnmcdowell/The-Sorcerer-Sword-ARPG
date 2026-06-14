@@ -93,6 +93,29 @@ class VarenholmScene extends WorldScene {
     this.floatText(this.player.x, this.player.y - 60, 'VARENHOLM — CROWN QUARTER', '#e7b450', 18);
     this.signDialog('THE COACH ROAD', Quests.varenholm.coach);
 
+    // ---------- WARLOCK HUNT (wq4): the climax — Cookie & the Thornwarden ----------
+    // Only the warlock, with Nyx's hunt active and Cookie not yet caged, sees the
+    // dancer waiting behind a living wall of thorns, her Druid protector on guard.
+    // tryHuntCapture('varenholm') stages the Thornwarden THEN Cookie (2 bosses:
+    // champ + rotwarden). Placed west of the guild on open ground, clear of the guild
+    // block (x20-34/y20-28), the statue (27,16), the coach + player spawn (~28,32-34).
+    // (Mutually exclusive with the druid-POV guildHall/Cookie scene via char gating.)
+    if (this.huntActive() && !flags['cap-cookie']) {
+      const hcX = 16 * T, hcY = 24 * T;
+      const hcG = this.add.graphics().setDepth(hcY + 4);
+      hcG.lineStyle(3, 0x1d3a1f, 0.95); // a living wall of thorns across the row
+      for (let i = -3; i <= 3; i++) { const bx = hcX + i * 11; hcG.lineBetween(bx, hcY + 14, bx + 6, hcY - 16); hcG.lineBetween(bx, hcY + 14, bx - 6, hcY - 14); }
+      hcG.fillStyle(0x86c06a, 0.9); for (let i = -3; i <= 3; i++) hcG.fillCircle(hcX + i * 11, hcY - 6, 2); // thorn-buds
+      hcG.fillStyle(0x8a2f3a, 1); hcG.fillRect(hcX - 5, hcY - 26, 10, 18);   // Cookie behind: red dancer
+      hcG.fillStyle(0xb8884a, 1); hcG.fillCircle(hcX, hcY - 30, 6);          // her head
+      hcG.fillStyle(0xf06a8a, 0.9); hcG.fillRect(hcX - 6, hcY - 12, 12, 3);  // a ribbon of red
+      hcG.fillStyle(0x3a5a2c, 1); hcG.fillRect(hcX + 14, hcY - 18, 14, 26);  // the Thornwarden in front
+      hcG.fillStyle(0x6b4a2a, 1); hcG.fillCircle(hcX + 21, hcY - 22, 7);     // his bark-skull
+      hcG.lineStyle(2, 0x86c06a, 0.8); hcG.strokeCircle(hcX + 21, hcY - 22, 11); // a crown of brambles
+      this.addLight(hcX, hcY, 80, false);
+      this.interactables.push({ x: hcX, y: hcY, label: 'a red dancer waits behind a wall of thorns', fn: () => this.tryHuntCapture('varenholm') });
+    }
+
     // coach home
     this.interactables.push({ x: 28 * T, y: (MH - 2) * T, label: 'take the coach back to Karridge', fn: () => {
       const doneQ = window.GameState.world.flags['q-mq6-the-dancer'] === 'done';

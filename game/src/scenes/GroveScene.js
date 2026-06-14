@@ -114,6 +114,20 @@ class GroveScene extends WorldScene {
     this.interactables.push({ x: dgX, y: dgY, label: 'descend into the root-hollow', fn: () => {
       window.GameState.world.zone = 'grove-dungeon'; this.scene.start('DungeonScene'); } });
 
+    // ---------- WARLOCK HUNT (wq4): Briar, the Green Orphan ----------
+    // Only the warlock, with Nyx's hunt active and Briar not yet caged, sees the
+    // thorn-thicket. tryHuntCapture('briar') runs the approach -> capture-fight.
+    if (this.huntActive() && !GS.world.flags['cap-briar']) {
+      const brX = 18 * T, brY = 42 * T;
+      const brG = this.add.graphics().setDepth(brY);
+      brG.fillStyle(0x14260f, 1); brG.fillCircle(brX, brY, 30);
+      brG.lineStyle(3, 0x4a7a32, 1);
+      for (let i = 0; i < 7; i++) { const a = i * 0.9; brG.lineBetween(brX, brY, brX + Math.cos(a) * 34, brY + Math.sin(a) * 34); }
+      brG.fillStyle(0x9af0c0, 0.9); brG.fillCircle(brX, brY - 4, 6);
+      this.addLight(brX, brY, 70, false);
+      this.interactables.push({ x: brX, y: brY, label: 'a green child waits in the thorns', fn: () => this.tryHuntCapture('briar') });
+    }
+
     // ---------- monster packs ----------
     this.packs = [];
     const mkPack = (px, py, kind) => {

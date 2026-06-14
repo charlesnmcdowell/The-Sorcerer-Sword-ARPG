@@ -305,6 +305,73 @@ class WorldScene extends Phaser.Scene {
     CityUI.dialog(name, text, [{ label: 'Leave', fn: () => CityUI.closeDialog() }]);
   }
 
+  // ---------- WARLOCK HUNT (wq4): shared capture helper ----------
+  // Nyx's five-name hunt. Each zone drops ONE interactable that calls
+  // this.tryHuntCapture(id) — it gates on warlock + active hunt, plays the
+  // approach dialogue and two warlock options, runs the boss capture-fight,
+  // then shows the capture beat, sets the cap-* flag, and tallies "N OF 5
+  // CAGED". Keeps per-scene wiring to a single line. Returns true if the beat
+  // ran (callers early-return), false if the warlock isn't on the hunt.
+  huntIds() { return ['cap-briar', 'cap-ossuary', 'cap-cinder', 'cap-whisper', 'cap-cookie']; }
+
+  huntActive() {
+    const GS = window.GameState;
+    return !!(GS.player && GS.player.char === 'warlock'
+      && Quests.warlockHunt && GS.world.flags[Quests.warlockHunt.huntFlag] === 'active');
+  }
+
+  huntCaged() {
+    const flags = window.GameState.world.flags;
+    return this.huntIds().filter(f => flags[f]).length;
+  }
+
+  // key: 'briar' | 'ossuary' | 'cinder' | 'whisper' (zone targets) or 'varenholm' (the climax).
+  tryHuntCapture(key) {
+    if (!this.huntActive()) return false;
+    const WH = Quests.warlockHunt, flags = window.GameState.world.flags;
+    const climax = (key === 'varenholm');
+    const t = climax ? WH.varenholm : (WH.targets || []).find(x => x.id === key);
+    if (!t) return false;
+    const title = t.banner[0], sub = t.banner[1];
+    if (flags[t.flag]) {            // already caged — acknowledge and stop
+      this.signDialog(title, 'A cage already holds this one; the black carriage keeps it. The hunt moves on.');
+      return true;
+    }
+    // shared fight -> capture tail (targets and climax both end here)
+    const fight = () => {
+      CityUI.closeDialog();
+      this.startEncounter(title, sub, t.pack.map(e => Object.assign({}, e)), win => {
+        if (!win) {
+          this.floatText(this.player.x, this.player.y - 50, 'the quarry slips your leash. the carriage waits.', '#c8443a');
+          return;
+        }
+        flags[t.flag] = true;
+        const n = this.huntCaged();
+        CityUI.dialog(title, t.capture, [{
+          label: n < 5 ? '(latch the cage — ' + n + ' of 5)' : '(five cages. the road turns home.)',
+          fn: () => {
+            CityUI.closeDialog();
+            this.floatText(this.player.x, this.player.y - 56, n + ' OF 5 CAGED', '#b070f0', 16);
+            if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+          }
+        }]);
+      }, { zoneScale: true });
+    };
+    // approach + the two warlock options (the climax stages two speakers first)
+    if (climax) {
+      CityUI.dialog(title, t.approach, [{ label: '(the bodyguard steps in)', fn: () =>
+        CityUI.dialog(t.protect.name, t.protect.line, [{ label: '(and then the dancer)', fn: () =>
+          CityUI.dialog(t.cookie.name, t.cookie.line, [
+            { label: '"Two cages, then. Hold still."', fn: fight },
+            { label: '"Never corner a dancer? Watch me."', fn: fight }]) }]) }]);
+    } else {
+      CityUI.dialog(title, t.approach, [
+        { label: t.opt[0], fn: fight },
+        { label: t.opt[1], fn: fight }]);
+    }
+    return true;
+  }
+
   // ---------- clearing encounters (pit combat host) ----------
   initEncounterHost(theme) {
     // touch attack buttons must drive the ACTIVE overworld encounter (bound once; Hiro mobile fix)

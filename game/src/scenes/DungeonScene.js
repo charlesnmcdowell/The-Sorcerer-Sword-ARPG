@@ -96,6 +96,20 @@ class DungeonScene extends WorldScene {
       this.floatText(35 * T, 25 * T - 50, 'LEY-SHARD — abilities +10% damage (permanent)', '#3df0c8', 15);
     }});
 
+    // ---------- WARLOCK HUNT (wq4): Ossuary, the Quiet Boy ----------
+    // Only the warlock, with Nyx's hunt active and Ossuary not yet caged, sees the
+    // bone-cairn. tryHuntCapture('ossuary') runs the approach -> capture-fight (necro boss).
+    if (this.huntActive() && !GS.world.flags['cap-ossuary']) {
+      const osX = 7 * T, osY = 14 * T;
+      const osG = this.add.graphics().setDepth(osY);
+      osG.fillStyle(0x0d0b10, 1); osG.fillEllipse(osX, osY + 4, 60, 30);
+      osG.fillStyle(0x9a9284, 0.85);
+      for (let i = 0; i < 9; i++) { const a = i * 0.7; osG.fillRect(osX + Math.cos(a) * 18 - 2, osY + Math.sin(a) * 10 - 6, 4, 12); }
+      osG.fillStyle(0xcfe6ff, 0.95); osG.fillCircle(osX, osY - 8, 6);
+      this.addLight(osX, osY, 75, false);
+      this.interactables.push({ x: osX, y: osY, label: 'a quiet boy sits among the bones', fn: () => this.tryHuntCapture('ossuary') });
+    }
+
     // exit
     this.interactables.push({ x: 5 * T, y: 3 * T, label: 'climb back to the grove', fn: () => {
       window.GameState.world.zone = 'thorn-grove'; this.scene.start('GroveScene'); } });

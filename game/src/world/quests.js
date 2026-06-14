@@ -213,6 +213,101 @@ const Quests = {
     },
   },
 
+  // ===== THE WARLOCK'S HUNT (wq4) — Nyx's first contract: capture five Ankuspawn ALIVE. =====
+  // The plaza was the audition; the offer was the callback; THIS is the job. Five gifted,
+  // one per zone, captured never killed (dead stock is worthless stock). Climax: Cookie of
+  // Varenholm, behind a Druid protector (two bosses). Canon: this is the WARLOCK'S POV of the
+  // crossing — the Druid campaign tells the same meeting from her side (she guards; he hunts).
+  // DATA ONLY this pass; scene wiring (cult-coach travel, WorldScene.tryHuntCapture, nyxDialog
+  // launch, objective() routing, journal beats into mainFor) lands next run. New speakers are
+  // mapped to existing voice ids in game/tools/voice_config.json. See docs/AUTOWORK_LOG.md.
+  warlockHunt: {
+    huntFlag: 'q-wq4-the-hunt',
+    // Nyx hands over the list — this LAUNCHES the hunt instead of rolling the credits.
+    launch: {
+      name: 'LADY NYX',
+      brief: 'The Matron does not shake on it. She slides a folded vellum across the cold table; it is warm, which is worse. "Five names, warlock. My collectors lost them — to rescue, to flight, to their own clumsiness. I want them back BREATHING. A grove-child who makes the green bleed. A boy in the dark who will not let things die. An ash-wick burning in the high cold. And a Listener who walked out of my OWN lower levels with a head full of my ledgers." A pause, precise. "The fifth name I have wanted longest. We will come to her."',
+      charge: '"Capture, warlock. Cages, not cairns. A corpse is an apology; a captive is an asset. Bruise them if you must — break them and the contract breaks with them." The vellum folds itself shut. "The black carriage is yours now; it goes where the leash needs to reach. Bring me five, and the Order screams your name into a pillow forever."',
+      go: ['"Five cages. Clean arithmetic. The hunt is on."',
+           '"They ran from your collectors. They will not run from me."'],
+    },
+    // ---- the five targets (one per zone) ----
+    targets: [
+      { id: 'briar', zone: 'thorn-grove', region: 'Thorn Grove',
+        name: 'BRIAR, THE GREEN ORPHAN', voice: 'Briar',
+        gift: 'Verdance — the grove bleeds sap where she weeps; the wound never closes.',
+        banner: ['THE GREEN ORPHAN', 'capture — do not let the grove keep her'],
+        approach: 'She is not lost; the grove HID her, folded her into a bower of living thorn that leans away from you and toward her like courtiers. A girl no older than a sapling looks out from the green. "You smell like the cold men," she says, and the brambles stand up. "The cold men with the soft cages. I made the trees say NO last time." The bower bristles into a wall of root and tooth.',
+        opt: ['"Easy, little weed. My cage is warmer than theirs." (measure)',
+              '"The trees said no. I did not ask the trees." (sever)'],
+        pack: [{ type: 'rotwarden', boss: true, deathCol: '#7fbf6a', x: 640, y: 300, r: 28, hp: 720, maxhp: 720, spd: 70, col: '#3a5a2c', wpn: '#2c4420', dmgScale: 1.4 }],
+        capture: 'The bower comes apart strand by screaming strand. When the last root lets go she is just a child again, sap-streaked and furious, small enough to lift. The cult\'s cage is cold-iron lined in moss — someone planned for her. She does not cry where you can see it. Behind you the grove closes its wound at last, because the thing that kept it open is in a box. ONE.',
+        flag: 'cap-briar' },
+
+      { id: 'ossuary', zone: 'grove-dungeon', region: 'the grove dungeon',
+        name: 'OSSUARY, THE QUIET BOY', voice: 'Ossuary',
+        gift: 'Necrourgy — near him the dead forget to stay down and the dying forget to finish.',
+        banner: ['THE QUIET BOY', 'everything down here is already his'],
+        approach: 'The dungeon is loud with things that should be silent — bones reknitting, a rat dying and undying in the same corner forever. At the center sits a boy with his knees drawn up, ringed by skeletons that orbit him like moons around a patience. "They keep me company," he says, not looking up. "They can\'t leave. I can\'t MAKE them leave. The cold men knew that — a quarry that digs its own guards." The orbit tightens.',
+        opt: ['"Then keep me company too, boy — for exactly one fight." (measure)',
+              '"Call them off, or I unmake every one in front of you." (threaten)'],
+        pack: [{ type: 'necro', boss: true, deathCol: '#7fd0ff', x: 640, y: 260, r: 20, hp: 740, maxhp: 740, spd: 75, col: '#b8b0a0', wpn: '#7fd0ff', dmgScale: 1.4 }],
+        capture: 'You cut the orbit down faster than he can refill it, and for one breath the dungeon is, for the first time in years, simply DEAD. The boy looks at the stillness he made by accident and goes very pale. The cage you bring is bone-dry and salted — Nyx\'s people understand exactly what he is. "Will it be quiet where you take me?" he asks. You tell him the truth, which is no. He almost smiles anyway. TWO.',
+        flag: 'cap-ossuary' },
+
+      { id: 'cinder', zone: 'dragonspine', region: 'Dragonspine',
+        name: 'CINDER, THE ASH-WICK', voice: 'Cinder',
+        gift: 'A living flame the high cold cannot drown — he burns and is not consumed.',
+        banner: ['THE ASH-WICK', 'a fire that will not go out is worth a kingdom in the cold'],
+        approach: 'On a ledge where the snow should have buried him a week ago, a thin figure sits in a ring of melt-water, steaming, alive, ASH where a man\'s skin should be and embers where his eyes should. "Come to put me out?" The voice crackles like green wood. "Everyone wants to put me out, or BOTTLE me. The treaty-things up here just let me be warm. First kind thing the mountain ever did." He stands; the ledge dries around him; the air bends with heat.',
+        opt: ['"Not put you out. Carry you somewhere your fire is wanted." (measure)',
+              '"Bottle, cage — what\'s the difference to ash? Burn, then." (cold)'],
+        pack: [{ type: 'pyre', boss: true, deathCol: '#ffb060', x: 640, y: 250, r: 18, hp: 700, maxhp: 700, spd: 150, col: '#7a3a2a', wpn: '#ffb060', dmgScale: 1.4 }],
+        capture: 'You give the fire nothing to catch and everything to spend, and when it gutters low he sits down hard in his own melt-water, smoking, spent, still alive — he is ALWAYS still alive, that is the entire point of him. The cult\'s cage is a lattice of cold-iron and packed snow that hisses as they fill it. "Somewhere my fire is wanted," he repeats, bitter and small. "You lied like you meant it. I respect that." THREE.',
+        flag: 'cap-cinder' },
+
+      { id: 'whisper', zone: 'ashenveil', region: 'the Ashenveil',
+        name: 'WHISPER, THE NINTH WARD', voice: 'Whisper',
+        gift: 'She hears every ledger read aloud — she walked out of the Academy\'s OWN lower levels.',
+        banner: ['THE NINTH WARD', 'she knows what the Matron knows — bring her back QUIET'],
+        approach: 'This one Nyx wants for reasons she did not fully say. A woman in the grey shift of the lower wards stands in a fallow row, eyes bound, head cocked, listening to a field that should make no sound. "You\'re the new dog," she says before you speak. "She gave you five names. I\'m the one she said LAST about and meant FIRST." She turns the blindfold toward you like a face. "I heard your whole contract through nine floors of stone, warlock. I can hear the part she didn\'t say out loud. Want me to tell you?" The dead in the rows all stop working at once.',
+        opt: ['"Tell me nothing. I\'m paid not to listen." (measure)',
+              '"She wants you gagged for a reason. Let\'s find it the loud way." (silence)'],
+        pack: [{ type: 'collector', boss: true, deathCol: '#b070f0', x: 640, y: 270, r: 20, hp: 760, maxhp: 760, spd: 145, col: '#4a3c5a', wpn: '#b070f0', dmgScale: 1.45 }],
+        capture: 'You end it before she can spend whatever she overheard, and the field of dead lurches back into its patient labor as her focus breaks. The cage they bring is the cruelest yet: leaded, lined, deaf — a box that hears nothing, so she can speak to no one. As they seal it she finds your face one last time. "She\'ll cage you too, you know," she says, kindly. "When you\'ve heard too much." FOUR.',
+        flag: 'cap-whisper' },
+    ],
+
+    // ---- the fifth name: COOKIE of Varenholm, behind her Druid protector (TWO bosses) ----
+    // Canon: warlock POV of the crossing; the Druid campaign tells it from her side.
+    varenholm: {
+      banner: ['THE FIFTH NAME', 'the dancer, and the green thing guarding her'],
+      approach: 'Varenholm\'s glass lamps, a playbill on every post: ONE NIGHT — THE DANCER. The fifth name is the one the Matron has wanted longest — a halfling who stood up in a guild hall and TOLD a room full of strangers exactly what she is. Easy mark, the ledger says. The ledger is wrong. She is not alone: something green-eared and blunt-handed has shadowed her since the show, and it makes the back of your teeth itch the way the grove node did.',
+      protect: {
+        name: 'THE THORNWARDEN', voice: 'Thornwarden',
+        line: 'The bodyguard steps between you and the stage door without hurry — green-eared, callused, eyes like a forest deciding whether to be a fire. "You\'re the cult\'s new hand. I can smell the ash road on you." A staff of living wood settles into a grip that has buried people. "She\'s not for your cages. Neither am I. You want her, you come through the Verdance first — and friend, I have ROOTS in this."',
+      },
+      cookie: {
+        name: 'COOKIE',
+        line: 'And then the dancer herself, still in firebird red, sliding into your path with a grin that has never once been afraid in public. "Oh, you\'re a SERIOUS one. Cages and everything." She rolls her shoulders; the scroll-marks on them catch the lamplight gold, and the air goes warm and wrong — two thousand heartbeats of borrowed joy turning to teeth. "Rule one, cousin: never be boring. You\'re about to learn rule two — never corner a dancer with an audience."',
+      },
+      pack: [
+        { type: 'rotwarden', boss: true, deathCol: '#7fbf6a', x: 520, y: 270, r: 26, hp: 720, maxhp: 720, spd: 80, col: '#2c5a30', wpn: '#1c3a20', dmgScale: 1.4 },
+        { type: 'champ', boss: true, deathCol: '#ff7a5a', x: 760, y: 270, r: 18, hp: 680, maxhp: 680, spd: 165, col: '#c8443a', wpn: '#ffb060', dmgScale: 1.4 },
+      ],
+      capture: 'It takes everything Nyx is paying for. The Thornwarden goes down rooted to the spot he swore to hold; the dancer goes down still moving, because she does not know another way to go. Two cages this time — the cult learned, after the camp out east, to bring spares. As the leaded lid comes down on the firebird red she finds your eyes through the bars and, impossibly, WINKS. "They keep sending little shopping parties," she says. "One day someone explains to them about the wererats." Then the latch, and the long quiet road back to the Ashenveil. FIVE.',
+      flag: 'cap-cookie',
+    },
+
+    // ---- deliver all five to Nyx -> the road's end ----
+    deliver: {
+      name: 'LADY NYX',
+      line: 'Five cages stand in the cold great hall, and the Matron walks the row of them the way other women walk a garden. Grove-child, quiet boy, ash-wick, the deaf box that was her Ninth Ward, and — longest-wanted — the dancer, who blows her a kiss through leaded bars. "Complete," says Lady Nyx, and the word in her mouth is a payment. "The Order will write its writs. They will mean nothing. You are the crown\'s shadow\'s shadow now, warlock — protected by a signature no paladin dares read aloud." She does not thank you. The cult does not use that word either. "Rest. The web always has a sixth name."',
+      go: ['"There is always a sixth name. I\'ll be here."'],
+      credits: 'THE WARLOCK\'S ROAD — five cages delivered, and the writs die in committee forever',
+    },
+  },
+
   // ===== THE SERAPHIM'S ROAD — an angel does not chase rumors. He recruits. =====
   // Backstory (player-facing): great evil brews in the land; he serves the place above
   // and has come to gather the worthy. (What the gods of death and creation actually

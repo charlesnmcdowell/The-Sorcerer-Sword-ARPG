@@ -75,6 +75,20 @@ class MountainScene extends WorldScene {
     this.addLight(shX, shY, 160, false);
     this.interactables.push({ x: shX, y: shY + 26, label: 'approach the SKYREACH SHRINE', fn: () => this.shrineDialog() });
 
+    // ---------- WARLOCK HUNT (wq4): Cinder, the Ash-Wick ----------
+    // Only the warlock, with Nyx's hunt active and Cinder not yet caged, sees the
+    // melt-ring on the snow. tryHuntCapture('cinder') runs the approach -> capture-fight.
+    if (this.huntActive() && !flags['cap-cinder']) {
+      const ciX = 34 * T, ciY = 18 * T;
+      const ciG = this.add.graphics().setDepth(ciY);
+      ciG.fillStyle(0x102030, 0.85); ciG.fillCircle(ciX, ciY, 30);        // ring of melt-water
+      ciG.fillStyle(0x2a2018, 1); ciG.fillCircle(ciX, ciY - 2, 12);        // ash where a man should be
+      ciG.fillStyle(0xffb060, 0.95); ciG.fillCircle(ciX - 4, ciY - 6, 3); ciG.fillCircle(ciX + 4, ciY - 6, 3); // ember eyes
+      for (let i = 0; i < 6; i++) { const a = i * 1.05; ciG.fillStyle(0xff8030, 0.5); ciG.fillCircle(ciX + Math.cos(a) * 10, ciY - 18 - i * 2, 2); } // rising sparks
+      this.addLight(ciX, ciY, 80, false);
+      this.interactables.push({ x: ciX, y: ciY, label: 'a fire that will not go out sits in the melt', fn: () => this.tryHuntCapture('cinder') });
+    }
+
     // ---------- the five banners ----------
     this.bakeFrames(Object.fromEntries([
       ...Quests.seraph.candidates.map(c => ['fr-duel-' + c.id, c.look]),

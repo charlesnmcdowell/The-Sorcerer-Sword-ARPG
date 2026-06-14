@@ -86,6 +86,7 @@ class CityScene extends WorldScene {
         // DRUID-ONLY post-finale: the heartland coach — her secret road north
         if (GS.world.flags['q-mq5-ash-and-silence'] === 'done' && P.char === 'druid') this.addVarenholmCoach();
         this.addHuntCoach(); // guild proving-ground writs: the Ashenveil hunts (all champions)
+        if (P.char === 'warlock' && this.huntActive()) this.addCultCoach(); // wq4: the hunt's gated roads (Dragonspine + Varenholm)
       }
       if (b.sign) {
         this.add.rectangle(dx + 36, dy - bh / 2 - 6, 46, 16, 0x15100b).setStrokeStyle(1, 0xe7b450, 0.6).setDepth(dy + 2);
@@ -369,6 +370,32 @@ class CityScene extends WorldScene {
       if (!window.GameState.world.flags['q-mq6-the-dancer']) window.GameState.world.flags['q-mq6-the-dancer'] = 'active';
       this.scene.start('VarenholmScene');
     }});
+  }
+
+  addCultCoach() { // wq4: Nyx's cult coach — the only road a warlock has to the gated zones during the hunt
+    if (this._cultCoachAdded || !this.guildDoor) return;
+    this._cultCoachAdded = true;
+    const { dx, dy } = this.guildDoor, cy = dy + 40;
+    const cg = this.add.graphics().setDepth(cy);
+    cg.fillStyle(0x1a1226); cg.fillRect(dx - 58, cy - 22, 56, 30);            // the cult coach, anku-violet
+    cg.lineStyle(1, 0xb070f0, 0.6); cg.strokeRect(dx - 58, cy - 22, 56, 30);  // hunt-purple trim
+    cg.fillStyle(0x0a0810); cg.fillCircle(dx - 46, cy + 10, 8); cg.fillCircle(dx - 14, cy + 10, 8);
+    this.addLight(dx - 30, cy, 60, false);
+    this.interactables.push({ x: dx - 30, y: cy, label: 'board the CULT COACH \u2014 the hunt roads', fn: () => this.cultCoachDialog() });
+  }
+
+  cultCoachDialog() {
+    const close = () => CityUI.closeDialog();
+    const go = key => { close(); this.scene.start(key); };
+    const f = window.GameState.world.flags;
+    const spine = { label: 'To DRAGONSPINE \u2014 the ash-wick burns there', fn: () => go('MountainScene') };
+    const varen = { label: 'To VARENHOLM \u2014 the dancer hides there', fn: () => go('VarenholmScene') };
+    // AUTO (FULL) clicks the first option, so lead with the next uncaged gated target:
+    // Cinder (Dragonspine) is hunted before Cookie (Varenholm).
+    const dests = !f['cap-cinder'] ? [spine, varen] : [varen, spine];
+    CityUI.dialog('THE CULT COACH',
+      'A dead-eyed driver waits, Nyx\'s seal at his collar, the boot full of empty cages. "Where does the hunt take us, hand of Ashenveil?"',
+      [...dests, { label: 'Not yet \u2014 the cages can wait', fn: close }]);
   }
 
   runFinale() {
