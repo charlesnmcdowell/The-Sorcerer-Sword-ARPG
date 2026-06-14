@@ -1372,3 +1372,56 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   playthrough sim that asserts no auto-pathing stuck states and no broken/bypassed quest beats (+ no fights in
   dialogue), via a new game/tests/qa_questlines.js + docs/QA_REPORT.md. RUN LAST, AFTER items 6 & 7, and re-run
   after any quest change. Roadmap is COMPLETE only when all four characters pass this clean. Order: 6 -> 7 -> 8.
+- 2026-06-14 (run 26) — **ITEM 7 STARTED — RONIN ENDING `roninEnding` text bank added to quests.js
+  (DATA ONLY; mirrors how the warlockHunt + druidCrossing data passes seeded their content first).**
+  Added a new `roninEnding` block to `game/src/world/quests.js` (inserted between `druidCrossing` and
+  `seraph`; no scene/engine/combat change this run). It is the single source of truth for the ronin
+  epilogue's 8 beats, all dialogue text, flags, and Vorathiel's combat tuning:
+    * GATE (documented): `char==='ronin' && q-mq5-ash-and-silence==='done'` (his ORIGINAL ending — set
+      by CityScene.runFinale's ronin branch, which rolls 'THE RONIN'S ROAD'). `epiFlag:'q-rq-epilogue'`
+      ('active' after Marlow's tip; 'done' after the final guild turn-in).
+    * Beat flags documented as source of truth: `rq-epi-guild`, `rq-epi-vorathiel`, `rq-epi-temple`,
+      `rq-epi-seraph`.
+    * Beats: (1) `marlow.tip` — guild asked for him by the name he won't use; (2) `guild` brief/charge —
+      investigate the SERAPHIM, last seen on the Dragonspine, guild buys a treaty-sealed spine passage;
+      (3) `arrival`+`descent` — a RED DRAGON lands and folds into the woman VORATHIEL; (4) `vorathiel`
+      accuse->roninDeny->hunt->roninAsk->ultimatum (CANON: ronin=Kenji/Ankunyx the elder BLACK dragon &
+      Dragon Emperor in "dress-up"; Vorathiel=Dragon God Queen, Shen Sama's mother & co-parent with Kenji,
+      hunting their fugitive son; Ignis framed as the ELDER PRECEDENT half-sister, parentage NOT invented —
+      her mother is a separate red dragon); (5) `choice` FIGHT or BEG; (5b) `beg` — kneel/ask for time ->
+      she relents, grants time, skips the human fight; (5f) `fight` — VORATHIEL human-form BOSS, on WIN a
+      scripted `skyward` RETREAT cutscene (she ascends to her unbeatable true dragon form, ronin flees to
+      the temple — NOT a winnable 2nd fight); (6) `temple` — the defiled Skyreach shrine: demon wave +
+      DESTRUCTIBLE GATE objective; (7) `seraph` thanks/explain/warn (he only intervenes vs threats beyond
+      mortals like the arch devil; someone DEFILING temples drains the gods' — and his — power); (8)
+      `report` — guild turn-in -> NEW ronin ending -> `credits` 'THE RONIN'S RECKONING ...'.
+    * COMBAT TUNING (Hiro spec "2x dmg, >=3x hp of the toughest enemy so far"): toughest existing scene
+      boss raw = hp 760 / dmgScale ~1.45 (the collector). Bosses scale x5 (boss:true), base x0.5,
+      territory does NOT compound for bosses. -> Vorathiel human form RAW `hp:2280` (=3x760; effective
+      ~5700 vs the toughest boss's ~1900) and `dmgScale:2.9` (=2x1.45), `type:'beast'` (big melee bruiser),
+      boss:true, deathCol+RED palette. Temple = a demon wave (brute/brute/pyre, reskinned infernal) + the
+      GATE as a stationary `destructible:true, gate:true` boss (spd:0; mirror the Ashenveil destructible —
+      wiring run reuses that pattern). The wiring run reconciles exact in-engine multipliers.
+  VOICE: NEW spoken lines (Marlow exists; GUILD CLERK + VORATHIEL are NEW speakers; Seraphim exists;
+  ronin=PLAYER-RONIN). Per constraints 8 & 9 — and exactly as the warlock/druid DATA passes did — voicing
+  is DEFERRED to the wiring run: speakers carry intended `voice:` tags ('GuildClerk','Vorathiel') with
+  comments to map to EXISTING ids; NO add()/speakerSlots added to build_voice_manifest.js yet, so NO
+  "voices ready" claim this run. (VORATHIEL -> an existing female id e.g. Nyx/Sylvara/Veiled Woman.)
+  VERIFY: `node --check src/world/quests.js` = PASS (file 786 lines; export tail
+  `else window.Quests = Quests;` INTACT, NOT truncated). `node -e require()` loads cleanly and confirms
+  `Quests.roninEnding` + all sibling blocks (seraph/archDevilOutro/warlockHunt/druidCrossing) still parse.
+  Data-only, but ran both suites anyway: `node tests/headless.js` = HEADLESS HARNESS PASS (5/5);
+  `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin/druid/warlock/seraph all VICTORY 20/20;
+  druid 35.0 / warlock 42.6 simMin, under the 50 cap). Game fully playable; no behavior change yet (data
+  is dormant until wired).
+  EXACT NEXT STEP (item 7 increment 2 — SCENE WIRING, ONE piece per run, smallest-safe first): wire beat 1
+  + routing. In `CityScene.js`, after the ronin original ending (`char==='ronin' && q-mq5-ash-and-silence
+  ==='done' && !q-rq-epilogue`), have Marlow deliver `Quests.roninEnding.marlow.tip` and set
+  `q-rq-epilogue='active'` (gate it conversation-safe per item 1.5: no proc while a dialog/cinematic/fight
+  is open). Then extend `QuestNav.objective()` with a ronin-epilogue branch: when `char==='ronin' &&
+  q-rq-epilogue==='active' && !rq-epi-guild`, route to the Adventurers' Guild clerk in the city. node --check
+  + headless + gauntlet after the change; sim a ronin to confirm AUTO reaches the guild and is never stuck.
+  Then later runs: (3) guild quest + spine passage; (4) MountainScene Vorathiel descent trigger + fight/beg
+  branch; (5) defiled-temple encounter + destructible gate; (6) Seraphim beat + guild turn-in + credits;
+  (7) the VOICE wiring pass (manifest add()/speakerSlots -> "VOICES READY TO GENERATE (ronin ending)").
+  AFTER item 7 is fully wired & voiced: item 8 (FINAL QA harness) LAST. Do NOT shut down — items 7 & 8 remain.

@@ -434,6 +434,160 @@ const Quests = {
     credits: 'THE CROSSING — the cages came, the green said NO, and three fugitives went up the mountain after a missing flame',
   },
 
+
+  // ===== THE RONIN'S RECKONING (rq) — Vorathiel, the defiled temple, the Seraphim =====
+  // Item 7: a VOICED epilogue questline for the RONIN (Kenji), appended AFTER his original
+  // ending (runFinale's RONIN branch sets q-mq5-ash-and-silence='done' and rolls
+  // 'THE RONIN'S ROAD'). Gate everything on: char==='ronin' AND q-mq5-ash-and-silence==='done'.
+  //
+  // CANON (character_tracker.md — Kenji ~L279, Shen Sama ~L201, Ignis ~L435; mirrored here so the
+  // dialogue stays faithful without re-opening the lore root):
+  //   - The ARPG "Ronin" IS Kenji = in the novels ANKUNYX, an elder BLACK dragon, the Lv40 Dragon
+  //     Emperor, playing dress-up as a nobody pit-fighter. Vorathiel calls this out to his face.
+  //   - VORATHIEL: Dragon God Queen of the Dragonspine peaks; Shen Sama's mother; she and Kenji are
+  //     Shen's parents (Shen hatched from her egg). She raised Shen and now HUNTS him because he fled
+  //     to live among humans / become an adventurer-monk (the same fugitive dragon met in the Grove).
+  //   - IGNIS, "The Firebird": an elder fire/red dragon who lived among humans as a bard; Shen's
+  //     HALF-SISTER and the ELDER PRECEDENT for living among mortals. Ignis's mother is a SEPARATE
+  //     red dragon — NOT Vorathiel. So Vorathiel frames Ignis as the precedent, never as her own
+  //     daughter. (Do not invent parentage; defer to character_tracker.md on any conflict.)
+  //   - THE SERAPHIM recruits mortal heroes for the side of the gods and only intervenes in person
+  //     for threats beyond mortals (the arch devil). Someone DEFILING temples drains the gods' power
+  //     — and thus his own — which is why this one matters to him.
+  //
+  // DATA ONLY this pass (text bank + combat tuning). Scene wiring lands in later runs: a CityScene
+  // Marlow tip, a guild quest + spine passage (mirror the warlock cult-coach OR open the grove->spine
+  // gate while rq is active), a MountainScene proximity trigger for the Vorathiel descent, the
+  // fight/beg branch, the defiled-temple wave + destructible gate, the Seraphim beat, the guild turn-in,
+  // and QuestNav.objective() routing inn->guild->mountains->temple->guild. Honor item 1.5 (no fights
+  // while a dialog/cinematic is open) on EVERY new trigger.
+  //
+  // VOICE (deferred to a later run, exactly as the warlockHunt/druidCrossing data passes deferred
+  // theirs — constraints 8 & 9): NEW lines only. Speakers: MARLOW (exists), GUILD CLERK (map to an
+  // existing voice id), VORATHIEL (NEW -> map to an EXISTING fitting female id already in
+  // voice_config.json, e.g. Nyx / Sylvara / Veiled Woman; do NOT design a new voice), THE SERAPHIM
+  // (exists), ronin lines = PLAYER-RONIN (exists). When the wiring run is ready, ADD add()/speakerSlots
+  // for VORATHIEL + GUILD CLERK to build_voice_manifest.js, rebuild (count grows; all resolve; none
+  // clean to empty), THEN write "VOICES READY TO GENERATE (ronin ending)". NOT claimed this run.
+  roninEnding: {
+    epiFlag: 'q-rq-epilogue', // 'active' after Marlow's tip; 'done' after the final guild report
+    gate: { char: 'ronin', requires: 'q-mq5-ash-and-silence' }, // also requires that flag === 'done'
+    // progress flags (set later by scene wiring; documented here as the single source of truth):
+    //   rq-epi-guild     — the guild gave him the Seraphim investigation + opened the spine passage
+    //   rq-epi-vorathiel — the Vorathiel confrontation resolved (FOUGHT-and-won OR BEGGED-and-spared)
+    //   rq-epi-temple    — the defiled temple cleared and the demonic gate closed
+    //   rq-epi-seraph    — the Seraphim has spoken (the temple-defiling revealed)
+    //   (the final guild turn-in sets epiFlag 'done' and rolls the new ronin credits)
+
+    // ---- beat 1: Marlow's tip in the city (after the ronin's original ending) ----
+    marlow: {
+      name: 'MARLOW',
+      tip: 'Marlow leans across the bar with the look of a man passing along a debt he would rather not hold. "Ronin. The Adventurers\' Guild sent a runner — sober, which is how I knew it was bad. They\'ve a request come down strange, and they asked for YOU. By name. By that name you don\'t use." He polishes a glass that is already clean. "I told them you\'d gone. They said the work would wait. Whatever you are when the lamps are out, friend — the guild knows enough to ask, and not enough to be smart about it. Go see them before they go asking louder."',
+      go: ['"By name. By that name." (go to the guild)',
+           '"The guild can keep its strange requests warm. ...Or I can go look." (go to the guild)'],
+    },
+
+    // ---- beat 2: the guild quest — investigate the SERAPHIM, last seen in the mountains ----
+    guild: {
+      name: 'GUILD CLERK', voice: 'GuildClerk', // map to an existing voice id when voiced (later run)
+      brief: 'The clerk does not look up from the writ until you are close, and then she looks up too fast. "You came. Good. Sit, don\'t sit, whatever you — " She squares the page. "There is a figure abroad in the high country. Winged. Bright. Folk are calling it a SERAPHIM, an angel, and they are not wrong often enough for me to laugh. It is not killing. It is RECRUITING — choosing fighters, leaving the rest shaken and blessed and useless to us for a week. The guild wants to know what it WANTS. And the guild wants someone who will not flinch at the holy or the high." A breath. "Which is, apparently, you."',
+      charge: '"Last sighting: the Dragonspine. The treaty lands — where everything too proud for the valley goes up to become a legend about itself. You can\'t take the trail as you are; the wards read the road. So the guild bought you a passage — a spine-coach with a treaty-seal that the stone will honor. Find the angel. Learn its business. Come back breathing." She slides a sealed token across the desk. "Don\'t make me explain to the masters why I sent the one fighter who scares the OTHER fighters."',
+      go: ['"Find the angel. Learn its business. Simple work." (take the spine passage)',
+           '"The mountain remembers me better than this town does. I\'ll go." (take the spine passage)'],
+    },
+
+    // ---- beat 3: the mountains — the search, then the descent ----
+    arrival: 'THE DRAGONSPINE — the treaty lands. Thin bright air, and below it the whole conspiracy-riddled valley small enough to cover with a thumb. No angel on the cairn-line. No angel at the wind-scoured shrines. Only the feeling, climbing your spine the higher you climb the mountain, that something far larger than an angel has already noticed you are here.',
+    descent: {
+      banner: ['SOMETHING LANDS', 'the mountain has been waiting for this one'],
+      text: 'You feel the heat before the shadow — a downdraft like a forge door opening, snow flashing to steam in a wide ring. A RED DRAGON comes down out of the high sun, vast and unhurried, wings folding the way a verdict folds. It does not roar. It lands, and looks at you the way a parent looks at a child caught in a costume, and then the great red shape FOLDS INWARD — scale to silk, talon to hand — until a tall woman stands in the melt-ring where the wyrm had been, crowned in red, beautiful the way a struck bell is beautiful. She tilts her head. "There you are," she says. "Little Emperor. Still wearing the little man."',
+    },
+
+    // ---- beat 4: the confrontation (cinematic dialogue; canon) ----
+    vorathiel: {
+      name: 'VORATHIEL', voice: 'Vorathiel', // NEW speaker -> map to an EXISTING female id (later run)
+      accuse: '"Why are you DRESSED like that?" She circles, red silk steaming. "A pit. A nameless little sword. Cheering drunks. Who do you imagine you are fooling, Ankunyx? An elder black dragon. The Dragon Emperor of an age. Playing the orphan with a borrowed blade." Her voice does not rise; it does not have to. "It is CHILDISH. It was childish in the Pit and it is childish on my mountain."',
+      roninDeny: '"...I don\'t know what you\'re talking about." (the nameless ronin\'s oldest line)',
+      hunt: '"Of course you don\'t." A smile with no warmth in it. "Then I will tell you what I know. I am hunting my SON. OUR son — though you were a closed door the day his egg cracked and have been one since. Shen. He has fled the peaks to live DOWN there, among the soft ones, to call himself a wanderer, a monk, an ADVENTURER." The word is acid. "Like his sister before him. Like Ignis — the Firebird who threw away an age of fire to strum a lute in human taverns. I will not lose a second child to the valley\'s little dream. You will help me drag him home."',
+      roninAsk: '"...I\'ll keep an eye out for him." A pause. "I came up here for a different name. An angel. They call it the Seraphim — have you seen it on your mountain?"',
+      ultimatum: '"An ERRAND." She laughs, and the melt-ring widens. "You stand before the Dragon God Queen, the mother of your own hunted child, and you ask after an ANGEL for a guild of strangers." The red around her brightens to a glare. "I am DONE with the costume, Ankunyx. I will burn the little man off you, I will beat the black dragon under him bloody, and I will drag both halves of you up this mountain by the neck to find our son. The other mothers indulge your wandering — your scattered little brood, your dancers and your strays. I will NOT. You will take responsibility, or you will be MADE to."',
+    },
+
+    // ---- beat 5: the choice ----
+    choice: {
+      prompt: 'The melt-ring steams. The mountain holds its breath. The Dragon God Queen waits — and behind her, somewhere on this peak, the angel the guild sent you for.',
+      fightOpt: 'FIGHT her — refuse the leash; the costume holds.',
+      begOpt: 'BEG — kneel, ask forgiveness, ask for TIME to finish the Seraphim first.',
+    },
+
+    // BEG branch -> she relents (grants time), skip the human fight, proceed to the temple.
+    beg: {
+      name: 'VORATHIEL',
+      kneel: 'You go down on one knee in the steaming melt — the nameless ronin and the elder Emperor both, for once in the same posture. "Then make me," you say, low. "But not today. There is an angel on your mountain doing the gods\' recruiting, and a guild of soft ones who trusted the wrong fighter with it. Let me finish that. Let me be, for one more errand, the little man — and I give you my word as the thing under him: I will look for our son with both eyes open." You do not look up. "You raised him alone because I was a closed door. I have no right to ask you for an hour. I am asking anyway."',
+      relent: 'A long silence, geological, the kind only old things can hold. Then the glare banks down to embers. "...Both eyes," Vorathiel says at last, and something almost tired moves through the queenly voice. "An age of you, and THAT is the first true thing you have said to me." She steps back out of the melt-ring; the snow dares to return. "Go. Finish your angel\'s errand, little Emperor. But the door does not get to stay closed. When this is done you climb to me, and we hunt our son together — or I come DOWN there, and the valley learns why the peaks are quiet." She is already brightening toward wings. "Do not make a liar of the one honest hour you have ever given me."',
+      flag: 'rq-epi-vorathiel',
+    },
+
+    // FIGHT branch -> Vorathiel HUMAN-FORM boss. On WIN she takes to the sky as the full RED DRAGON
+    // (too mighty to beat) -> scripted RETREAT cutscene to the temple (NOT a winnable 2nd fight).
+    fight: {
+      name: 'VORATHIEL',
+      banner: ['THE DRAGON GOD QUEEN', 'her human form is the MERCIFUL one'],
+      vLine: '"So. The costume would rather BLEED than bow." She does not summon a weapon; she becomes one — red silk hardening to scale at the knuckles, the air around her going to forge-heat. "Good. I have wanted to knock the little man loose for a century. Hold still, my Emperor. This is the gentle half."',
+      opt: ['"You called my brood scattered. You never asked why I keep them far from this mountain." (stand)',
+            '"One honest hour, then. The hard way." (raise the nameless blade)'],
+      // COMBAT TUNING (Hiro): "double the damage of the toughest enemy created so far, and at least
+      // 3x its health." Toughest existing scene boss raw stats: hp 760, dmgScale ~1.45 (the collector,
+      // warlockHunt/druidCrossing). Bosses scale x5 (boss:true) regardless of territory; base x0.5.
+      // -> Vorathiel human form RAW hp = 3 x 760 = 2280 (effective ~5700, ~3x the toughest boss's ~1900),
+      //    RAW dmgScale = 2 x 1.45 = 2.9. Reuse a tough melee AI type (beast — the big bruiser), boss:true,
+      //    deathCol + distinct RED palette. The wiring run reconciles the exact final multipliers in-engine.
+      pack: [{ type: 'beast', boss: true, deathCol: '#ff5a4a', x: 640, y: 260, r: 30,
+               hp: 2280, maxhp: 2280, spd: 96, col: '#b02030', wpn: '#ffb060', dmgScale: 2.9, phase: 1 }],
+      down: 'Her human shape folds to one knee in the melt — and laughs, blood bright on a queen\'s mouth, delighted. "THERE he is. The Emperor under the urchin." She rises anyway, because mercy and surrender were never the same thing to her. "But you mistook the lesson, little man. I let you win the GENTLE half."',
+      // scripted retreat cutscene (NOT a second fight): she ascends to her true form; the ronin runs.
+      skyward: 'The melt-ring becomes a crater. Vorathiel takes the sky as what she truly is — a RED DRAGON that blots the high sun, every scale a furnace door, a thing no blade in any pit was ever meant to face. "Run, then," her voice comes down like weather, almost fond. "Finish your angel. I have made my point, and you have made yours, and BOTH of us know how this ends." A wingbeat flattens the snow for a mile. "Climb to me when the errand is done — or I will come find the little man, and there will be no gentle half." You do the only wise thing an Emperor in a costume can do against the Dragon God Queen: you turn, and you RETREAT, up the spine trail toward the bright broken thing at the peak — the shrine the angel came for.',
+      flag: 'rq-epi-vorathiel',
+    },
+
+    // ---- beat 6: the defiled temple (the Skyreach shrine) — demon wave + destructible gate ----
+    temple: {
+      banner: ['THE SKYREACH SHRINE — DEFILED', 'close the gate; put down what comes through'],
+      arrive: 'The shrine at the peak should be the cleanest place on the mountain. It is the foulest. The dawn-stone is scrawled with a sigil that hurts to track, and where the altar stood a DEMONIC GATE hangs in the air — a wound in the world, weeping things. They come out wrong-jointed and burning, and they keep coming, because something opened this door on purpose and left it open. The Seraphim is nowhere yet. The gate is everywhere.',
+      opt: ['"A temple. Of course it\'s a temple. Someone is starving the gods on purpose." (close it)',
+            '"Hold the line. Break the door. Same as it ever was." (close it)'],
+      // a normal-ish demon wave (reuse demon-ish AI types, reskinned infernal) PLUS the GATE as a
+      // DESTRUCTIBLE OBJECTIVE (mirror the Ashenveil totem/destructible: a stationary high-hp target
+      // the player must destroy to end the encounter). The wiring run reuses the existing destructible
+      // pattern; spd:0 + a 'gate'/destructible marker keeps it as the objective, not a chaser.
+      pack: [{ type: 'grave', boss: true, deathCol: '#ff6a3a', x: 640, y: 230, r: 30,
+               hp: 1100, maxhp: 1100, spd: 0, col: '#5a1a20', wpn: '#ff6a3a', dmgScale: 1.6,
+               destructible: true, gate: true },
+             { type: 'brute', x: 470, y: 320, r: 22, hp: 360, maxhp: 360, spd: 120, col: '#7a2030', dmgScale: 1.4 },
+             { type: 'brute', x: 810, y: 320, r: 22, hp: 360, maxhp: 360, spd: 120, col: '#7a2030', dmgScale: 1.4 },
+             { type: 'pyre', x: 640, y: 360, r: 15, hp: 240, maxhp: 240, spd: 150, col: '#a4302c', wpn: '#ff6a3a', dmgScale: 1.4 }],
+      cleared: 'You break the last burning thing and drive the nameless blade into the heart of the sigil, and the gate SHUTS — not gently, a slammed door, a wound scabbing over in fire. The shrine goes quiet. The dawn-stone is scarred but whole. Whatever was being fed through that door upstairs in the high cold will go hungry tonight. And only now, with the gate dark, does the light arrive.',
+      flag: 'rq-epi-temple',
+    },
+
+    // ---- beat 7: the Seraphim ----
+    seraph: {
+      name: 'THE SERAPHIM', voice: 'Seraphim', // existing voice
+      thanks: 'Light steps down out of the thin air the way the dragon came down, but kinder — a winged figure, too bright to hold in the eye, settling onto the scarred dawn-stone. "You closed it," the Seraphim says, and there is real gratitude in it. "I felt it open and could not reach it in time. You have the guild\'s thanks. You have MINE, which is rarer."',
+      explain: '"You came looking for what I want. I will tell you, since you have earned the truth and bled for it. I do not fight your wars, fighter. I am not PERMITTED to — I recruit. I find the worthy, the way I found a champion on this very mountain, and I send them where the gods cannot openly reach. I step in MYSELF only against what no mortal should face alone — the arch devil clawing out of the deep, and things of that weight. A defiled shrine is beneath my office." A pause, and the brightness dims a shade, troubled. "Or it should be."',
+      warn: '"But this gate was no accident, and it is not the first. Someone is DEFILING the temples — methodically, across the high country and beyond. Every shrine they foul, the gods above grow a little fainter. And the fainter the gods, the fainter their servant." The wings draw in. "Which means the thing that just made me weaker is exactly the thing I am forbidden to chase directly. So I will do what I do: I will tell the worthy, and hope they are worth it. Take this to your guild, fighter. Tell them their angel is not recruiting today — their angel is asking for HELP."',
+    },
+
+    // ---- beat 8: return to the guild -> the new ronin ending -> credits ----
+    report: {
+      name: 'GUILD CLERK', voice: 'GuildClerk',
+      line: 'The clerk listens to all of it — the angel, the recruiting, the gate, the defiled shrine, the gods going thin — and for once does not square a single page. "An angel asking US for help," she says faintly. "Temples being starved on purpose. The masters are going to want this in triplicate, and then they are going to want a drink." She looks at you, and the practiced flinch is gone, replaced by something closer to respect. "You went up there as a fighter who scares fighters, and you came back the only one who closed the door. Whatever name you don\'t use — the guild owes that name a debt now. The hunt for whoever\'s defiling those shrines starts here. It\'ll be waiting when you are."',
+      go: ['"Triplicate. And a drink." (close the ledger on this one)',
+           '"Whoever\'s starving the gods — the guild will find them. I\'ll be near." (walk on)'],
+      credits: 'THE RONIN\'S RECKONING — he closed a door an angel could not, and the mountain still calls him by a name he will not answer',
+    },
+  },
+
   // ===== THE SERAPHIM'S ROAD — an angel does not chase rumors. He recruits. =====
   // Backstory (player-facing): great evil brews in the land; he serves the place above
   // and has come to gather the worthy. (What the gods of death and creation actually
