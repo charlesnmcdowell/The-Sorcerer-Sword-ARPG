@@ -182,6 +182,45 @@ if (ADO) {
   add('THE SERAPHIM', ADO.seraph, 'seraph descent');
 }
 
+// ---- THE RONIN'S ENDING (rq epilogue): Marlow's tip, the Guild Clerk, Vorathiel, the temple Seraphim, the turn-in ----
+// Speaker labels MUST match the scene dialog titles so runtime ids line up (CityScene/MountainScene).
+// New speakers map to EXISTING voice ids (speakerSlots below): GUILD CLERK -> Sylvara, VORATHIEL -> Nyx.
+// Vorathiel's skyward/prompt lines are titled 'THE DRAGON GOD QUEEN' in-scene; voice.js speakerFor()
+// normalizes that to VORATHIEL so the runtime ids match these manifest entries.
+const RE = Quests.roninEnding;
+if (RE) {
+  const prn = s => { if (s && s.trim().startsWith('"')) add('PLAYER-RONIN', s, 'player line: ronin ending'); };
+  // beat 1 — Marlow's tip (split:true forces quote-splitting like his other scenes)
+  add('MARLOW', RE.marlow.tip, 'ronin ending: marlow tip', { split: true });
+  for (const o of (RE.marlow.go || [])) prn(o);
+  // beat 2 — the Guild Clerk: the Seraphim brief + the spine passage
+  add('GUILD CLERK', RE.guild.brief, 'ronin ending: guild brief');
+  add('GUILD CLERK', RE.guild.charge, 'ronin ending: guild charge');
+  for (const o of (RE.guild.go || [])) prn(o);
+  // beat 4 — Vorathiel's confrontation
+  const RV = RE.vorathiel;
+  add('VORATHIEL', RV.accuse, 'ronin ending: vorathiel accuse');
+  prn(RV.roninDeny);
+  add('VORATHIEL', RV.hunt, 'ronin ending: vorathiel hunt');
+  prn(RV.roninAsk);
+  add('VORATHIEL', RV.ultimatum, 'ronin ending: vorathiel ultimatum');
+  // beat 5 — BEG branch (titled VORATHIEL in-scene)
+  add('VORATHIEL', RE.beg.kneel, 'ronin ending: beg kneel');
+  add('VORATHIEL', RE.beg.relent, 'ronin ending: beg relent');
+  // beat 5 — FIGHT branch (vLine/down titled VORATHIEL; skyward titled THE DRAGON GOD QUEEN -> VORATHIEL)
+  add('VORATHIEL', RE.fight.vLine, 'ronin ending: fight vLine');
+  for (const o of (RE.fight.opt || [])) prn(o);
+  add('VORATHIEL', RE.fight.down, 'ronin ending: fight down');
+  add('VORATHIEL', RE.fight.skyward, 'ronin ending: fight skyward');
+  // beat 7 — the Seraphim (Seraphim voice already exists)
+  add('THE SERAPHIM', RE.seraph.thanks, 'ronin ending: seraph thanks');
+  add('THE SERAPHIM', RE.seraph.explain, 'ronin ending: seraph explain');
+  add('THE SERAPHIM', RE.seraph.warn, 'ronin ending: seraph warn');
+  // beat 8 — the guild turn-in
+  add('GUILD CLERK', RE.report.line, 'ronin ending: report');
+  for (const o of (RE.report.go || [])) prn(o);
+}
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -274,6 +313,7 @@ fs.writeFileSync(out, JSON.stringify({
     'BRIAR': 'Briar', 'OSSUARY': 'Ossuary', 'CINDER': 'Cinder', 'WHISPER': 'Whisper', 'THORNWARDEN': 'Thornwarden',
     'GROVE KEEPER': 'Faelar',
     'THE ARCH DEVIL': 'Warlock', 'THE SERAPHIM': 'Seraphim',
+    'GUILD CLERK': 'Sylvara', 'VORATHIEL': 'Nyx', // ronin ending (existing ids)
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
   voiceHints: {

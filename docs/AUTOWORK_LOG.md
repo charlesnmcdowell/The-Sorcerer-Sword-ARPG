@@ -1425,3 +1425,406 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   branch; (5) defiled-temple encounter + destructible gate; (6) Seraphim beat + guild turn-in + credits;
   (7) the VOICE wiring pass (manifest add()/speakerSlots -> "VOICES READY TO GENERATE (ronin ending)").
   AFTER item 7 is fully wired & voiced: item 8 (FINAL QA harness) LAST. Do NOT shut down — items 7 & 8 remain.
+
+- 2026-06-14 (run 27) — **ITEM 7 increment 2 — RONIN EPILOGUE beat 1 (Marlow's tip) WIRED + QuestNav
+  routing.** First scene wiring of the ronin ending (data bank seeded in run 26). Two additive,
+  ronin-gated changes (no combat/engine change):
+  (a) `game/src/scenes/CityScene.js` `innDialog()` — inserted a RONIN EPILOGUE branch right after the
+      seraph redirect / `const GS,P,I,flags` line. When `P.char==='ronin' && flags['q-mq5-ash-and-silence']
+      ==='done' && !flags['q-rq-epilogue']`, Marlow leads with `Quests.roninEnding.marlow.tip`; either
+      `marlow.go` option calls `startEpi()` which sets `flags['q-rq-epilogue']='active'`, closes, and floats
+      "JOURNAL UPDATED — THE GUILD ASKED FOR YOU". Returns early so the normal inn flow is untouched.
+      Conversation-safe by construction (the player/AUTO opens it by talking to Marlow; once the epilogue
+      is active the branch is skipped and the regular inn dialog resumes). Zero change for non-ronins and
+      for a ronin who hasn't finished his original ending (`q-mq5` not 'done').
+  (b) `game/src/core/questnav.js` `objective()` — added a ronin-epilogue routing block just before the
+      final `return null`: when `char==='ronin' && q-mq5-ash-and-silence==='done'`, route to Marlow
+      (`karridge-city 640,704`, interact) while `!q-rq-epilogue`, then to the Adventurers Guild clerk
+      (`karridge-city 1568,704`, interact — the guild door = (44+5,14+8)*32; cult coach at 1538 = door-30
+      confirms it) while `q-rq-epilogue==='active' && !rq-epi-guild`. Falls through to `null` (story rests)
+      once `rq-epi-guild` is set or the epilogue is 'done'. So AUTO:FULL now walks the ronin inn->Marlow
+      (gets the tip, flag flips to active) -> guild, instead of returning null the instant his original
+      ending lands.
+  KNOWN, INTENDED GAP (next run): the city guild interactable still opens the hunt board (`guildBoard()`),
+  NOT the epilogue clerk dialog — so `rq-epi-guild` is not yet set in play and AUTO will idle at the guild
+  once it arrives. That's expected: beat 2 (the GUILD CLERK brief/charge + the treaty-sealed spine passage,
+  which sets `rq-epi-guild` and routes the ronin to the Dragonspine) is the next increment. This run only
+  delivers beat 1 + its routing, mirroring how the warlock/druid wiring landed one piece per run.
+  NO new voiced lines were wired this run (Marlow's tip text exists in the data bank but the manifest
+  add()/speakerSlots for the ronin ending are deferred to the dedicated VOICE wiring pass per the run-26
+  plan), so NO "voices ready" claim and constraints 8 & 9 are untouched.
+  VERIFY: `node --check src/scenes/CityScene.js` PASS (30149 B, tail `}`/`}`/`}` intact, NOT truncated);
+  `node --check src/core/questnav.js` PASS (15115 B, tail `window.QuestNav` intact, NOT truncated). vm
+  `QuestNav.objective()` dump for a post-ending ronin: no-epi -> Marlow (640,704); epi active ->
+  guild (1568,704); rq-epi-guild done -> null; epi done -> null (all correct; pre-q-mq5 routing and all
+  other chars unaffected). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js`
+  = GAUNTLET SWEEP: PASS first try (ronin 8.2 / druid 29.7 / warlock 21.1 / seraph 3.8 simMin, all
+  VICTORY 20/20, under the 50 cap). Game fully playable.
+  EXACT NEXT STEP (item 7 increment 3 — beat 2, the GUILD CLERK + spine passage): make the CITY guild,
+  for a ronin with `q-rq-epilogue==='active' && !rq-epi-guild`, open the epilogue clerk dialog instead of
+  the hunt board — i.e. in `CityScene.guildBoard()` (or a small wrapper at the guild interactable), branch
+  to a new clerk dialog that plays `Quests.roninEnding.guild.brief` -> `.charge` and, on the `guild.go`
+  option, sets `flags['rq-epi-guild']='active'` (or 'done' for the brief) and OPENS THE SPINE PASSAGE for
+  the ronin to the Dragonspine (mirror the warlock cult-coach: add a one-shot 'spine-coach' travel for the
+  ronin, OR set a flag the MountainScene/worldmap honors so the normally-gated Dragonspine accepts him).
+  Then extend `QuestNav.objective()`: when ronin & `rq-epi-guild` set & `!rq-epi-vorathiel`, route to the
+  spine-coach in the city (gated like the warlock's), and once in `dragonspine`, to the Vorathiel descent
+  trigger spot. node --check + headless + gauntlet after the change; vm-sim the ronin objective() chain
+  reaches the spine. Following runs: (4) MountainScene Vorathiel descent trigger + fight/beg branch (reuse
+  the boss/destructible patterns; honor item 1.5 on the new proximity proc); (5) defiled-temple encounter +
+  destructible gate; (6) Seraphim beat + guild turn-in + `report.credits`; (7) the VOICE wiring pass
+  (manifest add()/speakerSlots for MARLOW already mapped / GUILD CLERK + VORATHIEL -> existing ids, rebuild,
+  "VOICES READY TO GENERATE (ronin ending)"). THEN item 8 (FINAL QA harness) LAST. Do NOT shut down —
+  items 7 (beats 2-8 + voice) & 8 remain.
+
+- 2026-06-14 (run 28) — **ITEM 7 increment 3 — RONIN EPILOGUE beat 2 (GUILD CLERK + spine passage) WIRED +
+  QuestNav spine routing.** Second scene-wiring increment of the ronin ending (data bank seeded run 26,
+  beat 1 wired run 27). Three additive, ronin-gated changes (no combat/engine change):
+  (a) `game/src/scenes/CityScene.js` `guildBoard()` — at the very top, for a ronin with
+      `q-rq-epilogue==='active' && !rq-epi-guild`, it now opens the new `roninGuildClerk()` dialog and
+      returns INSTEAD of the hunt board. Zero change for everyone else / a ronin past this beat (the hunt
+      board resumes once `rq-epi-guild` is set).
+  (b) New `roninGuildClerk()` plays `Quests.roninEnding.guild.brief` -> `.charge`; either `guild.go` option
+      calls `takePassage()` which sets `flags['rq-epi-guild']='done'`, closes, calls `addSpineCoach()`, and
+      floats "JOURNAL UPDATED — THE SPINE PASSAGE". New `addSpineCoach()` (mirrors `addCultCoach`, treaty-amber
+      palette) pushes a SPINE-COACH interactable at the guild door (`dx-30, dy+40` = tile 1538,744 — the same
+      gated-coach tile the warlock cult coach uses; they never coexist, warlock-only vs ronin-only). New
+      `spineCoachDialog()` offers "To the DRAGONSPINE" -> `this.scene.start('MountainScene')` (the gated
+      Dragonspine is reached only via this coach, exactly like the warlock's cult coach). The coach is also
+      re-added in `create()`'s guild block when `char==='ronin' && rq-epi-guild && !rq-epi-vorathiel`, so it
+      persists across save/continue + scene reloads.
+  (c) `game/src/core/questnav.js` `objective()` — extended the ronin-epilogue block: when `rq-epi-guild` is
+      set and `!rq-epi-vorathiel`, route to the city spine-coach (`karridge-city 1538,744`, interact) while
+      NOT on the dragonspine; once `zone==='dragonspine'`, route to `dragonspine 1088,576` (interact:false,
+      "search the peak for the Seraphim" — the Vorathiel descent spot, wired next run). So AUTO:FULL now walks
+      the ronin inn->Marlow->guild->(board coach)->Dragonspine and idles at the search spot until the descent
+      trigger lands.
+  NO new voiced lines were wired this run (the clerk's `brief`/`charge` text exists in the data bank but the
+  manifest add()/speakerSlots for GUILD CLERK are deferred to the dedicated VOICE wiring pass per the run-26
+  plan), so NO "voices ready" claim; constraints 8 & 9 untouched.
+  KNOWN, INTENDED GAP (next run): the Dragonspine has no Vorathiel descent trigger yet, so once AUTO arrives
+  at (1088,576) it idles and `rq-epi-vorathiel` is never set in play. That's beat 3/4 — the next increment.
+  VERIFY: `node --check src/scenes/CityScene.js` PASS (30149 -> 32566 B, tail `}`/`}`/`}` intact, NOT
+  truncated); `node --check src/core/questnav.js` PASS (15115 -> 15617 B, tail `window.QuestNav` intact, NOT
+  truncated). vm `QuestNav.objective()` dump for a post-ending ronin: no-epi -> Marlow (640,704); epi active
+  -> guild clerk (1568,704); rq-epi-guild set & in city OR another zone -> spine-coach (1538,744); on
+  dragonspine -> search spot (1088,576); rq-epi-vorathiel done -> null (next beat TBD). Warlock/druid/other
+  chars unaffected. `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` = GAUNTLET
+  SWEEP: PASS first try (ronin 6.9 / druid 30.4 / warlock 21.6 / seraph 4.0 simMin, all VICTORY 20/20, under
+  the 50 cap). Game fully playable.
+  EXACT NEXT STEP (item 7 increment 4 — beat 3/4, the Vorathiel descent + confrontation + fight/beg choice):
+  in `game/src/scenes/MountainScene.js`, add a ronin-gated proximity AUTO-trigger in `update()` (mirror the
+  existing boss/hunt procs; honor item 1.5: NO proc while `CityUI.dialogOpen() || this.encounterActive ||
+  this.cinematic`) near (1088,576), gated `char==='ronin' && rq-epi-guild && !rq-epi-vorathiel`, that plays
+  `Quests.roninEnding.descent` (red dragon lands -> folds into VORATHIEL) -> the confrontation chain
+  (`vorathiel.accuse`->`roninDeny`->`hunt`->`roninAsk`->`ultimatum`) -> the `choice` (FIGHT vs BEG):
+   * BEG -> `beg.kneel` -> `beg.relent`, set `flags['rq-epi-vorathiel']='done'`, route on to the temple.
+   * FIGHT -> `startEncounter` with `Quests.roninEnding.fight.pack` (Vorathiel human-form boss: beast,
+     boss:true, deathCol #ff5a4a, hp 2280, dmgScale 2.9 — already tuned in the data) -> on WIN show
+     `fight.down` -> the scripted `fight.skyward` RETREAT cutscene (NOT a winnable 2nd fight) -> set
+     `rq-epi-vorathiel='done'` -> route to the temple. (The temple encounter + destructible gate is beat 6,
+     a following run.) Surface "THE DRAGONSPINE" / "THE DRAGON GOD QUEEN" as journal beats so it's visible.
+   node --check + headless + gauntlet after; vm-sim the ronin objective() chain past the descent.
+   Following runs: (5) defiled-temple demon wave + destructible gate (beat 6); (6) Seraphim beat (7) + guild
+   turn-in + `report.credits` (beat 8); (7) the VOICE wiring pass (manifest add()/speakerSlots: MARLOW already
+   mapped, GUILD CLERK + VORATHIEL -> existing ids; rebuild; "VOICES READY TO GENERATE (ronin ending)"). THEN
+   item 8 (FINAL QA harness) LAST. Do NOT shut down — items 7 (beats 3-8 + voice) & 8 remain.
+
+- 2026-06-14 (run 29) — **ITEM 7 increment 4 — RONIN EPILOGUE beat 3/4 (the Vorathiel descent +
+  confrontation + FIGHT/BEG choice) WIRED in MountainScene.** Third scene-wiring increment of the
+  ronin ending (data bank run 26; beat 1 run 27; beat 2 run 28). Three additive, ronin-gated changes
+  in `game/src/scenes/MountainScene.js` (no combat/engine change; reuses existing patterns):
+  (a) `create()` — a ronin-gated SEARCH/DESCENT MARKER (scorched melt-ring + red heat-ring + light) at
+      tile (34,18) = (1088,576), gated `char==='ronin' && rq-epi-guild && !rq-epi-vorathiel`. Pushes an
+      interactable `'search the peak for the Seraphim'` -> `vorathielDescent(this.portraitVorathiel())`.
+      Shares Cinder's tile (mutually exclusive: warlock-hunt vs ronin-epilogue) — an open center-spine
+      tile already vetted clear of cliffs/crags/shrine/packs. (1088,576) MATCHES the QuestNav search spot
+      wired in run 28, so AUTO walks exactly here.
+  (b) New `vorathielDescent(portrait)` method (mirrors VarenholmScene.crossingBeat's dialog/encounter
+      structure; conversation-safe by construction — driven by dialog/encounter, never aggros while open).
+      Gates `char==='ronin' && rq-epi-guild && !rq-epi-vorathiel`; sets `q-rq-vorathiel-seen` to surface
+      the journal beat. Plays `descent.text` -> `vorathiel.accuse`->`roninDeny`->`hunt`->`roninAsk`->
+      `ultimatum` -> `choice.prompt` with two buttons:
+        * BEG -> `beg.kneel` -> `beg.relent` -> `toTemple()`.
+        * FIGHT -> `fight.vLine` (both opts) -> `startEncounter(fight.banner, fight.pack, {zoneScale})` —
+          VORATHIEL human-form boss (beast, boss:true, deathCol #ff5a4a, hp 2280, dmgScale 2.9, RED palette,
+          already tuned in the data). On LOSS: respawn at the trailhead (27,40), no flag change, beat re-arms.
+          On WIN: `fight.down` -> the scripted `fight.skyward` RETREAT cutscene (a dialog, NOT a winnable 2nd
+          fight) -> `toTemple()`.
+      `toTemple()` (both branches converge) sets `flags['rq-epi-vorathiel']='done'`, closes, floats
+      "JOURNAL UPDATED — THE DEFILED SHRINE", autosaves. New `portraitVorathiel()` helper builds a cached
+      red-palette portrait via createPitCombat.drawFighter (same pattern as duelPortrait/portraitCookie).
+      Deliberately does NOT toggle `this.cinematic` (mirrors crossingBeat: relies on dialogOpen +
+      encounterActive) to avoid a stuck-cinematic softlock on a fight LOSS.
+  (c) `update()` — a ronin-gated proximity AUTO-trigger before the south-gate block (mirrors the Varenholm
+      collector/crossing procs): gated `char==='ronin' && rq-epi-guild && !rq-epi-vorathiel &&
+      !encounterActive && !this.cinematic && !CityUI.dialogOpen() && time>this._vorTrigT`, distance<130 of
+      (1088,576), 1.2s re-arm, calls `vorathielDescent(this.portraitVorathiel())`. So the descent fires for
+      AUTO and a manual player WITHOUT pressing E (item-1.5 conversation-safe: no proc while a dialog/
+      cinematic/fight runs). Both the interactable (b) and the proc (c) cover the beat, like the druid crossing.
+  NO new voiced lines were wired this run (Vorathiel/descent/beg/fight text exists in the data bank, but the
+  manifest add()/speakerSlots for GUILD CLERK + VORATHIEL are deferred to the dedicated VOICE wiring pass per
+  the run-26 plan) — so NO "voices ready" claim; constraints 8 & 9 untouched.
+  KNOWN, INTENDED GAP (next run): once `rq-epi-vorathiel` is 'done', QuestNav currently falls through to null
+  (run 28) — the defiled-temple beat (6) is not yet placed, so AUTO idles after the confrontation. That is the
+  next increment.
+  VERIFY: `node --check src/scenes/MountainScene.js` PASS (27417 B, tail `}`/`}`/`}` intact, NOT truncated).
+  Data round-trip via `require('./src/world/quests.js')` confirmed every field the new code reads exists
+  (descent.banner/text; vorathiel.accuse/roninDeny/hunt/roninAsk/ultimatum; choice.prompt/fightOpt/begOpt;
+  beg.kneel/relent; fight.banner/vLine/opt[2]/down/skyward/pack[beast,boss,hp2280]). `node tests/headless.js`
+  = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 7.2 / druid
+  28.2 / warlock 18.8 / seraph 4.0 simMin, all VICTORY 20/20, under the 50 cap). Game fully playable.
+  EXACT NEXT STEP (item 7 increment 5 — beat 6, the DEFILED TEMPLE: demon wave + destructible gate): in
+  `game/src/scenes/MountainScene.js` add a ronin-gated trigger at the Skyreach shrine (peak, 32*T,4*T) — when
+  `char==='ronin' && rq-epi-vorathiel==='done' && !rq-epi-temple`, route/proc to a `templeBeat()` that plays
+  `Quests.roninEnding.temple.arrive` -> two `temple.opt` -> `startEncounter(temple.banner, temple.pack,
+  {zoneScale})`. The pack is a demon wave (grave/brute/brute/pyre, infernal palette) PLUS the GATE as a
+  stationary `destructible:true, gate:true` boss (spd:0) — VERIFY the engine honors `destructible`/`gate`
+  (grep pit.js/combat for those keys; reuse the Ashenveil totem/destructible pattern; if `gate` isn't a
+  recognized engine key, fall back to a high-hp boss the player must kill to clear, the smallest-safe option).
+  On WIN: `temple.cleared`, set `flags['rq-epi-temple']='done'`, route on to the Seraphim. Then extend
+  `QuestNav.objective()`: ronin & rq-epi-vorathiel done & !rq-epi-temple -> route to the shrine (32*T,4*T);
+  rq-epi-temple done & !rq-epi-seraph -> the Seraphim spot. Honor item 1.5 on any new proc. node --check +
+  headless + gauntlet after. Following runs: (6) beat 7 Seraphim + beat 8 guild turn-in + `report.credits`;
+  (7) the VOICE wiring pass (manifest add()/speakerSlots: MARLOW mapped, GUILD CLERK + VORATHIEL -> existing
+  ids; rebuild; "VOICES READY TO GENERATE (ronin ending)"). THEN item 8 (FINAL QA harness) LAST. Do NOT shut
+  down — items 7 (beats 6-8 + voice) & 8 remain.
+
+- 2026-06-14 (run 30) — **ITEM 7 increment 5 — RONIN EPILOGUE beat 6 (THE DEFILED TEMPLE: demon wave +
+  destructible-gate boss) WIRED in MountainScene + QuestNav shrine/Seraphim routing.** Fourth scene-wiring
+  increment of the ronin ending (data bank run 26; beats 1-4 wired runs 27-29). Additive, ronin-gated; no
+  combat/engine change (reuses the existing boss/totem pattern).
+  ENGINE CHECK FIRST (per the run-26 plan): grepped src/ — the data's `destructible`/`gate` keys are NOT
+  recognized engine keys (they appear ONLY in quests.js). So per the documented fallback I used the
+  SMALLEST-SAFE option: the gate rides as a STATIONARY high-hp boss the player must destroy to clear the
+  wave (the data already sets `type:'grave', boss:true, spd:0, deathCol:'#ff6a3a', hp:1100`), exactly
+  mirroring the Ashenveil `totem` (spd:0) + warden-boss pattern. The extra `destructible`/`gate` flags are
+  inert/harmless metadata. The pack is a reskinned infernal demon wave (grave gate-boss + 2 brutes + 1 pyre).
+  Three changes in `game/src/scenes/MountainScene.js`:
+  (a) `create()` — a ronin-gated DEFILED-SHRINE marker (red gate "wound in the air" over the Skyreach
+      doorway + sigil sparks + red light) at the shrine tile (32*T,4*T)=(1024,128), gated
+      `char==='ronin' && rq-epi-vorathiel==='done' && !rq-epi-temple`. Pushes an interactable at
+      (shX+36, shY+26) -> `templeBeat()` (offset from the existing seraph shrine interactable so both can
+      coexist without clobbering each other's prompt).
+  (b) New `templeBeat()` method (mirrors vorathielDescent's structure; conversation-safe by construction —
+      driven by dialog/encounter, never aggros while open). Gates `char==='ronin' &&
+      rq-epi-vorathiel==='done' && !rq-epi-temple`; sets `q-rq-temple-seen` to surface the journal beat.
+      Plays `temple.arrive` -> two `temple.opt` -> `startEncounter(temple.banner[0], temple.banner[1],
+      temple.pack, win=>..., {zoneScale:true})`. On LOSS: respawn at trailhead (27,40), no flag change,
+      beat re-arms. On WIN: sets `flags['rq-epi-temple']='done'`, plays `temple.cleared` ("the gate shuts...
+      the light begins to arrive"), floats "JOURNAL UPDATED — THE LIGHT ARRIVES", autosaves. (The Seraphim
+      arrival itself is beat 7 — a following run; this beat ends right as the light arrives.)
+  (c) `update()` — a ronin-gated proximity AUTO-trigger after the Vorathiel proc (mirrors it): gated
+      `char==='ronin' && rq-epi-vorathiel==='done' && !rq-epi-temple && !encounterActive && !this.cinematic
+      && !CityUI.dialogOpen() && time>this._tplTrigT`, distance<130 of (32*T,5*T)=(1024,160), 1.2s re-arm,
+      calls `templeBeat()`. So the temple fires for AUTO and a manual player WITHOUT pressing E (item-1.5
+      conversation-safe: no proc while a dialog/cinematic/fight runs). Both interactable (a) and proc (c)
+      cover the beat, like the druid crossing / Vorathiel descent.
+  `game/src/core/questnav.js` `objective()` — extended the ronin block: when `rq-epi-vorathiel==='done' &&
+  !rq-epi-temple`, route to the Skyreach shrine (32*T,5*T=1024,160, interact, "the defiled Skyreach shrine
+  — close the gate"); when `rq-epi-temple==='done' && !rq-epi-seraph`, route to the same scarred-shrine spot
+  ("the Seraphim — the scarred shrine", beat 7 next run). Both guard `zone!=='dragonspine' -> city
+  spine-coach` (mirrors the Vorathiel guard) so the ronin is never stranded off-spine. (1024,160) is the
+  SAME tile the seraph's `q-sq4-the-chosen` objective already uses, i.e. a vetted-reachable shrine tile.
+  `game/src/scenes/CityScene.js` — SAFETY: the city spine-coach was previously added in `create()` only
+  while `rq-epi-guild && !rq-epi-vorathiel`, so a ronin who returned to the city AFTER fighting Vorathiel
+  would have been stranded (no way back up the gated spine for the temple/seraph beats). Changed the gate to
+  `rq-epi-guild && q-rq-epilogue!=='done'` so the coach persists through the temple + seraph beats until the
+  epilogue's final guild turn-in. Additive; zero change for everyone else.
+  NO new voiced lines were wired this run (the temple `arrive`/`opt`/`cleared` text exists in the data bank,
+  but the manifest add()/speakerSlots are deferred to the dedicated VOICE wiring pass per the run-26 plan) —
+  so NO "voices ready" claim; constraints 8 & 9 untouched. (The temple beat itself has no named-speaker
+  voiced lines — it's environmental narration + the player's two options.)
+  KNOWN, INTENDED GAP (next run): once `rq-epi-temple` is 'done', QuestNav routes to the Seraphim spot but
+  nothing places the Seraphim beat yet, so AUTO idles at the scarred shrine. That is beat 7 — the next
+  increment.
+  VERIFY: `node --check src/scenes/MountainScene.js` PASS (31382 B, tail `}`/`}`/`}` intact, NOT truncated);
+  `node --check src/core/questnav.js` PASS (16528 B, tail `window.QuestNav` intact); `node --check
+  src/scenes/CityScene.js` PASS (32606 B, tail intact). Data round-trip via `require('./src/world/quests.js')`
+  confirmed every field templeBeat reads exists (temple.banner[2]/arrive/opt[2]/pack/cleared/flag; gate boss
+  = grave, boss:true, spd:0, hp:1100, deathCol #ff6a3a). vm `QuestNav.objective()` dump for a full-mq-done
+  ronin: beat1 Marlow (640,704); epi-active -> guild clerk (1568,704); guild done & !vor -> spine-coach
+  off-spine / search-spot (1088,576) on-spine; **vor done & !temple -> shrine (1024,160) on-spine /
+  spine-coach off-spine; temple done & !seraph -> shrine (1024,160) / spine-coach; all epi flags done ->
+  null** (all correct; earlier beats + other chars unaffected; warlock objective unchanged). `node
+  tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try
+  (ronin 7.7 / druid 23.5 / warlock 30.6 / seraph 4.0 simMin, all VICTORY 20/20, under the 50 cap). Game
+  fully playable.
+  EXACT NEXT STEP (item 7 increment 6 — beat 7 the SERAPHIM + beat 8 the GUILD TURN-IN): in
+  `game/src/scenes/MountainScene.js`, after the temple clears, place the SERAPHIM beat at the scarred shrine
+  (32*T,5*T): a ronin-gated trigger (interactable + proximity proc, item-1.5 safe) gated `char==='ronin' &&
+  rq-epi-temple==='done' && !rq-epi-seraph` that plays `Quests.roninEnding.seraph.thanks` -> `.explain` ->
+  `.warn` (use the existing 'Seraphim' voice via a portrait if desired), then sets `flags['rq-epi-seraph']
+  ='done'` and floats a "RETURN TO THE GUILD" journal hint. Then beat 8 (guild turn-in) in
+  `game/src/scenes/CityScene.js`: for a ronin with `rq-epi-seraph==='done' && q-rq-epilogue!=='done'`, the
+  guild interactable opens a clerk dialog playing `Quests.roninEnding.report.line` -> two `report.go` opts ->
+  set `flags['q-rq-epilogue']='done'` (+ a `rq-epi-report` flag) and `CityUI.credits(report.credits)` (keeps
+  the books/podcast links). Extend `QuestNav.objective()`: `rq-epi-seraph==='done' && q-rq-epilogue!=='done'`
+  -> route to the city guild (1568,704; spine-coach guard not needed once heading to the city) — then null
+  once the epilogue is 'done'. node --check + headless + gauntlet after; vm-sim the objective() chain
+  shrine->seraph->guild->null. Following runs: (7) the VOICE wiring pass — ADD build_voice_manifest.js
+  add()/speakerSlots for the WHOLE ronin ending (MARLOW already mapped; GUILD CLERK + VORATHIEL -> existing
+  fitting voice ids in voice_config.json; SERAPHIM exists; ronin lines = PLAYER-RONIN), rebuild the manifest
+  (count grows; all resolve; none clean to empty), then "VOICES READY TO GENERATE (ronin ending)". THEN item
+  8 (FINAL QA harness — game/tests/qa_questlines.js + QA_REPORT.md) LAST. Do NOT shut down — items 7 (beats
+  7-8 + voice) & 8 remain.
+
+- 2026-06-14 (run 31) — **ITEM 7 increment 6 — RONIN EPILOGUE beats 7 (the SERAPHIM) + 8 (the GUILD
+  TURN-IN) WIRED.** Fifth scene-wiring increment of the ronin ending (data bank run 26; beats 1-6 wired
+  runs 27-30). Additive, ronin-gated; no combat/engine change (beat 7 is pure dialogue, beat 8 reuses the
+  existing credits path). THIS COMPLETES THE PLAYABLE FLOW of the ronin ending end-to-end.
+  Changes in `game/src/scenes/MountainScene.js`:
+  (a) `create()` — a ronin-gated SERAPHIM marker (a healed column of clean light + bright doorway +
+      settling feathers) at the scarred Skyreach shrine (32*T,4*T), gated `char==='ronin' &&
+      rq-epi-temple==='done' && !rq-epi-seraph`. Pushes an interactable at (shX-36, shY+26) ->
+      `seraphBeat(portraitSeraph())`. Offset from the base shrine interactable so both coexist; the
+      defiled-gate marker (beat 6) is gone by now (it gates on !rq-epi-temple), so no overlap.
+  (b) New `seraphBeat(portrait)` method (mirrors templeBeat/vorathielDescent structure; conversation-safe
+      by construction — driven by dialog, no fight, never aggros while open). Gates `char==='ronin' &&
+      rq-epi-temple==='done' && !rq-epi-seraph`; sets `q-rq-seraph-seen` for the journal beat. Plays
+      `seraph.thanks` -> `.explain` -> `.warn`, then `finish()` sets `flags['rq-epi-seraph']='done'`,
+      floats "JOURNAL UPDATED — RETURN TO THE GUILD", autosaves. New `portraitSeraph()` helper builds a
+      cached white/gold portrait via createPitCombat.drawFighter (same pattern as portraitVorathiel).
+  (c) `update()` — a ronin-gated proximity AUTO-trigger after the temple proc (mirrors it): gated
+      `char==='ronin' && rq-epi-temple==='done' && !rq-epi-seraph && !encounterActive && !this.cinematic
+      && !CityUI.dialogOpen() && time>this._serTrigT`, distance<130 of (32*T,5*T)=(1024,160), 1.2s re-arm,
+      calls `seraphBeat(portraitSeraph())`. So beat 7 fires for AUTO + a manual player WITHOUT pressing E
+      (item-1.5 conversation-safe). Both the interactable (a) and the proc (c) cover the beat.
+  Change in `game/src/scenes/CityScene.js`:
+  (d) `guildBoard()` — added a beat-8 branch right after the beat-2 branch: for a ronin with
+      `rq-epi-seraph==='done' && q-rq-epilogue!=='done'`, opens new `roninGuildReport()` and returns
+      INSTEAD of the hunt board (zero change for everyone else / a ronin past this beat). New
+      `roninGuildReport()` plays `Quests.roninEnding.report.line` -> either `report.go` option calls
+      `close()` which sets `flags['rq-epi-report']='done'` + `flags['q-rq-epilogue']='done'`, autosaves,
+      and `setTimeout(()=>CityUI.credits(report.credits),600)` — the NEW ronin ending 'THE RONIN'S
+      RECKONING …' (keeps the books/podcast links via CityUI.credits, same as runFinale).
+  Change in `game/src/core/questnav.js`:
+  (e) `objective()` ronin block — added beat-8 routing right after the seraph-shrine route: when
+      `rq-epi-seraph==='done' && q-rq-epilogue!=='done'`, route to the city Adventurers Guild (1568,704,
+      interact, "report to the clerk") from ANY zone; falls through to `null` once `q-rq-epilogue` is
+      'done' (story rests). So AUTO:FULL now walks the ronin shrine->Seraphim->city guild->credits.
+  NO new voiced lines were wired this run (the seraph thanks/explain/warn + report.line text exists in the
+  data bank, but the manifest add()/speakerSlots for GUILD CLERK / VORATHIEL / the ronin ending are
+  DEFERRED to the dedicated VOICE wiring pass per the run-26 plan) — so NO "voices ready" claim;
+  constraints 8 & 9 untouched. (SERAPHIM voice already exists/mapped.)
+  VERIFY: `node --check src/scenes/MountainScene.js` PASS (35355 B, tail `}`/`}`/`}` intact, NOT truncated);
+  `node --check src/core/questnav.js` PASS (16959 B, tail `window.QuestNav` intact); `node --check
+  src/scenes/CityScene.js` PASS (33464 B, tail intact). Data round-trip via require() confirmed every field
+  the new code reads exists (seraph.name/thanks/explain/warn; report.name/line/go[2]/credits). vm
+  `QuestNav.objective()` dump for a full-mq-done ronin: temple done & !seraph on-spine -> shrine (1024,160);
+  **seraph done (city OR spine) -> guild (1568,704); q-rq-epilogue done -> null** (all correct; earlier beats
+  + other chars unaffected). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js`
+  = GAUNTLET SWEEP: PASS on re-run (ronin 8.7 / druid 29.7 / warlock 18.0 / seraph 4.1 simMin, all VICTORY
+  20/20; first run had the KNOWN druid 50.0 TIMEOUT flake near the cap — re-ran per the constraint and it
+  passed clean; my changes are ronin-only and do not touch the druid). Game fully playable; ronin ending now
+  reachable end-to-end by AUTO (inn->Marlow->guild->spine-coach->Dragonspine->Vorathiel->temple->Seraphim->
+  guild turn-in->credits).
+  EXACT NEXT STEP (item 7 increment 7 — the VOICE WIRING PASS for the WHOLE ronin ending): in
+  `game/tools/build_voice_manifest.js`, ADD `add(...)` calls + `speakerSlots` for every NEW voiced line of
+  the ronin ending and rebuild. Speakers/lines to wire (constraints 8 & 9): MARLOW `roninEnding.marlow.tip`
+  (Marlow already mapped); GUILD CLERK `roninEnding.guild.brief`/`.charge` + `roninEnding.report.line` (map
+  'GUILD CLERK' -> an EXISTING voice id in voice_config.json, e.g. the existing clerk/female id); VORATHIEL
+  `roninEnding.vorathiel.accuse`/`.hunt`/`.ultimatum` + `roninEnding.beg.kneel`/`.relent` +
+  `roninEnding.fight.vLine`/`.down`/`.skyward` (map 'VORATHIEL' -> an EXISTING fitting female id, e.g.
+  Nyx/Sylvara/Veiled Woman — do NOT design a new voice); THE SERAPHIM `roninEnding.seraph.thanks`/`.explain`/
+  `.warn` (Seraphim voice already exists); ronin reply lines are PLAYER-RONIN (existing). The in-scene calls
+  already go through CityUI.dialog (text) — for in-COMBAT lines use window.VoiceMan.say(speaker,line) which
+  hashes to the same id. After adding, run `node game/tools/build_voice_manifest.js`, confirm the manifest
+  line COUNT GREW, all new lines RESOLVE to a voice id, and NONE clean to empty; only THEN write "VOICES
+  READY TO GENERATE (ronin ending)". (Map ONLY to existing ids; do NOT print/move the API key.) THEN item 8
+  (FINAL QA harness — game/tests/qa_questlines.js + docs/QA_REPORT.md, all four chars) LAST. Do NOT shut
+  down — item 7 (the voice pass) & item 8 remain.
+
+
+- 2026-06-14 (run 32) — **ITEM 7 increment 7 — RONIN ENDING VOICE WIRING PASS. VOICES READY TO GENERATE
+  (ronin ending).** Wired every NEW voiced line of the ronin epilogue into the voice manifest. Tooling-only
+  change (no combat/scene/engine logic touched); additive.
+  Changes:
+  (a) `game/src/core/voice.js` — added ONE alias to `speakerFor()` MAP: `'THE DRAGON GOD QUEEN' -> 'VORATHIEL'`.
+      In MountainScene the skyward-retreat (FT.skyward) and the choice prompt are titled 'THE DRAGON GOD QUEEN',
+      so this normalizes them to VORATHIEL at runtime, matching the manifest ids (same precedent as the existing
+      'THE DRAGON EMPEROR' -> 'ANKUNYX' alias). No existing voiced line uses that title, so no clip is affected.
+  (b) `game/tools/build_voice_manifest.js` — added a `const RE = Quests.roninEnding` block (placed right after
+      the ARCH DEVIL OUTRO block) that `add(...)`s: MARLOW marlow.tip (split:true); GUILD CLERK guild.brief,
+      guild.charge, report.line; VORATHIEL vorathiel.accuse/.hunt/.ultimatum, beg.kneel/.relent,
+      fight.vLine/.down/.skyward; THE SERAPHIM seraph.thanks/.explain/.warn; plus the quoted PLAYER-RONIN reply
+      labels (marlow.go, guild.go, vorathiel.roninDeny/.roninAsk, fight.opt, report.go — filtered to lines
+      starting with a quote so none strip to empty). Speaker labels match the scene dialog titles exactly so
+      runtime ids line up.
+  (c) `build_voice_manifest.js` speakerSlots — mapped the two NEW speakers to EXISTING voice ids:
+      `'GUILD CLERK' -> 'Sylvara'` (precise/professional female) and `'VORATHIEL' -> 'Nyx'` (commanding imperious
+      matron — fits the Dragon God Queen). THE SERAPHIM/MARLOW/PLAYER-RONIN already mapped. No new voice designed;
+      no API key printed or moved (constraints 8 & 9 respected — only NEW lines added, nothing existing altered).
+  DELIBERATELY NOT VOICED (scope per the run-26/31 plan, which enumerated the character lines only): the
+  descent narration (DE.text, titled 'SOMETHING LANDS') and the temple narration (TM.arrive/TM.cleared) — these
+  are banner-style narration and stay text-only/silent like other banner narration in the game; the choice
+  prompt (CH.prompt) is pure narration and also left silent. These are intentional, not gaps.
+  VERIFY: `node --check src/core/voice.js` PASS; `node --check tools/build_voice_manifest.js` PASS (both tails
+  intact, NOT truncated). Rebuilt manifest: **count 245 -> 270 (+25 new lines)**. A resolver check confirmed all
+  25 new lines (and every segment) RESOLVE to a voice id (MARLOW->Marlow, PLAYER-RONIN->Kenji, GUILD
+  CLERK->Sylvara, VORATHIEL->Nyx, THE SERAPHIM->Seraphim, NARRATOR->Narrator) and NONE clean to empty after
+  [tag] stripping (0 unresolved, 0 empty). Runtime-id parity check: recomputed `hash(speakerFor(title)|text)`
+  exactly as VoiceMan.say does for 8 representative lines INCLUDING the alt-titled skyward — all 8 match a
+  manifest id (0 mismatches). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` =
+  GAUNTLET SWEEP PASS (ronin 8.0 / druid 47.7 / warlock 28.4 / seraph 4.2 simMin, all VICTORY 20/20, druid under
+  the 50-cap). Game fully playable. Hiro: run `python game/tools/generate_voices.py --yes` to fill the 25 new
+  ronin-ending clips (resumable; skips clips already on disk) — see docs/VOICE_STATUS.md (now 245/270).
+  EXACT NEXT STEP (item 8 — the FINAL QA harness, the LAST roadmap item): create `game/tests/qa_questlines.js`
+  — a headless walk of QuestNav.objective() + the scene flag flow for ALL FOUR characters end-to-end (ronin
+  original->epilogue: Marlow->guild->spine->Vorathiel(both branches)->temple->Seraphim->guild->credits; warlock
+  full hunt->delivery->credits; druid crossing->Shen Sama->credits; seraph road->shrine->credits), asserting
+  each beat's terminal flag gets set and objective() routes correctly with no dead ends, then write
+  `docs/QA_REPORT.md` summarizing coverage. node --check + headless + gauntlet after. When item 8 is implemented,
+  verified, and logged, the roadmap (items 0-8) is COMPLETE -> follow the COMPLETION PROTOCOL (final tests +
+  "AUTOWORK COMPLETE" entry + disable the schedule). Do NOT shut down this run — item 8 remains.
+
+- 2026-06-14 (run 33) — **ITEM 8 — FINAL QA HARNESS (the LAST roadmap item) IMPLEMENTED + VERIFIED.**
+  Added `game/tests/qa_questlines.js`: a headless, deterministic, per-character walk of
+  `QuestNav.objective()` driven by each character's flag state machine, beat by beat, end to end —
+  the regression gate that prevents the druid-crossing class of bug (a beat that EXISTS in code but is
+  bypassed by routing, or credits that roll BEFORE the final beat). Also wrote `docs/QA_REPORT.md`
+  (auto-generated by the harness; re-run after any quest/scene/questnav change). NO game/combat/scene/
+  engine code touched — test + doc only (additive).
+  WHAT IT CHECKS (per character, every beat in story order):
+   (b) ROUTING + ORDERING + CREDITS-TIMING [HARD PASS/FAIL — deterministic, no scene boot]: canonical
+       beat tables for ronin/druid/warlock/seraph (shared mq1-mq5 + each char's epilogue/hunt). For each
+       beat it applies the terminal flags, sets the player's zone, calls `objective()`, and asserts the
+       returned label matches the EXPECTED beat (a mis-route shows up as MISROUTE), is never a dead end
+       (null mid-sequence = STUCK), is not identical to the previous beat (no-progress STUCK), and that
+       `objective()` returns null (story rests) ONLY after the FINAL beat — directly catching "credits
+       before the crossing." Gated-zone beats (warlock cult coach -> Dragonspine/Varenholm; ronin
+       spine-coach) are tested in BOTH the off-zone (coach) and in-zone (target) states.
+   (a) REACHABILITY [boots the REAL scenes for their solids via the navsim stub harness, then runs the
+       REAL BFS pathfinder `QuestNav.findPath` from each zone's player-start to every in-zone objective
+       tile; PASS = BFS endpoint within 48px of the target]. (Harness fix: all 7 scene files are eval'd
+       in ONE indirect-eval scope so cross-file top-level consts — GROVE_THEME, the WorldScene base class
+       — resolve, mirroring the browser where every file is a global <script>.)
+   (c) NO-FIGHT-DURING-DIALOGUE [item-1.5 regression check, informational]: static scan of each scene's
+       `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()`.
+  RESULT — ALL FOUR CHARACTERS PASS, every beat reached, every objective tile reachable, credits/null
+  only after the final beat: ronin 13/13, druid 14/14, warlock 18/18, seraph 5/5 (`QA QUESTLINES: PASS`).
+  Dialog-guard scan: City 1/1, Grove 2/2, Dungeon 1/1, Varenholm 1/1, Mountain 0/0 (its ronin/warlock
+  procs call beat methods that open a dialog BEFORE any startEncounter, so no direct in-update proc),
+  Ashenveil 1/1 — all proximity procs dialog-guarded.
+  (Two test-only modeling fixes made while building it, NOT game bugs: the GROVE_THEME cross-file eval
+  scope above; and the warlock END beat now sets `q-wq4-the-hunt:'done'` alongside `credits-rolled` to
+  match the real Nyx delivery, which sets both.)
+  VERIFY: `node --check game/tests/qa_questlines.js` PASS (file intact, NOT truncated); `node
+  game/tests/qa_questlines.js` = QA QUESTLINES: PASS (all 4 chars, wrote docs/QA_REPORT.md, 93 lines).
+  `node game/tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node game/tests/gauntlet.js` = GAUNTLET
+  SWEEP: PASS first try (ronin 7.1 / druid 22.4 / warlock 32.9 / seraph 4.0 simMin, all VICTORY 20/20,
+  under the 50 cap). Game fully playable.
+
+- 2026-06-14 (run 33) — **AUTOWORK COMPLETE - all roadmap items done; disabling schedule.** Every roadmap
+  item is implemented, verified, and logged: item 0 (warlock carriage bug, run 13), item 1 + step e
+  (warlock questline + journal, runs 1-14), item 1.5 (conversation-safe all zones, run 14), item 2 (druid
+  questline, run 18), item 3 (docs refresh, run 20), item 4 (voice gap — 13 tag-lines, run 21), item 5
+  (arch-devil cinematic + 11 voices, run 22), item 6 (druid Varenholm crossing trigger, run 24), item 7
+  (ronin Vorathiel/temple/Seraphim ending, beats 1-8 + voice wiring, runs 26-32), and item 8 (this run —
+  the final QA harness `game/tests/qa_questlines.js` + `docs/QA_REPORT.md`, all four characters PASS).
+  Final verification this run: `node --check` clean on the changed file; `node game/tests/qa_questlines.js`
+  = PASS (4/4 chars); `node game/tests/headless.js` = 5/5 PASS; `node game/tests/gauntlet.js` = GAUNTLET
+  SWEEP: PASS (all 4 VICTORY 20/20). Nothing remains actionable. Disabling the `sorcerer-sword-autowork`
+  scheduled task now. (Pending Hiro voice generation: run `python game/tools/generate_voices.py --yes`
+  to fill the warlock-hunt, arch-devil cinematic, druid-crossing, and ronin-ending clips flagged
+  "VOICES READY TO GENERATE" in earlier runs — see docs/VOICE_STATUS.md.)

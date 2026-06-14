@@ -103,6 +103,35 @@ const QuestNav = {
         return at('karridge-city', 1538, 744, true, 'the cult coach — ' + next[4]);
       return at(next[1], next[2], next[3], true, next[4]);
     }
+    // the ronin's epilogue (rq): after his original ending, Marlow's tip -> the guild clerk.
+    // (Beats 2+ — the spine passage, Vorathiel, the temple — are wired in following runs.)
+    const ronin = GS.player && GS.player.char === 'ronin';
+    if (ronin && f['q-mq5-ash-and-silence'] === 'done') {
+      if (!f['q-rq-epilogue']) return at('karridge-city', 640, 704, true, 'the Last Lantern \u2014 Marlow');
+      if (f['q-rq-epilogue'] === 'active' && !f['rq-epi-guild'])
+        return at('karridge-city', 1568, 704, true, 'the Adventurers Guild \u2014 the clerk');
+      // beat 3: the spine passage. Once the guild gave the writ, only the city's spine-coach can
+      // reach the gated Dragonspine; there the ronin searches for the Seraphim (Vorathiel descent wired next run).
+      if (f['rq-epi-guild'] && !f['rq-epi-vorathiel']) {
+        if (GS.world.zone !== 'dragonspine') return at('karridge-city', 1538, 744, true, 'the spine-coach \u2014 up the Dragonspine');
+        return at('dragonspine', 1088, 576, false, 'search the peak for the Seraphim');
+      }
+      // beat 6: the defiled temple. After Vorathiel, head to the Skyreach shrine and close the gate;
+      // once cleared, the Seraphim arrives at the scarred shrine (beat 7 wired a following run).
+      // Off the spine, route to the city spine-coach (mirrors the vorathiel guard).
+      if (f['rq-epi-vorathiel'] === 'done' && !f['rq-epi-temple']) {
+        if (GS.world.zone !== 'dragonspine') return at('karridge-city', 1538, 744, true, 'the spine-coach \u2014 up the Dragonspine');
+        return at('dragonspine', 32 * T, 5 * T, true, 'the defiled Skyreach shrine \u2014 close the gate');
+      }
+      if (f['rq-epi-temple'] === 'done' && !f['rq-epi-seraph']) {
+        if (GS.world.zone !== 'dragonspine') return at('karridge-city', 1538, 744, true, 'the spine-coach \u2014 up the Dragonspine');
+        return at('dragonspine', 32 * T, 5 * T, true, 'the Seraphim \u2014 the scarred shrine');
+      }
+      // beat 8: the angel has spoken (rq-epi-seraph done) but the epilogue is not yet closed —
+      // carry word back to the city guild for the turn-in. Once q-rq-epilogue is 'done', fall to null.
+      if (f['rq-epi-seraph'] === 'done' && f['q-rq-epilogue'] !== 'done')
+        return at('karridge-city', 1568, 704, true, 'the Adventurers Guild \u2014 report to the clerk');
+    }
     return null;
   },
 

@@ -39,6 +39,8 @@
     "GROVE KEEPER": "Faelar",
     "THE ARCH DEVIL": "Warlock",
     "THE SERAPHIM": "Seraphim",
+    "GUILD CLERK": "Sylvara",
+    "VORATHIEL": "Nyx",
     "THE PERFORMANCE": "Narrator",
     "THE COACH ROAD": "Narrator",
     "THE ROAD SOUTH": "Narrator"
@@ -55,8 +57,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 245,
-  "totalChars": 48226,
+  "count": 270,
+  "totalChars": 56915,
   "lines": [
     {
       "id": "0a8752aa",
@@ -3071,6 +3073,535 @@
         {
           "sp": "NARRATOR",
           "t": "Vile demon - away with you. Back to hell you go."
+        }
+      ]
+    },
+    {
+      "id": "462eff08",
+      "speaker": "MARLOW",
+      "text": "Marlow leans across the bar with the look of a man passing along a debt he would rather not hold. \"Ronin. The Adventurers' Guild sent a runner — sober, which is how I knew it was bad. They've a request come down strange, and they asked for YOU. By name. By that name you don't use.\" He polishes a glass that is already clean. \"I told them you'd gone. They said the work would wait. Whatever you are when the lamps are out, friend — the guild knows enough to ask, and not enough to be smart about it. Go see them before they go asking louder.\"",
+      "note": "ronin ending: marlow tip",
+      "split": true,
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Marlow leans across the bar with the look of a man passing along a debt he would rather not hold."
+        },
+        {
+          "sp": "MARLOW",
+          "t": "Ronin. The Adventurers' Guild sent a runner — sober, which is how I knew it was bad. They've a request come down strange, and they asked for YOU. By name. By that name you don't use."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He polishes a glass that is already clean."
+        },
+        {
+          "sp": "MARLOW",
+          "t": "I told them you'd gone. They said the work would wait. Whatever you are when the lamps are out, friend — the guild knows enough to ask, and not enough to be smart about it. Go see them before they go asking louder."
+        }
+      ]
+    },
+    {
+      "id": "f6ca8c1c",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"By name. By that name.\" (go to the guild)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "By name. By that name.\""
+        }
+      ]
+    },
+    {
+      "id": "8a52d0f0",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"The guild can keep its strange requests warm. ...Or I can go look.\" (go to the guild)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "The guild can keep its strange requests warm. ...Or I can go look.\""
+        }
+      ]
+    },
+    {
+      "id": "ac00a278",
+      "speaker": "GUILD CLERK",
+      "text": "The clerk does not look up from the writ until you are close, and then she looks up too fast. \"You came. Good. Sit, don't sit, whatever you — \" She squares the page. \"There is a figure abroad in the high country. Winged. Bright. Folk are calling it a SERAPHIM, an angel, and they are not wrong often enough for me to laugh. It is not killing. It is RECRUITING — choosing fighters, leaving the rest shaken and blessed and useless to us for a week. The guild wants to know what it WANTS. And the guild wants someone who will not flinch at the holy or the high.\" A breath. \"Which is, apparently, you.\"",
+      "note": "ronin ending: guild brief",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The clerk does not look up from the writ until you are close, and then she looks up too fast."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "You came. Good. Sit, don't sit, whatever you —"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She squares the page."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "There is a figure abroad in the high country. Winged. Bright. Folk are calling it a SERAPHIM, an angel, and they are not wrong often enough for me to laugh. It is not killing. It is RECRUITING — choosing fighters, leaving the rest shaken and blessed and useless to us for a week. The guild wants to know what it WANTS. And the guild wants someone who will not flinch at the holy or the high."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A breath."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "Which is, apparently, you."
+        }
+      ]
+    },
+    {
+      "id": "385145ce",
+      "speaker": "GUILD CLERK",
+      "text": "\"Last sighting: the Dragonspine. The treaty lands — where everything too proud for the valley goes up to become a legend about itself. You can't take the trail as you are; the wards read the road. So the guild bought you a passage — a spine-coach with a treaty-seal that the stone will honor. Find the angel. Learn its business. Come back breathing.\" She slides a sealed token across the desk. \"Don't make me explain to the masters why I sent the one fighter who scares the OTHER fighters.\"",
+      "note": "ronin ending: guild charge",
+      "segs": [
+        {
+          "sp": "GUILD CLERK",
+          "t": "Last sighting: the Dragonspine. The treaty lands — where everything too proud for the valley goes up to become a legend about itself. You can't take the trail as you are; the wards read the road. So the guild bought you a passage — a spine-coach with a treaty-seal that the stone will honor. Find the angel. Learn its business. Come back breathing."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She slides a sealed token across the desk."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "Don't make me explain to the masters why I sent the one fighter who scares the OTHER fighters."
+        }
+      ]
+    },
+    {
+      "id": "97bfd69c",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Find the angel. Learn its business. Simple work.\" (take the spine passage)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Find the angel. Learn its business. Simple work.\""
+        }
+      ]
+    },
+    {
+      "id": "6dd9a3c0",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"The mountain remembers me better than this town does. I'll go.\" (take the spine passage)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "The mountain remembers me better than this town does. I'll go.\""
+        }
+      ]
+    },
+    {
+      "id": "fd1bdb9e",
+      "speaker": "VORATHIEL",
+      "text": "\"Why are you DRESSED like that?\" She circles, red silk steaming. \"A pit. A nameless little sword. Cheering drunks. Who do you imagine you are fooling, Ankunyx? An elder black dragon. The Dragon Emperor of an age. Playing the orphan with a borrowed blade.\" Her voice does not rise; it does not have to. \"It is CHILDISH. It was childish in the Pit and it is childish on my mountain.\"",
+      "note": "ronin ending: vorathiel accuse",
+      "segs": [
+        {
+          "sp": "VORATHIEL",
+          "t": "Why are you DRESSED like that?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She circles, red silk steaming."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "A pit. A nameless little sword. Cheering drunks. Who do you imagine you are fooling, Ankunyx? An elder black dragon. The Dragon Emperor of an age. Playing the orphan with a borrowed blade."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "Her voice does not rise; it does not have to."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "It is CHILDISH. It was childish in the Pit and it is childish on my mountain."
+        }
+      ]
+    },
+    {
+      "id": "ebdf9b74",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"...I don't know what you're talking about.\" (the nameless ronin's oldest line)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "...I don't know what you're talking about.\""
+        }
+      ]
+    },
+    {
+      "id": "6fd74bd8",
+      "speaker": "VORATHIEL",
+      "text": "\"Of course you don't.\" A smile with no warmth in it. \"Then I will tell you what I know. I am hunting my SON. OUR son — though you were a closed door the day his egg cracked and have been one since. Shen. He has fled the peaks to live DOWN there, among the soft ones, to call himself a wanderer, a monk, an ADVENTURER.\" The word is acid. \"Like his sister before him. Like Ignis — the Firebird who threw away an age of fire to strum a lute in human taverns. I will not lose a second child to the valley's little dream. You will help me drag him home.\"",
+      "note": "ronin ending: vorathiel hunt",
+      "segs": [
+        {
+          "sp": "VORATHIEL",
+          "t": "Of course you don't."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A smile with no warmth in it."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Then I will tell you what I know. I am hunting my SON. OUR son — though you were a closed door the day his egg cracked and have been one since. Shen. He has fled the peaks to live DOWN there, among the soft ones, to call himself a wanderer, a monk, an ADVENTURER."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The word is acid."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Like his sister before him. Like Ignis — the Firebird who threw away an age of fire to strum a lute in human taverns. I will not lose a second child to the valley's little dream. You will help me drag him home."
+        }
+      ]
+    },
+    {
+      "id": "9f36ebec",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"...I'll keep an eye out for him.\" A pause. \"I came up here for a different name. An angel. They call it the Seraphim — have you seen it on your mountain?\"",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "...I'll keep an eye out for him.\" A pause. \"I came up here for a different name. An angel. They call it the Seraphim — have you seen it on your mountain?"
+        }
+      ]
+    },
+    {
+      "id": "9772bab8",
+      "speaker": "VORATHIEL",
+      "text": "\"An ERRAND.\" She laughs, and the melt-ring widens. \"You stand before the Dragon God Queen, the mother of your own hunted child, and you ask after an ANGEL for a guild of strangers.\" The red around her brightens to a glare. \"I am DONE with the costume, Ankunyx. I will burn the little man off you, I will beat the black dragon under him bloody, and I will drag both halves of you up this mountain by the neck to find our son. The other mothers indulge your wandering — your scattered little brood, your dancers and your strays. I will NOT. You will take responsibility, or you will be MADE to.\"",
+      "note": "ronin ending: vorathiel ultimatum",
+      "segs": [
+        {
+          "sp": "VORATHIEL",
+          "t": "An ERRAND."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She laughs, and the melt-ring widens."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "You stand before the Dragon God Queen, the mother of your own hunted child, and you ask after an ANGEL for a guild of strangers."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The red around her brightens to a glare."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "I am DONE with the costume, Ankunyx. I will burn the little man off you, I will beat the black dragon under him bloody, and I will drag both halves of you up this mountain by the neck to find our son. The other mothers indulge your wandering — your scattered little brood, your dancers and your strays. I will NOT. You will take responsibility, or you will be MADE to."
+        }
+      ]
+    },
+    {
+      "id": "ec4ab880",
+      "speaker": "VORATHIEL",
+      "text": "You go down on one knee in the steaming melt — the nameless ronin and the elder Emperor both, for once in the same posture. \"Then make me,\" you say, low. \"But not today. There is an angel on your mountain doing the gods' recruiting, and a guild of soft ones who trusted the wrong fighter with it. Let me finish that. Let me be, for one more errand, the little man — and I give you my word as the thing under him: I will look for our son with both eyes open.\" You do not look up. \"You raised him alone because I was a closed door. I have no right to ask you for an hour. I am asking anyway.\"",
+      "note": "ronin ending: beg kneel",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "You go down on one knee in the steaming melt — the nameless ronin and the elder Emperor both, for once in the same posture."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Then make me,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "you say, low."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "But not today. There is an angel on your mountain doing the gods' recruiting, and a guild of soft ones who trusted the wrong fighter with it. Let me finish that. Let me be, for one more errand, the little man — and I give you my word as the thing under him: I will look for our son with both eyes open."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "You do not look up."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "You raised him alone because I was a closed door. I have no right to ask you for an hour. I am asking anyway."
+        }
+      ]
+    },
+    {
+      "id": "8bb7a428",
+      "speaker": "VORATHIEL",
+      "text": "A long silence, geological, the kind only old things can hold. Then the glare banks down to embers. \"...Both eyes,\" Vorathiel says at last, and something almost tired moves through the queenly voice. \"An age of you, and THAT is the first true thing you have said to me.\" She steps back out of the melt-ring; the snow dares to return. \"Go. Finish your angel's errand, little Emperor. But the door does not get to stay closed. When this is done you climb to me, and we hunt our son together — or I come DOWN there, and the valley learns why the peaks are quiet.\" She is already brightening toward wings. \"Do not make a liar of the one honest hour you have ever given me.\"",
+      "note": "ronin ending: beg relent",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "A long silence, geological, the kind only old things can hold. Then the glare banks down to embers."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "...Both eyes,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "Vorathiel says at last, and something almost tired moves through the queenly voice."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "An age of you, and THAT is the first true thing you have said to me."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She steps back out of the melt-ring; the snow dares to return."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Go. Finish your angel's errand, little Emperor. But the door does not get to stay closed. When this is done you climb to me, and we hunt our son together — or I come DOWN there, and the valley learns why the peaks are quiet."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She is already brightening toward wings."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Do not make a liar of the one honest hour you have ever given me."
+        }
+      ]
+    },
+    {
+      "id": "f20b2c28",
+      "speaker": "VORATHIEL",
+      "text": "\"So. The costume would rather BLEED than bow.\" She does not summon a weapon; she becomes one — red silk hardening to scale at the knuckles, the air around her going to forge-heat. \"Good. I have wanted to knock the little man loose for a century. Hold still, my Emperor. This is the gentle half.\"",
+      "note": "ronin ending: fight vLine",
+      "segs": [
+        {
+          "sp": "VORATHIEL",
+          "t": "So. The costume would rather BLEED than bow."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She does not summon a weapon; she becomes one — red silk hardening to scale at the knuckles, the air around her going to forge-heat."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Good. I have wanted to knock the little man loose for a century. Hold still, my Emperor. This is the gentle half."
+        }
+      ]
+    },
+    {
+      "id": "9719f66c",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"You called my brood scattered. You never asked why I keep them far from this mountain.\" (stand)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "You called my brood scattered. You never asked why I keep them far from this mountain.\""
+        }
+      ]
+    },
+    {
+      "id": "69f8f8a8",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"One honest hour, then. The hard way.\" (raise the nameless blade)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "One honest hour, then. The hard way.\""
+        }
+      ]
+    },
+    {
+      "id": "cea84b82",
+      "speaker": "VORATHIEL",
+      "text": "Her human shape folds to one knee in the melt — and laughs, blood bright on a queen's mouth, delighted. \"THERE he is. The Emperor under the urchin.\" She rises anyway, because mercy and surrender were never the same thing to her. \"But you mistook the lesson, little man. I let you win the GENTLE half.\"",
+      "note": "ronin ending: fight down",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Her human shape folds to one knee in the melt — and laughs, blood bright on a queen's mouth, delighted."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "THERE he is. The Emperor under the urchin."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She rises anyway, because mercy and surrender were never the same thing to her."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "But you mistook the lesson, little man. I let you win the GENTLE half."
+        }
+      ]
+    },
+    {
+      "id": "07c5f2cc",
+      "speaker": "VORATHIEL",
+      "text": "The melt-ring becomes a crater. Vorathiel takes the sky as what she truly is — a RED DRAGON that blots the high sun, every scale a furnace door, a thing no blade in any pit was ever meant to face. \"Run, then,\" her voice comes down like weather, almost fond. \"Finish your angel. I have made my point, and you have made yours, and BOTH of us know how this ends.\" A wingbeat flattens the snow for a mile. \"Climb to me when the errand is done — or I will come find the little man, and there will be no gentle half.\" You do the only wise thing an Emperor in a costume can do against the Dragon God Queen: you turn, and you RETREAT, up the spine trail toward the bright broken thing at the peak — the shrine the angel came for.",
+      "note": "ronin ending: fight skyward",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The melt-ring becomes a crater. Vorathiel takes the sky as what she truly is — a RED DRAGON that blots the high sun, every scale a furnace door, a thing no blade in any pit was ever meant to face."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Run, then,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "her voice comes down like weather, almost fond."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Finish your angel. I have made my point, and you have made yours, and BOTH of us know how this ends."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A wingbeat flattens the snow for a mile."
+        },
+        {
+          "sp": "VORATHIEL",
+          "t": "Climb to me when the errand is done — or I will come find the little man, and there will be no gentle half."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "You do the only wise thing an Emperor in a costume can do against the Dragon God Queen: you turn, and you RETREAT, up the spine trail toward the bright broken thing at the peak — the shrine the angel came for."
+        }
+      ]
+    },
+    {
+      "id": "c8a68730",
+      "speaker": "THE SERAPHIM",
+      "text": "Light steps down out of the thin air the way the dragon came down, but kinder — a winged figure, too bright to hold in the eye, settling onto the scarred dawn-stone. \"You closed it,\" the Seraphim says, and there is real gratitude in it. \"I felt it open and could not reach it in time. You have the guild's thanks. You have MINE, which is rarer.\"",
+      "note": "ronin ending: seraph thanks",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Light steps down out of the thin air the way the dragon came down, but kinder — a winged figure, too bright to hold in the eye, settling onto the scarred dawn-stone."
+        },
+        {
+          "sp": "THE SERAPHIM",
+          "t": "You closed it,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "the Seraphim says, and there is real gratitude in it."
+        },
+        {
+          "sp": "THE SERAPHIM",
+          "t": "I felt it open and could not reach it in time. You have the guild's thanks. You have MINE, which is rarer."
+        }
+      ]
+    },
+    {
+      "id": "8894dd30",
+      "speaker": "THE SERAPHIM",
+      "text": "\"You came looking for what I want. I will tell you, since you have earned the truth and bled for it. I do not fight your wars, fighter. I am not PERMITTED to — I recruit. I find the worthy, the way I found a champion on this very mountain, and I send them where the gods cannot openly reach. I step in MYSELF only against what no mortal should face alone — the arch devil clawing out of the deep, and things of that weight. A defiled shrine is beneath my office.\" A pause, and the brightness dims a shade, troubled. \"Or it should be.\"",
+      "note": "ronin ending: seraph explain",
+      "segs": [
+        {
+          "sp": "THE SERAPHIM",
+          "t": "You came looking for what I want. I will tell you, since you have earned the truth and bled for it. I do not fight your wars, fighter. I am not PERMITTED to — I recruit. I find the worthy, the way I found a champion on this very mountain, and I send them where the gods cannot openly reach. I step in MYSELF only against what no mortal should face alone — the arch devil clawing out of the deep, and things of that weight. A defiled shrine is beneath my office."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A pause, and the brightness dims a shade, troubled."
+        },
+        {
+          "sp": "THE SERAPHIM",
+          "t": "Or it should be."
+        }
+      ]
+    },
+    {
+      "id": "9b182170",
+      "speaker": "THE SERAPHIM",
+      "text": "\"But this gate was no accident, and it is not the first. Someone is DEFILING the temples — methodically, across the high country and beyond. Every shrine they foul, the gods above grow a little fainter. And the fainter the gods, the fainter their servant.\" The wings draw in. \"Which means the thing that just made me weaker is exactly the thing I am forbidden to chase directly. So I will do what I do: I will tell the worthy, and hope they are worth it. Take this to your guild, fighter. Tell them their angel is not recruiting today — their angel is asking for HELP.\"",
+      "note": "ronin ending: seraph warn",
+      "segs": [
+        {
+          "sp": "THE SERAPHIM",
+          "t": "But this gate was no accident, and it is not the first. Someone is DEFILING the temples — methodically, across the high country and beyond. Every shrine they foul, the gods above grow a little fainter. And the fainter the gods, the fainter their servant."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The wings draw in."
+        },
+        {
+          "sp": "THE SERAPHIM",
+          "t": "Which means the thing that just made me weaker is exactly the thing I am forbidden to chase directly. So I will do what I do: I will tell the worthy, and hope they are worth it. Take this to your guild, fighter. Tell them their angel is not recruiting today — their angel is asking for HELP."
+        }
+      ]
+    },
+    {
+      "id": "41b0d5f6",
+      "speaker": "GUILD CLERK",
+      "text": "The clerk listens to all of it — the angel, the recruiting, the gate, the defiled shrine, the gods going thin — and for once does not square a single page. \"An angel asking US for help,\" she says faintly. \"Temples being starved on purpose. The masters are going to want this in triplicate, and then they are going to want a drink.\" She looks at you, and the practiced flinch is gone, replaced by something closer to respect. \"You went up there as a fighter who scares fighters, and you came back the only one who closed the door. Whatever name you don't use — the guild owes that name a debt now. The hunt for whoever's defiling those shrines starts here. It'll be waiting when you are.\"",
+      "note": "ronin ending: report",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The clerk listens to all of it — the angel, the recruiting, the gate, the defiled shrine, the gods going thin — and for once does not square a single page."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "An angel asking US for help,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "she says faintly."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "Temples being starved on purpose. The masters are going to want this in triplicate, and then they are going to want a drink."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She looks at you, and the practiced flinch is gone, replaced by something closer to respect."
+        },
+        {
+          "sp": "GUILD CLERK",
+          "t": "You went up there as a fighter who scares fighters, and you came back the only one who closed the door. Whatever name you don't use — the guild owes that name a debt now. The hunt for whoever's defiling those shrines starts here. It'll be waiting when you are."
+        }
+      ]
+    },
+    {
+      "id": "6f1abf58",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Triplicate. And a drink.\" (close the ledger on this one)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Triplicate. And a drink.\""
+        }
+      ]
+    },
+    {
+      "id": "e1b96824",
+      "speaker": "PLAYER-RONIN",
+      "text": "\"Whoever's starving the gods — the guild will find them. I'll be near.\" (walk on)",
+      "note": "player line: ronin ending",
+      "segs": [
+        {
+          "sp": "PLAYER-RONIN",
+          "t": "Whoever's starving the gods — the guild will find them. I'll be near.\""
         }
       ]
     },

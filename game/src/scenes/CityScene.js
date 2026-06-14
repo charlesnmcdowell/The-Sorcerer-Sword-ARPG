@@ -87,6 +87,7 @@ class CityScene extends WorldScene {
         if (GS.world.flags['q-mq5-ash-and-silence'] === 'done' && P.char === 'druid') this.addVarenholmCoach();
         this.addHuntCoach(); // guild proving-ground writs: the Ashenveil hunts (all champions)
         if (P.char === 'warlock' && this.huntActive()) this.addCultCoach(); // wq4: the hunt's gated roads (Dragonspine + Varenholm)
+        if (P.char === 'ronin' && GS.world.flags['rq-epi-guild'] && GS.world.flags['q-rq-epilogue'] !== 'done') this.addSpineCoach(); // rq: the spine passage persists through the temple/seraph beats until the epilogue ends
       }
       if (b.sign) {
         this.add.rectangle(dx + 36, dy - bh / 2 - 6, 46, 16, 0x15100b).setStrokeStyle(1, 0xe7b450, 0.6).setDepth(dy + 2);
@@ -196,6 +197,19 @@ class CityScene extends WorldScene {
   innDialog() {
     if (window.GameState.player.char === 'seraph') { this.innDialogSeraph(); return; }
     const GS = window.GameState, P = GS.player, I = Quests.innkeeper, flags = GS.world.flags;
+    // RONIN EPILOGUE beat 1: after his original ending, Marlow passes along the guild's
+    // strange request. Conversation-safe (player opens this by talking to Marlow). Once the
+    // epilogue is active the branch is skipped and the normal inn dialog resumes.
+    if (P.char === 'ronin' && flags['q-mq5-ash-and-silence'] === 'done' && !flags['q-rq-epilogue']) {
+      const MT = Quests.roninEnding.marlow;
+      const startEpi = () => {
+        flags['q-rq-epilogue'] = 'active';
+        CityUI.closeDialog();
+        this.floatText(this.player.x, this.player.y - 50, 'JOURNAL UPDATED — THE GUILD ASKED FOR YOU', '#e7b450', 14);
+      };
+      CityUI.dialog(MT.name, MT.tip, MT.go.map(label => ({ label, fn: startEpi })), this.portraitInn);
+      return;
+    }
     const N = t => t.replace('{N}', P.nickname);
     const close = () => CityUI.closeDialog();
     const paidOffer = () => {
@@ -241,6 +255,10 @@ class CityScene extends WorldScene {
 
   guildBoard() {
     const GS = window.GameState, P = GS.player, flags = GS.world.flags, counts = GS.world.questCounts;
+    // RONIN EPILOGUE beat 2: the guild clerk gives the Seraphim investigation + the spine passage.
+    if (P.char === 'ronin' && flags['q-rq-epilogue'] === 'active' && !flags['rq-epi-guild']) { this.roninGuildClerk(); return; }
+    // RONIN EPILOGUE beat 8: the angel has spoken — report it; the new ronin ending rolls.
+    if (P.char === 'ronin' && flags['rq-epi-seraph'] === 'done' && flags['q-rq-epilogue'] !== 'done') { this.roninGuildReport(); return; }
     P.guildHunts = P.guildHunts || 0;
     const rank0 = Quests.rankFor(P.guildHunts);
     // turn-ins — contracts are NEVERENDING: pay out, reset the tally, respawn the prey
@@ -271,6 +289,52 @@ class CityScene extends WorldScene {
       text: q.text + ' — ' + (counts[q.id] || 0) + '/' + q.need + ' (repeatable — the wilds restock)',
     }));
     CityUI.guildBoard(true, live, note);
+  }
+
+  // ===== THE RONIN'S EPILOGUE (rq) beat 2: the GUILD CLERK -> the Seraphim investigation + spine passage =====
+  roninGuildClerk() {
+    const G = Quests.roninEnding.guild, flags = window.GameState.world.flags;
+    const takePassage = () => {
+      flags['rq-epi-guild'] = 'done';
+      CityUI.closeDialog();
+      this.addSpineCoach();
+      this.floatText(this.player.x, this.player.y - 50, 'JOURNAL UPDATED \u2014 THE SPINE PASSAGE', '#e7b450', 14);
+    };
+    CityUI.dialog(G.name, G.brief, [{ label: '"Go on."', fn: () =>
+      CityUI.dialog(G.name, G.charge, G.go.map(label => ({ label, fn: takePassage }))) }]);
+  }
+
+  // ===== THE RONIN'S EPILOGUE (rq) beat 8: the GUILD TURN-IN -> the new ronin ending -> credits =====
+  roninGuildReport() {
+    const R = Quests.roninEnding.report, flags = window.GameState.world.flags;
+    const close = () => {
+      flags['rq-epi-report'] = 'done';
+      flags['q-rq-epilogue'] = 'done';
+      CityUI.closeDialog();
+      if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+      setTimeout(() => CityUI.credits(R.credits), 600);
+    };
+    CityUI.dialog(R.name, R.line, R.go.map(label => ({ label, fn: close })));
+  }
+
+  addSpineCoach() { // rq: the guild's treaty-sealed spine-coach to the gated Dragonspine (mirror addCultCoach)
+    if (this._spineCoachAdded || !this.guildDoor) return;
+    this._spineCoachAdded = true;
+    const { dx, dy } = this.guildDoor, cy = dy + 40;
+    const cg = this.add.graphics().setDepth(cy);
+    cg.fillStyle(0x14110a); cg.fillRect(dx - 58, cy - 22, 56, 30);            // the spine-coach, treaty-amber
+    cg.lineStyle(1, 0xe7b450, 0.6); cg.strokeRect(dx - 58, cy - 22, 56, 30);  // guild-amber trim
+    cg.fillStyle(0x0a0810); cg.fillCircle(dx - 46, cy + 10, 8); cg.fillCircle(dx - 14, cy + 10, 8);
+    this.addLight(dx - 30, cy, 60, false);
+    this.interactables.push({ x: dx - 30, y: cy, label: 'board the SPINE-COACH \u2014 the treaty road up the Dragonspine', fn: () => this.spineCoachDialog() });
+  }
+
+  spineCoachDialog() {
+    const close = () => CityUI.closeDialog();
+    CityUI.dialog('THE SPINE-COACH',
+      'A treaty-sealed coach waits, the guild\u2019s amber stamp burned into the door, a driver who will not meet your eye. "Up the Dragonspine, then. The wards read the seal and let you pass. Climb down where the air goes thin and the legends start."',
+      [{ label: 'To the DRAGONSPINE \u2014 find the angel', fn: () => { close(); this.scene.start('MountainScene'); } },
+       { label: 'Not yet \u2014 the angel can wait', fn: close }]);
   }
 
   // ===== THE WARLOCK'S EPILOGUE: the White Writ -> the letter -> the alley -> the carriage =====
