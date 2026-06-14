@@ -1338,11 +1338,12 @@ function toBoard(){
       setTimeout(()=>showBanner(P.unlockMsg,'',1400,'#3df0c8'),400);P.unlockMsg=null;}}
   const rows=statRows(prevKills,P.kills);prevKills=P.kills;
   // After the third fight, Bellow buys his fighters out — 15 silver to walk. Default choice. (Hiro)
-  const canLeave=S.fight>=3&&!encounterCb;
+  const canLeave=S.fight>=3&&!encounterCb&&!S.declinedPot;
   S.canLeave=canLeave;
   const offer=canLeave?'Bellow leans over the rail: "You\'ve made your name, '+nickname+'. Walk now and the house pays you FIFTEEN SILVER — or stay, and the deck gets... fuller." (default: take the purse)':'';
   show('board',{foeName:f.name,foeRec:f.rec,foeTaunt:f.taunt,odds:oddsTxt,rows,crowd:'The crowd calls you: '+nickname,canLeave,offer,leaveSilver:15});}
 function startFight(){
+  if(S.canLeave)S.declinedPot=true; // declined Bellow's buy-out: never offered again this Pit run (Hiro)
   S.mode='fight';show(null);
   UI.hud(true);UI.controls(true);UI.name(nickname);
   UI.stats(diceN()+'d8',(P.char==='ronin'?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
@@ -1564,7 +1565,7 @@ function endIntro(){
   S.mode='title';
   fullReset(demo.char);}
 function fullReset(ch){
-  S.fight=0;P.kills=0;prevKills=0;nickname='NOBODY';
+  S.fight=0;P.kills=0;prevKills=0;nickname='NOBODY';S.declinedPot=false;S.canLeave=false;
   if(ch)P.char=ch;
   P.form='human';P.r=16;P.wolfCD=0;P.formT=0;P.humanCD=0;P.bladeTier=0;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.devilT=0;P.hexCD=0;P.level=1;P.unlockMsg=null;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;wolves=[];demons=[];fireballs=[];P.channel=null;P.glaive=null;P.ascendT=0;rays=[];P.kneelT=0;P.graceUsed=false;P.lich=false;P.fadeT=0;P.fadeCD=0;P.lichRiseT=0;
   styleScore={untouched:0,headsman:0,quicksand:0,breath:0,corpse:0,mirror:0};
