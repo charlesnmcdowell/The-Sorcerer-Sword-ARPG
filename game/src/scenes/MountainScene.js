@@ -89,6 +89,21 @@ class MountainScene extends WorldScene {
       this.interactables.push({ x: ciX, y: ciY, label: 'a fire that will not go out sits in the melt', fn: () => this.tryHuntCapture('cinder') });
     }
 
+    // ---------- DRUID CROSSING (dq) increment 5: the Shen Sama meet on the Dragonspine ----------
+    // Only the druid, fled up the spine after the Varenholm crossing and not yet having met
+    // Shen Sama, finds the scorched hollow where Ignis kept the un-treatied warm. Inherently
+    // conversation-safe (an interactable, not a proximity proc). shenCrossing() plays the meet.
+    if (GS.player.char === 'druid' && flags['dq-cross-flee'] && !flags['dq-cross-shen']) {
+      const hoX = 26 * T, hoY = 8 * T;
+      const hoG = this.add.graphics().setDepth(hoY);
+      hoG.fillStyle(0x141008, 0.9); hoG.fillCircle(hoX, hoY, 34);          // scorched hollow, snow kept off
+      hoG.fillStyle(0x2a2018, 1); hoG.fillCircle(hoX, hoY - 2, 16);        // a bed of cold cinder
+      hoG.fillStyle(0x3a3a48, 1); hoG.fillCircle(hoX - 5, hoY - 4, 5); hoG.fillCircle(hoX + 6, hoY - 1, 4); // a hooded shape of cooling slag
+      hoG.fillStyle(0x55402a, 0.6); hoG.fillCircle(hoX, hoY + 4, 24);      // last dead-warmth, fading
+      this.addLight(hoX, hoY, 70, false);
+      this.interactables.push({ x: hoX, y: hoY, label: 'a scorched hollow where the snow will not settle', fn: () => this.shenCrossing() });
+    }
+
     // ---------- the five banners ----------
     this.bakeFrames(Object.fromEntries([
       ...Quests.seraph.candidates.map(c => ['fr-duel-' + c.id, c.look]),
@@ -224,6 +239,23 @@ class MountainScene extends WorldScene {
     CityUI.dialog(c.name, c.intro, [
       { label: c.challenge, fn: fight },
       { label: 'Not yet', fn: close }], this.duelPortrait(c));
+  }
+
+  shenCrossing() {
+    const GS = window.GameState, flags = GS.world.flags, D = Quests.druidCrossing, SH = D.shen;
+    if (GS.player.char !== 'druid' || flags['dq-cross-shen']) { CityUI.closeDialog(); return; }
+    CityUI.dialog(SH.name, SH.meet, [{ label: '(she is gone — and no track in the snow)', fn: () => {
+      CityUI.dialog(D.cookie.name, SH.cookieLine, [{ label: '"...That\'s a pattern."', fn: () => {
+        CityUI.dialog(SH.name, SH.shenClose, [{ label: 'Three is a different arithmetic', fn: () => {
+          flags['dq-cross-shen'] = 1;
+          flags[D.crossFlag] = 'done';
+          CityUI.closeDialog();
+          this.floatText(this.player.x, this.player.y - 60, 'THE CROSSING — three fugitives, one missing flame', '#7ac86a', 16);
+          if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+          setTimeout(() => CityUI.credits(D.credits), 2200);
+        }}]);
+      }}]);
+    }}]);
   }
 
   duelPortrait(c) {

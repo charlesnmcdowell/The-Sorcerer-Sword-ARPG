@@ -508,6 +508,74 @@ function exitDevil(){
   leafBurst(P.x,P.y,16,'#b070f0');
   showBanner('THE PACT ENDS','',800,'#b070f0');
   updateLabels();}
+
+/* ---- ARCH DEVIL OUTRO CINEMATIC (Hiro item 5): devil-timer expiry -> taunt -> Seraph descends -> guaranteed Lich ----
+   Fires EVERY time arch-devil mode runs out (warlock only). Phases driven by setTimeout (same as killEnemy/winFight),
+   so they resolve under the headless tests' simulated clock too. */
+let archCine=null;      // {ph:1taunt|2descend|3strike|4ascend, seraphY, fade}
+let archLastTaunt=-1;   // avoid an immediate repeat taunt
+let archCineFight=-1;   // softlock guard: the guaranteed-Lich outro plays at most once per pit fight
+function archVoice(speaker,line){ if(typeof window!=='undefined'&&window.VoiceMan&&line){ try{window.VoiceMan.say(speaker,line);}catch(e){} } }
+function archBank(){ return (typeof window!=='undefined'&&window.Quests&&window.Quests.archDevilOutro)||null; }
+function archDevilOutro(){
+  // guard: warlock only, alive, not already a lich / already rising / dead, in a real fight or the demo, not already playing
+  if(P.char!=='warlock'||P.lich||P.dead||P.lichRiseT>0||archCine||(S.mode!=='fight'&&S.mode!=='demo')){exitDevil();return;}
+  if(S.mode==='fight'&&S.fight===archCineFight){exitDevil();return;} // already cast down once this fight — plain revert (prevents a devil<->lich softlock)
+  archCineFight=S.fight;
+  P.devilT=0;P.r=16;updateLabels();              // the borrowed form falls away
+  P.channel=null;P.heavyWind=0;P.rollT=0;P.parryT=0;P.silenceT=0;
+  P.paralyzeT=Math.max(P.paralyzeT,5);           // he cannot act while the scene plays
+  archCine={ph:1,seraphY:-270,fade:1};
+  camFocus(P.x,P.y-20,1.7,3.0);S.slow=0.6;
+  flashFx(.22);S.shake=Math.max(S.shake,8);leafBurst(P.x,P.y,16,'#d03a4a');
+  const bank=archBank();
+  // PHASE 1 — the arch devil, loosed at last, taunts the world
+  const taunts=bank?bank.taunts:['The mortal plane is mine to take.'];
+  let ti=Math.floor(Math.random()*taunts.length);
+  if(taunts.length>1&&ti===archLastTaunt)ti=(ti+1)%taunts.length;
+  archLastTaunt=ti;const taunt=taunts[ti];
+  showBanner('THE ARCH DEVIL',taunt,2600,'#d03a4a');
+  archVoice('THE ARCH DEVIL',taunt);
+  // PHASE 2 — the Seraphim descends from above
+  setTimeout(()=>{ if(!archCine)return;
+    archCine.ph=2;
+    const seraph=bank?bank.seraph:'Vile demon - away with you. Back to hell you go.';
+    camFocus(P.x,P.y-40,1.6,2.6);flashFx(.16);
+    showBanner('THE SERAPHIM',seraph,2400,'#ffe9a8');
+    archVoice('THE SERAPHIM',seraph);
+  },2800);
+  // PHASE 3 — the angel casts the devil down; death signs the ledger -> the Lich rises
+  setTimeout(()=>{ if(!archCine)return;
+    archCine.ph=3;
+    rays.push({x:P.x,y:P.y+archCine.seraphY,a:Math.PI/2,len:Math.abs(archCine.seraphY)+34,w:16,t:.45,judge:true});
+    flashFx(.34);S.shake=Math.max(S.shake,14);S.slow=0.5;camFocus(P.x,P.y,1.85,2.4);
+    leafBurst(P.x,P.y,22,'#fff6dc');
+    if(S.mode==='fight'){
+      // force the existing warlock death->Lich pipeline (mirrors hurtPlayer's warlock branch exactly)
+      P.hp=1;P.lichRiseT=3;P.paralyzeT=3;P.channel=null;P.heavyWind=0;P.rollT=0;P.parryT=0;
+      summonDemons('dragon');                    // the phylactery rises with him; the frame loop calls enterLich() at lichRiseT<=0
+      P.lichForceT=14;                           // GUARANTEED return: this gifted lich always resurrects (~12s natural, 14s hard cap) so it can't strand on a tanky swarm
+      showBanner('THE DEVIL IS CAST DOWN','death signs the ledger — three seconds',2400,'#9af0c0');
+    }else{
+      exitDevil();                               // demo attract loop: banish + plain revert, never trap the demo in a forced death
+    }
+    archCine.ph=4;                               // the visitor withdraws
+  },5200);
+}
+function drawArchCine(){ // world-space; only runs in the browser (draw() early-returns when ctx is null)
+  if(!archCine||archCine.ph<2)return;
+  const a=archCine.fade==null?1:archCine.fade;
+  const sx=P.x, sy=P.y+archCine.seraphY;
+  ctx.save();ctx.globalAlpha=0.14*a;            // a pillar of dawn pouring down with the angel
+  const grd=ctx.createLinearGradient(sx,sy-200,sx,sy+26);
+  grd.addColorStop(0,'rgba(255,246,220,0)');grd.addColorStop(1,'rgba(255,246,220,0.9)');
+  ctx.fillStyle=grd;
+  ctx.beginPath();ctx.moveTo(sx-12,sy-210);ctx.lineTo(sx+12,sy-210);ctx.lineTo(sx+44,sy+26);ctx.lineTo(sx-44,sy+26);ctx.closePath();ctx.fill();
+  ctx.restore();
+  ctx.save();ctx.globalAlpha=a;                 // the visitor from the place above
+  drawFighter(sx,sy,20,Math.PI/2,'#cfd6e4',{seraphim:true,robe:true,flying:true,spear:true,spearLen:40,headCol:'#e8e4da'});
+  ctx.restore();
+}
 function devilClaw(){ // CLAW: roll to whoever he's targeting, then carve
   let tgt=null,bd=1e9;
   for(const d of demons){if(d.hp<=0||d.arch)continue;const dd=dist(P,d);if(dd<bd){bd=dd;tgt=d;}} // his own first — arch succubi are off the menu
@@ -586,7 +654,7 @@ function enterLich(){
   popup(P.x,P.y-64,'GUARD THE DRAGON — IT HOLDS YOUR SOUL','#9af0c0',13);
   updateLabels();}
 function resurrectWarlock(){
-  P.lich=false;P.hp=maxHP();P.r=16;P.fadeT=0;P.fadeCD=0;
+  P.lich=false;P.hp=maxHP();P.r=16;P.fadeT=0;P.fadeCD=0;P.lichForceT=0;
   flashFx(.3);S.shake=Math.max(S.shake,10);vib([50,50,100]);
   leafBurst(P.x,P.y,22,'#b070f0');
   showBanner('BACK TO THE LIVING','the ledger reopens — a warlock again',2000,'#b070f0');
@@ -994,6 +1062,7 @@ function hurtPlayer(dmg,from){
   if(P.rollT>0||P.dead)return;
   if(P.kneelT>0){popup(P.x,P.y-40,'IMMORTAL','#ffe9a8',12);return;} // grace: nothing touches him
   if(P.lichRiseT>0){popup(P.x,P.y-40,'THE PACT HOLDS','#9af0c0',12);return;} // the kneeling cinematic
+  if(archCine){popup(P.x,P.y-40,'SPARED','#fff6dc',11);return;} // untouchable through the arch-devil outro cinematic
   if(P.lich&&demons.some(d=>d.type==='dragon'&&d.hp>0)){ // dragons aloft = the lich cannot bleed
     popup(P.x,P.y-40,'PHYLACTERY','#9af0c0',12);return;}
   if(P.fadeT>0){popup(P.x,P.y-40,'FADED','#9af0c0',12);return;} // beyond reach
@@ -1625,7 +1694,7 @@ function endIntro(){
 function fullReset(ch){
   S.fight=0;P.kills=0;prevKills=0;nickname='NOBODY';S.declinedPot=false;S.canLeave=false;
   if(ch)P.char=ch;
-  P.form='human';P.r=16;P.wolfCD=0;P.formT=0;P.humanCD=0;P.bladeTier=0;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;P.devilT=0;P.hexCD=0;P.level=1;P.unlockMsg=null;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;wolves=[];demons=[];fireballs=[];P.channel=null;P.glaive=null;P.ascendT=0;rays=[];P.kneelT=0;P.graceUsed=false;P.lich=false;P.fadeT=0;P.fadeCD=0;P.lichRiseT=0;
+  P.form='human';P.r=16;P.wolfCD=0;P.formT=0;P.humanCD=0;P.bladeTier=0;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;P.devilT=0;P.hexCD=0;P.level=1;P.unlockMsg=null;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;wolves=[];demons=[];fireballs=[];P.channel=null;P.glaive=null;P.ascendT=0;rays=[];P.kneelT=0;P.graceUsed=false;P.lich=false;P.fadeT=0;P.fadeCD=0;P.lichRiseT=0;P.lichForceT=0;archCine=null;archCineFight=-1;
   styleScore={untouched:0,headsman:0,quicksand:0,breath:0,corpse:0,mirror:0};
   updateLabels();
   dctx.clearRect(0,0,W,H);toBoard();}
@@ -1670,11 +1739,19 @@ function tick(now){
       if(Math.random()<.4&&particles.length<240)particles.push({x:P.x+rnd(-16,16),y:P.y-6+rnd(-18,8),
         vx:rnd(-15,15),vy:rnd(-50,-15),t:rnd(.3,.5),col:'#9af0c0',r:2,noG:true});
       if(P.lichRiseT<=0){P.paralyzeT=0;enterLich();}}
+    if(P.lich&&P.lichForceT>0){P.lichForceT-=dt; if(P.lichForceT<=0){P.channel=null;resurrectWarlock();}} // cinematic lich: hard return even if the resurrection channel keeps getting interrupted
     if(P.fadeT>0){P.fadeT-=dt;
       if(Math.random()<.3&&particles.length<240)particles.push({x:P.x+rnd(-16,16),y:P.y-12+rnd(-14,10),
         vx:rnd(-20,20),vy:rnd(-30,-6),t:rnd(.25,.45),col:'#9af0c0',r:1.8,noG:true});
       if(P.fadeT<=0)popup(P.x,P.y-44,'SEEN AGAIN','#8a93a8',11);}
-    if(P.devilT>0){P.devilT-=dt;if(P.devilT<=0)exitDevil();}
+    if(P.devilT>0){P.devilT-=dt;if(P.devilT<=0)archDevilOutro();}
+    if(archCine){ // the outro cinematic: keep him frozen until the strike, animate the angel, then clear once the lich is up
+      if(archCine.ph<3&&!P.lich)P.paralyzeT=Math.max(P.paralyzeT,0.4);
+      if(archCine.ph>=2&&archCine.ph<4){ archCine.seraphY+=((-72)-archCine.seraphY)*Math.min(1,dt*3.2);
+        if(particles.length<240&&Math.random()<.5)particles.push({x:P.x+rnd(-26,26),y:P.y+archCine.seraphY+rnd(-8,20),vx:rnd(-8,8),vy:rnd(14,42),t:rnd(.5,1.0),col:'#fff6dc',r:rnd(1,2.4),noG:true}); }
+      else if(archCine.ph>=4){ archCine.seraphY-=200*dt; archCine.fade=Math.max(0,(archCine.fade==null?1:archCine.fade)-dt*0.8);
+        if(P.lich||archCine.seraphY<-300||archCine.fade<=0)archCine=null; }
+    }
     P.cdVines=Math.max(0,(P.cdVines||0)-dt);P.cdRoar=Math.max(0,(P.cdRoar||0)-dt);P.cdHowl=Math.max(0,(P.cdHowl||0)-dt);
     if(P.paralyzeT>0){P.paralyzeT-=dt;
       if(Math.random()<.3&&particles.length<240)particles.push({x:P.x+rnd(-12,12),y:P.y-20+rnd(-10,10),
@@ -2584,6 +2661,7 @@ function draw(){
     // katana glow tier
     if(P.kills>=2&&!P.dead){ctx.strokeStyle='rgba(231,180,80,'+Math.min(.5,P.kills*.06)+')';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.arc(P.x,P.y,P.r+5,0,7);ctx.stroke();}}
+  drawArchCine(); // the arch-devil outro: pillar of dawn + the descending Seraphim
   // swings
   for(const s of swings){
     const pr=s.t/(s.heavy?.18:.14);

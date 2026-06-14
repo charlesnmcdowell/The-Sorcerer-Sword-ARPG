@@ -608,5 +608,25 @@ const Quests = {
   },
 };
 
+// ---- ARCH DEVIL OUTRO (Hiro item 5): played when devil-mode timer EXPIRES (warlock only) ----
+// 10 taunts (Warlock voice) chosen at random + the Seraphim's banishing line (Seraphim voice).
+// pit.js reads these at runtime; build_voice_manifest.js extracts them. If you EDIT this text,
+// the line must be re-voiced (the clip is keyed by a hash of speaker+text).
+Quests.archDevilOutro = {
+  taunts: [
+    "At last - Sheol's gates could not hold me. The mortal plane is mine to take.",
+    "Free! An age in the Pit, and now your soft little world will kneel.",
+    "Do you feel it? The chains are off. I have CLIMBED OUT of hell.",
+    "Sheol spat me back up. How generous. Now I remake your sky in fire.",
+    "No more pits. No more wardens. The conqueror has arrived, and he is HUNGRY.",
+    "I clawed through the floor of the underworld for this - for YOU. Kneel.",
+    "The abyss is behind me. Ahead: a whole plane of warm, breathing thrones.",
+    "Escaped. Ascended. Unleashed. Sheol held its door open one breath too long.",
+    "They said no devil leaves the deep. They will be wrong about many things now.",
+    "Mortal plane - I waited an age in the dark to swallow you whole.",
+  ],
+  seraph: "Vile demon - away with you. Back to hell you go.",
+};
+
 if (typeof module !== 'undefined' && module.exports) module.exports = { Quests };
 else window.Quests = Quests;

@@ -225,9 +225,50 @@ class VarenholmScene extends WorldScene {
     const GS = window.GameState, flags = GS.world.flags, D = Quests.druidCrossing, W = D.warlock;
     if (GS.player.char !== 'druid') return false;
     if (flags[D.crossFlag] === 'done') return false;            // crossing already resolved
-    if (flags[W.flag]) {                                        // phase 1 done — later phases pending
-      CityUI.dialog('THE CROSSING', 'Cookie keeps her back to yours, watching the lamplit street for a second cart. The warlock is broken — but the ash road has your scent now. "We don\'t wait around for the encore, cousin," she murmurs. "Up the mountain. There\'s a fire up there that never sold a stray." (Your road climbs the Dragonspine — to be continued.)',
-        [{ label: 'Climb', fn: () => CityUI.closeDialog() }], portrait);
+    // surface THE CROSSING in the journal the moment the beat begins (the renderer shows the
+    // entry only once 'q-dq-the-crossing' is set; phase logic keys off the dq-cross-* flags, not this)
+    if (!flags[D.crossFlag] && flags['q-mq6-the-dancer'] === 'done') flags[D.crossFlag] = 'active';
+    const R = D.rematch;
+    if (flags[W.flag] && !flags[R.flag]) {                      // phase 2: the rematch — he gets back up, not alone
+      const rfight = () => {
+        CityUI.closeDialog();
+        this.startEncounter(R.banner[0], R.banner[1], R.pack.map(e => Object.assign({}, e)), win => {
+          if (!win) {
+            this.player.x = 28 * 32; this.player.y = 32 * 32;
+            this.floatText(this.player.x, this.player.y - 50, 'the ash road drives you back — Cookie hauls you up, fists still raised.', '#c8443a');
+            return;
+          }
+          flags[R.flag] = 1;
+          CityUI.dialog('THE CULT WARLOCK', R.down, [{ label: '(empty cages, and a ledger with your scent)', fn: () => {
+            CityUI.closeDialog();
+            this.floatText(this.player.x, this.player.y - 56, 'THE ASH ROAD IS THROWN BACK', '#7ac86a', 14);
+            if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+          }}], portrait);
+        }, { zoneScale: true });
+      };
+      CityUI.dialog('THE CROSSING', R.druidLine, [{ label: '(he laughs into the cobbles)', fn: () => {
+        CityUI.dialog('THE CULT WARLOCK', R.warlockRise, [{ label: '(the ash on his coat stands up)', fn: () => {
+          CityUI.dialog(D.cookie.name, R.cookieLine, [
+            { label: R.opt[0], fn: rfight },
+            { label: R.opt[1], fn: rfight }], portrait);
+        }}]);
+      }}], portrait);
+      return true;
+    }
+    if (flags[R.flag] && !flags['dq-cross-flee']) {            // phase 3: the flight — up the spine, where fire keeps strays warm
+      const FL = D.flight;
+      CityUI.dialog('THE CROSSING', FL.text, [{ label: 'Climb toward the warm — up the spine trail', fn: () => {
+        flags['dq-cross-flee'] = 1;
+        CityUI.closeDialog();
+        if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+        this.scene.start('MountainScene');                      // mirrors the warlock cult-coach route to the gated Dragonspine
+      }}], portrait);
+      return true;
+    }
+    if (flags['dq-cross-flee']) {                              // phases 1-3 done — Shen Sama meet (Dragonspine) is increment 5; offer the re-climb
+      CityUI.dialog('THE CROSSING', 'You are down off the spine for a breath, but the cold hollow stays with you — Ignis gone, her hearth out, and the shape in the snow of something that left no track. Cookie touches your sleeve. "The wyrm up there — Shen Sama — he\'s still in the warm ash, waiting on us. We don\'t leave him to it, cousin. Back up the trail." (The hunt for the missing flame climbs the Dragonspine.)',
+        [{ label: 'Climb back to the Dragonspine', fn: () => { CityUI.closeDialog(); this.scene.start('MountainScene'); } },
+         { label: 'Catch your breath first', fn: () => CityUI.closeDialog() }], portrait);
       return true;
     }
     // phase 1: the dancer spots the tail, the cult warlock steps out of the lamplight
@@ -285,6 +326,21 @@ class VarenholmScene extends WorldScene {
       this.startEncounter('THE COLLECTOR', 'it has come to add you to the set', [
         { type: 'collector', boss: true, deathCol: '#b070f0', x: 640, y: 270, r: 20, hp: 640, maxhp: 640, spd: 140, col: '#4a3c5a', wpn: '#b070f0', dmgScale: 1.35 }
       ], win => { _vf['varenholm-boss-collector'] = win ? 'cleared' : false; });
+    }
+
+    // --- DRUID CROSSING (dq): the cult comes for Cookie at the guild. Auto-fires for a
+    //     post-dancer druid so AUTO and a manual player both reach it WITHOUT pressing E at
+    //     the guild door (root cause of the bug: the crossing never triggered). Conversation-
+    //     safe: no proc while a dialog/cinematic/fight runs. Excludes the post-flight re-climb
+    //     state (dq-cross-flee) — that leg is handled by the guild-door interactable + routing. ---
+    if (window.GameState.player.char === 'druid' &&
+        _vf['q-mq6-the-dancer'] === 'done' && _vf['q-dq-the-crossing'] !== 'done' && !_vf['dq-cross-flee'] &&
+        !this.encounterActive && !this.cinematic &&
+        (typeof CityUI === 'undefined' || !CityUI.dialogOpen()) &&
+        time > (this._crossTrigT || 0) &&
+        Math.hypot(this.player.x - this.guildB.dx, this.player.y - this.guildB.dy) < 130) {
+      this._crossTrigT = time + 1200; // small re-arm so a just-closed dialog doesn't instantly reopen
+      this.crossingBeat(this.portraitCookie());
     }
   }
 }

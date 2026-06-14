@@ -21,6 +21,9 @@ A complete inventory of shipped features, so a maintainer knows what exists befo
 - Field encounters in the overworld (bump a monster pack → fight on an overlay).
 - Kill cinematics (slow-mo, zoom, letterbox, fatalities, dismemberment/blood decals).
 - ~15 enemy archetypes (tank/healer/riposte/ranged/fire/summoner/boss/etc.) + per-zone reskins.
+- **Boss expansion:** 7 named bosses across the zones, each with `boss:true`/`deathCol` health bars, a pre-fight banner, and a kill cinematic. Reuse the existing AI types (grave/necro/champ/collector/warden/pyre/hound) rather than bespoke systems.
+- **Venom + frost hazard zones:** territory packs scale on an HP ladder (forest x2, undead x4, mountain x8) with bosses x5, so deeper zones stay dangerous.
+- **Conversation-safe combat:** no encounter (proximity pack, ambush, or boss proc) can start while a dialog or cinematic is open — packs even freeze their wander mid-talk, preserving the cinematic feel.
 - Companions fight alongside you when recruited.
 - Field HP scaling (toggleable) so a snowballed champion still meets resistance.
 
@@ -33,6 +36,8 @@ A complete inventory of shipped features, so a maintainer knows what exists befo
 
 ## Quests & story
 - **Three main-quest tracks** by character: the Ankuspawn Conspiracy (ronin/druid/warlock, beats mq1–mq6), the Seraphim's Dragonspine road (sq1–sq4, duel + recruit 1 of 5), and the Warlock's White-Writ → Lady Nyx epilogue (wq1–wq3).
+- **The Warlock's Hunt (wq4):** Lady Nyx commissions the warlock to capture five ankuspawn alive, one per zone — Briar the Green Orphan (Thorn Grove), Ossuary the Quiet Boy (Root-Hollow dungeon), Cinder the Ash-Wick (Dragonspine), Whisper the Ninth Ward (Ashenveil), and the climax Cookie + the Thornwarden (Varenholm). Each is a boss capture-fight; a "cult coach" unlocks the normally-gated Mountain/Varenholm for the warlock, and the journal/AUTO route the warlock target-to-target. Delivering all five rolls the warlock's-road credits.
+- **The Druid's Crossing (dq):** the druid POV of the Varenholm cult crossing — befriend Cookie, fight off the cult warlock who comes to cage you, survive his Anku-reinforced rematch, flee up the Dragonspine, and meet **Shen Sama**, who is also hunting the missing hearth-wyrm **Ignis**. Ends on the druid credits.
 - Per-character endings + a credits screen linking the podcast and the Amazon books.
 - **16 repeatable guild hunt contracts** across three regions, with a 6-tier guild rank ladder (Iron→Diamond) scaling payouts.
 - **6 recruitable companions** with relationship/recruit flows, scripted dialogue, and optional **live AI conversation** (with an Anthropic key) + memory.

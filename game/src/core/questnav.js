@@ -58,6 +58,19 @@ const QuestNav = {
       if (!f['varenholm-show-seen']) return at('varenholm', 1248, 416, true, 'the Civic Auditorium');
       return at('varenholm', 864, 896, true, 'the Adventurers Guild — Cookie');
     }
+    // the Druid's Varenholm CROSSING must happen BEFORE the road home: after the dancer
+    // job, route her to the cult crossing (the Adventurers Guild — Cookie) until it
+    // resolves. Once the flight (dq-cross-flee) is set, the Shen Sama meet is up on the
+    // gated Dragonspine (reachable only via the guild re-climb), so funnel her there.
+    if (f['q-mq6-the-dancer'] === 'done' && druid && f['q-dq-the-crossing'] !== 'done') {
+      if (f['dq-cross-flee']) { // phases 1-3 done — find Shen Sama on the Dragonspine
+        if (GS.world.zone === 'dragonspine') return at('dragonspine', 26 * T, 8 * T, true, 'Shen Sama — the cold hollow');
+        if (GS.world.zone === 'varenholm') return at('varenholm', 864, 896, true, 'the guild — climb back to the Dragonspine');
+        return at('karridge-city', 1656, 744, true, 'the heartland coach to Varenholm');
+      }
+      if (GS.world.zone === 'varenholm') return at('varenholm', 864, 896, true, 'the Adventurers Guild — the crossing');
+      return at('karridge-city', 1656, 744, true, 'the heartland coach to Varenholm');
+    }
     // after Cookie: the road home rolls the credits — guide her to the coach so she's never stranded
     if (f['q-mq6-the-dancer'] === 'done' && druid && !f['credits-rolled']) {
       if (GS.world.zone === 'varenholm') return at('varenholm', 896, 1088, true, 'the coach home — your road south');

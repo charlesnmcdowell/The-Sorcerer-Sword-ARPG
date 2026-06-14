@@ -152,6 +152,36 @@ if (WH) {
   for (const t of (WH.deliver.go || [])) add('PLAYER-WARLOCK', t, 'player line: hunt deliver');
 }
 
+// ---- THE DRUID CROSSING (dq): the Varenholm crossing (her side) + the Dragonspine Shen Sama meet ----
+// Speaker labels MUST match the scene dialog titles exactly so runtime ids line up.
+const DC = Quests.druidCrossing;
+if (DC) {
+  add('COOKIE', DC.cookie.line, 'crossing: the dancer');
+  const WC = DC.warlock;
+  add('THE CULT WARLOCK', WC.arrive, 'crossing p1: the warlock arrives');
+  add('COOKIE', WC.cookieQuip, 'crossing p1: cookie quip');
+  add('THE CULT WARLOCK', WC.down, 'crossing p1: he folds');
+  for (const o of (WC.opt || [])) add('PLAYER-DRUID', o, 'player line: crossing p1');
+  const RC = DC.rematch;
+  add('THE CROSSING', RC.druidLine, 'crossing p2: stay down');
+  add('THE CULT WARLOCK', RC.warlockRise, 'crossing p2: he rises');
+  add('COOKIE', RC.cookieLine, 'crossing p2: you know any dragons');
+  add('THE CULT WARLOCK', RC.down, 'crossing p2: thrown back');
+  for (const o of (RC.opt || [])) add('PLAYER-DRUID', o, 'player line: crossing p2');
+  add('THE CROSSING', DC.flight.text, 'crossing p3: the flight');
+  const SC = DC.shen;
+  add('SHEN SAMA', SC.meet, 'crossing p4: the hearth is cold');
+  add('COOKIE', SC.cookieLine, 'crossing p4: that is a pattern');
+  add('SHEN SAMA', SC.shenClose, 'crossing p4: three is a different arithmetic');
+}
+
+// ---- ARCH DEVIL OUTRO (item 5): the devil-expiry cinematic — 10 taunts (Warlock voice) + the Seraphim's banish (Seraphim voice) ----
+const ADO = Quests.archDevilOutro;
+if (ADO) {
+  for (const t of (ADO.taunts || [])) add('THE ARCH DEVIL', t, 'arch devil outro');
+  add('THE SERAPHIM', ADO.seraph, 'seraph descent');
+}
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -193,6 +223,20 @@ function segment(l) {
     if (!t) continue;
     segs.push({ sp: i % 2 === 1 ? l.speaker : 'NARRATOR', t });
   }
+  // fold any TAG-ONLY segment (e.g. a leading "[pouting]" or a between-quotes
+  // "[the grin banks down]") INTO a neighbor so the audio tag rides inline with real
+  // spoken text. eleven_v3 strips [audio tags], so a tag-only segment synthesizes to
+  // EMPTY text -> API 400 ("empty text after removing audio tags"). Merge into the NEXT
+  // segment (the spoken line the tag performs); if it is the last segment, fold it into
+  // the previous one. Segmentation-ONLY: the line's hashed text/id is unchanged (the tag
+  // already lives in vtext), so existing voiced clips stay valid.
+  const TAG_ONLY = /^(\s*\[[^\]]*\]\s*)+$/;
+  for (let i = 0; i < segs.length; i++) {
+    if (segs.length > 1 && TAG_ONLY.test(segs[i].t)) {
+      if (i + 1 < segs.length) { segs[i + 1].t = segs[i].t + ' ' + segs[i + 1].t; segs.splice(i, 1); i--; }
+      else { segs[i - 1].t = segs[i - 1].t + ' ' + segs[i].t; segs.splice(i, 1); i--; }
+    }
+  }
   // merge adjacent same-speaker segments
   const merged = [];
   for (const g of segs) {
@@ -218,6 +262,7 @@ fs.writeFileSync(out, JSON.stringify({
     // game speaker -> tts_config.json character_voices slot
     'NARRATOR': 'Narrator', 'BELLOW': 'Bellow', 'MARLOW': 'Marlow',
     'ANKUNYX': 'Kenji', 'SHEN SAMA': 'Shen Sama',
+    'THE CULT WARLOCK': 'Warlock', 'THE CROSSING': 'Narrator',
     'THE QUARRY BOY': 'Quarry Boy', 'THE VEILED WOMAN': 'Veiled Woman',
     'BRAKKA': 'Brakka', 'VEXA': 'Vexa', 'DORIAN': 'Dorian',
     'FAELAR': 'Faelar', 'SYLVARA': 'Sylvara', 'PIPPA': 'Pippa',
@@ -228,6 +273,7 @@ fs.writeFileSync(out, JSON.stringify({
     'HALDRIC': 'Haldric', 'SALLOW': 'Sallow', 'PALE COURIER': 'Pale Courier', 'NYX': 'Nyx',
     'BRIAR': 'Briar', 'OSSUARY': 'Ossuary', 'CINDER': 'Cinder', 'WHISPER': 'Whisper', 'THORNWARDEN': 'Thornwarden',
     'GROVE KEEPER': 'Faelar',
+    'THE ARCH DEVIL': 'Warlock', 'THE SERAPHIM': 'Seraphim',
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
   voiceHints: {
