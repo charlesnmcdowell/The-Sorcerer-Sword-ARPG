@@ -1048,7 +1048,7 @@ function spawnFight(){
     for(const e of enemies){e.hp=Math.round(e.hp*2);e.maxhp=Math.round(e.maxhp*2);} // Hiro: DOUBLE all enemy HP after fight 3
   }
   zones=[];swings=[];particles=[];popups=[];bullets=[];limbs=[];wolves=[];P.wolfCD=0;P.glaive=null;
-  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;
+  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.paraImmuneT=0;P.wardT=0;P.silenceT=0;
   if(P.devilT>0){P.devilT=0;P.r=16;updateLabels();}
   if(P.char==='druid'){P.form='human';P.r=16;P.formT=0;P.humanCD=0;updateLabels();}
   cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;
@@ -1162,6 +1162,7 @@ function updEnemyVs(e,dt,P){
     else e.face=ang(e,P);};
   const beginAttack=(wind)=>{e.attacking=true;e.tele=wind;e.teleMax=wind;e.lockA=ang(e,P);};
   e.cool-=dt*(e.worthy?3:1); // the WORTHY move like the buff demands
+  e.paraCD=Math.max(0,(e.paraCD||0)-dt); // per-enemy paralyze cooldown (>=10s between stuns)
 
   switch(e.type){
    case 'door':
@@ -1209,7 +1210,7 @@ function updEnemyVs(e,dt,P){
          const sp2=e.spell||0;e.spell=(sp2+1)%3;e.cool=2.6;
          if(sp2===0)zones.push({x:P.x,y:P.y,r:54,tele:.75,life:3.5,type:'fire'});
          else if(sp2===1)zones.push({x:P.x,y:P.y,r:62,tele:.75,life:.1,type:'ice',dmg:4*e.dmgScale});
-         else zones.push({x:P.x,y:P.y,r:70,tele:.75,life:.1,type:'bolt'});
+         else zones.push({x:P.x,y:P.y,r:70,tele:.75,life:.1,type:'bolt',owner:e});
          if(!e.mageShield){e.mageShield=true;e.hp+=e.maxhp;e.maxhp*=2; // shield on successful cast
            popup(e.x,e.y-34,'SHIELDED','#5ad2ff',13);}}
        break;}
@@ -1377,19 +1378,19 @@ function updEnemyVs(e,dt,P){
         e.hp=Math.min(e.maxhp,e.hp+amt);popup(e.x,e.y-e.r-10,'+'+amt,'#7fbf6a',11);}}
     if(e.attacking){e.tele-=dt;
       if(e.tele<=0){e.attacking=false;e.cool=2.4;S.shake=Math.max(S.shake,7);
-        zones.push({x:P.x,y:P.y,r:70,tele:.7,life:.1,type:'bolt'});
+        zones.push({x:P.x,y:P.y,r:70,tele:.7,life:.1,type:'bolt',owner:e});
         for(let i2=0;i2<12&&particles.length<240;i2++)particles.push({x:e.x,y:e.y,vx:rnd(-80,80),vy:rnd(-80,40),t:.4,col:'#3a5a2c',r:2.5});}}
     else{chase(.7,e.r+P.r+30);
       e.spitT=(e.spitT===undefined?2.4:e.spitT)-dt;
       if(e.spitT<=0){e.spitT=rnd(2.6,3.6);
-        zones.push({x:P.x,y:P.y,r:58,tele:.6,life:4.5,type:'venom',dmgScale:e.dmgScale});}
+        zones.push({x:P.x,y:P.y,r:58,tele:.6,life:4.5,type:'venom',dmgScale:e.dmgScale,owner:e});}
       if(e.cool<=0&&dToP<e.r+90)beginAttack(.8);}
     break;
    case 'frostdrake': // Aurgelm (Mountain): kites, frost fields + ice volley
     {const a=ang(e,P);e.face=a;
      if(e.castT>0){e.castT-=dt;
        if(Math.random()<.4&&particles.length<240)particles.push({x:e.x+rnd(-14,14),y:e.y+rnd(-10,10),vx:0,vy:-20,t:.3,col:'#bfe6ff',r:2,noG:true});
-       if(e.castT<=0){e.cool=2.4;zones.push({x:P.x,y:P.y,r:66,tele:.7,life:4,type:'frost'});}
+       if(e.castT<=0){e.cool=2.4;zones.push({x:P.x,y:P.y,r:66,tele:.7,life:4,type:'frost',owner:e});}
        break;}
      if(dToP<200){e.x-=Math.cos(a)*e.spd*dt;e.y-=Math.sin(a)*e.spd*dt;}
      else if(dToP>340){e.x+=Math.cos(a)*e.spd*.7*dt;e.y+=Math.sin(a)*e.spd*.7*dt;}
@@ -1407,7 +1408,7 @@ function updEnemyVs(e,dt,P){
          enemies.push(mkEnemy({type:'skel',minion:true,x:sx,y:sy,hp:40*e.dmgScale,maxhp:40*e.dmgScale,spd:120,r:11,col:'#c8c2b0',dmgScale:e.dmgScale}));
          popup(sx,sy-20,'RISE','#9af0c0',12);}}
      e.castT=(e.castT===undefined?3:e.castT)-dt;
-     if(e.castT<=0){e.castT=4;zones.push({x:P.x,y:P.y,r:60,tele:.7,life:.1,type:'bolt'});}}
+     if(e.castT<=0){e.castT=4;zones.push({x:P.x,y:P.y,r:60,tele:.7,life:.1,type:'bolt',owner:e});}}
     break;
    case 'totem': // Mortain's wards - inert anchors; break them all to drop his immunity
     break;
@@ -1533,7 +1534,7 @@ function startEncounter(list,cb){
   encounterCb=cb||null;
   enemies=list.map(o=>mkEnemy(o));
   zones=[];swings=[];particles=[];popups=[];bullets=[];limbs=[];wolves=[];P.wolfCD=0;P.glaive=null;
-  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.wardT=0;P.silenceT=0;
+  demons=[];fireballs=[];tracers=[];P.channel=null;P.slowT=0;P.paralyzeT=0;P.paraImmuneT=0;P.wardT=0;P.silenceT=0;
   if(P.devilT>0){P.devilT=0;P.r=16;updateLabels();}
   if(P.char==='druid'){P.form='human';P.r=16;P.formT=0;P.humanCD=0;updateLabels();}
   cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;
@@ -1753,7 +1754,9 @@ function tick(now){
         if(P.lich||archCine.seraphY<-300||archCine.fade<=0)archCine=null; }
     }
     P.cdVines=Math.max(0,(P.cdVines||0)-dt);P.cdRoar=Math.max(0,(P.cdRoar||0)-dt);P.cdHowl=Math.max(0,(P.cdHowl||0)-dt);
+    P.paraImmuneT=Math.max(0,(P.paraImmuneT||0)-dt); // grace window after a stun so stacked enemies can't chain-lock
     if(P.paralyzeT>0){P.paralyzeT-=dt;
+      if(P.paralyzeT<=0)P.paraImmuneT=Math.max(P.paraImmuneT,3.5); // just recovered -> brief paralyze immunity
       if(Math.random()<.3&&particles.length<240)particles.push({x:P.x+rnd(-12,12),y:P.y-20+rnd(-10,10),
         vx:rnd(-40,40),vy:rnd(-40,40),t:.15,col:'#f0e05a',r:2});}
     if(P.char==='druid'){
@@ -1829,7 +1832,7 @@ function tick(now){
         swings.push({x:z.x,y:z.y,a:0,arc:7,range:z.r,t:.18,heavy:false,col:'#5ad2ff',ring:true});
         zones.splice(i,1);}
       else if(z.tele<=0&&z.type==='bolt'){
-        if(dist(z,P)<z.r&&P.rollT<=0&&!(P.wardT>0)){P.paralyzeT=3;
+        if(dist(z,P)<z.r&&P.rollT<=0&&!(P.wardT>0)&&(P.paraImmuneT||0)<=0&&(!z.owner||(z.owner.paraCD||0)<=0)){P.paralyzeT=3;if(z.owner)z.owner.paraCD=10;
           if(P.channel){P.channel=null;}
           popup(P.x,P.y-44,'PARALYZED','#f0e05a',15);vib(60);}
         swings.push({x:z.x,y:z.y,a:0,arc:7,range:z.r,t:.18,heavy:false,col:'#f0e05a',ring:true});
@@ -1850,14 +1853,14 @@ function tick(now){
       if(dist(z,P)<z.r&&P.rollT<=0){z.tick=(z.tick||0)-dt;
         if(z.tick<=0){z.tick=.5;hurtPlayer(3*(z.dmgScale||1),null);popup(P.x,P.y-40,'POISONED','#7fd05a',11);}
         z.dwell=(z.dwell||0)+dt;
-        if(z.dwell>=1.2&&P.paralyzeT<=0&&!(P.wardT>0)){P.paralyzeT=1.1;if(P.channel)P.channel=null;
+        if(z.dwell>=1.2&&P.paralyzeT<=0&&!(P.wardT>0)&&(P.paraImmuneT||0)<=0&&(!z.owner||(z.owner.paraCD||0)<=0)){P.paralyzeT=1.1;if(z.owner)z.owner.paraCD=10;if(P.channel)P.channel=null;
           popup(P.x,P.y-46,'ROOTED','#3a7a2c',14);vib(50);z.dwell=0;}}
       else z.dwell=0;
       if(z.life<=0)zones.splice(i,1);}
     else if(z.type==='frost'){z.life-=dt; // lingering rime field: slows, then FREEZES if you camp it (Hiro boss)
       if(dist(z,P)<z.r&&P.rollT<=0){P.slowT=Math.max(P.slowT,1.2);
         z.dwell=(z.dwell||0)+dt;
-        if(z.dwell>=1.4&&P.paralyzeT<=0&&!(P.wardT>0)){P.paralyzeT=1.0;if(P.channel)P.channel=null;
+        if(z.dwell>=1.4&&P.paralyzeT<=0&&!(P.wardT>0)&&(P.paraImmuneT||0)<=0&&(!z.owner||(z.owner.paraCD||0)<=0)){P.paralyzeT=1.0;if(z.owner)z.owner.paraCD=10;if(P.channel)P.channel=null;
           popup(P.x,P.y-46,'FROZEN','#5ad2ff',14);vib(50);z.dwell=0;}}
       else z.dwell=0;
       if(z.life<=0)zones.splice(i,1);}}

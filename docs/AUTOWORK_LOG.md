@@ -214,6 +214,32 @@ FIX (smallest-safe; the crossing must happen BEFORE credits):
  crossing already exist — only if you ADD new lines, follow constraints 8 & 9 (manifest wire + rebuild +
  "VOICES READY") . Note: the no-fights-during-conversations rule (item 1.5) applies to the new proximity trigger.
 
+### 6.6 BUGFIX — paralyze spam / perma-stun (HIGH priority; do WITH item 6, before item 7)
+Bug (Hiro-reported): some enemies can spam paralyze and keep the player PERMA-STUNNED with no counterplay.
+RULE: every enemy ability that PARALYZES the player must have at least a 10-SECOND per-enemy cooldown, so the
+player always gets a window to act.
+AUDIT every enemy-caused player-paralyze source in src/combat/pit.js (grep `P.paralyzeT`). IMPORTANT: do NOT
+touch the SELF-paralyze the warlock/seraph death/grace pipelines set on the PLAYER (lichRise/kneel/arch-devil
+outro) — only throttle paralyze CAUSED BY ENEMIES. Known sources:
+ - 'bolt' zone handler (sets P.paralyzeT=3) — produced by pyre casters (spell cycle), rotwarden/Heartrot slam,
+   warden/Provost Mortain cast.
+ - 'venom' zone root (Heartrot) and 'frost' zone freeze (Aurgelm) — dwell-based P.paralyzeT.
+ - any other source the grep surfaces.
+FIX:
+ (a) PER-ENEMY COOLDOWN: give each paralyze-producing enemy a `paraCD` timer; it may only cast/drop its
+     paralyzing ability (the bolt zone, or apply the venom/frost root) when paraCD<=0, then set paraCD=10.
+     While on cooldown it still acts/attacks but does NOT paralyze (deal damage / a non-paralyzing variant).
+ (b) RECOMMENDED SAFETY NET (covers MULTIPLE enemies stacking it — a per-enemy CD alone won't stop 3 enemies
+     chaining): after the player's P.paralyzeT expires, set a short `P.paraImmuneT` (~3-4s) during which any new
+     paralyze is ignored. Gate EVERY enemy paralyze-SET behind `P.paraImmuneT<=0`. Decay paraImmuneT in the
+     player frame block alongside the other timers; reset it to 0 at fight start (where P.paralyzeT=0 is reset).
+KEEP fair-and-telegraphed: the bolt/venom/frost telegraphs stay; only the RE-APPLICATION is throttled.
+NOTE: the Collector's silence (P.silenceT) is a separate lockout, not a stun — leave it unless Hiro asks, but
+it could get the same 10s treatment later if desired.
+VERIFY: node --check; headless + gauntlet PASS; confirm (sim or inspection) no single enemy paralyzes more than
+once per 10s and the player can't be locked back-to-back beyond one paralyze. Respect item 1.5.
+
+
 ### 7. RONIN ENDING EXPANSION — Vorathiel, the defiled temple, Seraphim (NEW; do AFTER item 6)
 A new epilogue questline for the RONIN (Kenji), appended after his ORIGINAL ending. Char-gated: ronin who has
 finished his original story. Multi-beat, with new VOICED dialogue (see VOICE) and 1-2 fights.
@@ -1828,3 +1854,80 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   scheduled task now. (Pending Hiro voice generation: run `python game/tools/generate_voices.py --yes`
   to fill the warlock-hunt, arch-devil cinematic, druid-crossing, and ronin-ending clips flagged
   "VOICES READY TO GENERATE" in earlier runs — see docs/VOICE_STATUS.md.)
+
+- 2026-06-14 (run 34) — **AUTOWORK COMPLETE (re-confirmed) — disabling schedule.** Run 33 already logged
+  the roadmap (items 0-8) complete and recorded "disabling schedule", but the `sorcerer-sword-autowork`
+  task was still ENABLED (cron */10) and fired again this run — the prior disable did not take effect.
+  This run: re-read the handoff log; COMPLETION PROTOCOL conditions all still met (no remaining actionable
+  NEXT STEP). No code changed. Final verification: `node game/tests/qa_questlines.js` = QA QUESTLINES: PASS
+  (4/4 chars; re-wrote docs/QA_REPORT.md); `node game/tests/headless.js` = 5/5 HEADLESS HARNESS PASS;
+  `node game/tests/gauntlet.js` = GAUNTLET SWEEP: PASS (all 4 chars VICTORY 20/20, druid 38.0 / warlock 22.1
+  / seraph 4.2 simMin, under the 50 cap). Game fully playable. Now disabling the scheduled task via
+  update_scheduled_task(taskId "sorcerer-sword-autowork", enabled:false). If the schedule somehow fires
+  again, just re-confirm tests PASS and re-disable — there is no further work.
+  (Pending Hiro voice generation remains the only open item, and it is a USER action, not autowork: run
+  `python game/tools/generate_voices.py --yes` to fill the clips flagged "VOICES READY TO GENERATE" —
+  see docs/VOICE_STATUS.md.)
+
+- 2026-06-14 (Hiro) — Queued roadmap item 6.6: PARALYZE-SPAM / perma-stun bugfix. Every enemy-caused paralyze
+  (bolt zone from pyre/rotwarden/warden; venom root; frost freeze) needs a >=10s per-enemy cooldown + a short
+  player paralyze-immunity after recovery so stacked enemies can't chain-lock. Do NOT touch the warlock/seraph
+  SELF-paralyze pipelines. HIGH priority: do with item 6, before item 7. node --check + headless + gauntlet.
+- 2026-06-14 (run 35) — **PARALYZE-SPAM / PERMA-STUN FIXED (roadmap item 6.6 COMPLETE).** Implemented the
+  per-enemy paralyze cooldown + a player post-recovery immunity window so no enemy (or stack of enemies) can
+  chain-lock the player. ONE file, `game/src/combat/pit.js`, purely additive (no engine-system rewrite).
+  AUDIT (grep `P.paralyzeT`): the THREE enemy-caused player paralyzes are all zone-driven —
+  (1) the `bolt` zone (`P.paralyzeT=3`, ~L1835) dropped by pyre casters, the rotwarden/Heartrot slam, and
+  the warden/Provost Mortain cast; (2) the `venom` zone dwell-ROOT (`P.paralyzeT=1.1`, ~L1856) from
+  Heartrot; (3) the `frost` zone dwell-FREEZE (`P.paralyzeT=1.0`, ~L1863) from Aurgelm. The SELF-paralyze
+  pipelines (warlock lich-rise L555/L1104/L1741, seraph kneel L1112/L1771, arch-devil outro L527/L1749)
+  were left UNTOUCHED per constraint.
+  FIX (both halves of the roadmap spec):
+  (a) PER-ENEMY COOLDOWN: added `e.paraCD` (decayed each enemy frame right after `e.cool`, ~L1165). Tagged
+      all 5 paralyzing zone pushes with `owner:e` (the 3 bolt sites, the venom site, the frost site). The
+      paralyze-SET in each zone handler now fires only when `(!z.owner||(z.owner.paraCD||0)<=0)` and SETS
+      `z.owner.paraCD=10` on success — so a given enemy can stun at most once per 10s. While on cooldown the
+      zone still appears and venom still deals its poison DoT (a non-paralyzing variant); only the stun is
+      withheld.
+  (b) SAFETY NET (covers multiple enemies stacking it): added `P.paraImmuneT`, decayed each player frame
+      (~L1757) and ARMED to 3.5s the instant `P.paralyzeT` expires (~L1759). EVERY enemy paralyze-SET is now
+      additionally gated behind `(P.paraImmuneT||0)<=0`, so right after recovering from any stun the player
+      gets a guaranteed ~3.5s window no enemy can re-stun. Reset to 0 at both encounter starts (L1051,
+      L1537, alongside `P.paralyzeT=0`). Net counterplay per cycle: a ~1.1–3s stun, then ~3.5s immunity,
+      and ≥10s before the same caster can stun again — no back-to-back lock possible.
+  Telegraphs (the bolt ring/flash, the venom/frost visuals + DoT/slow) are unchanged — only the
+  RE-APPLICATION of the stun is throttled, so the abilities stay fair and readable. The Collector silence
+  (`P.silenceT`) is a separate lockout and was left as-is per the roadmap note.
+  VERIFY: `node --check src/combat/pit.js` PASS (tail `window.createPitCombat=...` intact, NOT truncated).
+  `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS
+  first try (ronin 8.1 / druid 42.3 / warlock 23.8 / seraph 3.9 simMin, all VICTORY 20/20, under the 50
+  cap — the gauntlet exercises the real paralyzing bosses pyre/rotwarden/frostdrake/warden, so the gated
+  paths ran and the sim still completes). Logic review confirms: per-enemy CD bounds one enemy to ≤1 stun
+  /10s; the paraImmuneT grace bounds the player to ≤1 stun then a guaranteed free window even with several
+  enemies dropping zones at once. No new spoken dialogue, so no voice work (constraints 8 & 9 untouched).
+  STATUS: roadmap item 6.6 RESOLVED. With items 0, 1, 1.5, 2, 3, 4, 5, 6, 6.6, 7, 8 all implemented,
+  verified, and logged, there is NO remaining actionable NEXT STEP.
+
+- 2026-06-14 (run 35) — **AUTOWORK COMPLETE - all roadmap items done; disabling schedule.** Final pass:
+  `node --check src/combat/pit.js` clean (tail intact, not truncated); `node game/tests/headless.js` =
+  HEADLESS HARNESS PASS (5/5); `node game/tests/gauntlet.js` = GAUNTLET SWEEP: PASS (all four characters
+  VICTORY 20/20, first try). Every roadmap item — 0 (warlock carriage), 1 + step e (warlock hunt), 1.5
+  (conversation-safe), 2 (druid crossing), 3 (docs), 4 (voice gap), 5 (arch-devil cinematic), 6 (druid
+  crossing trigger), 6.6 (paralyze-spam, THIS run), 7 (ronin ending), 8 (final QA harness) — is complete
+  with nothing actionable left, so per the COMPLETION PROTOCOL the `sorcerer-sword-autowork` scheduled task
+  is being DISABLED. Game fully playable. Pending Hiro MANUAL step (not autowork): run
+  `python game/tools/generate_voices.py --yes` to fill the still-todo "VOICES READY TO GENERATE" clips
+  (warlock-hunt / arch-devil / druid-crossing / ronin-ending) — see docs/VOICE_STATUS.md.
+
+- 2026-06-14 (run 36) — **AUTOWORK COMPLETE - all roadmap items done; disabling schedule.** Re-read the
+  handoff log; COMPLETION PROTOCOL conditions all still met — items 0, 1+step e, 1.5, 2, 3, 4, 5, 6, 6.6, 7,
+  8 are every one implemented, verified, and logged (runs 13–35). No remaining actionable NEXT STEP, so no
+  new work invented and no code changed this run. Final verification: `node --check src/combat/pit.js` PASS
+  (tail intact, not truncated); `node game/tests/headless.js` = HEADLESS HARNESS PASS (5/5);
+  `node game/tests/gauntlet.js` = GAUNTLET SWEEP: PASS (all 4 chars VICTORY 20/20 first try; warlock 18.4 /
+  seraph 4.0 simMin, under the 50 cap); `node game/tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars,
+  re-wrote docs/QA_REPORT.md). Game fully playable. Disabling the `sorcerer-sword-autowork` scheduled task
+  via update_scheduled_task(taskId "sorcerer-sword-autowork", enabled:false). If it fires again, just
+  re-confirm tests PASS and re-disable — there is no further autowork.
+  (Pending Hiro MANUAL step, NOT autowork: run `python game/tools/generate_voices.py --yes` to fill the
+  still-todo "VOICES READY TO GENERATE" clips — see docs/VOICE_STATUS.md.)
