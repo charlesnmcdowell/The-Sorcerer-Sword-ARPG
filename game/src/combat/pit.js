@@ -961,7 +961,7 @@ const FIGHTS=[
   spawn:i=>[mkEnemy({type:'champ',hp:200*i,maxhp:200*i,spd:115,r:20,col:'#8a3a3a',feeds:0,thrallT:2})]},
  {name:"BELLOW'S SECRET",rec:'Undefeated. Unfed. Unwise.',taunt:'Bellow, sweating: "You weren\'t supposed to get this far."',
   spawn:i=>[mkEnemy({type:'beast',hp:340*i,maxhp:340*i,spd:88,r:30,col:'#3f3a44',phase:1}),
-            mkEnemy({type:'grave',boss:true,deathCol:'#c8443a',x:arena.x+150,hp:280*i,maxhp:280*i,spd:110,r:22,col:'#5a2a34',wpn:'#c8443a',dmgScale:1.2,stance:'open',stanceT:1})]}
+            mkEnemy({type:'grave',boss:true,deathCol:'#c8443a',x:arena.x+150,hp:1400*i,maxhp:1400*i,spd:110,r:22,col:'#5a2a34',wpn:'#c8443a',dmgScale:1.2,stance:'open',stanceT:1})]}
 ];
 function spawnFight(){
   const i=1+S.fight*0.30; // difficulty scale

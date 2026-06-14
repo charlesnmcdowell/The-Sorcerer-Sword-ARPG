@@ -93,6 +93,7 @@ class AshenveilScene extends WorldScene {
 
     // ---------- player + the carriage home ----------
     this.spawnPlayer(24 * T, (MH - 4) * T);
+    this.territoryHpMult = 4; // undead tier (Hiro HP ladder)
     const cg = this.add.graphics().setDepth((MH - 3) * T);
     cg.fillStyle(0x0c0a12); cg.fillRect(24 * T - 60, (MH - 3) * T - 16, 58, 32);
     cg.lineStyle(1, 0x9af0c0, 0.5); cg.strokeRect(24 * T - 60, (MH - 3) * T - 16, 58, 32);

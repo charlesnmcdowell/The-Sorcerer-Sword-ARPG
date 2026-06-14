@@ -491,10 +491,12 @@ class WorldScene extends Phaser.Scene {
     const GS = window.GameState, P = GS.player;
     const fs = this.fieldScale();
     const zd = (opts && opts.zoneScale) ? this.zoneDifficulty() : { hp: 1, dmg: 1 };
-    const ENEMY_HP_SCALE = 0.5; // global enemy HP tuning (Hiro: enemies were too tanky)
+    const ENEMY_HP_SCALE = 0.5; // base enemy HP tuning
+    // bosses x5; regular monsters scale by territory (this.territoryHpMult): forest 2, undead 4, mountain 8 (Hiro)
+    const terr = this.territoryHpMult || 1;
     pack = pack.map(e => Object.assign({}, e, {
-      hp: Math.max(1, Math.round(e.hp * fs * zd.hp * ENEMY_HP_SCALE)),
-      maxhp: Math.max(1, Math.round((e.maxhp || e.hp) * fs * zd.hp * ENEMY_HP_SCALE)),
+      hp: Math.max(1, Math.round(e.hp * fs * zd.hp * ENEMY_HP_SCALE * (e.boss ? 5 : terr))),
+      maxhp: Math.max(1, Math.round((e.maxhp || e.hp) * fs * zd.hp * ENEMY_HP_SCALE * (e.boss ? 5 : terr))),
       dmgScale: (e.dmgScale || 1) * zd.dmg }));
     this.encounterActive = true;
     if (window.IS_PHONE) this.cameras.main.setZoom(1); // the arena frame needs the full window

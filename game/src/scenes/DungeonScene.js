@@ -56,6 +56,7 @@ class DungeonScene extends WorldScene {
 
     this.bakeFrames();
     this.spawnPlayer(5 * T, 4 * T);
+    this.territoryHpMult = 2; // root-hollow (forest tier) (Hiro HP ladder)
     if (window.GameState.world.activeFollower) this.spawnFollower(window.GameState.world.activeFollower);
     this.initEncounterHost(GROVE_THEME);
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);

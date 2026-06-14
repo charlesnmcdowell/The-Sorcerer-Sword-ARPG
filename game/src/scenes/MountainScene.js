@@ -163,6 +163,7 @@ class MountainScene extends WorldScene {
 
     // ---------- player + travel ----------
     this.spawnPlayer(27 * T, (MH - 4) * T);
+    this.territoryHpMult = 8; // mountain = highest tier (Hiro HP ladder)
     this.gateSouth = { x: 24 * T, y: HPX - T * 1.5, w: 6 * T, h: T * 1.5 };
     this.initEncounterHost(MOUNT_THEME);
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);

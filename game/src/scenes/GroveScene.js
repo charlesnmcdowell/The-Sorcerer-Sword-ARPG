@@ -218,6 +218,7 @@ class GroveScene extends WorldScene {
     const spawn = GS.world.groveFromCity !== false ? { x: 34 * T, y: (MH - 4) * T } : { x: 34 * T, y: (MH - 4) * T };
     GS.world.groveFromCity = false;
     this.spawnPlayer(spawn.x, spawn.y);
+    this.territoryHpMult = 2; // forest tier (Hiro HP ladder)
     this.gateSouth = { x: 31 * T, y: HPX - T * 1.5, w: 6 * T, h: T * 1.5 };
     this.placeCompanions('grove');
     this.initEncounterHost(GROVE_THEME);
