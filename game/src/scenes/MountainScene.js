@@ -260,9 +260,11 @@ class MountainScene extends WorldScene {
     this.updateAtmosphere(time, dt);
 
     // wilds wander + aggro (no flags: the Spine restocks every visit)
+    const talking = CityUI.dialogOpen() || this.encounterActive || this.cinematic;
     for (const pk of this.packs) {
       if (!pk.alive) continue;
       pk.wanderT -= dt;
+      if (talking) continue; // no wander/aggro while a dialog or cinematic is open
       for (const s of pk.sprs) {
         if (pk.wanderT <= 0) { s.tx = pk.x + (Math.random() - 0.5) * 120; s.ty = pk.y + (Math.random() - 0.5) * 120; }
         if (s.tx !== undefined) {
@@ -274,7 +276,7 @@ class MountainScene extends WorldScene {
       }
       if (pk.wanderT <= 0) pk.wanderT = 2 + Math.random() * 3;
       const d = Math.hypot(pk.sprs[0].x - this.player.x, pk.sprs[0].y - this.player.y);
-      if (d < 130) {
+      if (d < 130 && !CityUI.dialogOpen() && !this.encounterActive && !this.cinematic) {
         pk.alive = false;
         this.startEncounter(pk.def.name, pk.def.sub, pk.def.spawn(pk.def.n), win => {
           if (win) {

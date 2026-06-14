@@ -29,6 +29,11 @@
     "SALLOW": "Sallow",
     "PALE COURIER": "Pale Courier",
     "NYX": "Nyx",
+    "BRIAR": "Briar",
+    "OSSUARY": "Ossuary",
+    "CINDER": "Cinder",
+    "WHISPER": "Whisper",
+    "THORNWARDEN": "Thornwarden",
     "GROVE KEEPER": "Faelar",
     "THE PERFORMANCE": "Narrator",
     "THE COACH ROAD": "Narrator",
@@ -46,8 +51,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 192,
-  "totalChars": 34510,
+  "count": 218,
+  "totalChars": 41810,
   "lines": [
     {
       "id": "0a8752aa",
@@ -2160,6 +2165,482 @@
         {
           "sp": "PLAYER-WARLOCK",
           "t": "Point the web at the prey. I'll mind the bruising."
+        }
+      ]
+    },
+    {
+      "id": "fd0db640",
+      "speaker": "NYX",
+      "text": "The Matron does not shake on it. She slides a folded vellum across the cold table; it is warm, which is worse. \"Five names, warlock. My collectors lost them — to rescue, to flight, to their own clumsiness. I want them back BREATHING. A grove-child who makes the green bleed. A boy in the dark who will not let things die. An ash-wick burning in the high cold. And a Listener who walked out of my OWN lower levels with a head full of my ledgers.\" A pause, precise. \"The fifth name I have wanted longest. We will come to her.\"",
+      "note": "hunt: launch",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The Matron does not shake on it. She slides a folded vellum across the cold table; it is warm, which is worse."
+        },
+        {
+          "sp": "NYX",
+          "t": "Five names, warlock. My collectors lost them — to rescue, to flight, to their own clumsiness. I want them back BREATHING. A grove-child who makes the green bleed. A boy in the dark who will not let things die. An ash-wick burning in the high cold. And a Listener who walked out of my OWN lower levels with a head full of my ledgers."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A pause, precise."
+        },
+        {
+          "sp": "NYX",
+          "t": "The fifth name I have wanted longest. We will come to her."
+        }
+      ]
+    },
+    {
+      "id": "df254688",
+      "speaker": "NYX",
+      "text": "\"Capture, warlock. Cages, not cairns. A corpse is an apology; a captive is an asset. Bruise them if you must — break them and the contract breaks with them.\" The vellum folds itself shut. \"The black carriage is yours now; it goes where the leash needs to reach. Bring me five, and the Order screams your name into a pillow forever.\"",
+      "note": "hunt: launch",
+      "segs": [
+        {
+          "sp": "NYX",
+          "t": "Capture, warlock. Cages, not cairns. A corpse is an apology; a captive is an asset. Bruise them if you must — break them and the contract breaks with them."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The vellum folds itself shut."
+        },
+        {
+          "sp": "NYX",
+          "t": "The black carriage is yours now; it goes where the leash needs to reach. Bring me five, and the Order screams your name into a pillow forever."
+        }
+      ]
+    },
+    {
+      "id": "507aeed0",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Five cages. Clean arithmetic. The hunt is on.\"",
+      "note": "player line: hunt launch",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Five cages. Clean arithmetic. The hunt is on."
+        }
+      ]
+    },
+    {
+      "id": "60984980",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"They ran from your collectors. They will not run from me.\"",
+      "note": "player line: hunt launch",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "They ran from your collectors. They will not run from me."
+        }
+      ]
+    },
+    {
+      "id": "7735b086",
+      "speaker": "BRIAR",
+      "text": "She is not lost; the grove HID her, folded her into a bower of living thorn that leans away from you and toward her like courtiers. A girl no older than a sapling looks out from the green. \"You smell like the cold men,\" she says, and the brambles stand up. \"The cold men with the soft cages. I made the trees say NO last time.\" The bower bristles into a wall of root and tooth.",
+      "note": "hunt: briar",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "She is not lost; the grove HID her, folded her into a bower of living thorn that leans away from you and toward her like courtiers. A girl no older than a sapling looks out from the green."
+        },
+        {
+          "sp": "BRIAR",
+          "t": "You smell like the cold men,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "she says, and the brambles stand up."
+        },
+        {
+          "sp": "BRIAR",
+          "t": "The cold men with the soft cages. I made the trees say NO last time."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The bower bristles into a wall of root and tooth."
+        }
+      ]
+    },
+    {
+      "id": "af294718",
+      "speaker": "BRIAR",
+      "text": "The bower comes apart strand by screaming strand. When the last root lets go she is just a child again, sap-streaked and furious, small enough to lift. The cult's cage is cold-iron lined in moss — someone planned for her. She does not cry where you can see it. Behind you the grove closes its wound at last, because the thing that kept it open is in a box. ONE.",
+      "note": "hunt capture: briar",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The bower comes apart strand by screaming strand. When the last root lets go she is just a child again, sap-streaked and furious, small enough to lift. The cult's cage is cold-iron lined in moss — someone planned for her. She does not cry where you can see it. Behind you the grove closes its wound at last, because the thing that kept it open is in a box. ONE."
+        }
+      ]
+    },
+    {
+      "id": "96233668",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Easy, little weed. My cage is warmer than theirs.\" (measure)",
+      "note": "player line: hunt briar",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Easy, little weed. My cage is warmer than theirs.\""
+        }
+      ]
+    },
+    {
+      "id": "226ed8d0",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"The trees said no. I did not ask the trees.\" (sever)",
+      "note": "player line: hunt briar",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "The trees said no. I did not ask the trees.\""
+        }
+      ]
+    },
+    {
+      "id": "ffc328be",
+      "speaker": "OSSUARY",
+      "text": "The dungeon is loud with things that should be silent — bones reknitting, a rat dying and undying in the same corner forever. At the center sits a boy with his knees drawn up, ringed by skeletons that orbit him like moons around a patience. \"They keep me company,\" he says, not looking up. \"They can't leave. I can't MAKE them leave. The cold men knew that — a quarry that digs its own guards.\" The orbit tightens.",
+      "note": "hunt: ossuary",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The dungeon is loud with things that should be silent — bones reknitting, a rat dying and undying in the same corner forever. At the center sits a boy with his knees drawn up, ringed by skeletons that orbit him like moons around a patience."
+        },
+        {
+          "sp": "OSSUARY",
+          "t": "They keep me company,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "he says, not looking up."
+        },
+        {
+          "sp": "OSSUARY",
+          "t": "They can't leave. I can't MAKE them leave. The cold men knew that — a quarry that digs its own guards."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The orbit tightens."
+        }
+      ]
+    },
+    {
+      "id": "92b96b41",
+      "speaker": "OSSUARY",
+      "text": "You cut the orbit down faster than he can refill it, and for one breath the dungeon is, for the first time in years, simply DEAD. The boy looks at the stillness he made by accident and goes very pale. The cage you bring is bone-dry and salted — Nyx's people understand exactly what he is. \"Will it be quiet where you take me?\" he asks. You tell him the truth, which is no. He almost smiles anyway. TWO.",
+      "note": "hunt capture: ossuary",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "You cut the orbit down faster than he can refill it, and for one breath the dungeon is, for the first time in years, simply DEAD. The boy looks at the stillness he made by accident and goes very pale. The cage you bring is bone-dry and salted — Nyx's people understand exactly what he is."
+        },
+        {
+          "sp": "OSSUARY",
+          "t": "Will it be quiet where you take me?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "he asks. You tell him the truth, which is no. He almost smiles anyway. TWO."
+        }
+      ]
+    },
+    {
+      "id": "9555fb93",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Then keep me company too, boy — for exactly one fight.\" (measure)",
+      "note": "player line: hunt ossuary",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Then keep me company too, boy — for exactly one fight.\""
+        }
+      ]
+    },
+    {
+      "id": "d831a6cc",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Call them off, or I unmake every one in front of you.\" (threaten)",
+      "note": "player line: hunt ossuary",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Call them off, or I unmake every one in front of you.\""
+        }
+      ]
+    },
+    {
+      "id": "d13c61a8",
+      "speaker": "CINDER",
+      "text": "On a ledge where the snow should have buried him a week ago, a thin figure sits in a ring of melt-water, steaming, alive, ASH where a man's skin should be and embers where his eyes should. \"Come to put me out?\" The voice crackles like green wood. \"Everyone wants to put me out, or BOTTLE me. The treaty-things up here just let me be warm. First kind thing the mountain ever did.\" He stands; the ledge dries around him; the air bends with heat.",
+      "note": "hunt: cinder",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "On a ledge where the snow should have buried him a week ago, a thin figure sits in a ring of melt-water, steaming, alive, ASH where a man's skin should be and embers where his eyes should."
+        },
+        {
+          "sp": "CINDER",
+          "t": "Come to put me out?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The voice crackles like green wood."
+        },
+        {
+          "sp": "CINDER",
+          "t": "Everyone wants to put me out, or BOTTLE me. The treaty-things up here just let me be warm. First kind thing the mountain ever did."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "He stands; the ledge dries around him; the air bends with heat."
+        }
+      ]
+    },
+    {
+      "id": "aca9a114",
+      "speaker": "CINDER",
+      "text": "You give the fire nothing to catch and everything to spend, and when it gutters low he sits down hard in his own melt-water, smoking, spent, still alive — he is ALWAYS still alive, that is the entire point of him. The cult's cage is a lattice of cold-iron and packed snow that hisses as they fill it. \"Somewhere my fire is wanted,\" he repeats, bitter and small. \"You lied like you meant it. I respect that.\" THREE.",
+      "note": "hunt capture: cinder",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "You give the fire nothing to catch and everything to spend, and when it gutters low he sits down hard in his own melt-water, smoking, spent, still alive — he is ALWAYS still alive, that is the entire point of him. The cult's cage is a lattice of cold-iron and packed snow that hisses as they fill it."
+        },
+        {
+          "sp": "CINDER",
+          "t": "Somewhere my fire is wanted,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "he repeats, bitter and small."
+        },
+        {
+          "sp": "CINDER",
+          "t": "You lied like you meant it. I respect that."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "THREE."
+        }
+      ]
+    },
+    {
+      "id": "531e5d04",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Not put you out. Carry you somewhere your fire is wanted.\" (measure)",
+      "note": "player line: hunt cinder",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Not put you out. Carry you somewhere your fire is wanted.\""
+        }
+      ]
+    },
+    {
+      "id": "4fd2c49f",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Bottle, cage — what's the difference to ash? Burn, then.\" (cold)",
+      "note": "player line: hunt cinder",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Bottle, cage — what's the difference to ash? Burn, then.\""
+        }
+      ]
+    },
+    {
+      "id": "718ee99c",
+      "speaker": "WHISPER",
+      "text": "This one Nyx wants for reasons she did not fully say. A woman in the grey shift of the lower wards stands in a fallow row, eyes bound, head cocked, listening to a field that should make no sound. \"You're the new dog,\" she says before you speak. \"She gave you five names. I'm the one she said LAST about and meant FIRST.\" She turns the blindfold toward you like a face. \"I heard your whole contract through nine floors of stone, warlock. I can hear the part she didn't say out loud. Want me to tell you?\" The dead in the rows all stop working at once.",
+      "note": "hunt: whisper",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "This one Nyx wants for reasons she did not fully say. A woman in the grey shift of the lower wards stands in a fallow row, eyes bound, head cocked, listening to a field that should make no sound."
+        },
+        {
+          "sp": "WHISPER",
+          "t": "You're the new dog,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "she says before you speak."
+        },
+        {
+          "sp": "WHISPER",
+          "t": "She gave you five names. I'm the one she said LAST about and meant FIRST."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She turns the blindfold toward you like a face."
+        },
+        {
+          "sp": "WHISPER",
+          "t": "I heard your whole contract through nine floors of stone, warlock. I can hear the part she didn't say out loud. Want me to tell you?"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "The dead in the rows all stop working at once."
+        }
+      ]
+    },
+    {
+      "id": "b9c89ba2",
+      "speaker": "WHISPER",
+      "text": "You end it before she can spend whatever she overheard, and the field of dead lurches back into its patient labor as her focus breaks. The cage they bring is the cruelest yet: leaded, lined, deaf — a box that hears nothing, so she can speak to no one. As they seal it she finds your face one last time. \"She'll cage you too, you know,\" she says, kindly. \"When you've heard too much.\" FOUR.",
+      "note": "hunt capture: whisper",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "You end it before she can spend whatever she overheard, and the field of dead lurches back into its patient labor as her focus breaks. The cage they bring is the cruelest yet: leaded, lined, deaf — a box that hears nothing, so she can speak to no one. As they seal it she finds your face one last time."
+        },
+        {
+          "sp": "WHISPER",
+          "t": "She'll cage you too, you know,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "she says, kindly."
+        },
+        {
+          "sp": "WHISPER",
+          "t": "When you've heard too much."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "FOUR."
+        }
+      ]
+    },
+    {
+      "id": "86b66074",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"Tell me nothing. I'm paid not to listen.\" (measure)",
+      "note": "player line: hunt whisper",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "Tell me nothing. I'm paid not to listen.\""
+        }
+      ]
+    },
+    {
+      "id": "307a60d4",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"She wants you gagged for a reason. Let's find it the loud way.\" (silence)",
+      "note": "player line: hunt whisper",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "She wants you gagged for a reason. Let's find it the loud way.\""
+        }
+      ]
+    },
+    {
+      "id": "2d03bde8",
+      "speaker": "NARRATOR",
+      "text": "Varenholm's glass lamps, a playbill on every post: ONE NIGHT — THE DANCER. The fifth name is the one the Matron has wanted longest — a halfling who stood up in a guild hall and TOLD a room full of strangers exactly what she is. Easy mark, the ledger says. The ledger is wrong. She is not alone: something green-eared and blunt-handed has shadowed her since the show, and it makes the back of your teeth itch the way the grove node did.",
+      "note": "hunt: varenholm"
+    },
+    {
+      "id": "d4208314",
+      "speaker": "THORNWARDEN",
+      "text": "The bodyguard steps between you and the stage door without hurry — green-eared, callused, eyes like a forest deciding whether to be a fire. \"You're the cult's new hand. I can smell the ash road on you.\" A staff of living wood settles into a grip that has buried people. \"She's not for your cages. Neither am I. You want her, you come through the Verdance first — and friend, I have ROOTS in this.\"",
+      "note": "hunt: thornwarden",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "The bodyguard steps between you and the stage door without hurry — green-eared, callused, eyes like a forest deciding whether to be a fire."
+        },
+        {
+          "sp": "THORNWARDEN",
+          "t": "You're the cult's new hand. I can smell the ash road on you."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "A staff of living wood settles into a grip that has buried people."
+        },
+        {
+          "sp": "THORNWARDEN",
+          "t": "She's not for your cages. Neither am I. You want her, you come through the Verdance first — and friend, I have ROOTS in this."
+        }
+      ]
+    },
+    {
+      "id": "5ece137e",
+      "speaker": "COOKIE",
+      "text": "And then the dancer herself, still in firebird red, sliding into your path with a grin that has never once been afraid in public. \"Oh, you're a SERIOUS one. Cages and everything.\" She rolls her shoulders; the scroll-marks on them catch the lamplight gold, and the air goes warm and wrong — two thousand heartbeats of borrowed joy turning to teeth. \"Rule one, cousin: never be boring. You're about to learn rule two — never corner a dancer with an audience.\"",
+      "note": "hunt: cookie climax",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "And then the dancer herself, still in firebird red, sliding into your path with a grin that has never once been afraid in public."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Oh, you're a SERIOUS one. Cages and everything."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She rolls her shoulders; the scroll-marks on them catch the lamplight gold, and the air goes warm and wrong — two thousand heartbeats of borrowed joy turning to teeth."
+        },
+        {
+          "sp": "COOKIE",
+          "t": "Rule one, cousin: never be boring. You're about to learn rule two — never corner a dancer with an audience."
+        }
+      ]
+    },
+    {
+      "id": "30b20fce",
+      "speaker": "NARRATOR",
+      "text": "It takes everything Nyx is paying for. The Thornwarden goes down rooted to the spot he swore to hold; the dancer goes down still moving, because she does not know another way to go. Two cages this time — the cult learned, after the camp out east, to bring spares. As the leaded lid comes down on the firebird red she finds your eyes through the bars and, impossibly, WINKS. \"They keep sending little shopping parties,\" she says. \"One day someone explains to them about the wererats.\" Then the latch, and the long quiet road back to the Ashenveil. FIVE.",
+      "note": "hunt capture: varenholm"
+    },
+    {
+      "id": "cd9865c6",
+      "speaker": "NYX",
+      "text": "Five cages stand in the cold great hall, and the Matron walks the row of them the way other women walk a garden. Grove-child, quiet boy, ash-wick, the deaf box that was her Ninth Ward, and — longest-wanted — the dancer, who blows her a kiss through leaded bars. \"Complete,\" says Lady Nyx, and the word in her mouth is a payment. \"The Order will write its writs. They will mean nothing. You are the crown's shadow's shadow now, warlock — protected by a signature no paladin dares read aloud.\" She does not thank you. The cult does not use that word either. \"Rest. The web always has a sixth name.\"",
+      "note": "hunt: deliver",
+      "segs": [
+        {
+          "sp": "NARRATOR",
+          "t": "Five cages stand in the cold great hall, and the Matron walks the row of them the way other women walk a garden. Grove-child, quiet boy, ash-wick, the deaf box that was her Ninth Ward, and — longest-wanted — the dancer, who blows her a kiss through leaded bars."
+        },
+        {
+          "sp": "NYX",
+          "t": "Complete,"
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "says Lady Nyx, and the word in her mouth is a payment."
+        },
+        {
+          "sp": "NYX",
+          "t": "The Order will write its writs. They will mean nothing. You are the crown's shadow's shadow now, warlock — protected by a signature no paladin dares read aloud."
+        },
+        {
+          "sp": "NARRATOR",
+          "t": "She does not thank you. The cult does not use that word either."
+        },
+        {
+          "sp": "NYX",
+          "t": "Rest. The web always has a sixth name."
+        }
+      ]
+    },
+    {
+      "id": "4af68886",
+      "speaker": "PLAYER-WARLOCK",
+      "text": "\"There is always a sixth name. I'll be here.\"",
+      "note": "player line: hunt deliver",
+      "segs": [
+        {
+          "sp": "PLAYER-WARLOCK",
+          "t": "There is always a sixth name. I'll be here."
         }
       ]
     },

@@ -361,9 +361,11 @@ class GroveScene extends WorldScene {
     this.updateAtmosphere(time, dt);
 
     // pack wander + aggro
+    const talking = CityUI.dialogOpen() || this.encounterActive || this.cinematic;
     for (const pk of this.packs) {
       if (!pk.alive) continue;
       pk.wanderT -= dt;
+      if (talking) continue; // no wander/aggro while a dialog or cinematic is open
       for (const s of pk.sprs) {
         if (pk.wanderT <= 0) { s.tx = pk.x + (Math.random() - 0.5) * 110; s.ty = pk.y + (Math.random() - 0.5) * 110; }
         if (s.tx !== undefined) {
@@ -375,7 +377,7 @@ class GroveScene extends WorldScene {
       }
       if (pk.wanderT <= 0) pk.wanderT = 2 + Math.random() * 3;
       const d = Math.hypot(pk.sprs[0].x - this.player.x, pk.sprs[0].y - this.player.y);
-      if (d < 130) {
+      if (d < 130 && !CityUI.dialogOpen() && !this.encounterActive && !this.cinematic) {
         pk.alive = false;
         this.startEncounter(pk.def.name, pk.def.sub, pk.def.spawn(pk.def.n), win => {
           if (win) {
@@ -398,6 +400,7 @@ class GroveScene extends WorldScene {
     // DRUID-ONLY: the cult comes for HER — capture team on the south path after the camp falls
     const GS2 = window.GameState;
     if (GS2.player.char === 'druid' && GS2.world.flags['q-mq3-roots-that-rot'] && !GS2.world.flags['druid-capture'] && !this.druidAmbushDone &&
+        !CityUI.dialogOpen() && !this.encounterActive && !this.cinematic &&
         Math.hypot(this.player.x - 20 * 32, this.player.y - 38 * 32) < 120) {
       this.druidAmbushDone = true;
       const D = Quests.druid;

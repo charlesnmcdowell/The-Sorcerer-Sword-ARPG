@@ -128,6 +128,30 @@ for (const t of [
   '"Point the web at the prey. I\'ll mind the bruising."',
 ]) add('PLAYER-WARLOCK', t, 'player line: epilogue');
 
+// ---- THE WARLOCK'S HUNT (wq4): Nyx's commission, the 4 ankuspawn captures, the Varenholm climax, delivery ----
+const WH = Quests.warlockHunt;
+if (WH) {
+  add('LADY NYX', WH.launch.brief, 'hunt: launch');
+  add('LADY NYX', WH.launch.charge, 'hunt: launch');
+  for (const t of (WH.launch.go || [])) add('PLAYER-WARLOCK', t, 'player line: hunt launch');
+  for (const tg of (WH.targets || [])) {
+    const sp = (tg.voice || 'NARRATOR').toUpperCase();
+    add(sp, tg.approach, 'hunt: ' + tg.id);
+    add(sp, tg.capture, 'hunt capture: ' + tg.id);
+    for (const o of (tg.opt || [])) add('PLAYER-WARLOCK', o, 'player line: hunt ' + tg.id);
+  }
+  const VH = WH.varenholm;
+  if (VH) {
+    add('NARRATOR', VH.approach, 'hunt: varenholm');
+    if (VH.protect) add((VH.protect.voice || 'NARRATOR').toUpperCase(), VH.protect.line, 'hunt: thornwarden');
+    if (VH.cookie) add('COOKIE', VH.cookie.line, 'hunt: cookie climax');
+    add('NARRATOR', VH.capture, 'hunt capture: varenholm');
+    for (const o of (VH.opt || [])) add('PLAYER-WARLOCK', o, 'player line: hunt varenholm');
+  }
+  add('LADY NYX', WH.deliver.line, 'hunt: deliver');
+  for (const t of (WH.deliver.go || [])) add('PLAYER-WARLOCK', t, 'player line: hunt deliver');
+}
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -202,6 +226,7 @@ fs.writeFileSync(out, JSON.stringify({
     'PLAYER-SERAPH': 'Seraphim',
     'KARGOTH': 'Kargoth', 'SKARVA': 'Skarva', 'NIBNOB': 'Nibnob', 'AURVAETH': 'Aurvaeth',
     'HALDRIC': 'Haldric', 'SALLOW': 'Sallow', 'PALE COURIER': 'Pale Courier', 'NYX': 'Nyx',
+    'BRIAR': 'Briar', 'OSSUARY': 'Ossuary', 'CINDER': 'Cinder', 'WHISPER': 'Whisper', 'THORNWARDEN': 'Thornwarden',
     'GROVE KEEPER': 'Faelar',
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },

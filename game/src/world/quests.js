@@ -64,7 +64,56 @@ const Quests = {
   mainFor() {
     const c = window.GameState && GameState.player && GameState.player.char;
     if (c === 'seraph') return this.seraph.main;
-    if (c === 'warlock') return this.main.concat(this.warlockEpilogue.main);
+    if (c === 'warlock') {
+      // base epilogue (writ -> alley -> Matron), then a LIVE hunt entry so the journal
+      // reflects wq4 instead of stale-showing the completed Matron "black carriage" step.
+      const list = this.main.concat(this.warlockEpilogue.main);
+      const f = (window.GameState && GameState.world && GameState.world.flags) || {};
+      const huntSt = f[this.warlockHunt.huntFlag]; // 'active' once Nyx recruits, 'done' after delivery
+      if (huntSt) {
+        const order = [
+          ['cap-briar', 'Briar in the Thorn Grove'],
+          ['cap-ossuary', 'Ossuary in the grove dungeon'],
+          ['cap-cinder', 'Cinder on the Dragonspine'],
+          ['cap-whisper', 'Whisper at the Ashenveil Academy'],
+          ['cap-cookie', 'Cookie of Varenholm (and her protector)'],
+        ];
+        const caged = order.filter(o => f[o[0]]).length;
+        const next = order.find(o => !f[o[0]]);
+        const objective = (huntSt === 'done' || !next)
+          ? 'All five cages delivered to Lady Nyx. The web has a new spider.'
+          : caged + ' of 5 caged. Next: bring back ' + next[1] + ' — alive (capture, never kill).';
+        list.push({ id: 'wq4-the-hunt', title: 'THE WARLOCK\'S HUNT',
+          text: 'Lady Nyx\'s first contract: capture five gifted Ankuspawn ALIVE, one per region — never kill, for dead stock is worthless stock. The fifth is the dancer of Varenholm, behind her green protector. Deliver all five to the Ashenveil Academy.',
+          objective });
+      }
+      return list;
+    }
+    if (c === 'druid') {
+      // the Druid's journal grows ONE live entry once the Varenholm crossing begins, computed
+      // from the dq-cross-* progress flags (mirrors the warlock wq4 pattern). id 'dq-the-crossing'
+      // makes 'q-'+id === crossFlag so the existing journal renderer shows it with NO new UI.
+      const list = this.main.slice();
+      const f = (window.GameState && GameState.world && GameState.world.flags) || {};
+      const crossSt = f[this.druidCrossing.crossFlag]; // 'active' once the warlock strikes; 'done' after Shen Sama
+      if (crossSt) {
+        const order = [
+          ['dq-cross-warlock', 'break the warlock who came with cages'],
+          ['dq-cross-cult', 'throw back the Anku reinforcements he raised'],
+          ['dq-cross-flee', 'get Cookie up the spine trail — away from the ash road'],
+          ['dq-cross-shen', 'find Shen Sama; learn what took Ignis the hearth-wyrm'],
+        ];
+        const doneN = order.filter(o => f[o[0]]).length;
+        const next = order.find(o => !f[o[0]]);
+        const objective = (crossSt === 'done' || !next)
+          ? 'Cookie is safe in the warm ash. Ignis is still missing — and now her hunt is yours too.'
+          : 'Step ' + (doneN + 1) + ' of 4: ' + next[1] + '.';
+        list.push({ id: 'dq-the-crossing', title: 'THE CROSSING',
+          text: 'The cult came to Varenholm with cages for the dancer — and a price on YOU: VERDANCE, underlined twice. You broke their warlock; he rose with the ash road at his back. Now you and Cookie climb the Dragonspine for the one shelter that never sold a stray: Ignis the hearth-wyrm. The fugitive dragon Shen Sama is climbing for her too. She has gone missing.',
+          objective });
+      }
+      return list;
+    }
     return this.main;
   },
 
@@ -306,6 +355,83 @@ const Quests = {
       go: ['"There is always a sixth name. I\'ll be here."'],
       credits: 'THE WARLOCK\'S ROAD — five cages delivered, and the writs die in committee forever',
     },
+  },
+
+  // ===== THE CROSSING (dq) — the Druid's POV of Varenholm: she GUARDS; the warlock HUNTS. =====
+  // Canon mirror of warlockHunt.varenholm (the same meeting from her side). After the Druid
+  // befriends Cookie the dancer, the cult's new warlock arrives with cages. She breaks him; he
+  // rises again with Anku reinforcements; she and Cookie flee UP — to the Dragonspine treaty
+  // lands, seeking dragon-fire for protection. There they find SHEN SAMA (the fugitive dragon
+  // from cult.shenSama / druid.shenSamaAdd), who is hunting the same shelter she is: IGNIS, the
+  // hearth-wyrm who has kept gifted strays warm for an age — and who has gone MISSING. New lore
+  // kept consistent with the Dragonspine treaty dragons Aurvaeth (treaty-bound) and Vesshk
+  // (wyvern matriarch): Ignis is a THIRD, un-treatied fire-dragon; her vanishing is the hook.
+  //
+  // DATA ONLY this pass (text bank + mainFor journal entry). Scene wiring (a Varenholm trigger
+  // that launches the crossing, the rematch, the flee-to-mountain travel, objective() routing,
+  // the Shen Sama meet) lands in later runs. New speaker SHEN SAMA must be mapped to an EXISTING
+  // voice id in voice_config.json AND extracted into the manifest (constraints 8 & 9) BEFORE any
+  // "voices ready" claim — NOT done this run. Keep dialogue TEXT-ONLY. See docs/AUTOWORK_LOG.md.
+  druidCrossing: {
+    crossFlag: 'q-dq-the-crossing', // 'active' once the warlock strikes in Varenholm; 'done' after Shen Sama
+    // progress flags (set later by scene wiring; documented here as the single source of truth):
+    //   dq-cross-warlock — the cult warlock is broken the first time (phase 1 fight won)
+    //   dq-cross-cult    — the Anku reinforcements are thrown back (phase 2 fight won)
+    //   dq-cross-flee    — Cookie is gotten clear of Varenholm, up the spine trail (travel beat)
+    //   dq-cross-shen    — Shen Sama is found on the Dragonspine; the hunt for Ignis is shared (done)
+
+    // ---- phase 0: the dancer, befriended, and the chains that follow her ----
+    cookie: {
+      name: 'COOKIE',
+      line: 'The firebird dancer drops onto the bench beside you still in her stage red, breathless, grinning the grin that has never once been afraid in public. "Okay, cousin — you HUM, dad collects us by accident, and you smell like a forest that has opinions. We are absolutely related in the way that matters." Then her grin tips, just slightly, toward the street. "...Also we are being watched by a man who brought CAGES to a dance recital. Rule one, never be boring. Rule two: never be alone when it matters. Stand up slow."',
+    },
+
+    // ---- phase 1: the cult warlock arrives — capture, never kill (her side of warlockHunt.varenholm) ----
+    warlock: {
+      name: 'THE CULT WARLOCK', voice: 'Warlock', // map to existing Warlock id when voiced (later run)
+      banner: ['THEY CAME WITH CAGES', 'the green thing is supposed to be the EASY part'],
+      arrive: 'He steps out of the lamplight wrong — the way a portal-stitched man steps, half a breath behind his own shadow. Cult-ash on his coat, a leaded cart-cage breathing behind him on dead-eyed horses. "The dancer," he says, bored, reading a folded vellum he does not need to read. "And a bodyguard the Matron\'s ledger forgot to price. Verdance, isn\'t it? You hum like the merchandise." He pockets the list. "Stand aside, grove-thing. My contract is the halfling. You I\'ll take if you make me — alive pays better than dead."',
+      cookieQuip: 'Cookie cracks her knuckles, scroll-marks gold in the lamplight. "He called you MERCHANDISE. In MY town. On show night." Two thousand borrowed heartbeats of joy go warm and wrong in the air around her. "Cousin, would you do the honors? I\'ll do the encore."',
+      opt: ['"She\'s not a line in your ledger. Neither am I." (root him where he stands)',
+            '"You brought a cage to the wrong recital." (the grove answers)'],
+      pack: [{ type: 'collector', boss: true, deathCol: '#b070f0', x: 640, y: 260, r: 20, hp: 760, maxhp: 760, spd: 140, col: '#3a2a4a', wpn: '#b070f0', dmgScale: 1.45 }],
+      down: 'He folds. The portal-stitch lets go and for one breath he is just a thin, winded man in an expensive coat, face-down in the dancer\'s town. The cart-cage stands open and empty behind him. You did not even have to kill him. The grove, for once, is quiet about it.',
+      flag: 'dq-cross-warlock',
+    },
+
+    // ---- phase 2: the cinematic — he gets back up, and he is not alone ----
+    rematch: {
+      banner: ['HE GETS BACK UP', 'and the ash road got OUT of the cart with him'],
+      druidLine: 'You crouch by the downed man — old habit, your mother\'s habit, check the breathing even of the thing that came to crate you. "Stay DOWN," you tell him, almost gently. "Walk back to your Matron with nothing. Tell her the green said no."',
+      warlockRise: 'He laughs into the cobbles. It is not a well man\'s laugh. "Down? Grove-thing, I don\'t get to go back with NOTHING." He pushes up on hands that are already smoking, and the ash on his coat lifts off him and STANDS — cult-shades pouring out of the leaded cart in the shapes of the men and women they cored to fill it. "The Matron does not employ losers. So I will spend her whole advance right here. CAGE the dancer. Render the weed."',
+      cookieLine: '"...Okay, THAT\'S a lot of him," Cookie admits, backing toward you, fists up, grin gone thin and bright. "New plan, cousin. We win this one, and then we run somewhere even the ash road won\'t follow. You know any dragons?"',
+      opt: ['"Then spend it. I have my mother\'s patience — and worse." (stand with Cookie)',
+            '"On your feet, dancer. We break this, then we climb." (hold the line)'],
+      pack: [{ type: 'collector', boss: true, deathCol: '#b070f0', x: 640, y: 250, r: 20, hp: 700, maxhp: 700, spd: 140, col: '#3a2a4a', wpn: '#b070f0', dmgScale: 1.4 },
+             { type: 'grave', x: 520, y: 320, hp: 320, maxhp: 320, spd: 150, r: 13, col: '#4a3c5a', dmgScale: 1.35 },
+             { type: 'grave', x: 760, y: 320, hp: 320, maxhp: 320, spd: 150, r: 13, col: '#4a3c5a', dmgScale: 1.35 }],
+      down: 'The shades come apart like blown ash; the warlock goes down a second time and this time STAYS down, spent past summoning, the Matron\'s advance burned to nothing in a dancer\'s street. He will live. He will go back with empty cages and a worse problem than you. But the ledger has your scent now — VERDANCE, underlined twice — and that is a debt the Ashenveil always comes to collect.',
+      flag: 'dq-cross-cult',
+    },
+
+    // ---- phase 3: the flight — up, where fire still keeps the gifted warm ----
+    flight: {
+      banner: ['UP THE SPINE TRAIL', 'where treaty-fire still keeps strays warm'],
+      text: 'You do not wait for the second cart. Varenholm\'s glass lamps fall away behind you, then the farms, then the green itself, until the air goes thin and rude and the Dragonspine opens overhead — the treaty lands, where everything too proud or too heavy for the valley went up to become a legend about itself. Cookie keeps pace on dancer\'s legs, breath ghosting in the cold. "There\'s a story," she pants, "the strays tell. A dragon up here that doesn\'t do the treaty, doesn\'t do cages, just keeps the warm ones WARM. Ignis. Hearth-wyrm. If anyone in this world won\'t sell us, it\'s her." You climb toward a heat you can already feel humming, the way the grove node hummed, the way YOU hum.',
+      flag: 'dq-cross-flee',
+    },
+
+    // ---- phase 4: Shen Sama — and the hearth gone cold ----
+    shen: {
+      name: 'SHEN SAMA', voice: 'ShenSama', // NEW speaker -> map to an EXISTING voice id (later run)
+      banner: ['THE HEARTH IS COLD', 'two fugitives, one missing flame'],
+      meet: 'You find the warm place, and it is OUT. A scorched hollow under the highest cairns where the snow has not dared settle in an age — and crouched in the dead-warm ash, a traveler who is not a traveler: scales like cooling slag under a hood, eyes too old for the face. The fugitive dragon. He does not run this time. He is too tired, or the hollow matters too much. "You felt it too," Shen Sama says, not a question. "The hearth-song. You climbed all this way toward Ignis." A clawed hand turns over a fistful of cold cinder. "So did I. She has kept the un-treatied warm since before Aurvaeth signed his peace — strays, fugitives, the gifted the valley wants to render. She would have hidden your dancer in a heartbeat." He lets the ash fall. "And she is GONE. No fire. No feathers of smoke. Just this cold hollow, and her last warmth, and the shape in the snow of something large that did not leave a single track."',
+      cookieLine: '"...Missing," Cookie repeats, very quietly, the grin finally, completely gone. "The one safe place, and it\'s missing too." She looks at you, and at the cold ash, and the borrowed joy in her does not have anywhere to land. "Cousin. Everyone who could shelter us keeps DISAPPEARING. That\'s not bad luck. That\'s a pattern."',
+      shenClose: 'Shen Sama rises, slag and shadow, and for the first time looks at the two of you not as cargo to avoid but as company in a thin season. "It is a pattern, halfling, and it has a buyer." The old eyes go north, the way hunted things look. "I came up here to hide behind Ignis. Now I will find what took her instead — because whatever can vanish a hearth-wyrm without a track will not be stopped by a grove-child or a dancer or a worn-out wyrm alone." A long pause, geological. "...Three, though. Three is a different arithmetic. Stay near the warm ash, sisters. We hunt the missing flame together — and the green keeps singing the whole way up."',
+      flag: 'dq-cross-shen',
+    },
+
+    credits: 'THE CROSSING — the cages came, the green said NO, and three fugitives went up the mountain after a missing flame',
   },
 
   // ===== THE SERAPHIM'S ROAD — an angel does not chase rumors. He recruits. =====

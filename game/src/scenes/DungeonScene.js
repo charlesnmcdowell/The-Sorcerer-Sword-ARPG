@@ -125,7 +125,7 @@ class DungeonScene extends WorldScene {
 
     for (const a of this.ambushes) {
       if (a.done || window.GameState.world.flags[a.id]) continue;
-      if (Math.hypot(a.x - this.player.x, a.y - this.player.y) < 110) {
+      if (Math.hypot(a.x - this.player.x, a.y - this.player.y) < 110 && !CityUI.dialogOpen() && !this.encounterActive && !this.cinematic) {
         a.done = true;
         this.startEncounter(a.name, a.sub, a.pack, win => {
           if (win) window.GameState.world.flags[a.id] = 'cleared';

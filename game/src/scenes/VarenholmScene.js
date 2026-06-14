@@ -168,6 +168,7 @@ class VarenholmScene extends WorldScene {
     const C = V.cookie, druid = GS.player.char === 'druid';
     const portrait = this.portraitCookie();
     if (flags['q-mq6-the-dancer'] === 'done') {
+      if (druid && this.crossingBeat(portrait)) return;   // DRUID POV: the cult comes for Cookie (dq)
       CityUI.dialog(C.name, '"Still here? The encore was YESTERDAY." She grins. "Road safe, pit-name. Send word if the ledger people get bold again."', [{ label: 'Leave', fn: close }], portrait); return;
     }
     const startJob = () => {
@@ -210,6 +211,51 @@ class VarenholmScene extends WorldScene {
       { label: druid ? '"...He doesn\'t know. Yes, I\'m in."' : 'Take the job', fn: () =>
         CityUI.dialog(C.name, C.jobBrief, [{ label: 'Down past the third step', fn: startJob }], portrait) },
       { label: 'Not yet', fn: close }], portrait);
+  }
+
+  // ---------- DRUID CROSSING (dq): phase 1 — the cult comes for Cookie ----------
+  // Druid POV of the Varenholm crossing (the warlock-hunt climax seen from her side).
+  // The cult warlock arrives with cages; the druid breaks him once (capture-fight,
+  // reusing a collector boss). Sets q-dq-the-crossing='active' + dq-cross-warlock so the
+  // journal/AUTO can navigate. Later increments add the rematch, the flight up the spine,
+  // and the Shen Sama meet. Gated to a druid who has finished the dancer job; mutually
+  // exclusive with the warlock-POV hunt climax via char gating. Launched from guildHall
+  // (a menu beat, not a proximity proc) so it is inherently conversation-safe.
+  crossingBeat(portrait) {
+    const GS = window.GameState, flags = GS.world.flags, D = Quests.druidCrossing, W = D.warlock;
+    if (GS.player.char !== 'druid') return false;
+    if (flags[D.crossFlag] === 'done') return false;            // crossing already resolved
+    if (flags[W.flag]) {                                        // phase 1 done — later phases pending
+      CityUI.dialog('THE CROSSING', 'Cookie keeps her back to yours, watching the lamplit street for a second cart. The warlock is broken — but the ash road has your scent now. "We don\'t wait around for the encore, cousin," she murmurs. "Up the mountain. There\'s a fire up there that never sold a stray." (Your road climbs the Dragonspine — to be continued.)',
+        [{ label: 'Climb', fn: () => CityUI.closeDialog() }], portrait);
+      return true;
+    }
+    // phase 1: the dancer spots the tail, the cult warlock steps out of the lamplight
+    const fight = () => {
+      CityUI.closeDialog();
+      this.startEncounter(W.banner[0], W.banner[1], W.pack.map(e => Object.assign({}, e)), win => {
+        if (!win) {
+          this.player.x = 28 * 32; this.player.y = 32 * 32;
+          this.floatText(this.player.x, this.player.y - 50, 'the cages drag you both down a side street — Cookie hauls you back up.', '#c8443a');
+          return;
+        }
+        flags[D.crossFlag] = 'active';
+        flags[W.flag] = 1;
+        CityUI.dialog(W.name, W.down, [{ label: '(the cart-cage stands empty)', fn: () => {
+          CityUI.closeDialog();
+          this.floatText(this.player.x, this.player.y - 56, 'JOURNAL — THE CROSSING BEGINS', '#7ac86a', 14);
+          if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
+        }}], portrait);
+      }, { zoneScale: true });
+    };
+    CityUI.dialog(D.cookie.name, D.cookie.line, [{ label: 'Stand up slow', fn: () => {
+      CityUI.dialog(W.name, W.arrive, [{ label: '(she steps up beside you)', fn: () => {
+        CityUI.dialog(D.cookie.name, W.cookieQuip, [
+          { label: W.opt[0], fn: fight },
+          { label: W.opt[1], fn: fight }], portrait);
+      }}]);
+    }}], portrait);
+    return true;
   }
 
   portraitCookie() {
