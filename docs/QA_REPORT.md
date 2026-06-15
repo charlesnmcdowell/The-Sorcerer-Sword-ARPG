@@ -12,6 +12,7 @@ This is roadmap item 8 — the gate that prevents the druid-crossing class of bu
 | druid | 14 | ✅ PASS |
 | warlock | 18 | ✅ PASS |
 | seraph | 5 | ✅ PASS |
+| ember | 7 | ✅ PASS |
 
 Reachability: real scenes booted; the real BFS pathfinder reached every in-zone objective tile (see per-beat `reach:ok`).
 
@@ -76,6 +77,16 @@ Reachability: real scenes booted; the real BFS pathfinder reached every in-zone 
 - ✅ **sq3 — five banners (first duel)** — -> "Kargoth, the ogre warchief" [dragonspine 448,960 E] reach:ok
 - ✅ **sq4 — the chosen (Skyreach shrine)** — -> "the Skyreach shrine" [dragonspine 1024,160 E] reach:ok
 - ✅ **END — the chosen done (story rests)** — null (story rests) ✓
+
+## EMBER — ✅ PASS
+
+- ✅ **mq1 — empty cell (Marlow)** — -> "the Last Lantern — Marlow" [karridge-city 640,704 E] reach:ok
+- ✅ **mq2 — listening room (grove)** — -> "the cult waystation" [thorn-grove 192,608 E] reach:ok
+- ✅ **mq3 — roots that rot (veiled woman)** — -> "the veiled woman" [karridge-city 384,1152 E] reach:ok
+- ✅ **mq4 — the buyer (night shipment)** — -> "the night shipment" [thorn-grove 128,864 E] reach:ok
+- ✅ **mq5 — ash and silence (plaza)** — -> "the plaza" [karridge-city 1120,816] reach:ok
+- ✅ **EPILOGUE — Marlow at the Last Lantern** — -> "the Last Lantern — Marlow" [karridge-city 640,704 E] reach:ok
+- ✅ **END — epilogue done (story rests)** — null (story rests) ✓
 
 ## Gated cult-coach transitions (item 9 regression gate) — ✅ PASS
 
@@ -173,6 +184,11 @@ reachability above only proves the objective TILE is walkable. This gate re-boot
 | seraph · sq1 — the host below (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
 | seraph · sq3 — five banners (first duel) [dragonspine 448,960] | interactable "challenge KARGOTH" @0px | ✅ |
 | seraph · sq4 — the chosen (Skyreach shrine) [dragonspine 1024,160] | interactable "approach the SKYREACH SHRINE" @6px | ✅ |
+| ember · mq1 — empty cell (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| ember · mq2 — listening room (grove) [thorn-grove 192,608] | interactable "search the camp" @0px | ✅ |
+| ember · mq3 — roots that rot (veiled woman) [karridge-city 384,1152] | interactable "approach the veiled woman" @0px | ✅ |
+| ember · mq4 — the buyer (night shipment) [thorn-grove 128,864] | interactable "stop the night shipment" @0px | ✅ |
+| ember · EPILOGUE — Marlow at the Last Lantern [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
 
 ## Manual-control AUTO-stop (item 14D regression gate) - ✅ PASS
 
@@ -185,6 +201,22 @@ Real-play check: with AUTO on, a deliberate MANUAL input must outrank the chauff
 | manual INTERACT (E) stops AUTO | keydown-E handler fired -> tracking=false | ✅ |
 | mobile prompt-tap stops AUTO | _onPrompt fired -> tracking=false | ✅ |
 | manual ATTACK (info) | attacks fire only in encounters where the walk is already suspended (encounterActive) - nothing to cancel | ✅ |
+
+## Ashenveil lower-levels raid routing (item 13 regression gate) — ✅ PASS
+
+The Ashenveil undercroft is OPT-IN side content (flag `q-ash-raid`), not a per-character beat. Asserts `QuestNav.objective()` routes the whole undercroft once the flag is active (overworld -> the Academy stairs down; in `ash-lower` -> the Warden of the Unfiled until `ash-lower-miniboss`, then the Deep Door finale), rests (null) once `ash-lower-boss` is set, and stays silent when the flag is unset (never diverts the main quest):
+
+| Check | Detail | Result |
+|---|---|---|
+| raid active -> Academy stairs | -> "the stairs to the LOWER LEVELS" [ashenveil 1056,480 E] | ✅ |
+| raid active -> Academy stairs | -> "the stairs to the LOWER LEVELS" [ashenveil 1056,480 E] | ✅ |
+| raid active -> Academy stairs | -> "the stairs to the LOWER LEVELS" [ashenveil 1056,480 E] | ✅ |
+| raid active -> Academy stairs | -> "the stairs to the LOWER LEVELS" [ashenveil 1056,480 E] | ✅ |
+| raid active -> Academy stairs | -> "the stairs to the LOWER LEVELS" [ashenveil 1056,480 E] | ✅ |
+| in undercroft -> the Warden | -> "the Warden of the Unfiled" [ash-lower 704,256] | ✅ |
+| warden down -> the Deep Door | -> "the DEEP DOOR — the last room" [ash-lower 640,102 E] | ✅ |
+| finale cleared -> story rests | -> (null) | ✅ |
+| inactive -> no raid objective | -> (null) | ✅ |
 
 ## No-fight-during-dialogue (item 1.5 regression check)
 

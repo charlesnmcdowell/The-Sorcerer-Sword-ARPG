@@ -191,8 +191,10 @@ class AshLowerScene extends WorldScene {
       this.startEncounter('THE THING THE WEB SAVES', 'the academy\'s worst work, kept for last', [boss], win => {
         if (win) {
           flags['ash-lower-boss'] = true;
+          flags['q-ash-raid'] = 'done';   // close the optional lower-levels objective (item 13 gate)
           this.openDeepDoor();
           this.floatText(this.player.x, this.player.y - 50, 'THE LAST ROOM — unmade', '#9af0c0', 16);
+          this.floatText(this.player.x, this.player.y - 74, 'JOURNAL — the lower levels are filed', '#9af0c0', 13);
           GroveScene.prototype.grantLoot.call(this, { type: 'copper', amount: 600 }, this.player.x + 30, this.player.y);
           if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
           this.signDialog('THE LAST ROOM', 'The shape comes apart along its seams and the names it wore scatter and go quiet, each one finally, simply, dead. The room behind the deep door is just a room now — cold, and ordinary. You step back into a green light that has lost its appetite. The lower levels are filed. The web will keep no more of its worst work here.');

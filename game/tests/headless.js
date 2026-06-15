@@ -8,7 +8,7 @@ const { createPitCombat } = require('../src/combat/pit.js');
 const trials = parseInt(process.argv[2] || '5', 10);
 let pass = 0;
 
-function runTrial(t) {
+function runTrial(t, ch) {
   let simMs = 0;
   const tq = [];
   global.setTimeout = (fn, ms) => { tq.push({ at: simMs + (ms || 0), fn }); return tq.length; };
@@ -20,7 +20,7 @@ function runTrial(t) {
     screen: id => { screen = id; }
   };
   const combat = createPitCombat({ width: 1280, height: 720, now: () => simMs, ui });
-  combat.fullReset('ronin');          // -> board for fight 1
+  combat.fullReset(ch);                // -> board for fight 1 (ember = RKIT, same ronin door bot)
   if (screen !== 'board') throw new Error('expected board screen, got ' + screen);
   combat.startFight();
 
@@ -69,7 +69,16 @@ function runTrial(t) {
   return won;
 }
 
-for (let t = 1; t <= trials; t++) if (runTrial(t)) pass++;
-console.log(`\n${pass}/${trials} wins`);
-if (pass === 0) { console.error('FAIL: fight 1 never won — check port'); process.exit(1); }
+const charArg = process.argv[3];
+const CHARS = charArg ? [charArg] : ['ronin', 'ember']; // ember = RKIT (ronin kit): wins fight 1 the same way
+let fail = false;
+for (const ch of CHARS) {
+  let cpass = 0;
+  console.log(`--- ${ch} ---`);
+  for (let t = 1; t <= trials; t++) if (runTrial(t, ch)) cpass++;
+  pass += cpass;
+  if (cpass === 0) { console.error(`FAIL: ${ch} never won fight 1 — check port`); fail = true; }
+}
+console.log(`\n${pass}/${CHARS.length * trials} wins`);
+if (fail) process.exit(1);
 console.log('HEADLESS HARNESS PASS');

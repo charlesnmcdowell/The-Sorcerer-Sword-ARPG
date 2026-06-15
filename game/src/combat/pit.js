@@ -47,7 +47,8 @@ let wolves=[],demons=[],fireballs=[],tracers=[];
 const lvl=()=>Math.min(20,Math.floor(P.level||1));
 let buffs=[]; // {k,amt,until} from belt potions
 const buffAmt=k=>{let a=0;for(const b of buffs)if(b.k===k&&b.until>S.time)a+=b.amt;return a;};
-const stat=k=>(P.char==='ronin'?P.base[k]+P.kills*2:P.base[k]+3*(lvl()-1))+buffAmt(k)+lineStatBonus(k)+evoStatBonus(k);
+const RKIT=c=>c==='ronin'||c==='ember'; // item-12: the EMBER reuses the RONIN combat kit (kills-snowball, katana, no levels/evo)
+const stat=k=>(RKIT(P.char)?P.base[k]+P.kills*2:P.base[k]+3*(lvl()-1))+buffAmt(k)+lineStatBonus(k)+evoStatBonus(k);
 function usePotion(type){
   if(P.dead)return false;
   if(type==='potion-health'){const hl=Math.round(maxHP()*0.5);P.hp=Math.min(maxHP(),P.hp+hl);
@@ -67,7 +68,7 @@ const formHP=()=>{
   if(P.char==='seraph')return 1.2;
   return 1;
 };
-const maxHP=()=>Math.round(((P.char==='ronin'?34:45)+(stat('CON')-10)*5)*MODS.maxhp*(P.char==='warlock'?0.85:1)*formHP());
+const maxHP=()=>Math.round(((RKIT(P.char)?34:45)+(stat('CON')-10)*5)*MODS.maxhp*(P.char==='warlock'?0.85:1)*formHP());
 const UNLOCKS={druid:{3:'BEAR FORM UNLOCKED',6:'WOLF FORM UNLOCKED'},
                warlock:{3:'BONE DRAGON UNLOCKED',5:'SUCCUBI UNLOCKED',8:'ARCH DEVIL UNLOCKED'},
                seraph:{3:'CHAINS OF DECREE',6:'TRIUNE MAW',8:'HALO JUDGEMENT'}};
@@ -135,7 +136,7 @@ const EVOLUTIONS={
   }
 };
 function gainLevel(){ // +1.5 levels per kill, max 20
-  if(P.char==='ronin')return;
+  if(RKIT(P.char))return;
   const ol=lvl();
   P.level=Math.min(20,(P.level||1)+1.5);
   if(lvl()>ol){
@@ -222,7 +223,7 @@ function evoTick(dt){                               // per-frame while a pick is
   if(P.evoPickT<=0)pickEvo(0);
 }
 // ronin weapon forms: stats double from 10 -> 20 (NODACHI) -> 40 (ODACHI). Permanent.
-const roninTier=()=>P.char!=='ronin'?0:(stat('STR')>=40?2:(stat('STR')>=20?1:0));
+const roninTier=()=>!RKIT(P.char)?0:(stat('STR')>=40?2:(stat('STR')>=20?1:0));
 // item-11 foundation: ronin weapon LINE (katana = default). All lines share the bladeTier
 // 0/1/2 ladder; for now only the tier NAMES differ (spear/rifle movesets + art land in later
 // runs). Katana names/subs are byte-identical to the old banner, so behavior is unchanged.
@@ -243,7 +244,7 @@ const WPN_LINE_NAMES={
 const LINE_FOCUS={spear:'DEX',rifle:'ATK'};   // katana: balanced => no focus bonus
 const LINE_TIER_BONUS=[0,12,28];              // extra focus-stat points per bladeTier (0/1/2)
 const lineStatBonus=k=>{
-  if(P.char!=='ronin')return 0;
+  if(!RKIT(P.char))return 0;
   const wl=P.weaponLine||'katana';
   if(LINE_FOCUS[wl]!==k)return 0;
   return LINE_TIER_BONUS[roninTier()]||0;};
@@ -262,7 +263,7 @@ const evoStatBonus=k=>{
   if(P.evo20){const br=(E[20]||[]).find(x=>x.key===P.evo20);if(br&&br.focus===k)b+=EVO_FOCUS_BONUS;}
   return b;};
 function checkRoninForm(){
-  if(P.char!=='ronin')return;
+  if(!RKIT(P.char))return;
   const t=roninTier();
   if(t===(P.bladeTier||0))return;
   P.bladeTier=t;
@@ -275,7 +276,7 @@ const dmgBonus=()=>6+Math.floor((stat('STR')-10)/2)+P.kills;
 const moveSpd=()=>185+(stat('DEX')-10)*4;
 const rollCDmax=()=>Math.max(.55,1.15-(stat('DEX')-10)*.035);
 const atkRec=()=>Math.max(.17,.34-(stat('ATK')-10)*.009);
-const diceN=()=>P.char==='ronin'?1+P.kills:lvl();
+const diceN=()=>RKIT(P.char)?1+P.kills:lvl();
 let nickname='NOBODY',styleScore={untouched:0,headsman:0,quicksand:0,breath:0,corpse:0,mirror:0};
 
 let enemies=[],particles=[],popups=[],zones=[],swings=[],bullets=[];
@@ -300,8 +301,8 @@ function doSlash(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.atkRecover>0|
     autoFace();hexBolt();return;}
   if(P.char==='druid'){autoFace();druidSlash();return;}
   if(P.char==='seraph'){autoFace();seraphSlash();return;}
-  if(P.char==='ronin'&&P.weaponLine==='spear'){autoFace();roninSpear();return;}
-  if(P.char==='ronin'&&P.weaponLine==='rifle'){autoFace();roninRifle();return;} // item-11: rifle LINE — slow ranged matchlock shot // item-11: spear LINE — reach/thrust, pierces a line
+  if(RKIT(P.char)&&P.weaponLine==='spear'){autoFace();roninSpear();return;}
+  if(RKIT(P.char)&&P.weaponLine==='rifle'){autoFace();roninRifle();return;} // item-11: rifle LINE — slow ranged matchlock shot // item-11: spear LINE — reach/thrust, pierces a line
   autoFace();P.atkRecover=atkRec();P.ft.slash++;
   if(P.comboT<=0)P.combo=0;
   const st=P.combo;P.atkPose=st;P.combo=(P.combo+1)%3;P.comboT=1.1;
@@ -330,7 +331,7 @@ function doParry(){if(S.mode!=='fight'&&S.mode!=='demo'||P.dead||P.rollT>0||P.he
 /* ============ DRUID ============ */
 function setBtnLabel(id,txt){UI.btnLabel(id,txt);}
 function updateLabels(){
-  if(P.char==='ronin'){setBtnLabel('bSlash','SLASH');setBtnLabel('bHeavy','HEAVY');setBtnLabel('bParry','PARRY');setBtnLabel('bRoll','ROLL');return;}
+  if(RKIT(P.char)){setBtnLabel('bSlash','SLASH');setBtnLabel('bHeavy','HEAVY');setBtnLabel('bParry','PARRY');setBtnLabel('bRoll','ROLL');return;}
   if(P.char==='warlock'){
     if(P.lich){setBtnLabel('bSlash','SCYTHE');setBtnLabel('bHeavy','SUMMON');
       setBtnLabel('bParry','FADE');setBtnLabel('bRoll','DRIFT');return;}
@@ -1156,14 +1157,14 @@ function killEnemy(e,heavy){
     }
   }
   if(e.minion){P.hp=Math.min(maxHP(),P.hp+5);popup(e.x,e.y-34,'+5 HP','#7fbf6a',13);
-    if(P.char==='ronin'){ // summons feed the ronin's blade too
+    if(RKIT(P.char)){ // summons feed the ronin's blade too
       P.kills++;
       popup(e.x,e.y-50,'+2 ALL STATS','#3df0c8',15);
       UI.stats(diceN()+'d8','KILLS '+P.kills);
       checkRoninForm();}
     else{P.kills++;popup(e.x,e.y-50,'+1.5 LVL','#3df0c8',13);gainLevel();}}
   else{P.kills++;const hpUp=maxHP();P.hp=Math.min(hpUp,P.hp+10);
-    if(P.char==='ronin'){
+    if(RKIT(P.char)){
       popup(e.x,e.y-50,'+2 ALL STATS','#3df0c8',18);
       popup(e.x,e.y-28,'KATANA  '+diceN()+'d8','#3df0c8',14);
       UI.stats(diceN()+'d8','KILLS '+P.kills);
@@ -1659,7 +1660,7 @@ function updEnemyVs(e,dt,P){
 function show(id,data){UI.screen(id||null,data||null);}
 function statRows(prevK,nowK){
   const rows=[];
-  if(P.char==='ronin'){
+  if(RKIT(P.char)){
     const defs=[['STR (damage)','STR'],['DEX (speed / roll)','DEX'],['CON (health)','CON'],['ATK (attack speed)','ATK']];
     for(const[lbl,k]of defs){
       const a=P.base[k]+prevK*2,b=P.base[k]+nowK*2;
@@ -1684,7 +1685,7 @@ function toBoard(){
   const f=FIGHTS[S.fight];
   const oddsAgainst=Math.max(1,12-P.kills*1.5);
   let oddsTxt='ODDS: '+(oddsAgainst<=1?'EVEN MONEY. The Pit fears you.':oddsAgainst.toFixed(0)+'-to-1 against you');
-  if(P.char!=='ronin'){oddsTxt+='   ·   LEVEL '+lvl()+'/20';
+  if(!RKIT(P.char)){oddsTxt+='   ·   LEVEL '+lvl()+'/20';
     if(P.unlockMsg){oddsTxt+='  —  '+P.unlockMsg;
       setTimeout(()=>showBanner(P.unlockMsg,'',1400,'#3df0c8'),400);P.unlockMsg=null;}}
   const rows=statRows(prevKills,P.kills);prevKills=P.kills;
@@ -1697,7 +1698,7 @@ function startFight(){
   if(S.canLeave)S.declinedPot=true; // declined Bellow's buy-out: never offered again this Pit run (Hiro)
   S.mode='fight';show(null);
   UI.hud(true);UI.controls(true);UI.name(nickname);
-  UI.stats(diceN()+'d8',(P.char==='ronin'?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
+  UI.stats(diceN()+'d8',(RKIT(P.char)?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
   spawnFight();showBanner(FIGHTS[S.fight].name,'fight '+(S.fight+1)+' of '+FIGHTS.length,1500);}
 const NICKBANKS={
  ronin:{styles:{
@@ -1768,7 +1769,7 @@ function startEncounter(list,cb){
   if(P.lich){P.lich=false;P.r=16;updateLabels();}P.fadeT=0;P.fadeCD=0;P.lichRiseT=0; // each fight begins among the living
   P.ft={dmgTaken:0,heavy:0,slash:0,rolls:0,parries:0,t0:NOW(),low:false};
   S.mode='fight';UI.hud(true);UI.controls(true);UI.name(nickname);
-  UI.stats(diceN()+'d8',(P.char==='ronin'?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
+  UI.stats(diceN()+'d8',(RKIT(P.char)?'':'LV '+lvl()+' · ')+'KILLS '+P.kills);
   UI.boss(false,'');}
 function winFight(){
   if(encounterCb){const cb=encounterCb;encounterCb=null;
@@ -1777,7 +1778,7 @@ function winFight(){
   S.fight++;
   if(S.fight>=FIGHTS.length){
     S.mode='victory';UI.hud(false);UI.controls(false);
-    show('victory',{stats:P.kills+' kills · '+(P.char==='ronin'?'katana '+diceN()+'d8':'level '+lvl()+' · '+diceN()+'d8')+' · they call you '+nickname});return;}
+    show('victory',{stats:P.kills+' kills · '+(RKIT(P.char)?'katana '+diceN()+'d8':'level '+lvl()+' · '+diceN()+'d8')+' · they call you '+nickname});return;}
   showBanner(nickname,renamed?'the crowd renames you':'the crowd roars',1700);flashFx(.15);
   setTimeout(toBoard,1500);}
 let dqOrder=[],dqIdx=0;
@@ -1813,10 +1814,11 @@ function lose(){
     seraph:'HINTS — the HALO RAY fires every second: whatever it KILLS rises as your minion, then returns to you as half your health. '
          +'The spear is a slow heavy POKE — keep your distance and land it clean. ASCEND lifts you above harm. '
          +'You are immortal: the first fall in any duel buys your foe ten seconds of glory — then you rise at full strength. The second fall is final.'};
-  show('death',{stats:_deathStats,quote:_deathQuote,hints:HINTS[P.char]||''});}
+  show('death',{stats:_deathStats,quote:_deathQuote,hints:HINTS[P.char]||(RKIT(P.char)?HINTS.ronin:'')});}
 /* ============ CHARACTER INTROS (automated demos) ============ */
 const BIOS={
  ronin:'The wandering samurai — said to have never lost a duel. He has traveled from the far east to become the greatest swordsman in the world. No magic. No levels. No enchantments or tricks. Just pure skill, and the vigor of defeated foes.',
+ ember:'Forged in the same fire that took her village, she fights with a katana that still smolders. No magic of her own — only borrowed flame and the same hard-won skill the Pit respects: every fallen foe makes her sharper, faster, harder to put down.', // item-12: EMBER reuses the RONIN kit until her own moveset lands
  druid:'From a grove far away, she comes seeking what nature could not teach her. She hates the city — but she has strength to prove, and there is no better place than the kitchen… I mean, the arena…',
  warlock:'A dark elf from even darker realms, beneath the dark recesses of the land. His book is disconcerting. His staff is ominous. More lurks behind his portals than the city guard should logically allow. Welp — too late. He\'s in the arena.',
  seraph:'He is not from the city. He is from the place above, as most angels are. Giant wings. Runic chains. Three heads, and every one of them watching a different sin. He says great evil brews in the land and he has come to find warriors worthy of the cleansing. The crowd believes him completely. Bellow, privately, is not so sure.'};
@@ -1885,9 +1887,10 @@ const DEMOS={
   {at:15.6,run:()=>{P.combo=2;P.comboT=1;seraphSlash();}},
   {at:17.4,cap:'And if something fells him? It earns ten seconds of glory. He gets back up.'},
   {at:19.4,cap:'He seeks the worthy. The Pit will do for a start. — tap ENTER THE PIT'}]};
+DEMOS.ember=DEMOS.ronin; // item-12: the EMBER plays the RONIN intro demo until it gets its own
 function demoReset(){
   const ch=demo.char;
-  P.char=ch;P.kills=0;P.level=ch==='ronin'?1:10;P.bladeTier=0;P.weaponLine=P.weaponLine||'katana';P.form='human';P.r=16;
+  P.char=ch;P.kills=0;P.level=RKIT(ch)?1:10;P.bladeTier=0;P.weaponLine=P.weaponLine||'katana';P.form='human';P.r=16;
   P.dead=false;P.channel=null;P.glaive=null;P.devilT=0;P.wardT=0;P.slowT=0;P.paralyzeT=0;
   P.formT=0;P.humanCD=0;P.wolfCD=0;P.cdVines=0;P.cdRoar=0;P.cdHowl=0;
   P.parryCD=0;P.parryT=0;P.heavyCD=0;P.heavyWind=0;P.rollCD=0;P.rollT=0;P.atkRecover=0;P.flash=0;P.hexCD=0;
@@ -1900,7 +1903,7 @@ function demoReset(){
   P.x=arena.x-arena.r*.3;P.y=arena.y;
   cam.x=cam.tx=W/2;cam.y=cam.ty=H/2;cam.z=cam.tz=1;cam.hold=0;S.fatal=false;S.slow=0;
   demo.t=0;demo.step=0;
-  UI.stats(diceN()+'d8',ch==='ronin'?'KILLS 0':'LV '+lvl());
+  UI.stats(diceN()+'d8',RKIT(ch)?'KILLS 0':'LV '+lvl());
   updateLabels();}
 function startIntro(ch){
   demo.char=ch;demo.script=DEMOS[ch];
@@ -1908,9 +1911,9 @@ function startIntro(ch){
   show(null);
   demoReset();
   UI.hud(true);UI.controls(false);UI.boss(false,'');
-  UI.name({ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM'}[ch]);
+  UI.name({ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM',ember:'THE EMBER'}[ch]);
   UI.demoCap('');
-  UI.intro(true,{name:{ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM'}[ch],bio:BIOS[ch]});}
+  UI.intro(true,{name:{ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM',ember:'THE EMBER'}[ch],bio:BIOS[ch]});}
 function endIntro(){
   UI.intro(false);
   S.mode='title';

@@ -77,6 +77,9 @@ class AshenveilScene extends WorldScene {
     this.add.text(slx, sly - 22, 'THE LOWER LEVELS', { fontFamily: 'Courier New', fontSize: '9px', color: '#9af0c0' }).setOrigin(0.5).setDepth(sly + 2);
     this.addLight(slx, sly, 70, false);
     this.interactables.push({ x: slx, y: sly, label: 'descend the stairs to the LOWER LEVELS', fn: () => {
+      // light the optional lower-levels objective the moment a champion chooses to descend (item 13
+      // gate) so the journal/AUTO can navigate the undercroft; never auto-set, so it can't divert the main quest.
+      const _fl = window.GameState.world.flags; if (!_fl['q-ash-raid'] && !_fl['ash-lower-boss']) _fl['q-ash-raid'] = 'active';
       window.GameState.world.zone = 'ash-lower';
       this.scene.start('AshLowerScene');
     }});

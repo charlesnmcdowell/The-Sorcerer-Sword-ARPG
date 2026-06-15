@@ -11,7 +11,12 @@ nn-marketing-site autowork job. Each run adds a few new assets; nothing here aut
 - **Play (free, no download, no sign-up):** neverendingnarratives.com/play/
 - **Listen (free first chapters):** YouTube @Neverendingnarratives37
 - **Read (Book One):** *Altar of Omnia — The Unbound Path* (also free on Royal Road)
-- **Fund:** Ko-fi — Goal 1 $1,000 = 4 character portraits · Goal 2 $5,000 = animated sprites
+- **Audiobook bundle ($10):** both audiobook files, manual delivery — pay via Cash App, then email
+  neverendingnarratives@gmail.com to receive the files. (Free first chapters stay on YouTube; paid audio is NOT hosted.)
+- **Money — Cash App ONLY:** Cash App `$hiiroprotagonist36` (cash.app/$hiiroprotagonist36) / phone 423-704-8922.
+  Used for BOTH the $10 bundle and donations/tips. Do NOT post Ko-fi / Gumroad / Payhip / Amazon links — they are
+  not set up and were removed from the site (req 9). Add an Amazon/Kindle link only once Hiro provides a real URL.
+- **Fund goals (manual bar):** Goal 1 $1,000 = 4 character portraits · Goal 2 $5,000 = animated sprites
 
 ## Files in this kit
 - `elevator-pitches.md` — 1-line + short pitches for any context
@@ -20,6 +25,7 @@ nn-marketing-site autowork job. Each run adds a few new assets; nothing here aut
 - `one-pager-press-blurb.md` — press blurb + boilerplate "About" in 3 lengths
 - `flyer-and-business-card.md` — con flyer copy + business-card copy
 - `launch-email.md` — announcement email / newsletter draft
+- `audiobook-bundle-and-cashapp.md` — $10 audiobook-bundle offer + Cash App captions / fulfillment checklist
 
 ## Voice
 Warm, a little epic, never corporate. Lead with "it's free." Funnel everything back to the site.

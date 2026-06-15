@@ -103,6 +103,14 @@ const QuestNav = {
         return at('karridge-city', 1538, 744, true, 'the cult coach — ' + next[4]);
       return at(next[1], next[2], next[3], true, next[4]);
     }
+    // EMBER (item 12) shares the char-agnostic mq1-5 SPINE above. Its dedicated epilogue (eq) is a
+    // SINGLE quiet beat: after mq5 'done', return to MARLOW at the Last Lantern for a closing exchange
+    // (CityScene.innDialog sets q-eq-epilogue 'done' + rolls the ember credits). Reuses Marlow's EXISTING
+    // tile (640,704) so the reachability check passes; once q-eq-epilogue is 'done' it falls through to
+    // null (the story RESTS — never a dead-end). qa_questlines walks: mq1-5 -> Marlow -> done -> null.
+    const ember = GS.player && GS.player.char === 'ember';
+    if (ember && f['q-mq5-ash-and-silence'] === 'done' && f['q-eq-epilogue'] !== 'done')
+      return at('karridge-city', 640, 704, true, 'the Last Lantern — Marlow');
     // the ronin's epilogue (rq): after his original ending, Marlow's tip -> the guild clerk.
     // (Beats 2+ — the spine passage, Vorathiel, the temple — are wired in following runs.)
     const ronin = GS.player && GS.player.char === 'ronin';
@@ -132,6 +140,18 @@ const QuestNav = {
       if (f['rq-epi-seraph'] === 'done' && f['q-rq-epilogue'] !== 'done')
         return at('karridge-city', 1568, 704, true, 'the Adventurers Guild \u2014 report to the clerk');
     }
+    // ---- OPTIONAL SIDE RAID: the Ashenveil lower levels (item 13). LOWEST priority — it
+    // only routes when q-ash-raid is active and the finale isn't cleared, so it can never
+    // divert a main questline (every story beat returns earlier). Path: the Academy stairs
+    // down -> the Warden of the Unfiled (proximity mini-boss) -> the Deep Door finale. Once
+    // ash-lower-boss is set the raid resolves to null (the story rests) — never a hard-block.
+    if (f['q-ash-raid'] === 'active' && !f['ash-lower-boss']) {
+      if (GS.world.zone === 'ash-lower') {
+        if (!f['ash-lower-miniboss']) return at('ash-lower', 22 * T, 8 * T, false, 'the Warden of the Unfiled');
+        return at('ash-lower', 20 * T, 2 * T + 38, true, 'the DEEP DOOR \u2014 the last room');
+      }
+      return at('ashenveil', 33 * T, 15 * T, true, 'the stairs to the LOWER LEVELS');
+    }
     return null;
   },
 
@@ -144,6 +164,8 @@ const QuestNav = {
       'varenholm': { 'karridge-city': { x: 896, y: 1088, interact: true }, 'thorn-grove': { x: 896, y: 1088, interact: true }, 'grove-dungeon': { x: 896, y: 1088, interact: true }, 'dragonspine': { x: 896, y: 1088, interact: true }, 'ashenveil': { x: 896, y: 1088, interact: true } },
       'dragonspine': { 'thorn-grove': { x: 864, y: 1380, interact: false }, 'karridge-city': { x: 864, y: 1380, interact: false }, 'grove-dungeon': { x: 864, y: 1380, interact: false }, 'varenholm': { x: 864, y: 1380, interact: false }, 'ashenveil': { x: 864, y: 1380, interact: false } },
       'ashenveil': { 'karridge-city': { x: 738, y: 992, interact: true }, 'thorn-grove': { x: 738, y: 992, interact: true }, 'grove-dungeon': { x: 738, y: 992, interact: true }, 'varenholm': { x: 738, y: 992, interact: true }, 'dragonspine': { x: 738, y: 992, interact: true } },
+      // the undercroft climbs back to Ashenveil via the stair interactable (failsafe — AUTO can never be stranded below)
+      'ash-lower': { 'ashenveil': { x: 640, y: 819, interact: true }, 'karridge-city': { x: 640, y: 819, interact: true }, 'thorn-grove': { x: 640, y: 819, interact: true }, 'grove-dungeon': { x: 640, y: 819, interact: true }, 'varenholm': { x: 640, y: 819, interact: true }, 'dragonspine': { x: 640, y: 819, interact: true } },
     };
     return (HOPS[from] || {})[to] || null;
   },

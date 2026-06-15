@@ -221,6 +221,21 @@ if (RE) {
   for (const o of (RE.report.go || [])) prn(o);
 }
 
+// ---- THE EMBER'S EPILOGUE (eq, item-12 follow-up): Marlow's quiet closing beat at the Last Lantern ----
+// Runtime (dialog.js): opening the dialog says MARLOW + the line text; clicking an option says
+// PLAYER-EMBER + the label (VoiceMan.sayPlayer -> 'PLAYER-' + char). Marlow is an EXISTING voiced
+// speaker; his two lines mix narration with quotes -> split:true (like his other scenes). The four
+// player option labels map to PLAYER-EMBER -> Druid (existing female voice; see speakerSlots). ADD only.
+const EE = Quests.emberEnding;
+if (EE && EE.marlow) {
+  const EM = EE.marlow;
+  add('MARLOW', EM.open, 'ember epilogue: marlow open', { split: true });
+  add('MARLOW', EM.send, 'ember epilogue: marlow send', { split: true });
+  const epl = s => { if (s && s.trim().startsWith('"')) add('PLAYER-EMBER', s, 'player line: ember epilogue'); };
+  for (const o of (EM.go1 || [])) epl(o);
+  for (const o of (EM.go2 || [])) epl(o);
+}
+
 // ---- THE DOJO (item 11): Sensei Okada's intro + the per-line confirmation (ronin weapon lines) ----
 // SENSEI OKADA reuses the Faelar voice slot (serene/ageless male — see speakerSlots). His intro has
 // no quote marks in-game, so wrap its vtext in quotes to keep it spoken by HIM (not the Narrator);
@@ -326,6 +341,7 @@ fs.writeFileSync(out, JSON.stringify({
     'COOKIE': 'Cookie', 'VERDANCE': 'Narrator', 'THE CAPTURE TEAM': 'Narrator',
     'PLAYER-RONIN': 'Kenji', 'PLAYER-DRUID': 'Druid', 'PLAYER-WARLOCK': 'Warlock',
     'PLAYER-SERAPH': 'Seraphim',
+    'PLAYER-EMBER': 'Druid', // item-12: the EMBER (female) reuses the Druid female PC voice for her spoken option lines (RKIT=ronin/Kenji is male, so NOT reused for her)
     'KARGOTH': 'Kargoth', 'SKARVA': 'Skarva', 'NIBNOB': 'Nibnob', 'AURVAETH': 'Aurvaeth',
     'HALDRIC': 'Haldric', 'SALLOW': 'Sallow', 'PALE COURIER': 'Pale Courier', 'NYX': 'Nyx',
     'BRIAR': 'Briar', 'OSSUARY': 'Ossuary', 'CINDER': 'Cinder', 'WHISPER': 'Whisper', 'THORNWARDEN': 'Thornwarden',

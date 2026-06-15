@@ -116,7 +116,7 @@ const MONSTER_BEHAVIOR = {
   md += `| type | Behavior |\n|---|---|\n`;
   for (const [t, b] of Object.entries(MONSTER_BEHAVIOR)) md += `| \`${t}\` | ${esc(b)} |\n`;
 
-  md += `\n## Named bosses\n\nThe boss expansion adds named, banner-titled fights with their own health bars (\`boss:true\`/\`deathCol\`) and a kill cinematic. Each REUSES one of the base AI types above (no bespoke boss engine) and scales on the per-zone HP ladder (forest x2, undead x4, mountain x8; bosses x5). **Curated table — update by hand when bosses change.**\n\n`;
+  md += `\n## Named bosses\n\nThe boss expansion adds named, banner-titled fights with their own health bars (\`boss:true\`/\`deathCol\`) and a kill cinematic. Each REUSES one of the base AI types above (no bespoke boss engine) and scales on the per-zone HP ladder (forest x2, undead x4, mountain x6 — Dragonspine regulars also hit ~15% harder, item-15 balance; bosses x5). **Curated table — update by hand when bosses change.**\n\n`;
   md += `| Boss | Zone | AI type | Source |\n|---|---|---|---|\n`;
   md += `| Briar, the Green Orphan | Thorn Grove | \`rotwarden\` | Warlock Hunt (wq4) capture |\n`;
   md += `| Ossuary, the Quiet Boy | Root-Hollow dungeon | \`necro\` | Warlock Hunt (wq4) capture |\n`;
@@ -125,10 +125,13 @@ const MONSTER_BEHAVIOR = {
   md += `| The Thornwarden + Cookie | Varenholm | \`champ\` + \`rotwarden\` | Warlock Hunt (wq4) climax (2 bosses) |\n`;
   md += `| The Cult Warlock | Varenholm | \`collector\` | Druid Crossing (dq) — comes to cage you |\n`;
   md += `| The Cult Warlock (risen) | Varenholm | \`collector\` + 2x \`grave\` | Druid Crossing (dq) — Anku-reinforced rematch |\n`;
+  md += `| The Warden of the Unfiled | The Ashenveil undercroft | \`door\` | Lower-Levels raid (g-ashlower) — mid-zone mini-boss; drops the DUELIST'S KNOT relic |\n`;
+  md += `| The Thing the Web Saves | The Ashenveil undercroft | \`necro\` | Lower-Levels raid (g-ashlower) — deep-door finale (boss x5); gated behind the Warden |\n`;
 
   md += `\n## Questline bosses & encounters\n\n`;
   md += `- **The Warlock's Hunt (wq4):** Lady Nyx commissions five live captures, one boss per zone — Briar (Grove), Ossuary (dungeon), Cinder (Dragonspine), Whisper (Ashenveil), and the climax Cookie + the Thornwarden (Varenholm). All proximity/ambush packs are gated so none can proc during the capture dialogues.\n`;
   md += `- **The Druid's Crossing (dq):** the cult warlock attacks the druid at Varenholm (1 boss), gets back up with Anku reinforcements (boss + 2x grave), then the druid flees up the Dragonspine to Shen Sama — a narrative/credits beat about the missing hearth-wyrm Ignis.\n`;
+  md += `- **The Ashenveil Lower Levels (g-ashlower):** an optional raid undercroft beneath the dark academy, reached by descending the Academy stairs (sets \`q-ash-raid\`). Feral undead packs (cell ghouls, vault wraiths, unfiled wights) restock every descent; a mid-zone mini-boss — **the Warden of the Unfiled** (\`door\`, undead tier x4) — drops the DUELIST'S KNOT relic and unlocks the sealed **DEEP DOOR**, whose finale boss **the Thing the Web Saves** (\`necro\`, boss x5) is the hardest fight in the undercroft. All triggers are conversation-safe and fail-safe (dialogs auto-advance under AUTO:FULL), and QuestNav routes the whole undercroft so AUTO can clear it headlessly.\n`;
 
   md += `\n## Arena gauntlet roster (20 fights)\n\nDefined in \`pit.js → FIGHTS\`. After fight 3, every fight also gains a \`stitch\` healer + a random wildcard (door/gunner/necro/pyre) dead-center.\n\n`;
   md += `| # | Name | Record | Enemies |\n|---|---|---|---|\n`;
@@ -141,6 +144,7 @@ const MONSTER_BEHAVIOR = {
   md += `- **Thorn Grove** (\`GroveScene.js\`): wolves, hounds, rotshaman, goblins, stranglevines, chitterswarm (insects), toll bandits.\n`;
   md += `- **Dragonspine** (\`MountainScene.js\`): goblins, orcs, ogres, slimes, wyverns, fire elementals.\n`;
   md += `- **The Ashenveil** (\`AshenveilScene.js\`): skeletons, zombies, vampires, werewolves, renegade dark mages.\n`;
+  md += `- **The Ashenveil undercroft** (\`AshLowerScene.js\`): cell ghouls, vault wraiths, unfiled wights (undead tier x4; restocks every descent).\n`;
   write('monsters.md', md);
 })();
 

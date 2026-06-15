@@ -94,6 +94,14 @@ const BEATS = {
     { name: 'SERAPHIM done -> report to the guild', set: { 'rq-epi-seraph': 'done' }, zone: 'karridge-city', expect: 'report to the clerk' },
     { name: 'END — epilogue done (story rests)', set: { 'q-rq-epilogue': 'done' }, zone: 'karridge-city', expectNull: true },
   ],
+  // EMBER (item 12) shares the ronin/druid/warlock mq1-5 SPINE, then has its own ONE-beat epilogue (eq):
+  // after mq5 'done' -> Marlow at the Last Lantern (closing exchange + credits); once q-eq-epilogue is
+  // 'done' the story RESTS at null (never a dead-end).
+  ember: [
+    ...MQ,
+    { name: 'EPILOGUE — Marlow at the Last Lantern', set: { 'q-mq5-ash-and-silence': 'done' }, zone: 'karridge-city', expect: 'Marlow' },
+    { name: 'END — epilogue done (story rests)', set: { 'q-eq-epilogue': 'done' }, zone: 'karridge-city', expectNull: true },
+  ],
 };
 
 // ---------- (a) reachability: boot the real scenes for their solids (best-effort) ----------
@@ -212,7 +220,7 @@ function interactExists(zone, char, flags, tx, ty, range) {
 function objInteractCheck() {
   const rows = []; let pass = true;
   const BOOTABLE = { 'karridge-city': 1, 'thorn-grove': 1, 'grove-dungeon': 1, 'varenholm': 1, 'dragonspine': 1, 'ashenveil': 1 };
-  for (const char of ['ronin', 'druid', 'warlock', 'seraph']) {
+  for (const char of ['ronin', 'druid', 'warlock', 'seraph', 'ember']) {
     const acc = {};
     for (const beat of BEATS[char]) {
       Object.assign(acc, beat.set);
@@ -405,6 +413,47 @@ function gatedGuardCheck() {
   return { pass, rows };
 }
 
+// ---------- OPTIONAL LOWER-LEVELS RAID routing gate (item 13 increment 5) ----------
+// The Ashenveil undercroft is opt-in side content, not a per-character beat, so the walk above
+// never touches it. This asserts QuestNav.objective() routes the whole undercroft once q-ash-raid
+// is active: from any overworld zone -> the Academy stairs down; in ash-lower -> the Warden (until
+// ash-lower-miniboss) -> the Deep Door finale; and that it RESTS (null) once ash-lower-boss is set.
+function ashRaidCheck() {
+  const rows = []; let pass = true;
+  const gs = { player: { char: 'warlock' }, world: { zone: '', flags: {} } };
+  global.GameState = gs;
+  // the undercroft is LATE/post-story content — objective() short-circuits to null until the main
+  // quest is past mq1, so the raid beat is only reachable once the story is complete. Use a
+  // story-complete warlock (all mq done, credits rolled, hunt inactive) so the fallthrough beat fires.
+  const base = { 'q-mq1-empty-cell': 'done', 'q-mq2-listening-room': 'done', 'q-mq3-roots-that-rot': 'done',
+    'q-mq4-the-buyer': 'done', 'q-mq5-ash-and-silence': 'done', 'credits-rolled': true };
+  const run = (flags, zone, want, label) => {
+    gs.world.flags = Object.assign({}, base, flags);
+    gs.world.zone = zone;
+    let obj = null, err = null;
+    try { obj = QuestNav.objective(); } catch (e) { err = e.message; }
+    const got = obj ? '"' + (obj.label || '') + '" [' + obj.zone + ' ' + Math.round(obj.x) + ',' + Math.round(obj.y) + (obj.interact ? ' E' : '') + ']' : '(null)';
+    let ok;
+    if (want === null) ok = !err && obj === null;
+    else ok = !err && !!obj && (obj.label || '').indexOf(want.text) >= 0 && obj.zone === want.zone && obj.interact === want.interact;
+    if (!ok) pass = false;
+    rows.push({ ok, label, detail: (err ? 'THREW ' + err : '-> ' + got) + (ok ? '' : '  EXPECTED ' + (want === null ? '(null)' : '"' + want.text + '" in ' + want.zone + (want.interact ? ' E' : ''))) });
+  };
+  const active = { 'q-ash-raid': 'active' };
+  // (1) raid active, anywhere overworld -> the Academy stairs down (an interact objective in ashenveil).
+  for (const z of ['karridge-city', 'thorn-grove', 'dragonspine', 'varenholm', 'ashenveil'])
+    run(active, z, { text: 'stairs to the LOWER LEVELS', zone: 'ashenveil', interact: true }, 'raid active -> Academy stairs');
+  // (2) in ash-lower, warden not yet down -> the Warden (proximity objective, NOT interact).
+  run(active, 'ash-lower', { text: 'Warden of the Unfiled', zone: 'ash-lower', interact: false }, 'in undercroft -> the Warden');
+  // (3) warden down, finale not cleared -> the Deep Door (an interact objective).
+  run(Object.assign({ 'ash-lower-miniboss': true }, active), 'ash-lower', { text: 'DEEP DOOR', zone: 'ash-lower', interact: true }, 'warden down -> the Deep Door');
+  // (4) finale cleared -> the raid RESTS (null), never a dead-end loop.
+  run({ 'q-ash-raid': 'done', 'ash-lower-miniboss': true, 'ash-lower-boss': true }, 'ash-lower', null, 'finale cleared -> story rests');
+  // (5) NOT activated -> the raid stays silent for a fresh ronin (no accidental divert of the main quest).
+  run({}, 'karridge-city', null, 'inactive -> no raid objective');
+  return { pass, rows };
+}
+
 // ---------- ronin DOJO line-pick gate (roadmap item 11, increment 7) ----------
 // The dojo (Sensei Okada) is an OPTIONAL City interactable for the ronin — not a QuestNav beat —
 // so the per-character walk above never touches it. This gate asserts the regression-prone bits:
@@ -540,9 +589,10 @@ console.log('QA QUESTLINES — full per-character AUTO route + flag-state walk\n
 try { zoneScenes = bootScenes(); }
 catch (e) { bootError = e.message; console.error('  (reachability scene-boot unavailable: ' + e.message + ' — routing checks continue)\n'); }
 
-const results = ['ronin', 'druid', 'warlock', 'seraph'].map(runChar);
+const results = ['ronin', 'druid', 'warlock', 'seraph', 'ember'].map(runChar);
 const guards = dialogGuardScan();
 const gated = gatedGuardCheck();
+const ashRaid = ashRaidCheck();
 const dojo = dojoCheck();
 const evo = evoCheck();
 const objInt = objInteractCheck();
@@ -558,6 +608,10 @@ for (const r of results) {
 if (!gated.pass) allPass = false;
 console.log('=== GATED CULT-COACH TRANSITIONS (item 9) === ' + (gated.pass ? 'PASS' : 'FAIL'));
 for (const row of gated.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
+if (!ashRaid.pass) allPass = false;
+console.log('=== ASHENVEIL LOWER-LEVELS RAID ROUTING (item 13) === ' + (ashRaid.pass ? 'PASS' : 'FAIL'));
+for (const row of ashRaid.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
 console.log('');
 if (!dojo.pass) allPass = false;
 console.log('=== RONIN DOJO LINE-PICK (item 11) === ' + (dojo.pass ? 'PASS' : 'FAIL'));
@@ -634,6 +688,14 @@ md += 'Real-play check: with AUTO on, a deliberate MANUAL input must outrank the
   + 'mobile `CityUI._onPrompt` tap - each must call `QuestNav.stop()` so the walk is cancelled. Manual attack is documented (it fires only mid-encounter where the walk is already suspended):\n\n';
 md += '| Check | Detail | Result |\n|---|---|---|\n';
 for (const row of manual.rows) md += '| ' + row.label.replace(/\|/g, '\\|') + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok === false ? '❌' : row.ok === null ? 'ℹ️' : '✅') + ' |\n';
+md += '\n';
+md += '## Ashenveil lower-levels raid routing (item 13 regression gate) — ' + (ashRaid.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'The Ashenveil undercroft is OPT-IN side content (flag `q-ash-raid`), not a per-character beat. '
+  + 'Asserts `QuestNav.objective()` routes the whole undercroft once the flag is active (overworld -> the Academy '
+  + 'stairs down; in `ash-lower` -> the Warden of the Unfiled until `ash-lower-miniboss`, then the Deep Door finale), '
+  + 'rests (null) once `ash-lower-boss` is set, and stays silent when the flag is unset (never diverts the main quest):\n\n';
+md += '| Check | Detail | Result |\n|---|---|---|\n';
+for (const row of ashRaid.rows) md += '| ' + row.label + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : '❌') + ' |\n';
 md += '\n';
 md += '## No-fight-during-dialogue (item 1.5 regression check)\n\n';
 md += 'Static scan of each scene\'s `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()` (so no ambush can start while a conversation/cinematic is open):\n\n';

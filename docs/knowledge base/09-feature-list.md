@@ -21,14 +21,15 @@ A complete inventory of shipped features, so a maintainer knows what exists befo
 - Field encounters in the overworld (bump a monster pack → fight on an overlay).
 - Kill cinematics (slow-mo, zoom, letterbox, fatalities, dismemberment/blood decals).
 - ~15 enemy archetypes (tank/healer/riposte/ranged/fire/summoner/boss/etc.) + per-zone reskins.
-- **Boss expansion:** 7 named bosses across the zones, each with `boss:true`/`deathCol` health bars, a pre-fight banner, and a kill cinematic. Reuse the existing AI types (grave/necro/champ/collector/warden/pyre/hound) rather than bespoke systems.
-- **Venom + frost hazard zones:** territory packs scale on an HP ladder (forest x2, undead x4, mountain x8) with bosses x5, so deeper zones stay dangerous.
+- **Boss expansion:** 9 named bosses across the zones, each with `boss:true`/`deathCol` health bars, a pre-fight banner, and a kill cinematic. Reuse the existing AI types (grave/necro/champ/collector/warden/pyre/hound) rather than bespoke systems.
+- **Venom + frost hazard zones:** territory packs scale on an HP ladder (forest x2, undead x4, mountain x6) with bosses x5, so deeper zones stay dangerous. Dragonspine regulars were rebalanced (item 15): ~25% less HP but ~15% more damage, so it stays the hardest zone without being spongy.
 - **Conversation-safe combat:** no encounter (proximity pack, ambush, or boss proc) can start while a dialog or cinematic is open — packs even freeze their wander mid-talk, preserving the cinematic feel.
 - Companions fight alongside you when recruited.
 - Field HP scaling (toggleable) so a snowballed champion still meets resistance.
 
 ## World & zones
-- **Karridge City**, **Thorn Grove**, **Root-Hollow dungeon**, **Dragonspine** (mountains), **Varenholm** (druid epilogue), **The Ashenveil** (warlock epilogue + open hunt grounds for all). Plus the **Pit** arena.
+- **Karridge City**, **Thorn Grove**, **Root-Hollow dungeon**, **Dragonspine** (mountains), **Varenholm** (druid epilogue), **The Ashenveil** (warlock epilogue + open hunt grounds for all), and the **Ashenveil Lower Levels** — an optional raid undercroft beneath the academy. Plus the **Pit** arena.
+- **The Ashenveil undercroft (raid):** descend the Academy stairs into a cold flagstone undercroft (sets `q-ash-raid`). Feral undead packs (cell ghouls, vault wraiths, unfiled wights) restock every descent; a mid-zone mini-boss, **the Warden of the Unfiled** (`door` AI, undead tier x4), drops the **Duelist's Knot** relic (+20% parry/dodge) and unlocks the sealed **Deep Door**, whose finale boss **the Thing the Web Saves** (`necro`, boss x5) is the hardest fight below. The whole undercroft is QuestNav-routed (AUTO can clear it headlessly) and fully fail-safe — every gate is a dialog that auto-advances under AUTO:FULL, so nothing can hard-block.
 - Atmospheric lighting/fog/ember stack per zone; per-zone + per-character music.
 - First-visit cinematic camera pan to each zone's objective.
 - World map (M key) with character-gated regions.

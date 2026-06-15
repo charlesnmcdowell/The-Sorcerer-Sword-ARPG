@@ -10,7 +10,7 @@ const { createPitCombat } = require('../src/combat/pit.js');
 
 const MODE = (process.argv[2] || 'assist');
 const WHO = (process.argv[3] || 'all');
-const chars = WHO === 'all' ? ['ronin', 'druid', 'warlock', 'seraph'] : [WHO];
+const chars = WHO === 'all' ? ['ronin', 'druid', 'warlock', 'seraph', 'ember'] : [WHO];
 
 function run(ch) {
   let simMs = 0;
@@ -55,7 +55,7 @@ function run(ch) {
         const moveTo = (tx, ty) => { const dx = tx - P.x, dy = ty - P.y;
           k.w = dy < -8; k.s = dy > 8; k.a = dx < -8; k.d = dx > 8; };
 
-        if (ch === 'ronin') {
+        if (ch === 'ronin' || ch === 'ember') {   // ember = RKIT (ronin kit): same flank+heavy+parry+roll bot
           moveTo(foe.x - Math.cos(foe.face) * 55, foe.y - Math.sin(foe.face) * 55);
           if (foe.attacking && foe.tele > 0 && dFoe < 140) combat.doParry();
           if (dFoe < 95) { if (P.heavyCD <= 0 && Math.random() < 0.25) combat.doHeavy(); else combat.doSlash(); }
@@ -129,7 +129,7 @@ function run(ch) {
     result: crashed ? 'CRASH' : S.mode === 'victory' ? 'VICTORY' : S.mode === 'death' ? 'DIED' : 'TIMEOUT',
     reachedFight: maxFight + 1, of: combat.FIGHTS.length,
     kills: P.kills, dice: combat.diceN() + 'd8',
-    level: ch === 'ronin' ? ('tier' + (P.bladeTier || 0)) : ('lv' + combat.lvl()),
+    level: (ch === 'ronin' || ch === 'ember') ? ('tier' + (P.bladeTier || 0)) : ('lv' + combat.lvl()),
     nickname: combat.nickname,
     simMin: (simMs / 60000).toFixed(1)
   };
