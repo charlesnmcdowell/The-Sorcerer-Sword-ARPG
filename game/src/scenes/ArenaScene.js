@@ -104,6 +104,7 @@ class ArenaScene extends Phaser.Scene {
     // --- input: identical bindings to the source ---
     this.input.keyboard.on('keydown', e => {
       this.combat.keys[e.key.toLowerCase()] = true;
+      if (this.combat.P.evoPick) return; // item-14C: evo panel open -> number keys pick a road, not a combat action
       if (e.key === ' ') this.combat.doRoll();
       const k = e.key.toLowerCase();
       if (k === 'q') this.combat.doHeavy();

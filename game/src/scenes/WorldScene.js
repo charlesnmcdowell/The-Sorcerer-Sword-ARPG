@@ -160,7 +160,7 @@ class WorldScene extends Phaser.Scene {
   spawnPlayer(x, y) {
     this.player = this.add.sprite(x, y, 'fr-player', 0).setDepth(y);
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,J,M,ESC,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT');
-    this.input.keyboard.on('keydown-E', () => { if (!this.encounterActive) this.tryInteract(); });
+    this.input.keyboard.on('keydown-E', () => { if (!this.encounterActive) { QuestNav.stop(); this.tryInteract(); } }); // manual interact outranks the AUTO walk (item 14D); AUTO's own interact goes via drive()->tryInteract, not this key handler
     this.input.keyboard.on('keydown-J', () => { if (this.encounterActive) return;
       this.qlogOpen = !this.qlogOpen; CityUI.questlog(this.qlogOpen, Quests.mainFor(), window.GameState.world.flags); });
     this.input.keyboard.on('keydown-M', () => { if (!this.encounterActive) WorldMapUI.toggle(); });
@@ -179,7 +179,7 @@ class WorldScene extends Phaser.Scene {
     CityUI.belt(window.GameState.player.belt);
     // mobile: stick moves, tapping the prompt interacts, tapping belt slots drinks
     TouchStick.attach(this, p => { if (this.encounterActive) this.encCombat.pointerAttack(p.x, p.y); });
-    CityUI._onPrompt = () => { if (!this.encounterActive) this.tryInteract(); };
+    CityUI._onPrompt = () => { if (!this.encounterActive) { QuestNav.stop(); this.tryInteract(); } }; // mobile prompt-tap: manual interact outranks the AUTO walk (item 14D)
     CityUI._onBelt = i => this.useBeltSlot(i, this.encounterActive);
     CityUI._onJournal = () => { this.qlogOpen = !this.qlogOpen;
       CityUI.questlog(this.qlogOpen, Quests.mainFor(), window.GameState.world.flags); };
@@ -437,6 +437,7 @@ class WorldScene extends Phaser.Scene {
         return;
       }
       this.encCombat.keys[e.key.toLowerCase()] = true;
+      if (this.encCombat.P.evoPick) return; // item-14C: evo panel open -> number keys pick a road, not a belt item / action
       if (e.key === ' ') this.encCombat.doRoll();
       const k = e.key.toLowerCase();
       if (k === 'q') this.encCombat.doHeavy();

@@ -160,14 +160,14 @@ function maybeOfferEvo(){
   if(!P.evo10&&lvl()>=10){                          // lv10: the FIRST road choice (2 options)
     const br=E[10];
     if(!br||!br[0]||!br[1])return;
-    P.evoPick=br;P.evoPickT=9;P.evoTier=10;         // ~9s to choose; no input -> first road
+    P.evoPick=br;P.evoPickT=30;P.evoTier=10;         // ~9s to choose; no input -> first road
     showBanner('EVOLUTION',br[0].name+'  vs  '+br[1].name+' — press 1 or 2',2200,'#e7b450');
     return;
   }
   if(P.evo10&&!P.evo20&&lvl()>=20){                 // lv20: the SECOND choice, gated by the lv10 road
     const br=(E[20]||[]).filter(b=>b.from===P.evo10);
     if(!br.length)return;                           // no continuation defined for this road
-    P.evoPick=br;P.evoPickT=9;P.evoTier=20;
+    P.evoPick=br;P.evoPickT=30;P.evoTier=20;
     const head=br[1]?br[0].name+'  vs  '+br[1].name:br[0].name;
     showBanner('EVOLUTION',head+' — press 1'+(br[1]?' or 2':''),2200,'#e7b450');
   }
@@ -183,12 +183,43 @@ function pickEvo(i){
   showBanner('EVOLVED — '+b.name,b.desc||'',2000,'#e7b450');
   popup(P.x,P.y-64,b.name,'#e7b450',16);flashFx(.18);vib([40,30,60]);
 }
+// item-14C: is the game currently AUTO-driven (or headless)? AUTO/headless take the default road
+// IMMEDIATELY; a MANUAL player instead gets a generous window to pick by key (1/2) or by click.
+function evoIsAuto(){
+  if(typeof window==='undefined')return true;         // headless tests / gauntlet
+  try{
+    if(window.QuestNav&&typeof window.QuestNav.mode==='number'&&window.QuestNav.mode>=1)return true; // AUTO: FIGHT or FULL
+    if(window.Autopilot&&window.Autopilot.on)return true;
+  }catch(e){}
+  return false;
+}
+// item-14C: the on-canvas rects of the evo cards (SAME geometry as drawEvoPanel) — used for BOTH
+// drawing and click hit-testing so a tap always lands exactly where the card is shown.
+function evoCardRects(){
+  const br=P.evoPick;if(!br)return[];
+  const n=Math.min(2,br.length||0);
+  const cx=W/2,cy=H/2,pw=Math.min(300,W*0.40),ph=160,gap=26,py=cy-54;
+  const out=[];
+  for(let i=0;i<n;i++){
+    const px=n===1?cx-pw/2:cx+(i===0?-(pw+gap/2):gap/2);
+    out.push({x:px,y:py,w:pw,h:ph,i:i});
+  }
+  return out;
+}
+// item-14C: resolve a click/tap against the evo cards -> pickEvo. Returns true if a card was hit
+// (a miss leaves the panel open). Works in BOTH combat hosts (ArenaScene + WorldScene route taps here).
+function evoClick(x,y){
+  if(!P.evoPick)return false;
+  for(const r of evoCardRects()){if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){pickEvo(r.i);return true;}}
+  return false;
+}
 function evoTick(dt){                               // per-frame while a pick is open
   if(!P.evoPick)return;
-  if(keys['1']){pickEvo(0);return;}
-  if(keys['2']){pickEvo(1);return;}
-  P.evoPickT=(P.evoPickT||0)-dt;
-  if(P.evoPickT<=0)pickEvo(0);                      // AUTO / no input -> first road (deadlock-proof)
+  if(keys['1']){pickEvo(0);return;}                 // keyboard: road 1
+  if(P.evoPick[1]&&keys['2']){pickEvo(1);return;}   // keyboard: road 2 (only if a 2nd road exists)
+  if(evoIsAuto()){pickEvo(0);return;}               // AUTO / headless -> default road immediately (deadlock-proof)
+  P.evoPickT=(P.evoPickT||0)-dt;                     // MANUAL: a generous failsafe window (still can't softlock)
+  if(P.evoPickT<=0)pickEvo(0);
 }
 // ronin weapon forms: stats double from 10 -> 20 (NODACHI) -> 40 (ODACHI). Permanent.
 const roninTier=()=>P.char!=='ronin'?0:(stat('STR')>=40?2:(stat('STR')>=20?1:0));
@@ -2975,11 +3006,11 @@ function drawEvoPanel(){
   ctx.fillStyle='#e7b450';ctx.font='bold 20px "Courier New",monospace';
   ctx.fillText('CHOOSE YOUR EVOLUTION',cx,cy-118);
   ctx.fillStyle='#cfc6b4';ctx.font='12px "Courier New",monospace';
-  ctx.fillText((n>1?'press  1  or  2':'press  1')+(P.evoPickT>0?'    ('+Math.ceil(P.evoPickT)+'s)':''),cx,cy-92);
-  const pw=Math.min(300,W*0.40),ph=160,gap=26;
+  ctx.fillText((n>1?'press 1 / 2  or click a card':'press 1  or click the card')+(P.evoPickT>0?'    ('+Math.ceil(P.evoPickT)+'s)':''),cx,cy-92);
+  const rs=evoCardRects();          // item-14C: same rects used for click hit-testing
   for(let i=0;i<n;i++){
     // center a lone card; place two side by side
-    const px=n===1?cx-pw/2:cx+(i===0?-(pw+gap/2):gap/2),py=cy-54,col=i===0?'#7fbf6a':'#b070f0';
+    const r=rs[i],px=r.x,py=r.y,pw=r.w,ph=r.h,col=i===0?'#7fbf6a':'#b070f0';
     ctx.fillStyle='rgba(20,15,10,.96)';ctx.fillRect(px,py,pw,ph);
     ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(px,py,pw,ph);
     const mx=px+pw/2;
@@ -3004,7 +3035,7 @@ const api={
   frame:tick,resize,keys,mouse,stick,
   doSlash,doParry,doHeavy,doRoll,heavyRelease,
   startIntro,endIntro,startFight,fullReset,toBoard,
-  pointerAttack:(x,y)=>{if(S.mode==='fight'){mouse.x=x;mouse.y=y;P.face=ang(P,mouse);doSlash();}},
+  pointerAttack:(x,y)=>{if(P.evoPick){evoClick(x,y);return;}if(S.mode==='fight'){mouse.x=x;mouse.y=y;P.face=ang(P,mouse);doSlash();}},
   pointerMove:(x,y)=>{mouse.x=x;mouse.y=y;},
   clearDecals:()=>{},
   get S(){return S;},get P(){return P;},get enemies(){return enemies;},
@@ -3012,7 +3043,7 @@ const api={
   get nickname(){return nickname;},get FIGHTS(){return FIGHTS;},
   maxHP,lvl,diceN,stat,
   // item-10 inc.6: evolution internals exposed for the qa_questlines headless evo-beat checks
-  get EVOLUTIONS(){return EVOLUTIONS;},maybeOfferEvo,pickEvo,evoTick,
+  get EVOLUTIONS(){return EVOLUTIONS;},maybeOfferEvo,pickEvo,evoTick,evoClick,get evoRects(){return evoCardRects();},
   drawFighter, // render-only reuse: city NPCs/player share the arena art style
   startEncounter,setMods,usePotion,mkEnemy,addAlly,
   setPlayerSnapshot:(snap)=>{P.char=snap.char;P.kills=snap.kills;P.level=snap.level;

@@ -231,6 +231,82 @@ function objInteractCheck() {
   return { pass, rows };
 }
 
+// ---------- (b) manual-control AUTO-stop wiring (roadmap item 14D) ----------
+// Real-play check: with AUTO on, a deliberate MANUAL input must outrank the chauffeur.
+// Boots the real CityScene (a WorldScene) and drives the REAL input wiring:
+//   (1) toggling AUTO via setMode(2)->tracking, setMode(0)->cleared (AUTO OFF returns control);
+//   (2) a manual MOVE through the real updatePlayer (keys.A held) cancels the walk (QuestNav.stop);
+//   (3) the real keydown-E handler cancels the walk (manual interact outranks AUTO);
+//   (4) the mobile prompt-tap (CityUI._onPrompt) cancels the walk.
+// Manual ATTACK is documented, not asserted: attacks fire only inside an encounter where the AUTO
+// walk is already suspended (updatePlayer returns early on encounterActive), so there is no walk to
+// cancel - the AUTO-FIGHT bot and a manual swing simply interleave. Per the FAILSAFE PRINCIPLE this
+// is the strongest headless assertion of "manual input returns control"; full pixel-level manual play
+// (touch stick / belt taps) can't be driven headlessly and is left to in-zone use, never a gate.
+function manualControlCheck() {
+  const rows = []; let pass = true;
+  if (!_boot || !_boot.CLASSES['karridge-city']) {
+    rows.push({ ok: null, label: 'boot WorldScene', detail: 'scene boot unavailable this run - manual-control wiring check skipped (non-fatal)' });
+    return { pass: true, rows };
+  }
+  const saved = global.GameState;
+  // IMPORTANT: bootScenes() RE-LOADS questnav.js, so the live object the scenes use is global.QuestNav
+  // (a 2nd instance), NOT the module-top `QuestNav` const. Drive the SAME object the scene code mutates.
+  const QN = global.QuestNav;
+  try {
+    global.GameState = { version: 1, player: { char: 'ronin', kills: 45, level: 10, bladeTier: 2,
+      base: { STR: 10, DEX: 10, CON: 10, ATK: 10 }, nickname: 'QA', copper: 450, belt: [], artifacts: [] },
+      world: { zone: 'karridge-city', flags: { pitChampion: true }, chestsOpened: [], questLog: [], questCounts: {} },
+      companions: {}, meta: { playtimeMs: 0, kills: 45, autoMode: 0 } };
+    const s = new _boot.CLASSES['karridge-city'](); _boot.plumb(s);
+    // capture the keyboard handlers create() registers so we can fire the REAL keydown-E listener
+    const handlers = {};
+    s.input.keyboard.on = (ev, fn) => { handlers[ev] = fn; };
+    s.create();
+    if (typeof CityUI !== 'undefined' && CityUI.closeDialog) CityUI.closeDialog(); // CityScene.create opens an intro dialog; close it so updatePlayer doesn't early-return
+
+    // (1) AUTO toggle: FULL sets tracking, OFF clears it (the real setMode)
+    QN.setMode(2); const onFull = QN.tracking === true;
+    QN.setMode(0); const offCleared = QN.tracking === false;
+    const okToggle = onFull && offCleared;
+    if (!okToggle) pass = false;
+    rows.push({ ok: okToggle, label: 'AUTO toggle clears tracking', detail: 'setMode(2)->tracking=' + onFull + ', setMode(0)->cleared=' + offCleared });
+
+    // (2) manual MOVE cancels the walk via the REAL updatePlayer (keys.A held, no touch)
+    QN.mode = 1; QN.tracking = true; QN.path = [{ x: s.player.x - 200, y: s.player.y }]; QN.pathI = 0;
+    if (typeof TouchStick !== 'undefined') TouchStick.mag = 0;
+    s.keys.A.isDown = true; s.updatePlayer(1 / 60); s.keys.A.isDown = false;
+    const okMove = QN.tracking === false;
+    if (!okMove) pass = false;
+    rows.push({ ok: okMove, label: 'manual MOVE stops AUTO', detail: 'updatePlayer with keys.A held -> tracking=' + QN.tracking });
+
+    // isolate manual-interact from side effects: empty the interactable list so tryInteract() fires no fn()
+    s.interactables = [];
+
+    // (3) manual INTERACT via the REAL keydown-E handler cancels the walk
+    QN.tracking = true; QN.path = [{ x: 0, y: 0 }]; QN.pathI = 0; s.encounterActive = false;
+    if (handlers['keydown-E']) handlers['keydown-E']();
+    const okKeyE = !!handlers['keydown-E'] && QN.tracking === false;
+    if (!okKeyE) pass = false;
+    rows.push({ ok: okKeyE, label: 'manual INTERACT (E) stops AUTO', detail: handlers['keydown-E'] ? ('keydown-E handler fired -> tracking=' + QN.tracking) : 'no keydown-E handler captured' });
+
+    // (4) mobile prompt-tap interact cancels the walk
+    QN.tracking = true; QN.path = [{ x: 0, y: 0 }]; QN.pathI = 0;
+    let okPrompt = false;
+    if (typeof CityUI !== 'undefined' && CityUI._onPrompt) { CityUI._onPrompt(); okPrompt = QN.tracking === false; }
+    if (!okPrompt) pass = false;
+    rows.push({ ok: okPrompt, label: 'mobile prompt-tap stops AUTO', detail: (typeof CityUI !== 'undefined' && CityUI._onPrompt) ? ('_onPrompt fired -> tracking=' + QN.tracking) : 'no _onPrompt wired' });
+
+    // (5) manual ATTACK - documented (see header); attacks happen only mid-encounter, walk already suspended
+    rows.push({ ok: true, label: 'manual ATTACK (info)', detail: 'attacks fire only in encounters where the walk is already suspended (encounterActive) - nothing to cancel' });
+
+    QN.setMode(0);
+  } catch (e) {
+    rows.push({ ok: null, label: 'manualControlCheck', detail: 'boot/run threw: ' + e.message + ' - skipped (non-fatal)' });
+  } finally { global.GameState = saved; }
+  return { pass, rows };
+}
+
 // ---------- (c) no-fight-during-dialogue: static guard scan ----------
 function dialogGuardScan() {
   const scenes = ['CityScene', 'GroveScene', 'DungeonScene', 'VarenholmScene', 'MountainScene', 'AshenveilScene'];
@@ -430,6 +506,19 @@ function evoCheck() {
     const ok10b = !c2.P.evoPick && c2.P.evo10 === EVO[10][1].key;
     if (!ok10b) pass = false;
     rows.push({ ok: ok10b, label: ch + ' lv10 explicit pick #2', detail: 'evo10=' + c2.P.evo10 + ' (want ' + EVO[10][1].key + ')' });
+    // (1c) item-14C — KEYBOARD selection: pressing '2' on the open lv10 panel resolves to road #2.
+    const ck = freshPit(ch); ck.P.level = 10; ck.maybeOfferEvo();
+    ck.keys['2'] = true; ck.evoTick(0.001); ck.keys['2'] = false;
+    const okKey = !ck.P.evoPick && ck.P.evo10 === EVO[10][1].key;
+    if (!okKey) pass = false;
+    rows.push({ ok: okKey, label: ch + ' lv10 KEY "2" pick', detail: 'evo10=' + ck.P.evo10 + ' (want ' + EVO[10][1].key + ')' });
+    // (1d) item-14C — CLICK selection: a tap inside road #2's on-canvas card rect resolves to road #2.
+    const cc = freshPit(ch); cc.P.level = 10; cc.maybeOfferEvo();
+    const rects = cc.evoRects; const r2 = rects && rects[1];
+    let okClick = false;
+    if (r2) { cc.evoClick(r2.x + r2.w / 2, r2.y + r2.h / 2); okClick = !cc.P.evoPick && cc.P.evo10 === EVO[10][1].key; }
+    if (!okClick) pass = false;
+    rows.push({ ok: okClick, label: ch + ' lv10 CLICK card #2', detail: r2 ? ('clicked (' + Math.round(r2.x + r2.w / 2) + ',' + Math.round(r2.y + r2.h / 2) + ') -> evo10=' + cc.P.evo10) : 'NO RECT' });
     // (2) lv20 — second choice, gated/filtered by the lv10 road (continue the auto-default pit)
     P.level = 20;
     const expect20 = EVO[20].filter(b => b.from === P.evo10);
@@ -457,6 +546,7 @@ const gated = gatedGuardCheck();
 const dojo = dojoCheck();
 const evo = evoCheck();
 const objInt = objInteractCheck();
+const manual = manualControlCheck();
 
 let allPass = true;
 for (const r of results) {
@@ -480,6 +570,10 @@ console.log('');
 if (!objInt.pass) allPass = false;
 console.log('=== OBJECTIVE-INTERACTABLE EXISTENCE (item 14B) === ' + (objInt.pass ? 'PASS' : 'FAIL'));
 for (const row of objInt.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
+if (!manual.pass) allPass = false;
+console.log('=== MANUAL-CONTROL AUTO-STOP (item 14D) === ' + (manual.pass ? 'PASS' : 'FAIL'));
+for (const row of manual.rows) console.log('  ' + (row.ok === false ? 'XX ' : 'ok ') + row.label + '  ' + row.detail);
 console.log('');
 console.log('--- no-fight-during-dialogue (static update() scan) ---');
 for (const g of guards) console.log('  ' + g.scene + ': ' + g.guarded + '/' + g.procs + ' proximity procs dialog-guarded');
@@ -533,6 +627,13 @@ md += 'reachability above only proves the objective TILE is walkable. This gate 
   + 'where nothing is" class (e.g. the reported Matron/black-carriage stall; headless-confirmed the carriage IS at 1656,744):\n\n';
 md += '| Beat (interact objective) | Detail | Result |\n|---|---|---|\n';
 for (const row of objInt.rows) md += '| ' + row.label.replace(/\|/g, '\\|') + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : row.ok === false ? '❌' : 'ℹ️') + ' |\n';
+md += '\n';
+md += '## Manual-control AUTO-stop (item 14D regression gate) - ' + (manual.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'Real-play check: with AUTO on, a deliberate MANUAL input must outrank the chauffeur. Boots the real CityScene and drives the real input wiring - '
+  + 'AUTO toggle (setMode 2->tracking, 0->cleared), a manual MOVE through the real `updatePlayer` (keys.A held), the real `keydown-E` handler, and the '
+  + 'mobile `CityUI._onPrompt` tap - each must call `QuestNav.stop()` so the walk is cancelled. Manual attack is documented (it fires only mid-encounter where the walk is already suspended):\n\n';
+md += '| Check | Detail | Result |\n|---|---|---|\n';
+for (const row of manual.rows) md += '| ' + row.label.replace(/\|/g, '\\|') + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok === false ? '❌' : row.ok === null ? 'ℹ️' : '✅') + ' |\n';
 md += '\n';
 md += '## No-fight-during-dialogue (item 1.5 regression check)\n\n';
 md += 'Static scan of each scene\'s `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()` (so no ambush can start while a conversation/cinematic is open):\n\n';

@@ -111,15 +111,21 @@ The lv10/lv20 EVOLUTION choice (druid + warlock) fires from `gainLevel()` inside
 
 | Check | Detail | Result |
 |---|---|---|
-| druid lv10 auto-default | opened=true -> evo10=warden (resolved in 9 ticks) CON 37->43 | ✅ |
+| druid lv10 auto-default | opened=true -> evo10=warden (resolved in 1 ticks) CON 37->43 | ✅ |
 | druid lv10 explicit pick #2 | evo10=alpha (want alpha) | ✅ |
-| druid lv20 (from warden) | opened=true -> evo20=colossus (resolved in 9 ticks) CON 73->79 | ✅ |
-| warlock lv10 auto-default | opened=true -> evo10=binder (resolved in 9 ticks) DEX 37->43 | ✅ |
+| druid lv10 KEY "2" pick | evo10=alpha (want alpha) | ✅ |
+| druid lv10 CLICK card #2 | clicked (803,386) -> evo10=alpha | ✅ |
+| druid lv20 (from warden) | opened=true -> evo20=colossus (resolved in 1 ticks) CON 73->79 | ✅ |
+| warlock lv10 auto-default | opened=true -> evo10=binder (resolved in 1 ticks) DEX 37->43 | ✅ |
 | warlock lv10 explicit pick #2 | evo10=herald (want herald) | ✅ |
-| warlock lv20 (from binder) | opened=true -> evo20=lichlord (resolved in 9 ticks) DEX 73->79 | ✅ |
-| seraph lv10 auto-default | opened=true -> evo10=wrath (resolved in 9 ticks) ATK 37->43 | ✅ |
+| warlock lv10 KEY "2" pick | evo10=herald (want herald) | ✅ |
+| warlock lv10 CLICK card #2 | clicked (803,386) -> evo10=herald | ✅ |
+| warlock lv20 (from binder) | opened=true -> evo20=lichlord (resolved in 1 ticks) DEX 73->79 | ✅ |
+| seraph lv10 auto-default | opened=true -> evo10=wrath (resolved in 1 ticks) ATK 37->43 | ✅ |
 | seraph lv10 explicit pick #2 | evo10=aegis (want aegis) | ✅ |
-| seraph lv20 (from wrath) | opened=true -> evo20=judgement (resolved in 9 ticks) ATK 73->79 | ✅ |
+| seraph lv10 KEY "2" pick | evo10=aegis (want aegis) | ✅ |
+| seraph lv10 CLICK card #2 | clicked (803,386) -> evo10=aegis | ✅ |
+| seraph lv20 (from wrath) | opened=true -> evo20=judgement (resolved in 1 ticks) ATK 73->79 | ✅ |
 
 ## Objective-interactable existence (item 14B regression gate) - ✅ PASS
 
@@ -167,6 +173,18 @@ reachability above only proves the objective TILE is walkable. This gate re-boot
 | seraph · sq1 — the host below (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
 | seraph · sq3 — five banners (first duel) [dragonspine 448,960] | interactable "challenge KARGOTH" @0px | ✅ |
 | seraph · sq4 — the chosen (Skyreach shrine) [dragonspine 1024,160] | interactable "approach the SKYREACH SHRINE" @6px | ✅ |
+
+## Manual-control AUTO-stop (item 14D regression gate) - ✅ PASS
+
+Real-play check: with AUTO on, a deliberate MANUAL input must outrank the chauffeur. Boots the real CityScene and drives the real input wiring - AUTO toggle (setMode 2->tracking, 0->cleared), a manual MOVE through the real `updatePlayer` (keys.A held), the real `keydown-E` handler, and the mobile `CityUI._onPrompt` tap - each must call `QuestNav.stop()` so the walk is cancelled. Manual attack is documented (it fires only mid-encounter where the walk is already suspended):
+
+| Check | Detail | Result |
+|---|---|---|
+| AUTO toggle clears tracking | setMode(2)->tracking=true, setMode(0)->cleared=true | ✅ |
+| manual MOVE stops AUTO | updatePlayer with keys.A held -> tracking=false | ✅ |
+| manual INTERACT (E) stops AUTO | keydown-E handler fired -> tracking=false | ✅ |
+| mobile prompt-tap stops AUTO | _onPrompt fired -> tracking=false | ✅ |
+| manual ATTACK (info) | attacks fire only in encounters where the walk is already suspended (encounterActive) - nothing to cancel | ✅ |
 
 ## No-fight-during-dialogue (item 1.5 regression check)
 

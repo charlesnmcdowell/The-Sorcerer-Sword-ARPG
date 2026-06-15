@@ -2929,3 +2929,65 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   audit, then items 13 (Ashenveil lower-levels encounters/mini-boss/boss), 12 (Ember class), 6 (druid
   Varenholm crossing trigger), plus the original roadmap tail. Leave the schedule ENABLED - COMPLETION
   PROTOCOL NOT met.
+
+
+- 2026-06-15 (run 54) - **ITEM 14(C) - EVOLUTION choice panel now SELECTABLE (click + keyboard), auto-pick
+  gated to AUTO/headless.** Real-play reported the lv10/lv20 evo cards appeared but could not be picked, and
+  the panel auto-defaulted even in manual play. Fixed in game/src/combat/pit.js (additive; no combat math
+  touched):
+   - NEW evoIsAuto(): true under headless (no window) OR when AUTO is on (window.QuestNav.mode>=1, i.e.
+     FIGHT/FULL, or window.Autopilot.on). Only then does the panel auto-resolve.
+   - NEW evoCardRects(): the cards' on-canvas rects computed from W/H with the EXACT geometry drawEvoPanel
+     uses (pw=min(300,0.40W), ph=160, gap=26, py=cy-54). drawEvoPanel() now DRAWS from these same rects, so
+     a click always lands where the card is shown (single source of truth).
+   - NEW evoClick(x,y): hit-tests the rects -> pickEvo(i); a miss leaves the panel open. Wired into
+     api.pointerAttack (when P.evoPick, route the tap to evoClick and return instead of slashing) - so mouse
+     clicks AND TouchStick taps work in BOTH hosts (ArenaScene and WorldScene both route taps to pointerAttack).
+   - evoTick() rewrite: keyboard 1 -> pickEvo(0); 2 -> pickEvo(1) (only if a 2nd road exists); checked BEFORE
+     the auto branch. If evoIsAuto() -> pickEvo(0) IMMEDIATELY (deadlock-proof for gauntlet/headless/AUTO).
+     MANUAL play instead counts down a GENEROUS failsafe window (evoPickT, raised 9->30s at both opens) and
+     only then defaults - so a manual player is no longer auto-dismissed, yet the FAILSAFE PRINCIPLE still
+     holds (the panel can NEVER softlock; it always auto-resolves eventually).
+   - Exposed api.evoClick + get api.evoRects for headless QA.
+   - Panel hint text updated UI-side to "press 1 / 2  or click a card" (UI label, NOT voiced dialogue - no
+     speaker, no manifest entry; constraints 8 & 9 untouched).
+  HOST GUARDS (so number keys pick a road, not a belt item / stray action while the panel is open):
+   - game/src/scenes/WorldScene.js encounter keydown: after setting encCombat.keys, `if (encCombat.P.evoPick)
+     return;` BEFORE the belt-slot/doRoll/doHeavy/doParry/doSlash dispatch (previously pressing 1/2 during the
+     panel ALSO fired useBeltSlot - now suppressed; the key still registers for the pick because keys is set first).
+   - game/src/scenes/ArenaScene.js keydown: same `if (combat.P.evoPick) return;` guard after keys are set.
+  TENSION NOTE for Hiro: item 14(C) said "auto-pick ONLY when AUTO is on / manual player not auto-dismissed,"
+  while the GLOBAL FAILSAFE PRINCIPLE says any choice panel MUST auto-resolve on a timer so a broken UI can
+  never softlock. I honored BOTH: manual gets a long 30s window + working key + click (so in practice they
+  always pick themselves), and the timer remains as a pure failsafe. Did NOT remove the failsafe (it outranks).
+  QA (game/tests/qa_questlines.js): extended evoCheck with two new per-character assertions - (1c) a simulated
+  KEY '2' resolves the open lv10 panel to road #2, and (1d) a simulated CLICK at road #2's evoRects center
+  resolves to road #2. Both pass for druid/warlock/seraph. (The existing auto-default check now resolves in 1
+  tick because evoIsAuto() picks immediately under headless - still === road #0, still <100 ticks, still PASS.)
+  VERIFY (no truncation; tails intact - pit.js ends at the createPitCombat module.exports footer,
+  qa_questlines.js at process.exit):
+   - `node --check` PASS on pit.js (185777->187554), WorldScene.js, ArenaScene.js, qa_questlines.js (39958->41027).
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS. Evo gate now 15/15 (druid+warlock+seraph x
+     auto-default + explicit#2 + KEY"2" + CLICK#2 + lv20). e.g. "warlock lv10 CLICK card #2 clicked (803,386)
+     -> evo10=herald"; "seraph lv10 KEY \"2\" pick evo10=aegis". Item 14B existence check still PASS (41/41).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 6.5 / druid 5.7 / warlock 15.4 /
+     seraph 3.1 simMin, all VICTORY 20/20). Druid+warlock reached lv20 = they opened AND auto-resolved BOTH
+     evo tiers with no deadlock at the panels (evoIsAuto immediate-pick).
+  CONSTRAINTS 8 & 9: untouched - no dialogue text added/changed, no voice_config / build_voice_manifest change,
+  no "VOICES READY". Item 1.5 status unchanged (this run added no proximity encounter triggers).
+  EXACT NEXT STEP: ITEM 14(D) - MANUAL-CONTROL AUDIT across scenes. Confirm (and fix anything unresponsive)
+  that manual play works end-to-end with AUTO OFF: movement (WASD/arrows + TouchStick), interact (E / tap
+  prompt), attack+abilities (J/K/Space/Q + the touch buttons), belt slots 1-8, and that giving manual input
+  cleanly stops AUTO (WorldScene.updatePlayer already calls QuestNav.stop() when mx||my - verify it also stops
+  on attack/interact taps, and that toggling AUTO OFF returns control). Since manual input can't be driven by
+  the headless harness, the SAFE increment is: (a) code-audit each scene's input wiring (WorldScene + the pit
+  hosts) for any action that does NOT route through the combat api or that ignores encounterActive/dialogOpen,
+  (b) add the strongest headless assertion possible - e.g. a qa check that QuestNav.stop() is invoked on a
+  simulated manual move AND on a simulated attack/interact while tracking, and that toggling mode to 0 clears
+  tracking - and (c) log any control that genuinely can't be headless-verified with a clear note (per the
+  FAILSAFE PRINCIPLE, never gate on an in-browser human confirm). Then node --check + headless + gauntlet +
+  qa_questlines all PASS. Remaining after 14D: items 13 (Ashenveil lower-levels encounters/mini-boss/boss/
+  reward/gate), 12 (Ember class), 15 (Mountain HP/dmg balance), 6 (druid Varenholm crossing trigger), plus the
+  original roadmap tail (1.5 already "all zones", warlock step e, druid line, docs, voice gap, arch-devil
+  cinematic). Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.
