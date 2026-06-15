@@ -105,6 +105,69 @@ The dojo (Sensei Okada) is an optional City interactable for the ronin (not a Qu
 | pick spear line | weaponLine=spear flags["rq-dojo"]=met | ✅ |
 | pick rifle line | weaponLine=rifle flags["rq-dojo"]=met | ✅ |
 
+## Character evolutions lv10/lv20 (item 10 regression gate) — ✅ PASS
+
+The lv10/lv20 EVOLUTION choice (druid + warlock) fires from `gainLevel()` inside pit combat, not from QuestNav, so the route walk never touches it. This gate boots a headless pit and drives the evo state machine: at lv10 a 2-road pick opens and resolves (auto-default AND explicit) raising the road focus stat by +6; at lv20 a SECOND pick opens FILTERED to the branches continuing the lv10 road, resolves to `P.evo20`, and raises the focus stat again — with no deadlock (the auto-default timer always resolves):
+
+| Check | Detail | Result |
+|---|---|---|
+| druid lv10 auto-default | opened=true -> evo10=warden (resolved in 9 ticks) CON 37->43 | ✅ |
+| druid lv10 explicit pick #2 | evo10=alpha (want alpha) | ✅ |
+| druid lv20 (from warden) | opened=true -> evo20=colossus (resolved in 9 ticks) CON 73->79 | ✅ |
+| warlock lv10 auto-default | opened=true -> evo10=binder (resolved in 9 ticks) DEX 37->43 | ✅ |
+| warlock lv10 explicit pick #2 | evo10=herald (want herald) | ✅ |
+| warlock lv20 (from binder) | opened=true -> evo20=lichlord (resolved in 9 ticks) DEX 73->79 | ✅ |
+| seraph lv10 auto-default | opened=true -> evo10=wrath (resolved in 9 ticks) ATK 37->43 | ✅ |
+| seraph lv10 explicit pick #2 | evo10=aegis (want aegis) | ✅ |
+| seraph lv20 (from wrath) | opened=true -> evo20=judgement (resolved in 9 ticks) ATK 73->79 | ✅ |
+
+## Objective-interactable existence (item 14B regression gate) - ✅ PASS
+
+reachability above only proves the objective TILE is walkable. This gate re-boots each objective's scene under the beat's REAL char+flags and asserts an interactable actually EXISTS within interaction range of the tile - catching the "objective points where nothing is" class (e.g. the reported Matron/black-carriage stall; headless-confirmed the carriage IS at 1656,744):
+
+| Beat (interact objective) | Detail | Result |
+|---|---|---|
+| ronin · mq1 — empty cell (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| ronin · mq2 — listening room (grove) [thorn-grove 192,608] | interactable "search the camp" @0px | ✅ |
+| ronin · mq3 — roots that rot (veiled woman) [karridge-city 384,1152] | interactable "approach the veiled woman" @0px | ✅ |
+| ronin · mq4 — the buyer (night shipment) [thorn-grove 128,864] | interactable "stop the night shipment" @0px | ✅ |
+| ronin · EPILOGUE — Marlow's tip [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| ronin · EPILOGUE — the guild clerk [karridge-city 1568,704] | interactable "enter the ADVENTURERS GUILD" @10px | ✅ |
+| ronin · SPINE — the spine-coach [off-spine guard] [karridge-city 1538,744] | interactable "board the SPINE-COACH — the treaty road up the Dragonspine" @0px | ✅ |
+| ronin · VORATHIEL done -> TEMPLE: close the gate [on spine] [dragonspine 1024,160] | interactable "approach the SKYREACH SHRINE" @6px | ✅ |
+| ronin · TEMPLE done -> the Seraphim [scarred shrine] [dragonspine 1024,160] | interactable "approach the SKYREACH SHRINE" @6px | ✅ |
+| ronin · SERAPHIM done -> report to the guild [karridge-city 1568,704] | interactable "enter the ADVENTURERS GUILD" @10px | ✅ |
+| druid · mq1 — empty cell (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| druid · mq2 — listening room (grove) [thorn-grove 192,608] | interactable "search the camp" @0px | ✅ |
+| druid · mq3 — roots that rot (veiled woman) [karridge-city 384,1152] | interactable "approach the veiled woman" @0px | ✅ |
+| druid · mq4 — the buyer (night shipment) [thorn-grove 128,864] | interactable "stop the night shipment" @0px | ✅ |
+| druid · mq6 — the dancer: board the heartland coach [karridge-city 1656,744] | interactable "board the heartland coach to VARENHOLM" @0px | ✅ |
+| druid · mq6 — the Civic Auditorium (Varenholm) [varenholm 1248,416] | interactable "enter the CIVIC AUDITORIUM" @10px | ✅ |
+| druid · mq6 — the Adventurers Guild (Cookie) [varenholm 864,896] | interactable "enter the ADVENTURERS GUILD" @10px | ✅ |
+| druid · CROSSING — the guild (the crossing) [in Varenholm] [varenholm 864,896] | interactable "enter the ADVENTURERS GUILD" @10px | ✅ |
+| druid · CROSSING — heartland coach to Varenholm [off-zone guard] [karridge-city 1656,744] | interactable "board the heartland coach to VARENHOLM" @0px | ✅ |
+| druid · CROSSING — Shen Sama on the Dragonspine [post-flee] [dragonspine 832,256] | interactable "a scorched hollow where the snow will not settle" @0px | ✅ |
+| druid · CROSSING — climb back up [in Varenholm, post-flee] [varenholm 864,896] | interactable "enter the ADVENTURERS GUILD" @10px | ✅ |
+| druid · ROAD HOME — the coach home (credits next) [varenholm 896,1088] | interactable "take the coach back to Karridge" @0px | ✅ |
+| warlock · mq1 — empty cell (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| warlock · mq2 — listening room (grove) [thorn-grove 192,608] | interactable "search the camp" @0px | ✅ |
+| warlock · mq3 — roots that rot (veiled woman) [karridge-city 384,1152] | interactable "approach the veiled woman" @0px | ✅ |
+| warlock · mq4 — the buyer (night shipment) [thorn-grove 128,864] | interactable "stop the night shipment" @0px | ✅ |
+| warlock · wq2 — a friend of the family (dark alley) [karridge-city 384,1152] | interactable "meet the PALE COURIER" @0px | ✅ |
+| warlock · wq3 — the Matron: the black carriage [in city] [karridge-city 1656,744] | interactable "board the BLACK CARRIAGE to the ASHENVEIL" @0px | ✅ |
+| warlock · wq3 — Lady Nyx [in Ashenveil] [ashenveil 1136,416] | interactable "enter the ASHENVEIL ACADEMY" @19px | ✅ |
+| warlock · HUNT 1/5 — Briar (thorn-grove) [thorn-grove 576,1344] | interactable "a green child waits in the thorns" @0px | ✅ |
+| warlock · HUNT 2/5 — Ossuary (dungeon) [grove-dungeon 224,448] | interactable "a quiet boy sits among the bones" @0px | ✅ |
+| warlock · HUNT 3/5 — cult coach to Cinder [gated, in city] [karridge-city 1538,744] | interactable "board the CULT COACH — the hunt roads" @0px | ✅ |
+| warlock · HUNT 3/5 — Cinder (Dragonspine) [dragonspine 1088,576] | interactable "a fire that will not go out sits in the melt" @0px | ✅ |
+| warlock · HUNT 4/5 — Whisper (Academy) [ashenveil 512,896] | interactable "a blindfolded woman listens to an empty field" @0px | ✅ |
+| warlock · HUNT 5/5 — cult coach to Cookie [gated, in city] [karridge-city 1538,744] | interactable "board the CULT COACH — the hunt roads" @0px | ✅ |
+| warlock · HUNT 5/5 — Cookie (Varenholm) [varenholm 512,768] | interactable "a red dancer waits behind a wall of thorns" @0px | ✅ |
+| warlock · DELIVER — the five cages to Nyx [ashenveil 1136,416] | interactable "enter the ASHENVEIL ACADEMY" @19px | ✅ |
+| seraph · sq1 — the host below (Marlow) [karridge-city 640,704] | interactable "enter THE LAST LANTERN" @10px | ✅ |
+| seraph · sq3 — five banners (first duel) [dragonspine 448,960] | interactable "challenge KARGOTH" @0px | ✅ |
+| seraph · sq4 — the chosen (Skyreach shrine) [dragonspine 1024,160] | interactable "approach the SKYREACH SHRINE" @6px | ✅ |
+
 ## No-fight-during-dialogue (item 1.5 regression check)
 
 Static scan of each scene's `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()` (so no ambush can start while a conversation/cinematic is open):

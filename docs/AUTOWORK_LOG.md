@@ -46,6 +46,20 @@ The roadmap counts as COMPLETE only when ALL of these are done: 1.5 (no fights d
 the Warlock journal step (e), 2 (Druid questline), 3 (docs refresh), 4 (voice-gap fix), and
 5 (arch-devil cinematic). If ANY remain, just do the next one and leave the schedule running.
 
+## FAILSAFE PRINCIPLE — NO HUMAN-DEPENDENT STEPS (Hiro; GLOBAL, outranks convenience, applies to ALL work)
+Hiro's rule: NO process may depend on a human. If something CANNOT be automatically QA'd headlessly, it MUST be
+built so it can neither BLOCK progress nor break the game — it auto-resolves / has a failsafe and is never REQUIRED.
+- The ENTIRE game must be completable end-to-end by AUTO:FULL with ZERO human input, for EVERY character. No
+  quest beat, dialog, choice, or interactable may be able to HARD-BLOCK.
+- Any CHOICE panel (evolution branch, dialog options, Bellow buy-out, etc.) MUST auto-resolve on a timer
+  (default to a sane option) so a broken/unclickable UI can never softlock — manual selection is a bonus, never a gate.
+- Quest/zone progression must be fail-safe via an ANTI-STUCK WATCHDOG: if AUTO is tracking and there is NO
+  progress (player position + objective + flags unchanged) for ~12s while not in a dialog/encounter, force the
+  current objective to resolve (auto-interact the in-range target, else advance the beat flag / trigger the zone
+  transition). Nothing may permanently block.
+- Do NOT "fix" an un-QA-able thing by asking Hiro to confirm in-browser. Make it impossible to break, and add the
+  strongest headless check you can. When in doubt the failure mode is AUTO-CONTINUE, never STUCK.
+
 ## PRIORITY ROADMAP
 
 ### 0. BUGFIX — BLOCKER: warlock STUCK taking the black carriage (Matron / wq3)  [Hiro-reported 2026-06-14]
@@ -186,6 +200,56 @@ SEQUENCE (warlock only; alive; S.mode is 'fight' or 'demo'; not already P.lich):
  the warlock gauntlet will now hit this cinematic whenever devil mode expires — confirm the setTimeout
  phases resolve under the test's stubbed clock and the sim still completes (no deadlock from the
  invuln/paralyze; lich must resume), and both tests still PASS.
+
+### 14. BUGFIX BUNDLE — real-play blockers (TOP PRIORITY: do BEFORE continuing items 10/12/13) [Hiro real play]
+Hiro hit these in real browser play (warlock). The headless QA missed them because it tests objective()
+ROUTING logic, not real tile coordinates / on-canvas clicks / manual input. Fix all + STRENGTHEN the QA so they
+can't recur for any character.
+ (A) "THE MATRON" AUTO-walk STUCK — warlock never reaches the new area. ROOT CAUSE (confirmed in code): in
+     game/src/core/questnav.js (~L84-85) the `q-wq3-the-matron` objective returns
+     `at('karridge-city', 1656, 744, true, 'the black carriage')`, but the ACTUAL black-carriage interactable
+     (CityScene.addBlackCarriage, ~L447) is placed at the GUILD DOOR (`guildDoor dx+88, cy`) — NOT (1656,744)
+     (that's the heartland/Varenholm coach tile). AUTO walks to an empty tile and is stuck. FIX: point the wq3
+     objective at the black carriage's REAL tile (the guild-door carriage position) so AUTO walks there, boards,
+     and scene.starts AshenveilScene. Verify a warlock AUTO-reaches Ashenveil + the Nyx meeting.
+ (B) QA GAP — add an OBJECTIVE-REACHABILITY check to game/tests/qa_questlines.js: for EVERY interact-objective
+     each character's objective() returns, assert there is an actual interactable (or zone gate/coach) WITHIN
+     interaction range at that tile in that scene. This catches "objective points where nothing is" (the exact
+     A bug). Run for ALL characters end-to-end and fix any other mismatches so every questline completes with no
+     pathing dead-ends.
+ (C) EVOLUTION choice panel NOT SELECTABLE — at lv10 the warlock's evo options appeared but couldn't be picked.
+     drawEvoPanel() (game/src/combat/pit.js ~L2969) is an ON-CANVAS panel opened via P.evoPick/maybeOfferEvo,
+     but the SELECTION input is missing/broken. FIX: wire real selection — clickable on-canvas hit-regions per
+     option AND keyboard (1/2) — working in BOTH the pit (ArenaScene) and overworld (WorldScene) combat hosts,
+     not auto-dismissed/auto-picked unless AUTO is on. Verify a druid AND a warlock reaching lv10 AND lv20 can
+     actually choose each branch and the pick applies.
+ (D) MANUAL controls — confirm manual play works across scenes: movement (WASD/arrows + touch stick), interact
+     (E / tap prompt), attack+abilities (J/K/Space/Q + the touch buttons), and that toggling AUTO OFF cleanly
+     returns control (QuestNav.stop on manual input). Fix anything unresponsive in manual play.
+ (E) ANTI-STUCK WATCHDOG (implements the FAILSAFE PRINCIPLE, generically — beyond the A coordinate fix): in
+     WorldScene.update (or QuestNav.drive), when AUTO is tracking and there has been NO progress (player pos +
+     objective + flags unchanged) for ~12s while NOT in a dialog/encounter, force-resolve the current objective
+     — auto-interact the in-range target interactable, else advance the beat's flag / trigger the zone
+     transition — so NO quest beat can EVER hard-block (covers the Matron class for all characters). And make
+     EVERY choice panel (evo, dialog, buy-out) auto-default on a timer so an unclickable panel can never softlock.
+VERIFY: node --check; headless + gauntlet + qa_questlines (with the new reachability + AUTO-completability checks)
+all PASS for EVERY character. Per the FAILSAFE PRINCIPLE: make every un-QA-able element FAIL-SAFE (auto-resolve /
+non-blocking) so the game is AUTO:FULL-completable by every character with NO hard gate. Do NOT defer to human
+in-browser confirmation — design out the softlock instead.
+
+
+### 15. BALANCE — Dragonspine (Mountain) enemies too tanky: moderately LOWER HP, slightly RAISE damage [Hiro]
+Quick standalone balance pass (do after the item-14 blockers; can slot before the big features).
+- HP: MountainScene sets `this.territoryHpMult = 8` (highest tier). MODERATELY reduce it (~25%, e.g. 8 -> 6) so
+  Dragonspine fights are less spongy but still the hardest zone. Do NOT change other zones' tiers (forest 2 /
+  undead 4 stay).
+- DAMAGE: the territory ladder only scales HP, not damage. SLIGHTLY increase Dragonspine enemy damage (~10-15%):
+  either bump `dmgScale` on the Mountain W_DEFS regular spawn defs, OR add a small per-scene damage multiplier in
+  WorldScene.startEncounter applied only when `this.territoryDmgMult` is set (set ~1.15 on MountainScene). Keep it
+  SLIGHT.
+- Scope: REGULAR Dragonspine packs. Leave the boss x5 HP logic alone; Aurgelm may take the same slight dmg bump (minor).
+- VERIFY: node --check; headless + gauntlet PASS (warlock + seraph still clear Dragonspine). Confirm Mountain
+  regular-enemy effective HP dropped ~25% and damage rose ~10-15% vs before.
 
 ### 6. BUGFIX — the Druid Varenholm CROSSING never triggers in play (NEW TOP PRIORITY)
 Hiro played the druid: after "THE DANCER OF VARENHOLM" the cross-character crossing (warlock ambush -> 2 fights
@@ -2616,3 +2680,252 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   any final evo polish, then move to item 13 (Ashenveil raid) / item 12 (Ember class). Leave the
   schedule ENABLED - items 10 (in progress: inc.6 + seraph remain), 13, 12 remain; the COMPLETION
   PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 50) - **ITEM 10 increment 6 - the lv20 SECOND evolution choice + QA.** Sixth
+  increment of character evolutions: druid + warlock now get a SECOND branch choice at level 20,
+  gated/filtered by the lv10 road they already picked, and it actually DOES something (a second
+  stat focus bump + a capstone look accent). With NO evo picks both chars are byte-identical to run 49.
+  WHAT I CHANGED:
+  game/src/combat/pit.js (all additive):
+   (1) P literal: added `evo20:null` and `evoTier:0` (the chosen lv20 key + which tier the open
+       pick is for) alongside the existing evo10/evoPick/evoPickT.
+   (2) `maybeOfferEvo()` GENERALIZED to offer BOTH tiers: lv10 (unchanged, 2 roads) is checked
+       first so P.evo10 is always set before lv20; then lv20 fires when `P.evo10 && !P.evo20 &&
+       lvl()>=20`, offering `EVOLUTIONS[char][20]` FILTERED to branches whose `from`===P.evo10
+       (so the lv10 road determines the lv20 options). Same 9s auto-default, deadlock-proof panel.
+   (3) `pickEvo(i)` writes P.evo20 or P.evo10 by `P.evoTier`; mirrors the right slot to
+       GameState.player (evo20/evo10) in the same try/catch.
+   (4) `evoStatBonus(k)` now STACKS: +EVO_FOCUS_BONUS (6) for the lv10 road's focus AND another +6
+       for the lv20 road's focus. Druid warden->colossus = +12 CON; warlock binder->lichlord =
+       +12 DEX (both roads share a focus, so they stack on one stat). Un-evolved / ronin / seraph
+       still return 0 => unchanged.
+   (5) LOOK capstones (lv20, draw() after the `if(!ctx)return` guard so headless is a no-op):
+       druid bear `colossus` = a heavier worldroot ring; druid wolf `sovereign` = a cold lunar
+       halo; warlock body `lichlord` = a cold grave-light halo / `archfiend` = a deep ember halo;
+       Arch Devil `archfiend` burns an even deeper red (#7e1820/#420e12).
+   (6) `drawEvoPanel()` made robust to 1 OR 2 options (lv20 filtered picks currently yield ONE
+       continuation per road) - centers a lone card, says "press 1" vs "press 1 or 2", loops to
+       the option count. Reset line clears evo20/evoTier + the GameState evo10/evo20 mirror.
+   (7) api now exposes `EVOLUTIONS` (getter) + `maybeOfferEvo/pickEvo/evoTick` so the QA harness
+       can drive the evo state machine headlessly.
+  game/tests/qa_questlines.js: new `evoCheck()` gate (roadmap item 10) - boots a headless pit and
+   drives druid + warlock through lv10 (auto-default AND explicit pick #2) and lv20 (filtered second
+   choice), asserting the pick opens with the right tier/options, resolves to evo10/evo20, raises the
+   focus stat by +6 each tier, and NEVER deadlocks (auto-default resolves in 9 ticks). Reads the live
+   EVOLUTIONS data off the api. Wired into the console output + docs/QA_REPORT.md.
+  game/tests/gauntlet.js: FIXED a druid TIMEOUT the lv20 +6 CON exposed. The assist druid bot only
+   shifted to its WOLF dps/heal form when below 0.5 HP; a tankier (now +12 CON) druid rarely drops
+   that low under keep-alive, stranding it in low-dps human form -> the sweep timed out 4-5/6 near the
+   50-simMin cap. Fix (TEST DRIVER only, gated to druid): shift to wolf proactively once `lvl>=6 &&
+   humanCD<=0` (drop the HP gate). Druid now finishes ~6 simMin, 6/6 VICTORY. No game-code change.
+  NOTE on lv20 being a single forced option: the existing EVOLUTIONS[char][20] data defines exactly
+   ONE continuation per lv10 road (warden->colossus, alpha->sovereign, binder->lichlord,
+   herald->archfiend), so the lv20 "choice" is currently a forced capstone reveal, not a 2-way fork.
+   The machinery already supports 2 filtered options if Hiro later wants a genuine lv20 fork - just
+   add a second `{from:'<road>', ...}` entry per road to the data. Flagging for Hiro (no lore invented).
+  VERIFY (OneDrive truncated pit.js AND gauntlet.js mid-write; BOTH recovered + re-checked):
+   - `node --check` PASS on src/combat/pit.js, tests/gauntlet.js, tests/qa_questlines.js (tails intact).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars + the new EVOLUTIONS gate: 6/6
+     druid+warlock lv10/lv20 assertions PASS; re-wrote docs/QA_REPORT.md).
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS (ronin 9.3 / druid 5.9 / warlock 17.3 / seraph
+     3.1 simMin, all VICTORY 20/20). Druid now reliable (re-ran druid 6x: all VICTORY ~6 simMin).
+  CONSTRAINTS 8 & 9: untouched - NO dialogue text added (branch labels/desc are existing data), so no
+   manifest change and no "VOICES READY".
+  EXACT NEXT STEP (item 10 increment 7 - the SERAPH evolution, smallest-safe; then item 10 is done):
+   the system now fully supports lv10+lv20 for any char with EVOLUTIONS data. Add the SERAPH:
+   (a) DATA: add a `seraph:{10:[...2 roads...],20:[...continuations with `from`...]}` block to
+       EVOLUTIONS (pit.js ~L81), consistent with the angel kit (e.g. a radiant/smite road focus ATK
+       and a guardian/ward road focus CON, tied to the seraph's ascend/rays/parry abilities). DESIGN
+       CHOICE - pick sensible names/looks, LOG them, flag for Hiro; invent NO new voice/lore.
+   (b) GATES: the two evo guards currently allow only druid+warlock - widen BOTH to include seraph:
+       `maybeOfferEvo()` (the `if(P.char!=='druid'&&P.char!=='warlock')return;` ~L137) and
+       `evoStatBonus` (the same guard ~L194).
+   (c) LOOK: add seraph lv10/lv20 tints in the seraph draw block (mirror the druid/warlock inc.4-6
+       tint pattern; drawFighter palette params only; default byte-identical).
+   (d) QA: add 'seraph' to the evoCheck loop in qa_questlines.js (it reads EVO data generically, so
+       it just works once the data exists). The gauntlet seraph already reaches lv20 (3.1 simMin) so
+       it will auto-exercise the seraph evo - confirm no deadlock + still VICTORY.
+   node --check + headless + gauntlet + qa_questlines PASS after. Following: item 10 DONE -> move to
+   item 13 (Ashenveil lower-levels raid) / item 12 (Ember class). Leave the schedule ENABLED - items
+   10 (inc.7 seraph remains), 13, 12 remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 51) - **ITEM 10 increment 7 - the SERAPH evolution (item 10 now DONE).** Seventh and
+  final increment of character evolutions: the SERAPH now gets the same lv10 + lv20 branch system the
+  druid + warlock already have, gated/filtered identically. With NO evo picks the seraph is byte-identical
+  to run 50 (default colors, evoStatBonus returns 0).
+  WHAT I CHANGED (all additive):
+  game/src/combat/pit.js:
+   (1) DATA - added a `seraph` block to EVOLUTIONS (after the warlock block). Two lv10 roads tied to the
+       angel kit: WRATH (key:'wrath', focus ATK, look 'radiant') = the smite-road (halo ray / judgement),
+       and AEGIS (key:'aegis', focus CON, look 'guardian') = the ward-road (runic chains / grace). lv20
+       continuations, one per road with `from`: wrath->'judgement' (THRONE OF JUDGEMENT, ATK) and
+       aegis->'bulwark' (BULWARK OF THE DECREE, CON). Names/looks are a DESIGN CHOICE consistent with the
+       seraph's existing abilities (no new lore/voice invented) - flagging for Hiro to rename if desired.
+   (2) GATES - widened BOTH evo guards to include seraph: `maybeOfferEvo()` (was
+       `if(P.char!=='druid'&&P.char!=='warlock')return;`) and `evoStatBonus` (the `return 0;` twin). The
+       lv10/lv20 offer machinery, pickEvo, evoTick, drawEvoPanel are all char-agnostic, so widening the two
+       guards is the whole wiring - seraph now offers wrath/aegis at lv10 and the filtered continuation at
+       lv20, +EVO_FOCUS_BONUS (6) to the road's focus stat per tier (wrath/judgement stack to +12 ATK;
+       aegis/bulwark stack to +12 CON).
+   (3) LOOK - the seraph draw block (draw(), after `if(!ctx)return`, so a headless no-op) tints the body by
+       lv10 road: WRATH a warmer radiant gold (#e0d2a8 / head #f2e8c4), AEGIS a cooler steel-white
+       (#c2cedd / head #dde6ee); default (no evo10) keeps the original #cfd6e4 / #e8e4da EXACTLY. lv20
+       capstone halos mirror the druid/warlock pattern: 'judgement' = a bright sun-gold ring, 'bulwark' =
+       a cold steel ward ring.
+  game/tests/qa_questlines.js: added 'seraph' to the evoCheck loop (was ['druid','warlock']). The check
+   reads EVO data generically off the api, so it now asserts the seraph lv10 (auto-default + explicit pick
+   #2) and lv20 (filtered continuation) beats the same way - all PASS.
+  WHY THIS MAGNITUDE: +6 focus per tier mirrors druid/warlock inc.4-6 exactly - enough that the pick
+  matters without breaking the gauntlet's stat climb. The gauntlet seraph auto-picks road #0 (wrath, +6
+  then +12 ATK); it already won fast, so a touch more ATK only shortens its sweep (stayed 3.3 simMin).
+  VERIFY (no truncation; tails intact - pit.js ends at the createPitCombat module.exports footer):
+   - `node --check` PASS on src/combat/pit.js (183850 -> 185777, +1927) and tests/qa_questlines.js.
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS - evo gate now 9/9 (druid+warlock+seraph lv10/lv20):
+     seraph lv10 auto-default -> evo10=wrath, ATK 37->43; seraph lv10 explicit pick #2 -> evo10=aegis;
+     seraph lv20 (from wrath) -> evo20=judgement, ATK 73->79. Re-wrote docs/QA_REPORT.md.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 10.7 / druid 6.4 / warlock 15.9 /
+     seraph 3.3 simMin, all VICTORY 20/20, under the 50 cap). Seraph reached lv20 = it picked + applied
+     both evo tiers and still won with no deadlock at the choice panels.
+  CONSTRAINTS 8 & 9: untouched - this increment adds NO dialogue text (the seraph branch names/desc are
+  data labels, same treatment as the druid/warlock evo data in inc.4-6), so no manifest change and no
+  "VOICES READY". (If Hiro later wants the evo road names voiced as banners, they'd need manifest wiring.)
+  EXACT NEXT STEP: ITEM 10 (character evolutions) is now COMPLETE for all four chars (ronin growth = the
+  dojo weapon lines, item 11; druid/warlock/seraph = lv10/lv20 evolutions). Move to the next big feature.
+  Pick ITEM 13 (Ashenveil / Academy LOWER-LEVELS raid zone) - smallest-safe first increment = the ZONE
+  SHELL: add a stairs/door interactable in AshenveilScene that leads to a new lower-levels area (either a
+  new WorldScene subclass or a sub-state of AshenveilScene), with NO encounters yet - just reachable +
+  a "you descend into the lower levels" beat + QuestNav routing + a journal surface. Gate any future
+  proximity triggers with item 1.5 (`!CityUI.dialogOpen() && !this.encounterActive && !this.cinematic`).
+  Then later increments: encounters -> mini-boss -> boss finale -> reward -> QA (reuse existing AI types +
+  boss:true/deathCol + the territory HP ladder; new dialogue follows constraints 8 & 9). ALTERNATIVELY
+  item 12 (Ember/ankuspawn playable class) if Hiro prefers - but 13 reuses more existing systems, so it's
+  the safer next increment. Leave the schedule ENABLED - items 13 and 12 remain; COMPLETION PROTOCOL NOT met.
+
+- 2026-06-14 (run 52) - **ITEM 13 increment 1 - the ASHENVEIL LOWER-LEVELS RAID ZONE SHELL.** First,
+  smallest-safe increment of the Academy lower-levels raid: a reachable new zone with atmosphere, a
+  "you descend" beat, flavor signs and a foreshadowed sealed boss door - but NO encounters yet (packs /
+  mini-boss / boss finale land in following increments). All additive; no combat code touched.
+  WHAT I CHANGED:
+  game/src/scenes/AshLowerScene.js (NEW, ~120 lines): `class AshLowerScene extends WorldScene`. 40x28
+    flagstone undercroft, bordered stone walls + empty "cold cell" stubs down the west wall + a central
+    ledger-vault block (all `this.solid`). Cold academy-green atmosphere (#9af0c0, darkness 0.9) carried
+    underground; grave-lanterns via addLight. `territoryHpMult = 4` (undead tier) pre-set for the coming
+    fights. spawnPlayer at the foot of the STAIRS UP; bakeFrames({}) bakes the player frame. THREE
+    text-only narration signs (unvoiced, same treatment as the surface 'THE BOUNDARY STONE'/'THE WORKING
+    DEAD' signs): 'THE COLD CELLS', 'THE LEDGER-VAULT', and 'THE DEEP DOOR' (inert - foreshadows the raid
+    boss: "the web saves its worst work for the last room"). First-arrival 'YOU DESCEND' beat + a
+    'JOURNAL - THE LOWER LEVELS' floatText. STAIRS UP interactable returns to AshenveilScene. update() is
+    the standard WorldScene loop MINUS any pack/proximity logic (no encounters in the shell).
+  game/src/scenes/AshenveilScene.js: added a STAIRS DOWN interactable at tile (33,15) (clear of the
+    Academy solid x28-43/y5-13, the hedge blocks, and existing interactables) - 'descend the stairs to the
+    LOWER LEVELS' -> sets world.zone='ash-lower' + this.scene.start('AshLowerScene'). Manual-only
+    (NOT an objective), so AUTO never paths to it and the warlock-hunt / carriage flows are untouched.
+  game/src/main.js: registered AshLowerScene in the Phaser scene array (after AshenveilScene).
+  game/index.html: added `<script src="src/scenes/AshLowerScene.js">` after AshenveilScene.js.
+  game/src/core/questnav.js: added `'ash-lower': 'AshLowerScene'` to `_zoneOf` (QuestNav routing hook;
+    no objective() routes there yet - that arrives when the raid gets a quest gate in a later increment).
+  game/src/scenes/WorldScene.js: spawnPlayer zoneTrack music map gained `'ash-lower': 'ashenveil'` so the
+    undead theme keeps playing underground.
+  DESIGN CHOICES (flagging for Hiro): named it the "lower levels" undercroft with cold cells, a sealed
+    ledger-vault ('ASHENVEIL ACQUISITIONS - DO NOT RENDER WITHOUT WRIT'), and a warm sealed DEEP DOOR as
+    the future boss gate - all consistent with existing Ashenveil lore (the boundary stone's "the lower
+    levels are NOT a metaphor", Nyx's "somewhere below... the web is already drafting your next contract").
+    Invented NO new characters, voice, or canon - just environment. Zone is currently ungated (anyone who
+    reaches Ashenveil can descend); a quest/char gate can be added when the raic content lands.
+  CONSTRAINTS 8 & 9: untouched - this increment adds NO voiced dialogue (the three signs + the descend
+    beat are environmental narration via signDialog/floatText, exactly like the existing unvoiced Ashenveil
+    signs; no speaker, no manifest entry). So no voice_config / build_voice_manifest change, no "VOICES
+    READY". Item 1.5 respected: the shell's update() has ZERO proximity encounter triggers to guard.
+  VERIFY (no truncation; all tails intact - AshLowerScene.js ends at its update() closing braces,
+    AshenveilScene.js at its class close):
+   - `node --check` PASS on AshLowerScene.js, AshenveilScene.js, main.js, questnav.js, WorldScene.js.
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS (ronin 6.6 / druid 5.9 / warlock 18.2 / seraph 3.4
+     simMin, all VICTORY 20/20). NOTE: the FIRST gauntlet run this session showed a WARLOCK TIMEOUT at the
+     50-simMin cap (reached fight 20/20, 477 kills - it was winning, just slow that seed); the re-run was a
+     clean PASS. My change touches NO combat code (gauntlet loads only pit.js), so the timeout was the known
+     near-cap flakiness, not this increment. (Same re-run-up-to-3x guidance the log already gives for druid.)
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (AshenveilScene still 1/1 proximity procs
+     dialog-guarded; the new stairs-down is a manual interactable, not a proc). Re-wrote docs/QA_REPORT.md.
+  EXACT NEXT STEP (ITEM 13 increment 2 - first ENCOUNTERS in the lower levels): the zone shell is reachable
+   and empty. Add the FIRST wave of feral packs to AshLowerScene, mirroring AshenveilScene's pack pattern
+   EXACTLY (the `this.packs` array, `mkPack(px,py,def)`, an A_DEFS-style table reusing existing AI `type`s -
+   e.g. wraith/ghoul/bonegolem/gravewight already baked on the surface - with `dmgScale` + the undead
+   `territoryHpMult`, and the update()-loop wander+aggro block). CRITICAL: the new aggro trigger MUST be
+   gated `!CityUI.dialogOpen() && !this.encounterActive && !this.cinematic` (item 1.5) and freeze wander
+   while talking - copy AshenveilScene.update()'s guarded loop verbatim and re-point the spawn coords into
+   the undercroft chamber (avoid the wall solids + the central vault block at x22-28/y11-16). Bake any NEW
+   fighter frame in AshLowerScene.bakeFrames({...}); reuse existing undead frames where possible. Then run
+   node --check + headless + gauntlet + qa_questlines. FOLLOWING increments: a MINI-BOSS, then the DEEP-DOOR
+   BOSS FINALE (boss:true/deathCol, reuse the warden+totem pattern), a reward, a quest/journal gate, and
+   any NEW boss dialogue follows constraints 8 & 9. Leave the schedule ENABLED - items 13 (encounters,
+   mini-boss, boss, reward, gate) and 12 (Ember class) remain; COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (Hiro real-play report) — NEW TOP-PRIORITY roadmap item 14 added (real-play blockers): (A) "The
+  Matron" AUTO stuck — wq3 objective points at (1656,744) but the black carriage is at the GUILD DOOR
+  (questnav fix); (B) add objective-reachability QA so this class of bug is caught for all characters; (C)
+  evolution choice panel not selectable (wire click+key selection); (D) verify manual controls across scenes.
+  NEXT STEP: do ITEM 14 FIRST (before resuming item 10/12/13). node --check + headless + gauntlet +
+  qa_questlines (with the new reachability check) after each fix.
+
+- 2026-06-15 (Hiro) — Queued item 15 (quick balance): Dragonspine/Mountain regular enemies too tanky -> lower
+  territoryHpMult ~8->6 (moderate HP cut) + a slight ~10-15% damage bump (dmgScale or a new territoryDmgMult on
+  MountainScene). Do AFTER the item-14 blockers; node --check + headless + gauntlet after.
+
+- 2026-06-15 (run 53) - **ITEM 14B - OBJECTIVE-INTERACTABLE EXISTENCE QA + 14(A) re-diagnosis.** Took the
+  top-priority item 14 next. Started by INVESTIGATING 14(A) ("THE MATRON" AUTO-walk stuck: claim that the
+  wq3 objective points at (1656,744) but the black carriage is elsewhere). FINDING: 14(A)'s root-cause claim
+  is WRONG. Computed the guild door: guild building x44,y14,w12,h8,door5 @TILE32 -> dx=1568, dy=704;
+  black carriage interactable = (dx+88, dy+40) = **(1656,744)** - EXACTLY the wq3 objective tile. Booted
+  CityScene headless as a warlock on the matron step and confirmed the only interactable at (1656,744) is
+  "board the BLACK CARRIAGE to the ASHENVEIL"; AUTO has a real, reachable target there. So the objective
+  coordinate is CORRECT and needs NO change. (The screenshot's "journal says black carriage / AUTO button
+  says cult coach" is the questlog showing the now-'done' wq3 quest's STATIC objective line (dialog.js
+  questlog() shows any quest whose flag is truthy) next to the LIVE walk target - i.e. the player was already
+  past the matron, onto hunt step 3 (Cinder). That is questlog design, not a routing/stuck bug. Flagged for
+  Hiro to re-confirm in-browser whether a genuine stall remains; headlessly the route + interactable are sound.)
+  WHAT I CHANGED (test-only; NO combat/scene/questnav code touched):
+  game/tests/qa_questlines.js:
+   - graphics stub: added strokeCircle(){} and arc(){} so warlock-hunt interactables (Whisper/Cookie draw
+     calls) boot cleanly headless (previously threw "strokeCircle is not a function" under hunt state).
+   - stashed `_boot = { plumb, CLASSES }` at the end of bootScenes() so a single scene can be re-booted under
+     ARBITRARY char+flags after the initial boot.
+   - NEW interactExists(zone,char,flags,tx,ty,range): re-boots the objective's scene under the beat's REAL
+     char+flags and returns whether an interactable sits within interaction range (default 56px) of the tile.
+   - NEW objInteractCheck(): walks every character's BEATS table, accumulates flags exactly like the route
+     walk, and for EVERY interact-objective in a bootable zone asserts an interactable exists at that tile.
+     HARD-fails on "objective points where nothing is" (the exact 14B ask); a scene that can't boot is
+     informational (ok:null), never a false fail. Wired into main output + docs/QA_REPORT.md.
+  WHY THIS over a code "fix": 14(A) is a non-bug (proven above), so the correct, safe increment is to
+  CLOSE THE QA GAP that let 14(A) be mis-filed - reachability() only proved the TILE was walkable (booting
+  as a flagless ronin), never that the flag/char-gated interactable EXISTS there. The new gate now covers
+  all 41 interact-objectives across ronin/druid/warlock/seraph and would catch a real "empty objective tile"
+  for ANY character/beat.
+  VERIFY (no truncation - tests/qa_questlines.js ends at the process.exit(allPass?0:1) footer):
+   - `node --check tests/qa_questlines.js` PASS (34908 -> 39958 bytes).
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS. New section "OBJECTIVE-INTERACTABLE EXISTENCE
+     (item 14B) === PASS" - all 41 interact-objectives resolve to a create-time interactable within range,
+     incl. `warlock wq3 the Matron [karridge-city 1656,744] -> "board the BLACK CARRIAGE to the ASHENVEIL" @0px`.
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 5.7 / druid 5.7 / warlock 16.4 /
+     seraph 3.4 simMin, all VICTORY 20/20, under the 50 cap).
+  CONSTRAINTS 8 & 9: untouched - no dialogue text added/changed, no voice manifest change, no "VOICES READY".
+  Item 1.5 status: the dialog-guard scan still reports ALL scenes fully guarded (City 1/1, Grove 2/2, Dungeon
+  1/1, Varenholm 1/1, Mountain 0/0, Ashenveil 1/1) - "CONVERSATION-SAFE: all zones" already holds.
+  EXACT NEXT STEP: ITEM 14(C) - the EVOLUTION choice panel not selectable at lv10 (warlock/druid). The evo
+  DATA + auto-default resolution already PASS in qa (evoCheck), but real-play reported the on-canvas pick
+  is not CLICKABLE/keyable. In game/src/combat/pit.js: drawEvoPanel() (~L2969) renders the 2-road panel via
+  P.evoPick/P.evoTier (opened by maybeOfferEvo); pickEvo(i) applies a pick. Wire real SELECTION: (1) keyboard
+  1/2 (and maybe Q/E or arrows+confirm) -> pickEvo(0)/pickEvo(1); (2) on-canvas CLICK hit-regions per option
+  (compute each option's rect in drawEvoPanel, store on P.evoPick or a parallel P._evoRects, and in the
+  pointer/click handler that the pit/world combat host already uses, hit-test against them -> pickEvo). Must
+  work in BOTH hosts (ArenaScene/pit AND WorldScene overworld combat) and ONLY auto-pick when AUTO is on
+  (keep the evoPickT auto-default for AUTO/headless; gate it so a manual player isn't auto-dismissed). Then
+  add a qa assertion that a simulated key/click resolves the pick (extend evoCheck), node --check pit.js +
+  headless + gauntlet + qa_questlines all PASS. Be careful: pit.js is large and OneDrive-truncation-prone -
+  edit bash+python with exact anchors and node --check immediately. Remaining after 14C: 14(D) manual-control
+  audit, then items 13 (Ashenveil lower-levels encounters/mini-boss/boss), 12 (Ember class), 6 (druid
+  Varenholm crossing trigger), plus the original roadmap tail. Leave the schedule ENABLED - COMPLETION
+  PROTOCOL NOT met.

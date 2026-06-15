@@ -11,7 +11,7 @@ const QuestNav = {
   path: [], pathI: 0,
   autoDialog: false,             // FULL opened the current dialog
   dialogT: 0,
-  _zoneOf: { 'karridge-city': 'CityScene', 'thorn-grove': 'GroveScene', 'grove-dungeon': 'DungeonScene', 'varenholm': 'VarenholmScene', 'dragonspine': 'MountainScene', 'ashenveil': 'AshenveilScene' },
+  _zoneOf: { 'karridge-city': 'CityScene', 'thorn-grove': 'GroveScene', 'grove-dungeon': 'DungeonScene', 'varenholm': 'VarenholmScene', 'dragonspine': 'MountainScene', 'ashenveil': 'AshenveilScene', 'ash-lower': 'AshLowerScene' },
 
   cycleMode() {
     this.setMode((this.mode + 1) % 3);

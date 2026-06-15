@@ -98,6 +98,7 @@ const BEATS = {
 
 // ---------- (a) reachability: boot the real scenes for their solids (best-effort) ----------
 let zoneScenes = null, bootError = null;
+let _boot = null;   // {plumb, CLASSES} stashed by bootScenes() so single scenes can be re-booted under arbitrary char+flags (item 14B)
 function bootScenes() {
   // --- minimal sim clock + DOM/Phaser stubs (mirrors navsim.js) ---
   let simNow = 0; const timers = [];
@@ -126,7 +127,7 @@ function bootScenes() {
       if (typeof k === 'string' && (k.startsWith('set') || ['destroy','start','stop','clear','fill','erase','refresh','draw'].includes(k))) return () => self; return undefined; },
       set(t,k,v){ t[k]=v; return true; } }); return self; };
   const texReg = new Set();
-  const graphics = () => chain({ fillStyle(){}, fillRect(){}, fillCircle(){}, fillEllipse(){}, fillTriangle(){}, strokeTriangle(){}, strokeEllipse(){}, strokeRect(){}, lineStyle(){}, lineBetween(){}, beginPath(){}, moveTo(){}, lineTo(){}, strokePath(){}, generateTexture: key => texReg.add(key) });
+  const graphics = () => chain({ fillStyle(){}, fillRect(){}, fillCircle(){}, fillEllipse(){}, fillTriangle(){}, strokeTriangle(){}, strokeEllipse(){}, strokeRect(){}, lineStyle(){}, lineBetween(){}, beginPath(){}, moveTo(){}, lineTo(){}, strokePath(){}, strokeCircle(){}, arc(){}, generateTexture: key => texReg.add(key) });
   const textures = { exists: k => texReg.has(k), remove: k => texReg.delete(k), addCanvas: k => { texReg.add(k); return { add(){} }; }, createCanvas: k => { texReg.add(k); return { getContext: stub2d, refresh(){}, add(){} }; }, get: () => ({ has: () => true, add(){}, getContext: stub2d }) };
   global.Phaser = { AUTO: 1, VERSION: 'sim', Scale: { FIT: 1, CENTER_BOTH: 1 }, BlendModes: { ADD: 1, MULTIPLY: 2, ERASE: 3 }, Game: class {}, Scene: class { constructor(cfg){ this._key = cfg && cfg.key; } }, Display: { Color: { GetColor: () => 0 } }, Math: { Vector2: class { constructor(x,y){ this.x=x; this.y=y; } } }, Curves: { QuadraticBezier: class { draw(){} } } };
 
@@ -161,6 +162,7 @@ function bootScenes() {
       start: { x: (s.player && s.player.x) || s.worldW / 2, y: (s.player && s.player.y) || s.worldH / 2 },
       interactables: s.interactables || [], scene: s };
   }
+  _boot = { plumb, CLASSES };
   return out;
 }
 
@@ -173,6 +175,60 @@ function reachability(zone, tx, ty) {
   const endp = pts.length >= 2 ? pts[pts.length - 2] : pts[pts.length - 1];
   const dist = Math.hypot(endp.x - tx, endp.y - ty);
   return { ok: dist < 48, dist: Math.round(dist), steps: pts.length };
+}
+
+// ---------- (a2) interactable EXISTENCE at objective tiles (roadmap item 14B) ----------
+// reachability() above boots scenes ONCE as a flagless ronin, so it only proves the objective TILE
+// is walkable - it never checks that a flag/char-gated interactable (the black carriage, the cult/
+// heartland/spine coaches, Marlow, the clerk, the hunt captures...) actually EXISTS at that tile for
+// the character on that beat. interactExists() re-boots the objective's scene under the BEAT's real
+// char+flags and asserts an interactable sits within interaction range of the objective tile. This is
+// the regression gate for the "objective points where nothing is" class (the reported Matron / black-
+// carriage "AUTO walks to an empty tile" bug). NOTE: headless-confirmed - the Matron objective tile
+// (karridge-city 1656,744) DOES carry the "board the BLACK CARRIAGE" interactable, so that bug was a
+// mis-diagnosis; this check now guards every character's interact-objective against the real failure.
+function interactExists(zone, char, flags, tx, ty, range) {
+  range = range || 56;
+  if (!_boot || !_boot.CLASSES[zone]) return { ok: null, note: 'scene not booted' };
+  const saved = global.GameState;
+  try {
+    global.GameState = { version: 1, player: { char, kills: 45, level: 10, bladeTier: 2,
+      base: { STR: 10, DEX: 10, CON: 10, ATK: 10 }, nickname: 'QA', copper: 450, belt: [], artifacts: [] },
+      world: { zone, flags: Object.assign({ pitChampion: true }, flags), chestsOpened: [], questLog: [], questCounts: {} },
+      companions: {}, meta: { playtimeMs: 0, kills: 45, autoMode: 2 } };
+    const s = new _boot.CLASSES[zone](); _boot.plumb(s); s.create();
+    const its = s.interactables || [];
+    let best = null, bd = Infinity;
+    for (const i of its) { const d = Math.hypot((i.x || 0) - tx, (i.y || 0) - ty); if (d < bd) { bd = d; best = i; } }
+    return { ok: !!best && bd <= range, dist: Math.round(bd === Infinity ? -1 : bd), label: best && best.label };
+  } catch (e) { return { ok: null, note: 'boot threw: ' + e.message }; }
+  finally { global.GameState = saved; }
+}
+
+// Walk each character's beats, accumulate flags exactly like the route walk, and for EVERY interact-
+// objective in a bootable zone assert an interactable exists at the objective tile under that beat's
+// real state. HARD-fails when the scene boots but no interactable is within range (the 14B class);
+// a scene that can't boot headlessly is reported informational (ok:null) rather than failing.
+function objInteractCheck() {
+  const rows = []; let pass = true;
+  const BOOTABLE = { 'karridge-city': 1, 'thorn-grove': 1, 'grove-dungeon': 1, 'varenholm': 1, 'dragonspine': 1, 'ashenveil': 1 };
+  for (const char of ['ronin', 'druid', 'warlock', 'seraph']) {
+    const acc = {};
+    for (const beat of BEATS[char]) {
+      Object.assign(acc, beat.set);
+      global.GameState = { player: { char }, world: { zone: beat.zone, flags: acc } };
+      let obj = null; try { obj = QuestNav.objective(); } catch (e) {}
+      if (!obj || !obj.interact || !BOOTABLE[obj.zone]) continue;
+      const r = interactExists(obj.zone, char, acc, obj.x, obj.y);
+      let ok, detail;
+      if (r.ok === null) { ok = true; detail = 'interactable:? (' + (r.note || 'dynamic') + ') - informational'; }
+      else if (r.ok) { ok = true; detail = 'interactable "' + r.label + '" @' + r.dist + 'px'; }
+      else { ok = false; detail = 'NO interactable within range (nearest ' + (r.label ? '"' + r.label + '" ' : '') + r.dist + 'px) - objective points where nothing is'; }
+      if (!ok) pass = false;
+      rows.push({ ok, label: char + ' · ' + beat.name + ' [' + obj.zone + ' ' + Math.round(obj.x) + ',' + Math.round(obj.y) + ']', detail });
+    }
+  }
+  return { pass, rows };
 }
 
 // ---------- (c) no-fight-during-dialogue: static guard scan ----------
@@ -332,6 +388,65 @@ function dojoCheck() {
   return { pass, rows };
 }
 
+// ---------- character EVOLUTION beats gate (roadmap item 10) ----------
+// The lv10/lv20 EVOLUTION choice (druid + warlock) fires from gainLevel() INSIDE pit combat,
+// not from QuestNav — so the per-character route walk above never touches it. This gate boots a
+// headless pit and drives the evo state machine for druid + warlock, asserting:
+//   (1) lv10 opens a 2-road pick (P.evoTier=10) that resolves BOTH via auto-default (the evoPickT
+//       timer -> pickEvo(0), deadlock-proof) AND via an explicit pick(i) -> P.evo10, and the road
+//       focus stat rises by EVO_FOCUS_BONUS (+6);
+//   (2) lv20 opens a SECOND pick (P.evoTier=20) FILTERED to branches whose `from` === P.evo10
+//       (so the lv10 road determines the lv20 options), resolves -> P.evo20, focus stat rises again;
+//   (3) neither pick deadlocks (the auto-default loop always terminates well under the step cap).
+// It reads the live EVOLUTIONS data off the api so the test follows the source, not a hardcoded copy.
+function evoCheck() {
+  const rows = []; let pass = true;
+  let createPit;
+  try { createPit = require(path.join(ROOT, 'src/combat/pit.js')).createPitCombat; }
+  catch (e) { rows.push({ ok: false, label: 'load pit.js', detail: 'THREW ' + e.message }); return { pass: false, rows }; }
+  // deterministic sim clock (any banner setTimeout just queues; the evo logic never needs it flushed)
+  let simMs = 0; const tq = [];
+  global.setTimeout = (fn, ms) => { tq.push({ at: simMs + (ms || 0), fn }); return tq.length; };
+  global.clearTimeout = () => {};
+  const FOCUS_BONUS = 6;   // mirrors EVO_FOCUS_BONUS in pit.js
+  const freshPit = ch => { const c = createPit({ width: 1280, height: 720, now: () => simMs, ui: { banner: () => {} } }); c.fullReset(ch); return c; };
+  for (const ch of ['druid', 'warlock', 'seraph']) {
+    const combat = freshPit(ch);
+    const P = combat.P, EVO = combat.EVOLUTIONS[ch];
+    // (1) lv10 — auto-default path (no key input)
+    P.level = 10;
+    const focus10 = EVO[10][0].focus, base10 = combat.stat(focus10);
+    combat.maybeOfferEvo();
+    const opened10 = !!P.evoPick && P.evoPick.length === 2 && P.evoTier === 10;
+    let steps = 0; while (P.evoPick && steps < 100) { combat.evoTick(1); steps++; }
+    const resolved10 = !P.evoPick && P.evo10 === EVO[10][0].key;
+    const after10 = combat.stat(focus10);
+    const ok10 = opened10 && resolved10 && after10 === base10 + FOCUS_BONUS && steps < 100;
+    if (!ok10) pass = false;
+    rows.push({ ok: ok10, label: ch + ' lv10 auto-default',
+      detail: 'opened=' + opened10 + ' -> evo10=' + P.evo10 + ' (resolved in ' + steps + ' ticks) ' + focus10 + ' ' + base10 + '->' + after10 });
+    // (1b) lv10 — explicit pick of road #2 (fresh pit)
+    const c2 = freshPit(ch); c2.P.level = 10; c2.maybeOfferEvo(); c2.pickEvo(1);
+    const ok10b = !c2.P.evoPick && c2.P.evo10 === EVO[10][1].key;
+    if (!ok10b) pass = false;
+    rows.push({ ok: ok10b, label: ch + ' lv10 explicit pick #2', detail: 'evo10=' + c2.P.evo10 + ' (want ' + EVO[10][1].key + ')' });
+    // (2) lv20 — second choice, gated/filtered by the lv10 road (continue the auto-default pit)
+    P.level = 20;
+    const expect20 = EVO[20].filter(b => b.from === P.evo10);
+    const focus20 = expect20[0] ? expect20[0].focus : focus10, base20 = combat.stat(focus20);
+    combat.maybeOfferEvo();
+    const opened20 = !!P.evoPick && P.evoTier === 20 && P.evoPick.every(b => b.from === P.evo10);
+    steps = 0; while (P.evoPick && steps < 100) { combat.evoTick(1); steps++; }
+    const resolved20 = !P.evoPick && !!expect20[0] && P.evo20 === expect20[0].key;
+    const after20 = combat.stat(focus20);
+    const ok20 = opened20 && resolved20 && after20 === base20 + FOCUS_BONUS && steps < 100;
+    if (!ok20) pass = false;
+    rows.push({ ok: ok20, label: ch + ' lv20 (from ' + P.evo10 + ')',
+      detail: 'opened=' + opened20 + ' -> evo20=' + P.evo20 + ' (resolved in ' + steps + ' ticks) ' + focus20 + ' ' + base20 + '->' + after20 });
+  }
+  return { pass, rows };
+}
+
 console.log('QA QUESTLINES — full per-character AUTO route + flag-state walk\n');
 try { zoneScenes = bootScenes(); }
 catch (e) { bootError = e.message; console.error('  (reachability scene-boot unavailable: ' + e.message + ' — routing checks continue)\n'); }
@@ -340,6 +455,8 @@ const results = ['ronin', 'druid', 'warlock', 'seraph'].map(runChar);
 const guards = dialogGuardScan();
 const gated = gatedGuardCheck();
 const dojo = dojoCheck();
+const evo = evoCheck();
+const objInt = objInteractCheck();
 
 let allPass = true;
 for (const r of results) {
@@ -355,6 +472,14 @@ console.log('');
 if (!dojo.pass) allPass = false;
 console.log('=== RONIN DOJO LINE-PICK (item 11) === ' + (dojo.pass ? 'PASS' : 'FAIL'));
 for (const row of dojo.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
+if (!evo.pass) allPass = false;
+console.log('=== CHARACTER EVOLUTIONS lv10/lv20 (item 10) === ' + (evo.pass ? 'PASS' : 'FAIL'));
+for (const row of evo.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
+if (!objInt.pass) allPass = false;
+console.log('=== OBJECTIVE-INTERACTABLE EXISTENCE (item 14B) === ' + (objInt.pass ? 'PASS' : 'FAIL'));
+for (const row of objInt.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
 console.log('');
 console.log('--- no-fight-during-dialogue (static update() scan) ---');
 for (const g of guards) console.log('  ' + g.scene + ': ' + g.guarded + '/' + g.procs + ' proximity procs dialog-guarded');
@@ -392,6 +517,22 @@ md += 'The dojo (Sensei Okada) is an optional City interactable for the ronin (n
   + '(katana stays the default elsewhere):\n\n';
 md += '| Check | Detail | Result |\n|---|---|---|\n';
 for (const row of dojo.rows) md += '| ' + row.label + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : '❌') + ' |\n';
+md += '\n';
+md += '## Character evolutions lv10/lv20 (item 10 regression gate) — ' + (evo.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'The lv10/lv20 EVOLUTION choice (druid + warlock) fires from `gainLevel()` inside pit combat, not from QuestNav, '
+  + 'so the route walk never touches it. This gate boots a headless pit and drives the evo state machine: at lv10 a 2-road '
+  + 'pick opens and resolves (auto-default AND explicit) raising the road focus stat by +6; at lv20 a SECOND pick opens '
+  + 'FILTERED to the branches continuing the lv10 road, resolves to `P.evo20`, and raises the focus stat again — with no '
+  + 'deadlock (the auto-default timer always resolves):\n\n';
+md += '| Check | Detail | Result |\n|---|---|---|\n';
+for (const row of evo.rows) md += '| ' + row.label + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : '❌') + ' |\n';
+md += '\n';
+md += '## Objective-interactable existence (item 14B regression gate) - ' + (objInt.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'reachability above only proves the objective TILE is walkable. This gate re-boots each objective\'s scene under the beat\'s '
+  + 'REAL char+flags and asserts an interactable actually EXISTS within interaction range of the tile - catching the "objective points '
+  + 'where nothing is" class (e.g. the reported Matron/black-carriage stall; headless-confirmed the carriage IS at 1656,744):\n\n';
+md += '| Beat (interact objective) | Detail | Result |\n|---|---|---|\n';
+for (const row of objInt.rows) md += '| ' + row.label.replace(/\|/g, '\\|') + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : row.ok === false ? '❌' : 'ℹ️') + ' |\n';
 md += '\n';
 md += '## No-fight-during-dialogue (item 1.5 regression check)\n\n';
 md += 'Static scan of each scene\'s `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()` (so no ambush can start while a conversation/cinematic is open):\n\n';

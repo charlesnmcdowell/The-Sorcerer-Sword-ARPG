@@ -68,6 +68,18 @@ class AshenveilScene extends WorldScene {
     this.add.text(ddx, by * T - 10, 'THE ASHENVEIL ACADEMY', { fontFamily: 'Courier New', fontSize: '11px', color: '#9af0c0' }).setOrigin(0.5).setDepth(ddy + 2);
     this.addLight(ddx, ddy, 120, false);
     this.interactables.push({ x: ddx, y: ddy - 10, label: 'enter the ASHENVEIL ACADEMY', fn: () => this.nyxDialog() });
+    // ---------- STAIRS DOWN to the lower levels (item 13 raid zone; "not a metaphor") ----------
+    const slx = 33 * T, sly = 15 * T;
+    const slg = this.add.graphics().setDepth(sly);
+    slg.fillStyle(0x0c0a12, 1); slg.fillRect(slx - 26, sly - 14, 52, 30);
+    slg.lineStyle(1, 0x9af0c0, 0.6); slg.strokeRect(slx - 26, sly - 14, 52, 30);
+    for (let i = 0; i < 4; i++) { slg.lineStyle(1, 0x9af0c0, 0.4); slg.lineBetween(slx - 22 + i * 12, sly - 10, slx - 22 + i * 12, sly + 10); }
+    this.add.text(slx, sly - 22, 'THE LOWER LEVELS', { fontFamily: 'Courier New', fontSize: '9px', color: '#9af0c0' }).setOrigin(0.5).setDepth(sly + 2);
+    this.addLight(slx, sly, 70, false);
+    this.interactables.push({ x: slx, y: sly, label: 'descend the stairs to the LOWER LEVELS', fn: () => {
+      window.GameState.world.zone = 'ash-lower';
+      this.scene.start('AshLowerScene');
+    }});
 
     // ---------- the working dead ----------
     this.bakeFrames({ 'fr-deadworker': { col: '#8a8474', o: { skull: true } },

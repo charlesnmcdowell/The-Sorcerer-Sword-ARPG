@@ -114,6 +114,24 @@ const EVOLUTIONS={
        desc:'The Sheol-escapee unbound; the Arch Devil lingers far longer.',
        kit:'arch-devil duration extended; hellfire wider'}
     ]
+  },
+  seraph:{
+    10:[
+      {key:'wrath', name:'SERAPH OF WRATH', focus:'ATK', look:'radiant',
+       desc:'The smite-road — the halo ray burns hotter and judgement falls heavier.',
+       kit:'halo ray hits harder; smite judgement intensified'},
+      {key:'aegis', name:'SERAPH OF AEGIS', focus:'CON', look:'guardian',
+       desc:'The ward-road — runic chains and an unbreaking grace shield the worthy.',
+       kit:'sturdier; grace ward lingers; chains of decree bind'}
+    ],
+    20:[
+      {from:'wrath', key:'judgement', name:'THRONE OF JUDGEMENT', focus:'ATK', look:'radiant',
+       desc:'The high seat of the burning court; the halo becomes a small sun.',
+       kit:'halo judgement widened; the smite ray reaches further'},
+      {from:'aegis', key:'bulwark',   name:'BULWARK OF THE DECREE', focus:'CON', look:'guardian',
+       desc:'An unbreakable bastion; the decree\'s chains hold the whole field.',
+       kit:'grace deepened; chains of decree bind all who near'}
+    ]
   }
 };
 function gainLevel(){ // +1.5 levels per kill, max 20
@@ -137,7 +155,7 @@ function gainLevel(){ // +1.5 levels per kill, max 20
 // determines the second's options). lv10 is checked first so P.evo10 is always set before lv20.
 function maybeOfferEvo(){
   if(P.evoPick)return;
-  if(P.char!=='druid'&&P.char!=='warlock')return;
+  if(P.char!=='druid'&&P.char!=='warlock'&&P.char!=='seraph')return;
   const E=EVOLUTIONS[P.char]||{};
   if(!P.evo10&&lvl()>=10){                          // lv10: the FIRST road choice (2 options)
     const br=E[10];
@@ -207,7 +225,7 @@ const lineStatBonus=k=>{
 // forward-reference safety as lineStatBonus above).
 const EVO_FOCUS_BONUS=6;            // focus-stat points granted by EACH chosen road (lv10 + lv20 stack)
 const evoStatBonus=k=>{
-  if(P.char!=='druid'&&P.char!=='warlock')return 0;
+  if(P.char!=='druid'&&P.char!=='warlock'&&P.char!=='seraph')return 0;
   const E=EVOLUTIONS[P.char]||{};let b=0;
   if(P.evo10){const br=(E[10]||[]).find(x=>x.key===P.evo10);if(br&&br.focus===k)b+=EVO_FOCUS_BONUS;}
   if(P.evo20){const br=(E[20]||[]).find(x=>x.key===P.evo20);if(br&&br.focus===k)b+=EVO_FOCUS_BONUS;}
@@ -2717,10 +2735,20 @@ function draw(){
         const bw4=48,bx4=P.x-24,by4=P.y-P.r-30; // rising back to his feet
         ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(bx4,by4,bw4,5);
         ctx.fillStyle='#ffe9a8';ctx.fillRect(bx4+1,by4+1,(bw4-2)*Math.max(0,1-P.kneelT/10),3);}
-      drawFighter(P.x,P.y-lift+(P.kneelT>0?5:0),P.r*(P.kneelT>0?.92:1),P.face,'#cfd6e4',{seraphim:true,robe:true,flash:P.flash,
+      // item-10 inc.7: SERAPH lv10 branch tint — WRATH (smite-road) a warmer radiant gold;
+      // AEGIS (ward-road) a cooler steel-white. Default (no evo10) = the original colors.
+      const _srCol =P.evo10==='wrath'?'#e0d2a8':(P.evo10==='aegis'?'#c2cedd':'#cfd6e4');
+      const _srHead=P.evo10==='wrath'?'#f2e8c4':(P.evo10==='aegis'?'#dde6ee':'#e8e4da');
+      drawFighter(P.x,P.y-lift+(P.kneelT>0?5:0),P.r*(P.kneelT>0?.92:1),P.face,_srCol,{seraphim:true,robe:true,flash:P.flash,
         dead:P.dead,deathT:P.dead?1:0,phase:P.walkP,moving:P._mv,
         flying:P.ascendT>0,haloGone:P.heavyWind>0,
-        spear:P.kneelT<=0,spearLen:46,poke:P.atkRecover>0,headCol:'#e8e4da'});
+        spear:P.kneelT<=0,spearLen:46,poke:P.atkRecover>0,headCol:_srHead});
+      if(P.evo20==='judgement'){ // item-10 inc.7 capstone: a bright sun-gold halo (wrath->throne road)
+        ctx.strokeStyle='rgba(255,224,120,'+(0.45+0.25*Math.sin(S.time*6))+')';ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(P.x,P.y-8,P.r+14,0,7);ctx.stroke();}
+      else if(P.evo20==='bulwark'){ // item-10 inc.7 capstone: a cold steel ward ring (aegis->bulwark road)
+        ctx.strokeStyle='rgba(190,210,240,'+(0.45+0.25*Math.sin(S.time*5))+')';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(P.x,P.y-8,P.r+15,0,7);ctx.stroke();}
     }else if(P.char==='warlock'&&P.lich){
       const bob=Math.sin(S.time*2.2)*4, lift=12+bob; // he does not walk anymore
       ctx.save();ctx.globalAlpha=P.fadeT>0?.12:.3;ctx.fillStyle='#000'; // small far shadow

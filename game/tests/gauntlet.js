@@ -69,9 +69,10 @@ function run(ch) {
             combat.doSlash();                                   // throws/refreshes glaive
             const near = foes.filter(e => dist(P, e) < 160).length;
             if (near >= 1 && P.cdVines <= 0) combat.doHeavy();  // vines + retreat hop
-            if (combat.lvl() >= 6 && P.hp / combat.maxHP() < 0.5 && P.humanCD <= 0) {
-              combat.doParry(); combat.doParry();               // human->bear->wolf
-            }
+            // proactively shift to the WOLF dps/heal form once available (not only when hurt) —
+            // a tankier (evolved) druid rarely drops below 0.5 HP under assist keep-alive, which used
+            // to strand it in low-dps human form and time the sweep out near the cap.
+            if (combat.lvl() >= 6 && P.humanCD <= 0) { combat.doParry(); combat.doParry(); }
           } else if (P.form === 'wolf') {
             if (P.cdHowl <= 0) combat.doHeavy();                // howling heal
             combat.doSlash();
