@@ -3,6 +3,35 @@ Autonomous job: turn neverendingnarratives.com into a Sorcerer-Sword PRODUCT HUB
 audiobook chapters · buy the books · fund development) AND produce a marketing content kit Hiro can post.
 Each run is a FRESH session — DISK is the state. Read this every run; do ONE increment; verify; log.
 
+## UPDATE — REOPENED (Hiro 2026-06-15): new requirements + CANONICAL CLONE FIX (do this update first)
+CANONICAL SITE CLONE IS NOW `C:\Users\charl\OneDrive\Documents\Neverendingnarratives` (the real deployed repo;
+the prior marketing layer was ported there). EDIT ONLY THAT clone (bash: /sessions/*/mnt/Neverendingnarratives —
+find via `ls /sessions/*/mnt/`). The old `...The Sorcerer Sword ARPG\site-neverendingnarratives` is a STALE
+DUPLICATE — do NOT touch it. Still NEVER auto-deploy (edit in place + backup; Hiro reviews + git pushes).
+NEW REQUIREMENTS:
+1. REMOVE the audiobook-"studio for hire" content entirely — Services, Pricing, Process, "Want your book next?",
+   "Contact us for story continuation". Hiro sells PRODUCTS now, not services.
+2. AUDIOBOOK BUNDLE PRODUCT: offer BOTH audiobook files as a bundle for $10. Payment = CashApp (MANUAL flow): a
+   "Get the audiobook bundle — $10" button -> instructions: pay $10 via CashApp, then email
+   neverendingnarratives@gmail.com to receive the files. Do NOT publicly host the paid audio in the deployed site
+   (that gives it away free) — the FREE first chapters stay on YouTube; the paid bundle is emailed after payment.
+   (Swap to Gumroad/Payhip auto-delivery later only if Hiro sets that up.)
+3. CASHAPP: Hiro's CashApp = phone 423-704-8922. NOTE a phone number is NOT a clickable web link; CashApp's real
+   link is a $cashtag (cash.app/$tag). So DISPLAY "CashApp: 423-704-8922" as text + a placeholder for Hiro's QR,
+   and use the $cashtag for the clickable link ONCE Hiro provides it (PENDING). Use CashApp for BOTH the donate/tip
+   AND the $10 bundle. Drop the Ko-fi/Gumroad placeholders unless Hiro adds those accounts.
+4. DONATION GOAL BAR: CashApp can't auto-report a total, so the "Help develop the Sorcerer-Sword" bar reads a
+   MANUAL `data-raised` value Hiro edits after payouts. Keep the $1000 portraits -> $5000 sprites goals.
+5. BACKGROUND: set the site background to a FOREST image from C:\Users\charl\OneDrive\Documents\TTRPG\Kenji\Art —
+   for dark fantasy prefer `forestnight.jpg` or `ForestEveningbackground.jpg` (darker) over bright `Forestbackground.jpg`.
+   Copy the chosen file into the site assets/, set as hero/page background with a dark overlay for text legibility.
+   (Optional later: the folder also has looping forest VIDEOS — Forestmove.mp4 / nightforestmove.mp4 — for a subtle bg.)
+6. THEME / WORD-ART: shift to DARK FANTASY — gothic/serif display headings (game's torch-gold + blood + bone
+   palette, Playfair/Cinzel-style display font), atmospheric, but STILL mostly professional/clean and readable.
+7. KEEP the YouTube channel + podcast/video embeds (free first chapters) — drive people to watch.
+STILL PENDING from Hiro (leave clearly-marked placeholders): the $cashtag (clickable link), Amazon book links,
+Book 2 title, and confirmation the two audiobook files exist + where they live for emailing.
+
 ## WHAT AN AUTONOMOUS TASK CAN / CANNOT DO (set expectations)
 - CAN: edit the website, write copy/SEO/meta, build donate/buy/audiobook sections (as hosted-checkout
   EMBEDS), and generate marketing CONTENT (drafts of posts, video descriptions, one-pager, flyers, emails).
@@ -203,3 +232,11 @@ MARKETING AUTOWORK COMPLETE (site build + first content kit)
   Amazon links + Book Two title on the site, set data-raised after payouts, then review and git push (site is
   never auto-deployed). Disabling the nn-marketing-site scheduled task now; Hiro can re-enable later for ongoing
   content refreshes.
+
+- 2026-06-15 (Hiro) — REOPENED with new requirements (see the UPDATE section at top): EDIT ONLY the canonical
+  clone Documents\Neverendingnarratives (NOT the stale site-neverendingnarratives duplicate); remove the
+  studio-for-hire sections; add a $10 CashApp audiobook-bundle product (manual email delivery); CashApp =
+  423-704-8922 (display as text + QR; $cashtag pending for a clickable link); manual donation goal bar; swap
+  background to a dark forest image (forestnight.jpg / ForestEveningbackground.jpg) from Kenji\Art; dark-fantasy
+  theme; keep YouTube. The prior "MARKETING AUTOWORK COMPLETE" is SUPERSEDED. NEXT STEP: apply the UPDATE,
+  smallest-safe increments, node-verify the HTML, never push.

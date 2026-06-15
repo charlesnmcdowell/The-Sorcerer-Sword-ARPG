@@ -2991,3 +2991,232 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   reward/gate), 12 (Ember class), 15 (Mountain HP/dmg balance), 6 (druid Varenholm crossing trigger), plus the
   original roadmap tail (1.5 already "all zones", warlock step e, druid line, docs, voice gap, arch-devil
   cinematic). Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (run 55) - **ITEM 14(D) - MANUAL-CONTROL AUDIT + headless AUTO-stop QA; item 14 now COMPLETE.**
+  Took the top-priority next step. Audited every manual-input path in WorldScene + the pit hosts and
+  confirmed the wiring, then added the strongest headless assertion possible (per the FAILSAFE PRINCIPLE -
+  no in-browser human confirm).
+  AUDIT FINDINGS:
+   - Manual MOVE already cancels the walk: updatePlayer (WorldScene.js ~L241) `if (mx||my) QuestNav.stop()`
+     for WASD/arrows AND TouchStick. OK.
+   - Manual INTERACT did NOT cancel the walk. The keydown-E handler (~L163) and the mobile prompt-tap
+     (CityUI._onPrompt, ~L182) just called tryInteract(). KEY INSIGHT: AUTO's OWN interact goes through
+     drive() -> scene.tryInteract() (questnav.js ~L223), NOT through these manual handlers - so it is safe
+     to make ONLY the manual entry points outrank the chauffeur without touching AUTO's auto-interact.
+   - Manual ATTACK needs no stop(): attacks fire only inside an encounter, where updatePlayer returns early
+     on encounterActive and there is no walk in progress - the AUTO-FIGHT bot and a manual swing interleave.
+   - AUTO OFF already returns control: setMode(0) -> stop() clears tracking (questnav.js ~L25/160).
+  CODE CHANGE (game/src/scenes/WorldScene.js; additive, no combat touched):
+   - keydown-E handler: `if (!this.encounterActive) { QuestNav.stop(); this.tryInteract(); }` - a deliberate
+     manual interact now pauses the AUTO walk (FAILSAFE-safe: in FULL, idleResume self-resumes after ~1.2s;
+     in OFF/FIGHT the human is driving anyway, so no softlock can result).
+   - CityUI._onPrompt (mobile prompt-tap): same QuestNav.stop() before tryInteract().
+   - Did NOT put stop() inside tryInteract() itself (that would also stop AUTO's drive()-initiated interact).
+  QA CHANGE (game/tests/qa_questlines.js): NEW manualControlCheck() (item 14D regression gate). Boots the
+   REAL CityScene (a WorldScene) and drives the REAL input wiring against the SAME live QuestNav the scene
+   mutates (note: bootScenes() RE-LOADS questnav.js, so the scene uses global.QuestNav - a 2nd instance -
+   not the module-top const; the check binds `QN = global.QuestNav` to match identity). Asserts: (1) AUTO
+   toggle - setMode(2)->tracking, setMode(0)->cleared; (2) a manual MOVE through the real updatePlayer
+   (keys.A held; intro dialog closed first so it doesn't early-return) clears tracking; (3) the real
+   keydown-E handler clears tracking; (4) the mobile CityUI._onPrompt tap clears tracking; (5) manual ATTACK
+   documented (info row). Wired into console output + docs/QA_REPORT.md (new section). Interactables emptied
+   before the interact asserts so tryInteract fires no side-effect fn().
+  ITEM 14 STATUS: now FULLY COMPLETE - 14(A) re-diagnosed as a non-bug (run 53; carriage IS at 1656,744),
+   14(B) objective-interactable existence QA (run 53, 41/41), 14(C) evo panel selectable (run 54, 15/15),
+   14(D) manual-control audit + QA (this run, 5/5).
+  CONSTRAINTS 8 & 9: untouched - no dialogue text added/changed, no voice_config / build_voice_manifest
+   change, no "VOICES READY". Item 1.5 status unchanged (no new proximity encounter triggers added).
+  VERIFY (no truncation; tails intact - WorldScene.js ends at its enc-frame `}` class close,
+   qa_questlines.js at the process.exit footer):
+   - `node --check` PASS on WorldScene.js (33454->33694) and qa_questlines.js (41027->~47.2k).
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS. New "MANUAL-CONTROL AUTO-STOP (item 14D) === PASS"
+     (5/5: AUTO toggle, manual MOVE, keydown-E, prompt-tap, attack-info). 14B existence 41/41 + evo 15/15
+     still PASS.
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 5.0 / druid 5.8 / warlock 20.7 /
+     seraph 3.1 simMin, all VICTORY 20/20). (This run's code change is in WorldScene, which gauntlet doesn't
+     load - it loads pit.js - so combat is unaffected; tests confirm nothing regressed.)
+  EXACT NEXT STEP: with item 14 done, take ITEM 15 - the QUICK Dragonspine (Mountain) balance pass (now
+   unblocked, smallest self-contained increment): in game/src/scenes/MountainScene.js MODERATELY lower
+   `this.territoryHpMult` from 8 -> 6 (~25% HP cut, still the hardest zone; leave forest 2 / undead 4
+   tiers alone) AND SLIGHTLY raise Dragonspine regular-enemy damage ~10-15% (either bump `dmgScale` on the
+   Mountain W_DEFS regular spawn defs, OR add a per-scene `this.territoryDmgMult = 1.15` and apply it in
+   WorldScene.startEncounter only when set). Scope = REGULAR packs; leave the boss x5 HP logic alone
+   (Aurgelm/Aurvaeth may take the same slight dmg bump, minor). VERIFY: node --check the changed file(s);
+   `node tests/headless.js` + `node tests/gauntlet.js` BOTH PASS (warlock + seraph must still clear
+   Dragonspine); confirm Mountain regular effective-HP dropped ~25% and damage rose ~10-15% vs before
+   (compute from the mult change). AFTER 15: item 13 (Ashenveil lower-levels - first feral-pack encounters
+   in AshLowerScene per run 52's next-step, then mini-boss, deep-door boss finale, reward, quest/journal
+   gate), then item 12 (Ember class), then item 6 (druid Varenholm crossing trigger), plus the original
+   roadmap tail. Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (run 56) - **ITEM 15 - Dragonspine (Mountain) balance pass: regular packs ~25% LESS HP, ~15% MORE damage.**
+  Quick self-contained increment per run 55's EXACT NEXT STEP. Two additive edits, no combat-engine systems added:
+   - game/src/scenes/MountainScene.js (~L239): `this.territoryHpMult = 8` -> `6` (regular Dragonspine packs now
+     scale HP x6 instead of x8 = a 25% effective-HP cut; still the hardest tier - forest 2 / undead 4 untouched).
+     The boss x5 HP path is `(e.boss ? 5 : terr)` in WorldScene.startEncounter, so bosses are UNAFFECTED by the
+     terr change (Aurgelm/Aurvaeth keep x5 HP) - exactly the "leave boss HP alone" scope.
+   - Added `this.territoryDmgMult = 1.15` on MountainScene (new line right after territoryHpMult).
+   - game/src/scenes/WorldScene.js startEncounter (~L585): dmgScale now `* (this.territoryDmgMult || 1)` so
+     Dragonspine regulars hit ~15% harder. Only Mountain sets the mult, so every other zone is unchanged
+     (`|| 1` no-op). Aurgelm/Aurvaeth take the same slight +15% dmg bump - explicitly allowed as "minor".
+  NET: Mountain regular effective HP dropped 25% (8->6) and their damage rose 15% (x1.15) vs before; less spongy,
+  a touch deadlier, still the toughest zone.
+  CONSTRAINTS 8 & 9: untouched - no dialogue text, no voice_config / build_voice_manifest change, no "VOICES READY".
+  Item 1.5 status unchanged (no new proximity encounter triggers added this run).
+  VERIFY (no truncation; tails intact - MountainScene ends at its class-close `}`, WorldScene at the enc-frame
+  class close):
+   - `node --check` PASS on MountainScene.js and WorldScene.js.
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try - ronin 5.9 / druid 5.9 / warlock 20.6 /
+     seraph 3.0 simMin, all VICTORY 20/20. Warlock + seraph still CLEAR Dragonspine after the rebalance.
+  EXACT NEXT STEP: ITEM 13 - ASHENVEIL LOWER-LEVELS content (AshLowerScene). Per run 52's plan, build it in
+  order: (1) first feral-pack proximity encounters in AshLowerScene (undead tier-4 HP already set there; reuse
+  existing AI types + the 1.5 dialog/encounter guards `!CityUI.dialogOpen() && !this.encounterActive &&
+  !this.cinematic`), (2) a mini-boss, (3) a deep-door boss finale (boss:true / deathCol pattern), (4) a reward,
+  (5) a quest/journal gate so QuestNav routes to it. Do it as small verifiable sub-steps (one per run if needed),
+  node --check + headless + gauntlet + qa_questlines PASS after each. AFTER 13: item 12 (Ember class), item 6
+  (druid Varenholm crossing trigger), then the original roadmap tail (warlock step e, druid line, docs refresh,
+  voice gap 13-line fix, arch-devil cinematic). Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (run 57) - **ITEM 13 increment 1 - ASHENVEIL LOWER-LEVELS: feral-pack proximity encounters added.**
+  Took run 56's EXACT NEXT STEP: first sub-step of item 13 = wire feral packs into the AshLowerScene shell.
+  Purely additive; reuses existing undead AI types + textures + the WorldScene pack pattern (no new engine systems).
+  CHANGES (game/src/scenes/AshLowerScene.js only):
+   - create(): added `this.packs` + a `mkPack` helper + an `L_DEFS` bank of THREE undercroft packs themed to
+     the cells/vault, each reusing an existing AI type + an existing fr-* texture (all confirmed present):
+       * CELL GHOULS (fr-ghoul, type 'hound', n3, hp230)  - "the slabs were open; so are their mouths"
+       * VAULT WRAITHS (fr-wraith, type 'hook', n3, hp240) - "the cold the ledger keeps"
+       * UNFILED WIGHTS (fr-gravewight, type 'grave', n2, hp320, stance open) - "names the vault never balanced"
+     Placed at 5 walkable tiles clear of the west cells / central ledger-vault / deep door:
+     ghouls [14,8],[32,20]; wraiths [30,9],[12,22]; wights [16,18]. All quest-count into `g-ashlower`.
+     territoryHpMult is already 4 (undead tier) so packs scale x4 HP via `{zoneScale:true}` like the surface.
+   - update(): added the pack wander+aggro loop, MIRRORING AshenveilScene exactly and FULLY honoring item 1.5:
+     `talking = CityUI.dialogOpen() || this.encounterActive || this.cinematic` skips wander/aggro, and the
+     proximity trigger (d<130) is additionally gated `&& !dialogOpen && !encounterActive && !cinematic`. On WIN:
+     destroy sprites, log to g-ashlower, 50% health-potion drop. On LOSS: revive pack, return player to the
+     STAIRS spawn (20*32,(28-3)*32) - no hard-block.
+  ITEM 1.5 NOTE: this NEW proximity trigger ships pre-gated by the 1.5 conversation-safe guards, so the
+  "CONVERSATION-SAFE: all zones" status is preserved (AshLowerScene previously had no encounters).
+  CONSTRAINTS 8 & 9: untouched - no dialogue text changed, no voice_config / build_voice_manifest change, no
+  "VOICES READY" (pack names/subs are floatText/banner flavor, not voiced speaker lines).
+  VERIFY (no truncation; tail intact - file ends at the update() method's class-close `}`):
+   - `node --check src/scenes/AshLowerScene.js` = PASS (file 11176 chars).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 5.6 / druid 5.7 / warlock 13.4 /
+     seraph 3.1 simMin, all VICTORY 20/20). (The packs live in AshLowerScene, which the gauntlet doesn't
+     load - it drives pit.js combat directly - so this confirms nothing regressed.)
+  EXACT NEXT STEP: ITEM 13 increment 2 - the AshLowerScene MINI-BOSS. Add ONE mid-zone mini-boss pack to
+  AshLowerScene's L_DEFS (reuse a boss-ish AI type, e.g. 'warden'/'door' with boss:false so it stays x4 not
+  x5, OR a small boss:true so it gets the x5 bump - pick the smaller bump to keep it a MINI-boss; give it a
+  themed name like 'THE LEDGER-KEEPER' / 'THE WARDEN OF THE UNFILED', a short pre-fight signDialog, and place
+  it deeper in the room, e.g. near the ledger-vault [25,9] or mid-chamber [22,8]). Same 1.5 guards on its
+  trigger; on win drop a better reward + set a `ash-lower-miniboss` flag. node --check + headless + gauntlet
+  (+ qa_questlines if you touch routing) all PASS. AFTER increment 2: increment 3 = the DEEP-DOOR boss finale
+  (boss:true / deathCol pattern, unsealing the deep door), increment 4 = reward, increment 5 = quest/journal
+  gate so QuestNav routes to it. THEN item 12 (Ember class), item 6 (druid Varenholm crossing trigger), then
+  the original roadmap tail (warlock step e, druid line, docs refresh, voice gap 13-line fix, arch-devil
+  cinematic). Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (run 58) - **ITEM 13 increment 2 - ASHENVEIL LOWER-LEVELS: the MINI-BOSS (THE WARDEN OF THE UNFILED).**
+  Took run 57's EXACT NEXT STEP: the mid-zone mini-boss. Purely additive to AshLowerScene.js; reuses the
+  existing 'door' AI + an existing texture + the WorldScene encounter path (no new engine systems).
+  CHANGES (game/src/scenes/AshLowerScene.js only):
+   - L_DEFS: added a `warden` def = 'THE WARDEN OF THE UNFILED' (tex 'fr-bonegolem', n1, type 'door',
+     hp480, r26, dmgScale1.5, deathCol '#9af0c0'), flagged `mini:true` + `quest:'g-ashlower'` with a
+     `pre` pre-fight signline and `preBtn`. SAFETY CHOICE: deliberately used the 'door' AI (frontal-block
+     guard; heavy strike OR flank breaks the shield - KILLABLE), NOT 'warden' - the 'warden' AI in pit.js
+     (~L1021) is "untouchable until every totem is broken", so a warden with no totems would be an
+     UNKILLABLE hard-block. boss:false keeps it on the x4 undead tier (480*4 eff-HP) = a real MINI-boss,
+     smaller than the x5 deep-door finale still to come (leaves the boss x5 path untouched).
+   - Placed at mid-chamber tile [22,8] = px(704,256): walkable (3 tiles N of the ledger-vault block
+     x22-28/y11-16, clear of the west cells and the deep door), deeper than the stair spawn so it guards
+     the approach to the vault/deep door.
+   - NEW method `miniBossFight(pk)`: a single-button pre-fight `CityUI.dialog` (auto-advances under
+     AUTO:FULL via QuestNav.updateDialogs, so it can NEVER hard-block - FAILSAFE PRINCIPLE honored) ->
+     `startEncounter(...,{zoneScale:true})`. On WIN: destroy sprite, log to g-ashlower, and on the FIRST
+     clear only (`!flags['ash-lower-miniboss']`) set that flag + drop the DUELIST'S KNOT artifact (a real,
+     mechanically-active +20% parry/dodge relic from artifactMods() that had NO in-game source until now)
+     + SaveSystem.save. On LOSS: revive the pack + bounce the player to the stair spawn (no hard-block).
+   - update() proximity loop: branch `if (pk.def.mini) { this.miniBossFight(pk); continue; }` BEFORE the
+     regular startEncounter. The trigger keeps the SAME item-1.5 guards
+     (`!CityUI.dialogOpen() && !this.encounterActive && !this.cinematic`), so CONVERSATION-SAFE: all zones
+     status is preserved (and the pre-fight dialog itself blocks other packs via dialogOpen()).
+  ITEM 1.5 NOTE: the new mini-boss trigger ships pre-gated by the 1.5 conversation-safe guards - status
+  "CONVERSATION-SAFE: all zones" unchanged.
+  CONSTRAINTS 8 & 9: untouched - no dialogue text changed/removed (the `pre` line is NEW flavor, not a
+  voiced speaker line; no voice_config / build_voice_manifest change, no "VOICES READY").
+  VERIFY (no truncation; tail intact - file ends at the update() method's class-close `}`):
+   - `node --check src/scenes/AshLowerScene.js` = PASS (file 14270 chars).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (no-fight scan + 14B existence + evo + 14D
+     manual-control all still PASS).
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try - ronin 8.3 / druid 5.4 / warlock 20.9 /
+     seraph 3.0 simMin, all VICTORY 20/20. (Mini-boss lives in AshLowerScene, which the gauntlet doesn't
+     load - it drives pit.js combat directly - so this confirms nothing regressed.)
+  EXACT NEXT STEP: ITEM 13 increment 3 - the AshLowerScene DEEP-DOOR BOSS FINALE. Replace the inert sealed
+  deep door (the `interactable` at L76 that currently just runs signDialog('THE DEEP DOOR',...)) with a
+  GATED boss encounter: only let the door "open" into the finale once `flags['ash-lower-miniboss']` is set
+  (else keep the existing flavor signDialog so it never hard-blocks). Add ONE deep-door boss to L_DEFS using
+  the boss:true / deathCol pattern (x5 HP via the e.boss path; a themed name e.g. 'THE LAST ROOM' /
+  'THE THING THE WEB SAVES'), with a short pre-fight CityUI.dialog (reuse the miniBossFight pattern, or a
+  dedicated bossFight()). On win: set `flags['ash-lower-boss']`, a finale reward, and unseal the door
+  (visual + a victory signDialog). Keep the same 1.5 guards. node --check + headless + gauntlet
+  (+ qa_questlines if routing/objective touched) all PASS. AFTER inc 3: increment 4 = reward polish,
+  increment 5 = a quest/journal gate so QuestNav routes a character to the lower levels. THEN item 12
+  (Ember class), item 6 (druid Varenholm crossing trigger), then the original roadmap tail (warlock step e,
+  druid line, docs refresh, voice gap 13-line fix, arch-devil cinematic). Leave the schedule ENABLED -
+  COMPLETION PROTOCOL NOT met.
+
+- 2026-06-15 (run 59) - **ITEM 13 increment 3 - ASHENVEIL LOWER-LEVELS: the DEEP-DOOR BOSS FINALE (THE THING THE WEB SAVES).**
+  Took run 58's EXACT NEXT STEP: replaced the inert sealed deep door with a GATED raid-finale boss.
+  Purely additive to AshLowerScene.js; reuses the 'necro' boss AI + the boss:true/deathCol pattern + the
+  existing startEncounter path (no new engine systems).
+  CHANGES (game/src/scenes/AshLowerScene.js only):
+   - Deep-door creation block: now stores refs (this.deepDoorX/Y, this.deepDoorG, this.deepDoorLabel) and,
+     if flags['ash-lower-boss'] is already set on entry, calls this.openDeepDoor() to keep it open on re-visit.
+     The interactable label changed 'try the sealed DEEP DOOR' -> 'the DEEP DOOR' and now dispatches to
+     this.deepDoor() instead of a fixed flavor sign.
+   - NEW deepDoor() dispatcher (3 branches, all dialog-based so NONE can hard-block per FAILSAFE PRINCIPLE):
+       * flags['ash-lower-boss'] set -> aftermath signDialog (door open, finale already cleared).
+       * flags['ash-lower-miniboss'] NOT set -> the original sealed-door flavor (reworded to point at the
+         warden as the gate); never blocks, just flavor.
+       * else (warden down, finale not yet cleared) -> deepDoorFight().
+   - NEW deepDoorFight(): a single-button pre-fight CityUI.dialog (auto-advances under AUTO:FULL via
+     QuestNav.updateDialogs -> can never hard-block) -> startEncounter with ONE boss:true enemy
+     'THE THING THE WEB SAVES' (type 'necro', hp760, deathCol '#9af0c0', stance open, dmgScale1.4). Via the
+     e.boss?5:terr path in WorldScene.startEncounter that is 760*5 = 3800 eff-HP (vs the surface Ashenveil
+     warden's 700*5=3500) - the hardest fight in the undercroft, as a finale should be. Calling CityUI.dialog
+     from inside the win-callback is the established pattern (cf. WorldScene.tryHuntCapture). On WIN: set
+     flags['ash-lower-boss'], openDeepDoor() (reskin), a 'THE LAST ROOM - unmade' banner, a 600-copper finale
+     purse via GroveScene.prototype.grantLoot.call, SaveSystem.save, and a victory signDialog. On LOSS: bounce
+     the player to the stair spawn (20*32,(28-3)*32) - no hard-block.
+   - NEW openDeepDoor(): clears deepDoorG and redraws the slab as an open black doorway + relabels
+     'THE DEEP DOOR - OPEN'. Idempotent; safe to call on win or on re-entry.
+  WHY 'necro' (not 'warden'): the 'warden' AI is untouchable until totems break (a hard-block with no totems),
+  so - exactly as for the run-58 mini-boss - I deliberately avoided it. 'necro' is a proven killable boss AI
+  (DungeonScene boss). The mini-boss ('door' AI, x4) and this finale ('necro', boss x5) are clearly tiered.
+  ITEM 1.5 NOTE: the deep-door trigger is INTERACT-based (E / prompt tap), not a proximity pack, and the
+  fight only starts after a dialog closes - inherently conversation-safe. "CONVERSATION-SAFE: all zones"
+  status preserved (no new proximity encounter triggers added this run).
+  CONSTRAINTS 8 & 9: untouched - no dialogue text changed/removed (the deep-door + finale prose are NEW
+  flavor/sign text, not voiced speaker lines); no voice_config / build_voice_manifest change; no "VOICES READY".
+  VERIFY (no truncation; tail intact - file ends at the update() method's class-close `}`):
+   - `node --check src/scenes/AshLowerScene.js` = PASS (file ~18355 chars).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (no-fight scan + 14B existence + evo + 14D
+     manual-control all still PASS).
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try - ronin 8.6 / druid 5.6 / warlock 15.2 /
+     seraph 3.1 simMin, all VICTORY 20/20. (Finale lives in AshLowerScene, which the gauntlet doesn't load -
+     it drives pit.js combat directly - so this confirms nothing regressed.)
+  EXACT NEXT STEP: ITEM 13 increment 4/5 - REWARD POLISH + a QUEST/JOURNAL GATE so QuestNav routes a
+  character down to the lower levels. (4) Reward polish is largely done (mini-boss = DUELIST'S KNOT artifact;
+  finale = 600 copper) - optionally add a small named drop or a journal "the lower levels are filed" beat on
+  the finale win. (5) THE GATE is the real remaining work: add a beat in game/src/core/questnav.js objective()
+  (and/or the Ashenveil stairs interactable) that, for the right character/flag, surfaces a journal objective
+  pointing at the AshenveilScene stairs down -> AshLowerScene -> the warden -> the deep door, so AUTO can
+  navigate the whole undercroft headlessly. Wire a qa_questlines assertion that objective() returns the
+  lower-levels target under the gating flag, and that AUTO can reach the stairs. node --check + headless +
+  gauntlet + qa_questlines all PASS. AFTER 13: item 12 (Ember class), item 6 (druid Varenholm crossing
+  trigger), then the original roadmap tail (warlock step e, druid line, docs refresh, voice gap 13-line fix,
+  arch-devil cinematic). Leave the schedule ENABLED - COMPLETION PROTOCOL NOT met.

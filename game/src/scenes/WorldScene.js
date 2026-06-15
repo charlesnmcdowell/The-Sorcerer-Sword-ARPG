@@ -582,7 +582,7 @@ class WorldScene extends Phaser.Scene {
     pack = pack.map(e => Object.assign({}, e, {
       hp: Math.max(1, Math.round(e.hp * fs * zd.hp * ENEMY_HP_SCALE * (e.boss ? 5 : terr))),
       maxhp: Math.max(1, Math.round((e.maxhp || e.hp) * fs * zd.hp * ENEMY_HP_SCALE * (e.boss ? 5 : terr))),
-      dmgScale: (e.dmgScale || 1) * zd.dmg }));
+      dmgScale: (e.dmgScale || 1) * zd.dmg * (this.territoryDmgMult || 1) }));
     this.encounterActive = true;
     if (window.IS_PHONE) this.cameras.main.setZoom(1); // the arena frame needs the full window
     this.encImg.setVisible(true);
