@@ -200,7 +200,7 @@ class ArenaScene extends Phaser.Scene {
     window.GameState.player = {
       char: P.char, kills: P.kills,
       level: P.char === 'ronin' ? 1 : Math.min(10, Math.floor(P.level || 1)),
-      bladeTier: P.bladeTier || 0, base: Object.assign({}, P.base),
+      bladeTier: P.bladeTier || 0, weaponLine: P.weaponLine || 'katana', base: Object.assign({}, P.base),
       nickname: this.combat.nickname, copper: purse, belt: []
     };
     window.GameState.world.flags.pitChampion = true;

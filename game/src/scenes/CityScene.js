@@ -173,6 +173,7 @@ class CityScene extends WorldScene {
     }
 
     this.placeCompanions('city');
+    if (P.char === 'ronin') this.addDojo(); // rq item 11: the sensei teaches a weapon line (katana/spear/rifle)
     this.initEncounterHost(null); // city uses default pit theme (no city fights yet, but host is uniform)
     this.cameras.main.setBounds(0, 0, WPX, HPX).startFollow(this.player, true, 0.12, 0.12);
     this.floatText(spawn.x, spawn.y - 60, 'KARRIDGE CITY', '#e7b450', 18);
@@ -335,6 +336,46 @@ class CityScene extends WorldScene {
       'A treaty-sealed coach waits, the guild\u2019s amber stamp burned into the door, a driver who will not meet your eye. "Up the Dragonspine, then. The wards read the seal and let you pass. Climb down where the air goes thin and the legends start."',
       [{ label: 'To the DRAGONSPINE \u2014 find the angel', fn: () => { close(); this.scene.start('MountainScene'); } },
        { label: 'Not yet \u2014 the angel can wait', fn: close }]);
+  }
+
+  // ===== ITEM 11: THE DOJO \u2014 Sensei Okada teaches the ronin a weapon line =====
+  // Increment 2: the unlock interactable only. Choosing a line sets GameState.player.weaponLine
+  // (+ flags['rq-dojo']='met') and, for now, only changes the on-level-up tier BANNER names
+  // (WPN_LINE_NAMES in pit.js). No spear/rifle moveset or stat change yet (later increments).
+  addDojo() {
+    if (this._dojoAdded || window.GameState.player.char !== 'ronin') return;
+    this._dojoAdded = true;
+    const T = CityMap.TILE, dx = 20 * T, dy = 25 * T; // inn-street side, clear of the guild coaches
+    const g = this.add.graphics().setDepth(dy - 1); // a simple training post beside the sensei
+    g.fillStyle(0x3a2a1a); g.fillRect(dx + 26, dy - 44, 6, 44);
+    g.fillStyle(0x6b4a2a); g.fillRect(dx + 20, dy - 46, 18, 6);
+    this.add.sprite(dx, dy, 'fr-npc1', 0).setDepth(dy);
+    this.addLight(dx, dy, 60, false);
+    this.interactables.push({ x: dx, y: dy, label: 'train with SENSEI OKADA', fn: () => this.dojoDialog() });
+  }
+
+  dojoDialog() {
+    if (CityUI.dialogOpen() || this.encounterActive) return; // item 1.5: never open over a live scene
+    const D = Quests.dojo, P = window.GameState.player, flags = window.GameState.world.flags;
+    const close = () => CityUI.closeDialog();
+    const current = P.weaponLine || 'katana';
+    const choose = key => {
+      const L = D.lines[key];
+      P.weaponLine = key;
+      flags[D.flag] = 'met';
+      const tierNames = L.tiers.map(t => t.name).join(' \u2192 ');
+      const focus = L.focus.charAt(0).toUpperCase() + L.focus.slice(1);
+      CityUI.dialog(D.teacher,
+        'A short bow. \"' + L.tiers[0].name + ', then. ' + focus + '. Your road climbs ' + tierNames +
+        ' \u2014 earn each tier in the Pit, as you always have.\"',
+        [{ label: 'Bow and take up the line', fn: () => { close();
+          this.floatText(this.player.x, this.player.y - 52, 'WEAPON LINE \u2014 ' + L.tiers[0].name, '#e7b450', 15); } }]);
+    };
+    const opts = Object.keys(D.lines).map(key => ({
+      label: (key === current ? '\u25cf ' : '') + D.lines[key].tiers[0].name + ' \u2014 ' + D.lines[key].stat,
+      fn: () => choose(key) }));
+    opts.push({ label: 'Not today, sensei', fn: close });
+    CityUI.dialog(D.teacher, D.intro, opts);
   }
 
   // ===== THE WARLOCK'S EPILOGUE: the White Writ -> the letter -> the alley -> the carriage =====

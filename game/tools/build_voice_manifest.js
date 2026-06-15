@@ -221,6 +221,24 @@ if (RE) {
   for (const o of (RE.report.go || [])) prn(o);
 }
 
+// ---- THE DOJO (item 11): Sensei Okada's intro + the per-line confirmation (ronin weapon lines) ----
+// SENSEI OKADA reuses the Faelar voice slot (serene/ageless male — see speakerSlots). His intro has
+// no quote marks in-game, so wrap its vtext in quotes to keep it spoken by HIM (not the Narrator);
+// the id still hashes from the UNQUOTED runtime text, so the in-game clip matches. The per-line
+// confirmation is rebuilt with the EXACT scene template (CityScene.dojoDialog) so its hash matches too.
+const DJ = Quests.dojo;
+if (DJ) {
+  add('SENSEI OKADA', DJ.intro, 'dojo: intro', { vtext: '"' + DJ.intro + '"' });
+  for (const key of Object.keys(DJ.lines)) {
+    const L = DJ.lines[key];
+    const tierNames = L.tiers.map(t => t.name).join(' \u2192 ');
+    const focus = L.focus.charAt(0).toUpperCase() + L.focus.slice(1);
+    const conf = 'A short bow. "' + L.tiers[0].name + ', then. ' + focus + '. Your road climbs ' +
+      tierNames + ' \u2014 earn each tier in the Pit, as you always have."';
+    add('SENSEI OKADA', conf, 'dojo: ' + key + ' confirm');
+  }
+}
+
 // ---- grove keeper (template-built in GroveScene; both variants) ----
 const kBase = 'A wood elf with bark-braided hair sizes you up. "The pit-crowned. Word outruns you." ';
 add('GROVE KEEPER', kBase + '"The line runs thin and the dead walk our edge. There is a camp by no road, west past the node — men who are not woodsmen, crates that are not goods. The Eldest will not act beyond Deepwood\'s shade. You might." (The trail sharpens in the next stretch of the hunt — Bucket 5.)', 'keeper');
@@ -314,6 +332,7 @@ fs.writeFileSync(out, JSON.stringify({
     'GROVE KEEPER': 'Faelar',
     'THE ARCH DEVIL': 'Warlock', 'THE SERAPHIM': 'Seraphim',
     'GUILD CLERK': 'Sylvara', 'VORATHIEL': 'Nyx', // ronin ending (existing ids)
+    'SENSEI OKADA': 'Faelar', // dojo (item 11) — reuse Faelar's serene/ageless male voice
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',
   },
   voiceHints: {

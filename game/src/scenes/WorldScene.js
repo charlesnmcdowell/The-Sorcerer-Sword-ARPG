@@ -12,7 +12,7 @@ class WorldScene extends Phaser.Scene {
     this.walkP = 0; this.face = -Math.PI / 2;
     this.encounterActive = false;
     const GS = window.GameState;
-    if (!GS.player) GS.player = { char: 'ronin', kills: 20, level: 1, bladeTier: 1,
+    if (!GS.player) GS.player = { char: 'ronin', kills: 20, level: 1, bladeTier: 1, weaponLine: 'katana',
       base: { STR: 10, DEX: 10, CON: 10, ATK: 10 }, nickname: 'THE HEADSMAN', copper: 200, belt: [] };
     if (!GS.player.artifacts) GS.player.artifacts = [];
     if (!GS.world.questCounts) GS.world.questCounts = {};
@@ -38,7 +38,11 @@ class WorldScene extends Phaser.Scene {
       'fr-player': GSP.char === 'druid' ? { col: '#2c4430', o: { druid: true, wpnLen: 26, wpnCol: '#d8e4d0', twin: true } }
         : GSP.char === 'warlock' ? { col: '#241a30', o: { warlock: true, robe: true, wpnLen: 30, wpnCol: '#3a3046', staffTip: true, tipCol: '#b070f0', twoHand: false, headCol: '#9a9ab0' } }
         : GSP.char === 'seraph' ? { col: '#cfd6e4', o: { seraphim: true, robe: true, spear: true, spearLen: 46, headCol: '#e8e4da' } }
-        : { col: '#2c3440', o: { samurai: true, armor: GSP.bladeTier || 0, wpnLen: (GSP.bladeTier === 2 ? 62 : GSP.bladeTier === 1 ? 46 : 30), wpnCol: '#e7d9a8', thickWpn: GSP.bladeTier === 2 } },
+        : (GSP.weaponLine === 'spear'
+          ? { col: '#2c3440', o: { samurai: true, armor: GSP.bladeTier || 0, spear: true, spearLen: (GSP.bladeTier === 2 ? 70 : GSP.bladeTier === 1 ? 58 : 48), spearBladeCol: '#dfe6ee', headCol: '#caa27a' } }
+          : GSP.weaponLine === 'rifle'
+          ? { col: '#2c3440', o: { samurai: true, armor: GSP.bladeTier || 0, gun: true, headCol: '#caa27a' } }
+          : { col: '#2c3440', o: { samurai: true, armor: GSP.bladeTier || 0, wpnLen: (GSP.bladeTier === 2 ? 62 : GSP.bladeTier === 1 ? 46 : 30), wpnCol: '#e7d9a8', thickWpn: GSP.bladeTier === 2 } }),
       'fr-npc0': { col: '#4a3c30', o: {} }, 'fr-npc1': { col: '#39414a', o: { hood: true } },
       'fr-npc2': { col: '#4a2f33', o: { robe: true, headCol: '#caa27a' } }, 'fr-npc3': { col: '#3c4434', o: {} },
       'fr-wolf': { col: '#3a4a3c', o: { quad: true } },
@@ -53,7 +57,7 @@ class WorldScene extends Phaser.Scene {
     const DIRS = 8, PH = 4;
     // the player's look only changes with character/blade-tier — NEVER destroy a texture
     // a live sprite is using (that's a black screen on WebGL)
-    const frSig = GSP.char + ':' + (GSP.bladeTier || 0);
+    const frSig = GSP.char + ':' + (GSP.bladeTier || 0) + ':' + (GSP.weaponLine || 'katana');
     for (const [key, look] of Object.entries(looks)) {
       if (this.textures.exists(key)) {
         if (key !== 'fr-player' || window.__frPlayerSig === frSig) continue;
@@ -598,6 +602,7 @@ class WorldScene extends Phaser.Scene {
       P.kills = this.encCombat.P.kills;
       P.level = Math.min(10, Math.floor(this.encCombat.P.level || P.level));
       P.bladeTier = this.encCombat.P.bladeTier || P.bladeTier;
+      P.weaponLine = this.encCombat.P.weaponLine || P.weaponLine || 'katana';
       P.nickname = this.encCombat.nickname;
       CityUI.setIdentity(P.nickname); CityUI.belt(P.belt);
       this.encounterActive = false;

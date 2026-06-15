@@ -782,5 +782,33 @@ Quests.archDevilOutro = {
   seraph: "Vile demon - away with you. Back to hell you go.",
 };
 
+Quests.dojo = {
+  // ITEM 11 — Ronin DOJO weapon lines (DESIGN DATA; wiring + voice land in later runs).
+  // The katana chain (Katana->Nodachi->Odachi) is the ronin's default. The dojo unlocks
+  // two ALTERNATE lines; each mirrors the katana tier ladder (tier 0/1/2) with its own
+  // stat-doubling focus, look and attack feel. Hiro: review/approve the names + stat focus
+  // + feel below (these are creative calls, flagged in the AUTOWORK log).
+  flag: 'rq-dojo',                 // dojo unlock / questline flag (set when the sensei is met)
+  teacher: 'SENSEI OKADA',         // dojo master NPC (City) — voice mapped to an existing id later
+  intro: "Three weapons, one discipline. The blade you carry, the spear that keeps the wolf at arm's length, and the thunder-stick the southern traders left behind. Choose, and I will set your feet on the road.",
+  lines: {
+    katana: { key: 'katana', stat: 'STR', focus: 'balanced kesa cuts + the men finisher',
+      tiers: [
+        { name: 'KATANA',  sub: 'one edge, one breath' },
+        { name: 'NODACHI', sub: 'the blade grows with its legend' },
+        { name: 'ODACHI',  sub: 'the blade is taller than the man was' } ] },
+    spear: { key: 'spear', stat: 'DEX', focus: 'long reach thrusts that pierce a line of foes',
+      tiers: [
+        { name: 'YARI',         sub: "keep the wolf at arm's length" },
+        { name: 'NAGAE-YARI',   sub: 'the reach outgrows the man' },
+        { name: 'JUMONJI-YARI', sub: 'the cross-blade takes two at once' } ] },
+    rifle: { key: 'rifle', stat: 'ATK', focus: 'slow, heavy matchlock shots — range over rhythm',
+      tiers: [
+        { name: 'TANEGASHIMA', sub: 'thunder in a wooden stock' },
+        { name: 'LONG RIFLE',  sub: 'the range outgrows the room' },
+        { name: 'OZUTSU',      sub: 'a hand-cannon that ends arguments' } ] },
+  },
+};
+
 if (typeof module !== 'undefined' && module.exports) module.exports = { Quests };
 else window.Quests = Quests;

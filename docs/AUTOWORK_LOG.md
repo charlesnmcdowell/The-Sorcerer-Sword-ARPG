@@ -332,6 +332,77 @@ roadmap is COMPLETE only when QA_REPORT.md shows all four characters fully trave
 triggered and zero stuck states.
 
 
+### 9. BUGFIX — Warlock Hunt AUTO STUCK at "2 of 5 caged, bring back Cinder" (Dragonspine) [Hiro real-play report]
+Bug: as warlock, after caging Briar (Grove) + Ossuary (Dungeon), the objective is "bring back Cinder" but
+play/AUTO gets STUCK — can't reach or capture Cinder on the DRAGONSPINE (gated for the warlock; reachable only
+via the city CULT COACH). IMPORTANT: item 8's sim-QA reported warlock PASS, so qa_questlines.js does NOT model
+the cult-coach gated-zone transition — closing that QA gap is part of THIS fix.
+LIKELY ROOT CAUSES (check all):
+ - MountainScene may NOT set `world.zone='dragonspine'` when entered VIA THE CULT COACH (vs the seraph route).
+   If the zone isn't 'dragonspine' after the coach, QuestNav.objective()'s gated-zone branch keeps returning the
+   CITY cult-coach tile -> loop -> STUCK. STRONG CANDIDATE — verify the coach's scene.start path sets the zone.
+ - cultCoachDialog boarding/ordering: when Cinder is the next uncaged target, confirm the coach actually offers +
+   boards DRAGONSPINE (AUTO clicks the FIRST option) and scene.start lands in MountainScene.
+ - Cinder interactable reachability: its tile (~34,18) must be walkable (not on a crag/solid) and BFS-reachable
+   from the Mountain spawn, and its trigger must fire for warlock + hunt-active + !cap-cinder.
+ - objective() for {briar+ossuary caged, cinder next}: must return a REACHABLE target with NO dead-end/loop both
+   when NOT in dragonspine (-> cult coach) and when IN dragonspine (-> the Cinder tile).
+FIX: make the warlock able to travel to Dragonspine via the cult coach and reach + capture Cinder under AUTO and
+manual play. APPLY THE SAME FIX/CHECK to the Varenholm climax (Cookie) — it's the same gated-coach mechanism; the
+warlock must reach BOTH gated targets end to end (cinder AND cookie).
+EXTEND QA (item 8 / game/tests/qa_questlines.js): model the cult-coach gated-zone transitions (set zone exactly
+as the coach scene.start does) so the harness actually walks the warlock THROUGH Dragonspine + Varenholm and
+would catch this stuck state. Re-run: warlock must complete all 5 captures + deliver, not just route to the coach.
+VERIFY: node --check; headless + gauntlet PASS; qa_questlines.js PASS with warlock actually reaching cinder +
+cookie. Respect item 1.5. No new VO unless new lines are added (then follow constraints 8 & 9).
+
+
+### 10. BIG FEATURE — Character EVOLUTIONS at lv 10 / 20 (large; multi-run; do AFTER items 6-9 + QA)
+Per docs/knowledge base/10-future-features.md: an evolution CHOICE per character at level 10 and again at 20
+(raise the level cap from 10 to 20 for this), each branch giving a new look + a variant moveset. Focus per the
+doc: Druid + Warlock branches first (Ronin growth is the weapon chains, item 11; Seraph last). 
+- Code: character kits + level/forms live in src/combat/pit.js (lvl(), the per-char ability gates, druid
+  forms, warlock summon->arch-devil->lich ladder). Add a branch-choice UI at the lv10/20 thresholds; each
+  branch = a reused/retuned ability set + a distinct drawFighter look (bakeFrames in WorldScene). Keep balanced
+  vs the existing engine; the gauntlet test exercises all chars.
+- DESIGN: where a real creative choice exists (which 2 branches per char, the new moves), pick sensible options
+  consistent with each char's identity, LOG them, and flag anything Hiro should approve. New dialogue/flavor ->
+  constraints 8 & 9 (manifest + voice). Small increments; node --check + headless + gauntlet + qa after each.
+
+### 11. BIG FEATURE — Ronin DOJO weapon lines: spear + rifle (large; multi-run)
+Per the doc: learnable SPEAR and RIFLE weapon lines for the Ronin, EACH with its own stat-doubling evolution
+chain mirroring the existing katana -> nodachi -> odachi (bladeTier) progression. A dojo/teacher unlocks a line;
+each tier doubles the relevant stat + changes the weapon look + tweaks the moveset.
+- Code: the Ronin's katana chain is the bladeTier system in src/combat/pit.js (+ the samurai look in
+  WorldScene.bakeFrames). Generalize it to multiple weapon lines (track active line + tier), each with its own
+  art + attack feel (spear = reach/thrust; rifle = ranged shots, reuse the bullets/gunner system). Add a dojo
+  unlock interactable (a scene, e.g. City). Keep balanced; gauntlet must still PASS for the ronin.
+- DESIGN: pick spear/rifle tier names + stat curves consistent with katana->nodachi->odachi; LOG them. New
+  dialogue -> constraints 8 & 9. Small increments; verify each.
+
+### 12. BIG FEATURE — Playable ANKUSPAWN class ("Ember theme") (LARGE; multi-run; lore-heavy)
+Per the doc: a 5th playable champion, an Ankuspawn "Ember" class tied to core lore (the current four are
+deliberately NOT Ankuspawn). CANON: read C:\Users\charl\OneDrive\Documents\TTRPG\Kenji\Game init files\character_tracker.md
++ ankuspawn_race.md for the Ankuspawn/Ember identity; keep it consistent (Ember = the green-fire dragon-blood gift).
+- Code: add a 5th character end-to-end — character-select button (index.html + ArenaScene), a full kit in
+  src/combat/pit.js (reuse engine primitives; an Ember-themed moveset), a drawFighter look (bakeFrames), intro
+  bio, nickname banks, and char-gating across scenes/QuestNav as the existing four have. It must pass the
+  gauntlet like the others and the per-character QA (item 8) must be extended to a 5th character.
+- DESIGN: this is the biggest item — design the kit + look + a (short) story path or at least reuse the main
+  quest for it; pick sensible, balanced, canon choices, LOG them, flag big calls for Hiro. New dialogue ->
+  constraints 8 & 9. Build in small increments (button+look first, then kit, then gating, then QA), verifying each.
+
+### 13. BIG FEATURE — Ashenveil / Academy LOWER-LEVELS raid zone (large; multi-run)
+Per the doc: turn the Ashenveil Academy "lower levels" (currently a locked teaser + epilogue references) into a
+playable RAID zone — a deeper, harder multi-encounter dungeon under the Academy.
+- Code: extend AshenveilScene or add a new WorldScene subclass for the lower levels, reachable from the Academy
+  (a stairs/door interactable). Build a sequence of tougher encounters (reuse existing AI types + the boss
+  pattern boss:true/deathCol; reuse the territory HP ladder, undead-tier+), a mini-boss/boss finale, and a
+  reward. Respect item 1.5 (no fights during dialogue) on all triggers; add QuestNav routing; surface in journal.
+- DESIGN: pick the raid's encounter flow + boss + reward (lore-consistent with Ashenveil/Nyx); LOG choices. New
+  dialogue -> constraints 8 & 9. Small increments (zone shell -> encounters -> boss -> reward -> QA), verify each.
+
+
 ## CURRENT STATE (as of handoff)
 Already DONE on disk (uncommitted): boss expansion (7 bosses + cinematics + venom/frost zones),
 territory HP ladder (forest x2, undead x4, mountain x8) + bosses x5, pit decline-once + board buttons,
@@ -1931,3 +2002,617 @@ WARLOCK hunt: NOT STARTED. Begin with the Quests text bank in game/src/world/que
   re-confirm tests PASS and re-disable — there is no further autowork.
   (Pending Hiro MANUAL step, NOT autowork: run `python game/tools/generate_voices.py --yes` to fill the
   still-todo "VOICES READY TO GENERATE" clips — see docs/VOICE_STATUS.md.)
+
+- 2026-06-14 (Hiro real-play report) — REOPENED: roadmap item 9 (warlock hunt AUTO STUCK at "2 of 5 caged,
+  bring back Cinder" — Dragonspine gated-coach routing). The prior "AUTOWORK COMPLETE" is SUPERSEDED. NEXT STEP:
+  do item 9 — likely MountainScene not setting world.zone='dragonspine' when entered via the cult coach (so
+  objective() loops back to the coach); fix coach travel to Dragonspine (and verify Varenholm/Cookie the same
+  way), and EXTEND qa_questlines.js to model the cult-coach gated-zone transitions so QA catches it. node --check
+  + headless + gauntlet + qa_questlines after. Then (only if no items remain) follow the COMPLETION PROTOCOL.
+
+- 2026-06-14 (Hiro) — Queued BIG FEATURES as roadmap items 10-13: character evolutions (lv10/20), Ronin dojo
+  weapon lines (spear+rifle), playable Ankuspawn "Ember" class, and the Ashenveil lower-levels raid zone. These
+  are LARGE multi-run features with real design/lore decisions — make sensible canon/balanced choices, LOG them,
+  flag big calls for Hiro. PRIORITY: AFTER the bugfix (item 9) + QA. Order among 10-13: smallest-scope first
+  (suggest 11 dojo or 10 evolutions, then 13 raid, then 12 the new class — the biggest). Each: small increments,
+  node --check + headless + gauntlet + qa_questlines PASS after each; extend the QA harness for the 5th class.
+- 2026-06-14 (run 37) — **ITEM 9 ROUTING VERIFIED SOUND + permanent regression gate added.** Investigated
+  the Hiro-reported "warlock AUTO stuck at 2/5 caged, bring back Cinder — Dragonspine gated-coach routing."
+  Built a faithful headless route simulator (scratch `routesim.js`): boots the REAL scene classes with the
+  REAL QuestNav AUTO drive loop and REAL zone transitions, but SHORT-CIRCUITS combat (every encounter = an
+  instant win) to isolate ROUTING from the combat sim. RESULT: the warlock hunt routes CLEANLY end-to-end on
+  AUTO FULL — cap-briar (grove) -> cap-ossuary (dungeon) -> auto-hops dungeon->grove->city -> boards the CULT
+  COACH -> **MountainScene sets zone='dragonspine' and cap-cinder is captured** -> Whisper (ashenveil) ->
+  cult coach -> Cookie (Varenholm) -> deliver to Nyx -> credits-rolled. So the leading hypothesis
+  ("MountainScene not setting world.zone='dragonspine' when entered via the cult coach -> objective() loops
+  back to the coach") is DISPROVEN: MountainScene.create() sets the zone at L21, the real tryInteract picks
+  the cult coach correctly even with the hunt-coach/carriage crowding the guild door, and cap-cinder is set.
+  The reported stuck could NOT be reproduced at the routing/zone level.
+  WHAT I CHANGED (one file, test-only, additive — NO game code touched): extended
+  `game/tests/qa_questlines.js` with `gatedGuardCheck()` (roadmap item 9's QA ask: "model the cult-coach
+  gated-zone transitions so QA catches it"). It asserts `QuestNav.objective()` (1) routes to the city cult
+  coach from EVERY off-gated-zone position — Cinder from {grove-dungeon, thorn-grove, karridge-city,
+  ashenveil}, Cookie from {ashenveil, karridge-city, dragonspine, thorn-grove} — and (2) once ON the gated
+  zone, routes to the in-zone CAPTURE tile (Cinder@dragonspine, Cookie@varenholm) and NEVER loops back to the
+  coach. This bites on the exact reported regression: the "on Dragonspine -> capture Cinder" check requires
+  obj.zone==='dragonspine', so if the scene ever failed to set the zone the objective would resolve to the
+  coach (zone karridge-city) and the check FAILS. Also wrote the gate into docs/QA_REPORT.md.
+  VERIFY: `node --check tests/qa_questlines.js` PASS (tail intact, not truncated). `node
+  tests/qa_questlines.js` = QA QUESTLINES: PASS — new "GATED CULT-COACH TRANSITIONS (item 9)" section 10/10
+  PASS, all 4 characters still PASS. `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node
+  tests/gauntlet.js` = GAUNTLET SWEEP: PASS (ronin 8.4 / druid 38.6 / warlock 26.7 / seraph 4.3 simMin, all
+  VICTORY 20/20). Game fully playable; no game code changed, so combat is untouched.
+  STATUS: item 9 routing is verified sound and now permanently gated. Because the stuck is NOT reproducible
+  headlessly, it is most likely either (a) already resolved on the current build, or (b) a real-PLAY combat /
+  pixel-pathing artifact the BFS route sim can't see (NOT a routing/zone bug).
+  EXACT NEXT STEP for the following run: (1) Treat item-9 ROUTING as closed (gated by qa_questlines). If Hiro
+  reports the stuck STILL repros on a fresh build, ask him to capture a flag dump at the stuck moment —
+  `q-wq4-the-hunt`, all `cap-*`, `GameState.world.zone`, and the AUTO mode — so the real (combat/pixel) cause
+  can be targeted; do NOT change game code chasing an unreproducible bug. (2) Otherwise BEGIN the queued big
+  features 10-13, smallest-scope first per Hiro's note: start with item 11 (Ronin dojo weapon lines:
+  spear+rifle) OR item 10 (lv10/20 character evolutions). Each: small increments, `node --check` + headless +
+  gauntlet + qa_questlines PASS after each, and extend the QA harness as the 5th-class/new-content surface
+  grows. Leave the schedule ENABLED — items 10-13 remain.
+
+- 2026-06-14 (run 38) — **ITEM 11 increment 1 — RONIN DOJO WEAPON LINES: design data + non-breaking
+  `P.weaponLine` plumbing.** First (foundation) increment of the multi-run dojo feature. Purely
+  additive; combat behavior is UNCHANGED (katana stays the only live line this run). No new engine
+  system; reuses the existing `bladeTier` 0/1/2 ladder and (for the future rifle line) the existing
+  `bullets`/`gunner` system.
+  WHAT I ADDED:
+  (a) DATA — `Quests.dojo` in `game/src/world/quests.js` (appended before the module export): the
+      dojo design bank — `flag:'rq-dojo'`, teacher `SENSEI OKADA` (City NPC, voice mapped later),
+      an `intro` line, and `lines.{katana,spear,rifle}` each with `{key, stat, focus, tiers[3]}`.
+      DESIGN CHOICES (Hiro — please review/approve; these are creative calls):
+        • KATANA (default, unchanged): stat STR — balanced kesa cuts + men finisher.
+          Tiers KATANA -> NODACHI -> ODACHI (existing).
+        • SPEAR (new): stat DEX — long reach thrusts that pierce a line of foes.
+          Tiers YARI -> NAGAE-YARI -> JUMONJI-YARI.
+        • RIFLE (new): stat ATK — slow, heavy matchlock shots, range over rhythm (will reuse the
+          bullets system). Tiers TANEGASHIMA -> LONG RIFLE -> OZUTSU.
+      Each line mirrors the katana stat-doubling ladder (tier 0/1/2). Names are authentic JP
+      weapon terms; flagged here so Hiro can rename before the movesets are built.
+  (b) ENGINE PLUMBING — `game/src/combat/pit.js`: added a self-contained `WPN_LINE_NAMES` table
+      (katana/spear/rifle tier name+sub; katana entries byte-identical to the old banner) just above
+      `checkRoninForm()`, and generalized that function's tier banner to read it via
+      `P.weaponLine` (defaults 'katana' -> SAME NODACHI/ODACHI banners as before). Added a
+      non-breaking `P.weaponLine` field defaulted to 'katana' at both resets (fight-start L1667 +
+      fullReset L1698) and restored in `setPlayerSnapshot` (`snap.weaponLine||'katana'`). pit.js does
+      NOT depend on Quests.dojo (the table is local) so headless/gauntlet need no quests data.
+  (c) SNAPSHOT ROUND-TRIP — `weaponLine` now carried through: `ArenaScene.handoffToCity()` snapshot,
+      `WorldScene` GS.player default + post-fight sync-back. All default to 'katana', so existing
+      saves and all four characters are unaffected.
+  NO new playable flow, NO dojo NPC/scene, NO moveset/art changes yet — so NO voice work this run
+  (constraints 8 & 9 untouched; the `intro`/teacher text exists as data but is not wired to a
+  speaker, exactly like the warlockHunt data-bank run). Combat for every character is identical.
+  VERIFY: `node --check` PASS on all 4 changed files (quests.js 93052 B, pit.js 166980 B,
+  ArenaScene.js 16171 B, WorldScene.js 32896 B — tails intact, NOT truncated). `Quests.dojo`
+  round-trips via require() (3 lines, tiers KATANA>NODACHI>ODACHI / YARI>NAGAE-YARI>JUMONJI-YARI /
+  TANEGASHIMA>LONG RIFLE>OZUTSU; stats STR/DEX/ATK). `node tests/headless.js` = 5/5 HEADLESS HARNESS
+  PASS. `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md).
+  `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS (all 4 VICTORY 20/20, seraph 4.1 simMin) first try.
+  Game fully playable.
+  EXACT NEXT STEP (item 11 increment 2 — the DOJO UNLOCK interactable, smallest-safe, no moveset yet):
+  in `game/src/scenes/CityScene.js` add a ronin-gated dojo NPC/interactable (SENSEI OKADA) that opens
+  a dialog using `Quests.dojo.intro` and offers the three lines; selecting one sets
+  `GameState.player.weaponLine` (+ `flags['rq-dojo']='met'`). Gate it `char==='ronin'` and respect
+  item 1.5 (no fight while the dialog is open). DO NOT yet change the spear/rifle MOVESET or stats —
+  switching the line should, for this increment, only change the on-level-up tier BANNER names
+  (already supported by WPN_LINE_NAMES) so it is verifiable with zero combat-balance risk. node --check
+  + headless + gauntlet + qa_questlines after. Following increments: (3) spear moveset+art (reach/thrust,
+  pierce a line; bakeFrames spear look in WorldScene), (4) rifle moveset+art (ranged bullets, reuse the
+  gunner/bullets system; rifle look), (5) per-line stat-doubling tier curves, (6) VOICE the sensei +
+  any new lines (constraints 8 & 9), (7) extend qa_questlines for the dojo beat. Leave the schedule
+  ENABLED — items 10-13 remain (11 in progress; then 10 evolutions, 13 raid, 12 the Ember class).
+
+- 2026-06-14 (run 39) - **ITEM 11 increment 2 - DOJO UNLOCK interactable (SENSEI OKADA) wired.** Second
+  increment of the multi-run ronin dojo feature. Added a ronin-gated dojo NPC in the City that lets the
+  player choose a weapon LINE (katana/spear/rifle). Banner-only for now: choosing a line sets
+  GameState.player.weaponLine + flags['rq-dojo']='met' and ONLY changes the on-level-up tier BANNER names
+  (the WPN_LINE_NAMES table already added to pit.js in run 38). NO spear/rifle moveset/art/stat change yet
+  (deferred to increments 3-5), so combat balance is untouched and the gauntlet is unaffected.
+  WHAT I ADDED (one file, game/src/scenes/CityScene.js, additive):
+   (a) `addDojo()` - places SENSEI OKADA (+ a small training-post graphic + light) at tile (20,25), the
+       inn-street side, clear of the guild-door coach crowding. Guarded `this._dojoAdded` (once) and
+       `char==='ronin'`. Called from create() via `if (P.char === 'ronin') this.addDojo();` (right after
+       placeCompanions). Pushes an interactable 'train with SENSEI OKADA' -> `this.dojoDialog()`.
+   (b) `dojoDialog()` - opens `Quests.dojo.intro`, lists the three lines (label = tier-0 name + stat, a
+       bullet marks the current line), and on select sets weaponLine + the flag and shows a short
+       confirmation naming the line's focus + tier ladder. Item-1.5 respected: it early-returns if
+       `CityUI.dialogOpen() || this.encounterActive`, and it's an E-press interactable (no proximity
+       fight). No QuestNav routing added (dojo is optional, not a story objective).
+  TRUNCATION EVENT + RECOVERY (constraint 1): the first save via the Edit tool TRUNCATED the file on disk
+  at line 570 ("// wa", mid-update()) - `node --check` failed at end-of-file. RECOVERED by extracting the
+  last committed copy (`git show HEAD:...CityScene.js`, 568 lines, today 13:43, predates any edit since no
+  run touched CityScene after run 38) and RE-APPLYING both edits bash-side via python, then writing the
+  full file. NOTE for future runs: the file uses LITERAL `\u2014`-style escape sequences in source (not raw
+  em-dash bytes) - match those, not the rendered char, when anchoring edits.
+  VOICE: SENSEI OKADA is a NEW speaker and his intro/confirmation text is now player-facing, but it is
+  TEXT-ONLY and NOT yet voiced (mapping + manifest deferred to increment 6 per the item-11 plan, exactly
+  like the warlockHunt data-bank pattern). NOT writing "VOICES READY TO GENERATE" this run.
+  VERIFY: `node --check src/scenes/CityScene.js` PASS twice (immediately after the python write AND a
+  re-check - tail = the class/update() closing braces, 610 lines, 35864 B, NOT truncated). `node
+  tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4
+  chars; re-wrote docs/QA_REPORT.md). `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 6.4 /
+  druid 36.1 / warlock 16.2 / seraph 3.9 simMin, all VICTORY 20/20, under the 50 cap). Game fully playable;
+  every character unaffected except the ronin gains an optional dojo NPC.
+  EXACT NEXT STEP (item 11 increment 3 - the SPEAR moveset + art, smallest-safe): when `P.weaponLine==='spear'`,
+  give the ronin a reach/thrust attack feel that can pierce a line of foes (reuse existing melee primitives;
+  do NOT build a new engine system) and a spear `drawFighter` look (bakeFrames in WorldScene, mirror the
+  samurai katana look with a long thrust weapon). Keep katana byte-identical when weaponLine==='katana'.
+  Mirror the bladeTier stat ladder for the spear's tiers (DEX focus). node --check + headless + gauntlet +
+  qa_questlines PASS after. Following increments: (4) rifle moveset+art (ranged, reuse the bullets/gunner
+  system), (5) per-line stat-doubling tier curves, (6) VOICE Sensei Okada + any new lines (constraints 8 &
+  9), (7) extend qa_questlines for the dojo beat. Leave the schedule ENABLED - items 10-13 remain (11 in
+  progress; then 10 evolutions, 13 raid, 12 the Ember class).
+
+- 2026-06-14 (run 40) - **ITEM 11 increment 3 - SPEAR moveset + art.** Third increment of the ronin dojo
+  feature: when `P.weaponLine==='spear'` the ronin now fights with a DISTINCT reach/thrust moveset and a
+  spear LOOK. Katana stays BYTE-IDENTICAL (the existing katana drawFighter call and the whole katana
+  doSlash path are untouched - the spear is a pure early-return branch). No new engine system; the thrust
+  reuses hitEnemy() so every per-enemy rule (warden ward, door guard, grave parry) still applies, and the
+  art reuses the EXISTING `o.spear` drawFighter look already used by the seraph.
+  WHAT I ADDED (2 files, additive):
+   game/src/combat/pit.js:
+    (a) `pierceLine(a,len,w,dmg,heavy,kb)` - a thrust that hits EVERY foe along a line (seraph fireRay-style
+        projection/perp test), calling hitEnemy per foe; optional knockback shove (clamped to arena).
+    (b) `roninSpear()` - DEX reach combo: two quick narrow thrusts (len 120+tier*18, w26, 0.8x dmg,
+        pierces the line) then a 3rd LUNGE that charges through, len 150+tier*22 / w34 / 1.25x dmg / +shove,
+        banner "NUKITSUKE - the long lunge". Steps into each strike like the katana. Slightly slower recover
+        (atkRec*1.12) for the longer haft. Visual = `style:2` straight-line swing (steel-blue).
+    (c) doSlash() branch: `if(P.char==='ronin'&&P.weaponLine==='spear'){autoFace();roninSpear();return;}`
+        (single additive line right after the seraph branch; katana default below is unchanged).
+    (d) combat-view player draw: when weaponLine==='spear' draw `{samurai:true,armor:bt,spear:true,
+        spearLen: bt2?70:bt1?58:48, spearBladeCol:'#dfe6ee', poke:P.atkRecover>0}` (samurai armor body +
+        steel spear that extends on the thrust); the katana drawFighter call is kept verbatim in the else.
+    (e) drawFighter spear branch: leaf-blade color now `C(o.spearBladeCol||'#fff6dc')` so the ronin gets a
+        STEEL point while the seraph (passes no spearBladeCol) stays angelic-white = byte-identical.
+   game/src/scenes/WorldScene.js (overworld sprite):
+    (f) ronin player look is now weaponLine-conditional: spear -> samurai+spear sprite (tier-scaled
+        spearLen 48/58/70, steel blade); katana -> the existing samurai+katana look (unchanged).
+    (g) `frSig` now includes `(GSP.weaponLine||'katana')` so picking a line at SENSEI OKADA's dojo rebakes
+        the player texture (without this the overworld sprite would not switch to the spear).
+  DESIGN/BALANCE: spear trades single-target burst for LINE coverage + reach (DEX focus per Quests.dojo).
+  Zero balance risk to the test sweep: the gauntlet/headless ronin uses the DEFAULT katana line, so the
+  spear code is never exercised there - katana numbers are identical. Tier names still come from
+  WPN_LINE_NAMES (YARI/NAGAE-YARI/JUMONJI-YARI). Stat-doubling tier CURVES per line remain increment 5.
+  VOICE: none this run (no new player-facing dialogue text; Sensei Okada voicing is still increment 6).
+  Constraints 8 & 9 untouched.
+  VERIFY: `node --check src/combat/pit.js` PASS (169094 B, tail intact: the module.exports footer, NOT
+  truncated). `node --check src/scenes/WorldScene.js` PASS (33153 B, tail intact). `node tests/headless.js`
+  = 5/5 HEADLESS HARNESS PASS. `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote
+  docs/QA_REPORT.md). `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 6.3 / druid 39.1 /
+  warlock 17.3 / seraph 4.0 simMin, all VICTORY 20/20). SPEAR SMOKE TEST (scratch): booted pit with
+  weaponLine='spear', drove a fight - roninSpear/pierceLine execute with NO throw and WIN fight 1
+  (311 slashes, hp 31/44). Game fully playable; every character unchanged except a ronin who picks the
+  spear line at the dojo gains the new thrust feel + spear sprite.
+  EXACT NEXT STEP (item 11 increment 4 - the RIFLE moveset + art, smallest-safe): when
+  `P.weaponLine==='rifle'` give the ronin a RANGED attack by REUSING the existing bullets/gunner system
+  (do NOT build a new engine) - slow, heavy matchlock shots (ATK focus per Quests.dojo), and a rifle
+  drawFighter look (the `o.gun` branch already exists in drawFighter - mirror the spear's WorldScene
+  conditional + frSig already covers rifle). Keep katana+spear byte-identical. node --check + headless +
+  gauntlet + qa_questlines PASS after. Following increments: (5) per-line stat-doubling tier curves,
+  (6) VOICE Sensei Okada + any new lines (constraints 8 & 9), (7) extend qa_questlines for the dojo beat.
+  Leave the schedule ENABLED - items 10-13 remain (11 in progress: katana+spear done, rifle next; then
+  10 evolutions, 13 raid, 12 the Ember class).
+
+- 2026-06-14 (run 41) - **ITEM 11 increment 4 - RIFLE moveset + art.** Fourth increment of the ronin
+  dojo feature: when `P.weaponLine==='rifle'` the ronin now fights with a RANGED matchlock, reusing the
+  EXISTING bullets system (no new engine). Katana AND spear stay BYTE-IDENTICAL (both are untouched
+  earlier branches; the rifle is a pure additive branch after them).
+  WHAT I ADDED (2 files, additive):
+   game/src/combat/pit.js:
+    (a) `roninRifle()` - ATK-focus slow shot: long reload (`atkRecover=atkRec()*2.0`), aims at the nearest
+        real foe, pushes ONE `bullets` entry flagged `friendly:true` (vel 640, r5), heavy dmg
+        `(rollDice(diceN(),8)+dmgBonus())*(1.6+tier*0.35)`, muzzle flash + smoke particles, shake/vib/flash,
+        banner "TANEGASHIMA - fire". Reuses the same `bullets[]` array the gunner enemy uses.
+    (b) bullets update loop: a `if(b.friendly){...}` block at the TOP of the per-bullet body - friendly
+        balls hit the FIRST enemy they reach via `hitEnemy(e,dmg,true,angle)` (so every per-enemy rule -
+        warden ward, door guard, grave parry - still applies), spark a small hit burst, and despawn off-arena.
+        They NEVER call hurtPlayer. Enemy (non-friendly) bullets fall through to the original code unchanged.
+    (c) doSlash() branch: `if(P.char==='ronin'&&P.weaponLine==='rifle'){autoFace();roninRifle();return;}`
+        (single additive line right after the spear branch; katana default below unchanged).
+    (d) combat-view player draw: added `}else if(P.weaponLine==='rifle'){ drawFighter(...{samurai:true,
+        armor:bt,gun:true,...}) }` between the spear and katana draws (reuses the EXISTING drawFighter
+        `o.gun` branch - samurai armor body + long matchlock). Spear block + katana else block byte-identical.
+   game/src/scenes/WorldScene.js (overworld sprite):
+    (e) ronin look gains a rifle case: `weaponLine==='rifle'` -> samurai+gun sprite. spear/katana cases
+        unchanged. `frSig` already includes weaponLine, so picking the rifle at SENSEI OKADA rebakes the
+        player texture (same mechanism the spear uses).
+  DESIGN/BALANCE: rifle trades melee tempo for safe ranged ATK burst (slow cadence, big single-target ball).
+  ZERO balance risk to the test sweep: the gauntlet/headless ronin uses the DEFAULT katana line, so the
+  rifle code is never exercised there - katana numbers identical. Tier names come from WPN_LINE_NAMES
+  (TANEGASHIMA/LONG RIFLE/OZUTSU). Per-line stat-doubling tier CURVES remain increment 5.
+  VOICE: none this run (no new player-facing dialogue text; Sensei Okada voicing is still increment 6).
+  Constraints 8 & 9 untouched.
+  VERIFY: `node --check src/combat/pit.js` PASS (171057 B, tail intact = module.exports footer, NOT
+  truncated). `node --check src/scenes/WorldScene.js` PASS (33303 B, tail intact). `node tests/headless.js`
+  = 5/5 HEADLESS HARNESS PASS. `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote
+  docs/QA_REPORT.md). `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 5.9 / druid 26.3 /
+  warlock 21.2 / seraph 4.2 simMin, all VICTORY 20/20, under the 50 cap). RIFLE SMOKE TEST (scratch harness,
+  forced weaponLine='rifle'): drove doSlash for 60 sim-s - roninRifle/friendly-bullets execute with NO
+  throw, 273 shots fired, 25 kills across multiple fights, friendly balls damage enemies (never the player).
+  Game fully playable; every character unchanged except a ronin who picks the rifle line at the dojo gains
+  the ranged matchlock + gun sprite.
+  EXACT NEXT STEP (item 11 increment 5 - per-line stat-doubling tier CURVES, smallest-safe): right now all
+  three lines share the SAME stat ladder (only banner names + moveset differ). Give each line its own
+  on-level-up tier stat curve per `Quests.dojo` focus - katana balanced (STR/DEX/ATK), spear DEX-weighted,
+  rifle ATK-weighted - so the line choice changes growth, not just flavor. Apply ONLY when
+  `weaponLine!=='katana'` (keep katana's existing curve byte-identical => gauntlet/headless unaffected since
+  they run katana). Wire it where bladeTier/level stats are computed in pit.js (find the roninTier stat
+  application). node --check + headless + gauntlet + qa_questlines PASS after. Following increments:
+  (6) VOICE Sensei Okada + any new lines (constraints 8 & 9), (7) extend qa_questlines for the dojo beat.
+  Leave the schedule ENABLED - items 10-13 remain (11 in progress: katana+spear+rifle done, stat-curves
+  next; then 10 evolutions, 13 raid, 12 the Ember class).
+
+- 2026-06-14 (run 42) - **ITEM 11 increment 5 - per-LINE stat-doubling tier CURVES.** Fifth increment
+  of the ronin dojo feature: the weapon-line CHOICE now changes stat GROWTH, not just flavor/moveset.
+  Each non-katana line weights ONE stat as it climbs the existing bladeTier ladder (0/1/2). Katana
+  stays BYTE-IDENTICAL (the tested path), so the gauntlet/headless ronin - which runs the default
+  katana line - is completely unaffected; combat balance is untouched for every character.
+  WHAT I ADDED (one file, game/src/combat/pit.js, additive):
+   (a) `LINE_FOCUS={spear:'DEX',rifle:'ATK'}` + `LINE_TIER_BONUS=[0,12,28]` + a tiny `lineStatBonus(k)`
+       helper, inserted just after WPN_LINE_NAMES (before checkRoninForm). It returns the per-tier
+       focus-stat bonus for a ronin on a non-katana line, else 0. Katana has NO entry in LINE_FOCUS, so
+       it returns 0 for every stat => the katana stat curve is unchanged.
+   (b) `stat()` (L49) now adds `+lineStatBonus(k)`. lineStatBonus self-guards `char==='ronin'`, so all
+       other characters are unchanged.
+  RESULT (smoke-verified in a scratch sandbox replicating stat/roninTier/lineStatBonus): at bladeTier 2
+  (kills 15) katana = STR40/DEX40/ATK40 (unchanged); spear = DEX 68 (STR/ATK 40); rifle = ATK 68
+  (STR/DEX 40). At tier 1 (kills 5) spear DEX 20->32. So spear (reach/thrust, DEX focus) gains move
+  speed + roll cadence, rifle (slow heavy shot, ATK focus) gains attack recovery - matching Quests.dojo
+  focuses. These DEX/ATK consumers are all bounded (moveSpd, rollCDmax floor .55, atkRec floor .17), so
+  no runaway.
+  SAFETY / NO-RECURSION: NO line focuses STR, and roninTier() reads stat('STR'); therefore
+  lineStatBonus('STR') is ALWAYS 0. Two consequences: (1) the tier THRESHOLD (STR>=20/40) is never
+  shifted, so tier-up TIMING and the weapon-tier banner/radius are identical across all three lines;
+  (2) stat('STR') cannot recurse back into roninTier() (the bonus path is never taken for STR). Confirmed
+  no infinite loop and tier timing identical katana/spear/rifle in the smoke test.
+  KNOWN COSMETIC DEFERRAL (low-risk, logged): the level-up stat popup `statRows()` still shows the
+  base per-kill stat (`P.base[k]+nowK*2`) without the line focus bonus, so a spear/rifle player's
+  level-up card under-reports their focus stat by the tier bonus. The bonus DOES apply in actual combat
+  (via stat()); only the popup display lags. Left for a later polish pass to avoid touching the
+  level-up UI this run (smallest-safe).
+  VOICE: none this run (no new player-facing dialogue text; Sensei Okada voicing is still increment 6).
+  Constraints 8 & 9 untouched.
+  VERIFY: `node --check src/combat/pit.js` PASS (172580 B, tail intact = the createPitCombat
+  module.exports footer, NOT truncated). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node
+  tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md). `node
+  tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 8.0 / druid 34.5 / warlock 43.6 / seraph
+  4.0 simMin, all VICTORY 20/20, under the 50 cap). Stat-curve smoke test (scratch) confirms katana
+  unchanged + spear/rifle focus-weighted + tier timing identical. Game fully playable; every character
+  unchanged except a ronin who picks the spear or rifle line at the dojo now grows that line's focus stat.
+  EXACT NEXT STEP (item 11 increment 6 - VOICE Sensei Okada + any new lines, constraints 8 & 9):
+  SENSEI OKADA's `Quests.dojo.intro` + the dojoDialog confirmation lines (added run 39) are player-facing
+  TEXT but NOT yet voiced. (1) Map speaker 'SENSEI OKADA' to an EXISTING fitting male voice id in
+  `game/tools/voice_config.json` (do NOT design a new voice; reuse e.g. a calm elder male id already
+  present). (2) EXTRACT his lines into the manifest: add matching `add('SENSEI OKADA', <line>, 'dojo')`
+  calls (+ a speakerSlots entry) in `game/tools/build_voice_manifest.js` for the intro and the per-line
+  confirmation text, then run `node game/tools/build_voice_manifest.js` and confirm the line COUNT GREW
+  and the new lines resolve to a voice id (none clean to empty). Only THEN write
+  "VOICES READY TO GENERATE (dojo / Sensei Okada)". node --check + headless + gauntlet + qa_questlines
+  PASS after. Following: (7) extend qa_questlines for the dojo beat (model the dojo line-pick flag),
+  then OPTIONALLY the statRows cosmetic fix. Leave the schedule ENABLED - items 10-13 remain (11 nearly
+  done: katana+spear+rifle movesets + per-line stat curves done, voice + qa next; then 10 evolutions,
+  13 raid, 12 the Ember class).
+
+- 2026-06-14 (run 43) - **ITEM 11 increment 6 - VOICE Sensei Okada (dojo) wired into the manifest.**
+  Sixth increment of the ronin dojo feature: SENSEI OKADA's player-facing dialogue (added run 39 as
+  text-only) is now EXTRACTED into the voice manifest so Hiro can generate his clips. NO combat/scene/
+  engine/gameplay change this run - the displayed dialogue TEXT is byte-identical (constraint 8 honored);
+  this run only touches the build tool + the generated JSON.
+  WHAT I CHANGED (one source file + two generated artifacts):
+   game/tools/build_voice_manifest.js (additive, 2 edits):
+    (a) speakerSlots: added `'SENSEI OKADA': 'Faelar'` - REUSES the existing Faelar voice id
+        (OfPJOajRq2RbLMXEafCw; serene/unhurried/ageless male - a fitting dojo master). No new voice
+        designed; no voice_config.json edit (so the API key file is untouched). Follows the same
+        existing-slot-reuse pattern as GUILD CLERK->Sylvara / VORATHIEL->Nyx.
+    (b) a `const DJ = Quests.dojo` block that EXTRACTS his 4 lines:
+        - `add('SENSEI OKADA', DJ.intro, 'dojo: intro', { vtext: '"'+DJ.intro+'"' })` - the in-game intro
+          has NO quote marks, so left as-is segment() would assign it to the NARRATOR. Wrapping the
+          **vtext** (not the hashed text) in quotes makes it spoken by HIM; the id still hashes from the
+          UNQUOTED runtime text, so the in-game clip matches.
+        - a loop over `DJ.lines` (katana/spear/rifle) rebuilding the per-line confirmation with the EXACT
+          `CityScene.dojoDialog().choose()` template (`'A short bow. "'+name+', then. '+focus+'. Your road
+          climbs '+tierNames+' \u2014 ...'`, tierNames joined with ' \u2192 ', focus first-char-upper) so
+          each id matches the runtime hash. Each confirmation segments cleanly as NARRATOR ("A short bow.")
+          + SENSEI OKADA (the quoted line).
+  VERIFY:
+   - `node --check game/tools/build_voice_manifest.js` PASS (file tail intact = the VOICE COVERAGE block,
+     NOT truncated).
+   - `node game/tools/build_voice_manifest.js` rebuilt the manifest: line COUNT GREW 270 -> 274 (+4), and
+     coverage is now 270/274 (the 4 new dojo lines are the only ones awaiting acting -> docs/VOICE_STATUS.md).
+   - Resolution check (scripted): all 4 SENSEI OKADA lines resolve to a real voice id (intro -> Faelar;
+     each confirmation -> Narrator + Faelar) and NO segment cleans to empty.
+   - HASH-MATCH check (scripted, the important one): replicated `CityScene.dojoDialog` exactly + hashed via
+     `VoiceMan` - all 4 runtime ids (b44562b0 intro, 21badbe4 katana, 4bb93900 spear, 64418948 rifle)
+     are present in the manifest, so the generated clips WILL play in-game.
+   - `node game/tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node game/tests/qa_questlines.js` =
+     QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md). `node game/tests/gauntlet.js` =
+     GAUNTLET SWEEP: PASS first try (ronin 6.6 / druid 30.0 / warlock 17.2 / seraph 4.2 simMin, all
+     VICTORY 20/20, under the 50 cap).
+  VOICES READY TO GENERATE (dojo / Sensei Okada) - 4 new lines (1 intro + 3 line-confirmations). Hiro:
+  run `python game/tools/generate_voices.py --yes` to fill them (resumable; skips the 270 already on disk).
+  EXACT NEXT STEP (item 11 increment 7 - extend qa_questlines for the dojo beat, smallest-safe): model the
+  ronin DOJO line-pick in `game/tests/qa_questlines.js` so the harness asserts the dojo interactable is
+  reachable + that picking a weapon line sets `GameState.player.weaponLine` and `flags['rq-dojo']='met'`
+  (mirror how it models the other ronin beats). Purely a TEST addition - no gameplay change; keep katana
+  the default so the gauntlet/headless ronin path is unaffected. node --check + headless + gauntlet +
+  qa_questlines PASS after. OPTIONAL polish after that: the `statRows()` level-up popup cosmetic (it
+  under-reports a spear/rifle player's focus stat by the per-line tier bonus - combat already applies it;
+  only the popup display lags - logged run 42). Once increment 7 lands, ITEM 11 is COMPLETE (katana+spear+
+  rifle movesets + per-line stat curves + voice + qa all done). Leave the schedule ENABLED - items 10, 13,
+  12 remain (10 evolutions, 13 Ashenveil raid, 12 the Ember class).
+
+- 2026-06-14 (run 44) - **ITEM 11 increment 7 - qa_questlines now gates the ronin DOJO line-pick. ITEM 11 COMPLETE.**
+  Final increment of the ronin dojo feature: the FINAL-QA harness now asserts the dojo beat, closing
+  the item-8 coverage gap (the dojo was the one ronin beat the per-character walk never touched, since
+  it is an OPTIONAL City interactable, not a QuestNav route). PURE TEST ADDITION - no game/combat/scene/
+  engine/dialogue change this run; katana stays the default everywhere (gauntlet/headless ronin path
+  unaffected). Constraints 8 & 9 untouched (no dialogue text added, no manifest change).
+  WHAT I CHANGED (one file: game/tests/qa_questlines.js, all additive):
+   (1) bootScenes(): each booted scene's `out[zone]` now also carries `interactables: s.interactables||[]`
+       and `scene: s` (so the dojo gate can find the registered interactable and drive the REAL
+       CityScene.dojoDialog()). Additive - the existing reachability checks read the same `out` and are
+       unaffected.
+   (2) NEW `dojoCheck()` (modeled on gatedGuardCheck): 
+       - asserts addDojo() REGISTERED the "train with SENSEI OKADA" interactable in CityScene
+         (reach reported informationally, like the per-beat reach: - dojo tile resolves to
+         karridge-city 640,800, reach:ok), and
+       - drives the REAL dojoDialog()/choose() for each line by temporarily swapping CityUI.dialog to
+         CAPTURE its option list (restored in a finally), clicking each weapon-line option, and asserting
+         GameState.player.weaponLine === that key AND flags['rq-dojo']==='met'. Resets CityUI.closeDialog()
+         + scene.encounterActive=false before each call so the item-1.5 dialog guard in dojoDialog doesn't
+         early-return. If scenes don't boot this run, the dojo check is SKIPPED non-fatally (mirrors the
+         best-effort reachability design) - it never turns a green gate red on a boot hiccup.
+       - wired into the console output ("=== RONIN DOJO LINE-PICK (item 11) ===") + allPass + a new
+         docs/QA_REPORT.md section.
+  VERIFY:
+   - `node --check game/tests/qa_questlines.js` PASS (file tail intact = the `process.exit(allPass?0:1)`
+     footer, NOT truncated).
+   - `node game/tests/qa_questlines.js` = QA QUESTLINES: PASS. New section reads:
+       RONIN DOJO LINE-PICK (item 11) === PASS
+         ok dojo interactable registered  "train with SENSEI OKADA" [karridge-city 640,800 E] reach:ok
+         ok pick katana line  weaponLine=katana flags["rq-dojo"]=met
+         ok pick spear line   weaponLine=spear  flags["rq-dojo"]=met
+         ok pick rifle line   weaponLine=rifle  flags["rq-dojo"]=met
+     (all 4 chars still PASS; gated cult-coach PASS; re-wrote docs/QA_REPORT.md with the dojo table.)
+   - `node game/tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node game/tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 9.1 / druid 43.5 / warlock 24.8
+     / seraph 4.3 simMin, all VICTORY 20/20, under the 50 cap).
+  VOICE: none this run (no new player-facing dialogue text). Constraints 8 & 9 untouched.
+  ITEM 11 IS NOW COMPLETE: katana+spear+rifle movesets + per-line stat curves + Sensei Okada voice wired
+  (runs 39-43) + this QA gate. (Known cosmetic deferral still open from run 42: statRows() level-up popup
+  under-reports a spear/rifle player's focus stat by the per-line tier bonus - combat already applies it;
+  display-only lag. Optional polish, not blocking.)
+  EXACT NEXT STEP (item 10 - RONIN weapon-line EVOLUTIONS, increment 1; smallest-safe): begin the next
+  unstarted roadmap item. Re-read the item 10 spec near the top of this log before coding; scope the FIRST
+  increment to a single self-contained, verifiable change (design-data only or one mechanic), keep katana
+  default + every other character unchanged, node --check + headless + gauntlet + qa_questlines PASS after,
+  and follow constraints 8 & 9 if any NEW dialogue text is added. Leave the schedule ENABLED - items 10,
+  13 (Ashenveil raid), 12 (the Ember class) remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 45) — **ITEM 10 increment 1 — EVOLUTIONS design data laid down (DESIGN-DATA ONLY).**
+  Began the next unstarted roadmap item (character evolutions at lv 10/20). This increment is a single
+  self-contained, INERT data addition — NO gameplay/combat/scene/UI change, so every character behaves
+  exactly as before (confirmed by the two tests below). Constraints 8 & 9 untouched (no dialogue text).
+  WHAT I CHANGED (one file: game/src/combat/pit.js, purely additive):
+   - Added a `const EVOLUTIONS={...}` block right AFTER the `UNLOCKS` const (the natural home, next to the
+     level system). It encodes, for DRUID and WARLOCK (the doc's first two), a branch CHOICE at level 10
+     and a second at level 20, each branch built as a RETUNED reuse of that character's EXISTING kit + a
+     distinct look (constraint 6 — no new engine systems). Tier-20 branches carry a `from` field naming
+     their tier-10 parent so the two choices chain.
+  DESIGN CHOICES LOGGED (Hiro: flag any you'd change):
+   - DRUID lv10: PRIMAL WARDEN (bear-road, CON, thorn-aura tank) | FERAL ALPHA (wolf-road, DEX, bleeding
+     pack hunter).  lv20: WARDEN->WORLDROOT COLOSSUS (treant, quaking AoE slam) | ALPHA->DIRE MOON
+     SOVEREIGN (3-wolf dire pack on howl).
+   - WARLOCK lv10: DREADBINDER (summoner-road, DEX, stronger bone-dragon/succubi) | INFERNAL HERALD
+     (devil-road, ATK, harder arch-devil + burning hexes).  lv20: BINDER->LICH SOVEREIGN (longer lich
+     uptime, extra undead) | HERALD->ARCHFIEND ASCENDANT (extended arch-devil, wider hellfire).
+   All branches reuse forms/summons/devil/lich the kit already has — only retuned/relooked, nothing net-new
+   in the engine. Ronin growth is the dojo weapon lines (item 11, DONE); Seraph deferred to last per the doc.
+  NOT done this run (deliberately deferred to keep increment 1 small + safe): raising the level cap 10->20,
+  the lv10/20 branch-choice UI, and the per-branch stat/look hooks. The cap is STILL 10 (lvl() unchanged),
+  so the EVOLUTIONS const is dormant — it is referenced by nothing yet.
+  VERIFY: `node --check src/combat/pit.js` PASS (174888 B; tail intact = the createPitCombat module.exports
+  footer, NOT truncated). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/gauntlet.js` =
+  GAUNTLET SWEEP: PASS first try (ronin 9.1 / druid 28.9 / warlock 21.1 / seraph 4.0 simMin, all VICTORY
+  20/20, under the 50 cap). Game fully playable; behavior byte-for-byte unchanged.
+  EXACT NEXT STEP (item 10 increment 2 — RAISE THE LEVEL CAP 10->20, smallest-safe mechanic step): change
+  the cap in `lvl()` (L46, `Math.min(10,...)`->`Math.min(20,...)`) AND in `gainLevel()` (L76, the
+  `Math.min(10,(P.level||1)+1.5)` and its `// max 10` comment) so casters can climb past 10; ALSO update the
+  HUD/odds strings that hardcode "/10" (grep `/10` near L1532 — `'LEVEL '+lvl()+'/10'`) to "/20". CAUTION:
+  gainLevel adds +1.5/kill, so a cap of 20 means ~7 more kills to max — confirm the gauntlet still finishes
+  (it currently maxes casters at lv10 fast; a higher cap just lets them keep leveling, abilities already gate
+  at <=8). Do NOT add the choice UI yet — only the cap + HUD text. Keep `roninTier()`/ronin path untouched.
+  node --check + headless + gauntlet + qa_questlines PASS after. Following increments: (3) lv10 branch-choice
+  UI reading EVOLUTIONS, (4) wire druid branch look+stat hooks, (5) warlock branch hooks, (6) lv20 second
+  choice + QA. Leave the schedule ENABLED — items 10 (in progress), 13 (Ashenveil raid), 12 (Ember class)
+  remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 46) - **ITEM 10 increment 2 - RAISED THE LEVEL CAP 10->20 (mechanic-only).**
+  Second increment of character evolutions: casters (druid/warlock/seraph) can now climb past level 10
+  to a new cap of 20, so the dormant EVOLUTIONS data (run 45) has a level range to hang on. NO branch-choice
+  UI and NO per-branch hooks yet (deferred to increments 3-6 per the plan) - this run is purely the cap +
+  HUD text. Ronin path untouched (roninTier/kills system, not lvl()). Constraints 8 & 9 untouched (no dialogue).
+  WHAT I CHANGED (one file: game/src/combat/pit.js, 6 surgical edits, all 10->20):
+   (a) `lvl()` (L46): `Math.min(10,...)` -> `Math.min(20,...)` - the level read used everywhere (stat(),
+       ability gates, HUD).
+   (b) `gainLevel()` (L118 comment + L121): `// +1.5 levels per kill, max 10` -> `max 20`, and
+       `P.level=Math.min(10,(P.level||1)+1.5)` -> `Math.min(20,...)` so kills keep leveling past 10.
+   (c) `statRows()` level-up popup (L1561-1562): `pl=Math.min(10,...)` -> `Math.min(20,...)` (prev-level calc
+       for the delta arrow) and the displayed `'LEVEL', L+' / 10'` -> `' / 20'`.
+   (d) board/odds HUD (L1577): `LEVEL '+lvl()+'/10'` -> `/20`.
+  Untouched on purpose: ability UNLOCK gates (BONE DRAGON 3 / SUCCUBI 5 / ARCH DEVIL 8; druid forms 3/6;
+  seraph 3/6/8) all gate at <=8, so a higher cap unlocks NOTHING new - it only extends the stat climb
+  (stat() = base + 3*(lvl()-1), so lv20 = +57 vs the old +27). The unrelated `/10` MATH at L788/2013/2656
+  (particle interp, hexCD bar, kneelT bar) was left alone - only the three LEVEL-cap `Math.min(10` sites +
+  the two "/10" HUD strings + the comment were changed.
+  VERIFY: `node --check src/combat/pit.js` PASS (175221 B, tail intact = the createPitCombat module.exports
+  footer, NOT truncated). `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS. `node tests/qa_questlines.js`
+  = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md). `node tests/gauntlet.js` = GAUNTLET SWEEP:
+  PASS first try (ronin 7.0 / druid 39.5 / warlock 14.1 / seraph 3.2 simMin, all VICTORY 20/20, under the
+  50 cap). Confirms the cap works: the gauntlet now reports the three casters at `"level":"lv20"` (was lv10)
+  and they still win every fight - the extra stat climb is a mild buff, not a balance break, and no ability
+  regressed. Game fully playable; ronin unchanged (still tier-based).
+  EXACT NEXT STEP (item 10 increment 3 - lv10 BRANCH-CHOICE UI reading EVOLUTIONS, smallest-safe): when a
+  druid or warlock first reaches level 10 (hook in gainLevel() right where it detects `lvl()>ol` and the
+  new level is 10), PAUSE and present a TWO-OPTION choice from `EVOLUTIONS[char][10]` (druid: PRIMAL WARDEN
+  | FERAL ALPHA; warlock: DREADBINDER | INFERNAL HERALD). Store the pick on `P.evo10` (and persist to
+  GameState so it survives between fights). This increment is UI + state ONLY - do NOT wire the branch
+  stat/look effects yet (increments 4-5). Reuse the existing board/choice dialog pattern (show('board',...)
+  or the pit's option overlay) so no new UI engine is built (constraint 6). CAUTION: the gauntlet auto-plays
+  - make the choice AUTO-resolvable (default to the first branch if no input / in demo/assist mode) so the
+  sim never deadlocks waiting on a click; verify the gauntlet still completes. node --check + headless +
+  gauntlet + qa_questlines PASS after. Following: (4) druid branch look+stat hooks, (5) warlock branch hooks,
+  (6) lv20 second choice + QA. Leave the schedule ENABLED - items 10 (in progress), 13 (Ashenveil raid),
+  12 (Ember class) remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 47) - **ITEM 10 increment 3 - lv10 EVOLUTION BRANCH-CHOICE UI + state (UI+STATE ONLY).**
+  Third increment of character evolutions: when a DRUID or WARLOCK first reaches level 10 they now PICK a
+  branch from EVOLUTIONS[char][10] (druid: PRIMAL WARDEN | FERAL ALPHA; warlock: DREADBINDER | INFERNAL
+  HERALD). The pick is recorded on `P.evo10` and mirrored to `GameState.player.evo10` for persistence. Per
+  the plan this is UI + STATE ONLY - the per-branch stat/look EFFECTS are NOT wired yet (increments 4-5), so
+  picking changes NO combat numbers this run (gauntlet stat climb identical to run 46). Ronin/seraph paths
+  untouched. Constraints 8 & 9 untouched: the panel labels/descriptions come from the existing EVOLUTIONS
+  DATA (no new VOICED dialogue text), so no manifest change and no "VOICES READY".
+  WHAT I CHANGED (one file: game/src/combat/pit.js, all additive):
+   (1) P literal: added `evo10:null, evoPick:null, evoPickT:0` (picked branch key / an open pick / its
+       auto-default timer). fullReset() also clears all three so a fresh run/character re-offers the choice.
+   (2) gainLevel(): after the level-up banner it calls new `maybeOfferEvo()`, which (guarded to
+       druid/warlock, lvl>=10, not already picked / not already open) sets P.evoPick = EVOLUTIONS[char][10]
+       and P.evoPickT=9, and banners "EVOLUTION  A vs B - press 1 or 2".
+   (3) DEADLOCK-PROOF choice loop: new `evoTick(dt)` reads keys['1']/['2'] to pick, else counts the 9s
+       timer down and AUTO-DEFAULTS to branch 0 at expiry. `pickEvo(i)` sets P.evo10=branch.key, mirrors to
+       GameState.player.evo10 (window-guarded try/catch), banners "EVOLVED - <name>", popups, clears the pick.
+   (4) tick() pause hook: right after the non-fight early-return, `if(P.evoPick){evoTick(dt);draw();return;}`
+       FREEZES the whole scene (no enemy/player update) while a pick is open - so the player is safe during
+       the choice AND, because the timer still decays each frame and auto-resolves, the gauntlet/autopilot
+       can never deadlock waiting on a click (they simply run ~9 frozen sim-seconds, then branch 0 is taken).
+   (5) draw(): `if(P.evoPick)drawEvoPanel()` renders an on-canvas 2-option panel (name + desc + kit, "press
+       1 or 2", live countdown) via a tiny local `evoWrap()` word-wrap. All drawing sits after draw()'s
+       `if(!ctx)return` guard, so it is a no-op under headless (gauntlet ctx=null) - logic-only there.
+  WHY NON-BLOCKING-WITH-AUTO-DEFAULT (vs a hard interactive modal): the plan demands the choice be
+  AUTO-resolvable so the auto-played gauntlet never stalls, and the pit UI is DOM-screen based (no generic
+  option overlay). A frozen-scene canvas panel + a 9s auto-default to branch 0 satisfies "pause and present
+  two options" with zero HTML changes and zero deadlock risk - the smallest safe change.
+  VERIFY:
+   - `node --check src/combat/pit.js` PASS (tail intact = the createPitCombat module.exports footer, NOT
+     truncated; +3656 chars vs run 46).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md).
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 5.6 / druid 24.2 / warlock 15.6 /
+     seraph 3.0 simMin, all VICTORY 20/20, under the 50 cap). No deadlock at the new lv10 choice; the brief
+     freeze adds a little sim time but stays well under cap.
+   - Direct probe (drove a druid gauntlet-style): evoPick opened, banners ['EVOLUTION','EVOLVED - PRIMAL
+     WARDEN'], P.evo10 auto-set to 'warden' (branch 0), run reached victory - the choice path executes and
+     auto-resolves end-to-end.
+  EXACT NEXT STEP (item 10 increment 4 - WIRE the DRUID branch look+stat hooks; smallest-safe): make the
+  stored P.evo10 actually DO something for the druid only (warlock stays inert until increment 5). Smallest
+  cut: (a) STAT focus - have stat()/the stat curve give a small bonus to the branch's `focus` stat
+  (warden=CON, alpha=DEX) when P.char==='druid' && P.evo10 is that branch (mirror how lineStatBonus()
+  weights a ronin weapon line - reuse that pattern, do NOT build a new system). (b) LOOK - tint/adjust the
+  druid's bear/wolf form draw per branch (warden=bear road, alpha=wolf road) using the branch `look` field,
+  reusing drawFighter palette params. Keep it tiny + additive; katana/ronin/seraph untouched; default
+  (no evo10) = byte-identical to today. node --check + headless + gauntlet + qa_questlines PASS after.
+  Following: (5) warlock branch hooks, (6) lv20 second choice + QA. Leave the schedule ENABLED - items 10
+  (in progress), 13 (Ashenveil raid), 12 (Ember class) remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 48) - **ITEM 10 increment 4 - WIRE the DRUID lv10 EVOLUTION branch (stat + look).**
+  Fourth increment of character evolutions: the branch a DRUID picks at level 10 (item-10 inc.3) now
+  actually DOES something - a small stat focus AND a distinct beast-form look. Warlock branches stay
+  inert (increment 5). Ronin/seraph untouched. With NO evo10 the druid is byte-identical to run 47.
+  WHAT I CHANGED (one file: game/src/combat/pit.js, all additive):
+   (1) STAT FOCUS - new `evoStatBonus(k)` (defined right after `lineStatBonus`, same forward-reference
+       pattern) returns +EVO_FOCUS_BONUS (6) to the picked road's focus stat for a DRUID only:
+       warden -> +6 CON (tankier bear, via maxHP's CON term), alpha -> +6 DEX (swifter wolf, via
+       moveSpd/rollCD). It reads ONLY P.evo10 + the EVOLUTIONS data (never calls stat()), so no
+       recursion. `stat()` now adds `+evoStatBonus(k)`. Warlock/ronin/seraph and an un-evolved druid
+       all get 0 => combat numbers unchanged for them.
+   (2) LOOK - the druid beast-form draw is tinted by branch: PRIMAL WARDEN (bear-road) darkens the
+       bear to a bark/stone palette (#5a4326 body / #3a2a18 head) + a pulsing thorn-aura ring; FERAL
+       ALPHA (wolf-road) tints the wolf moon-silver (#5a6470) with a brighter silver ring. Default
+       (no evo10) keeps the original colors EXACTLY. All look code sits in draw() after the `if(!ctx)
+       return` guard, so it is a no-op under headless/gauntlet (ctx=null) - logic-only there.
+  WHY THIS MAGNITUDE: +6 focus is a modest, road-flavored nudge (warden ~+30 maxHP at the CON term,
+  alpha a small speed/roll edge) - enough to make the pick matter without breaking the gauntlet's
+  stat climb. The gauntlet druid auto-picks branch 0 (warden), so its sim now runs a touch longer
+  (26.0 vs 24.2 simMin) from the extra HP - still well under the 50-simMin cap, all VICTORY.
+  VERIFY:
+   - `node --check src/combat/pit.js` PASS (tail intact = createPitCombat module.exports footer, NOT
+     truncated; ~+1500 chars vs run 47).
+   - `node tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md).
+   - `node tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 8.4 / druid 26.0 / warlock 19.9
+     / seraph 3.0 simMin, all VICTORY 20/20, under the 50 cap). No deadlock; warden's extra HP only
+     lengthens the druid sim slightly.
+   - Source probe confirmed: stat() includes +evoStatBonus(k); evoStatBonus defined; warden=CON /
+     alpha=DEX focus intact; bear warden tint + wolf alpha tint present.
+  CONSTRAINTS 8 & 9: untouched - this increment adds NO dialogue text (branch labels/desc come from
+  the existing EVOLUTIONS data), so no manifest change and no "VOICES READY".
+  EXACT NEXT STEP (item 10 increment 5 - WIRE the WARLOCK branch look+stat hooks; smallest-safe): mirror
+  this run for the WARLOCK (P.char==='warlock'). (a) STAT: extend evoStatBonus to also handle warlock -
+  binder -> +6 DEX (its summon-swarm/caster road), herald -> +6 ATK (its hellfire/devil road), reading
+  EVOLUTIONS.warlock[10] focus (binder=DEX, herald=ATK as already in the data). Keep druid logic intact;
+  un-picked/other chars still return 0. (b) LOOK: tint the warlock's draw per branch in draw() (binder =
+  a paler bone/violet caster cast, herald = a redder hellfire cast) using drawFighter palette params only
+  (the warlock body is drawn at the `P.char==='warlock'` block, col '#241a30' + headCol '#9a9ab0'); also
+  optionally tint the ARCH DEVIL (hulk #5a1a24) for the herald road. Default (no evo10) byte-identical.
+  node --check + headless + gauntlet + qa_questlines PASS after. Following: (6) lv20 SECOND choice offer
+  + branch->branch (the EVOLUTIONS[char][20] tiers, gated by `from` matching P.evo10) + extend
+  qa_questlines for the evo beats. Leave the schedule ENABLED - items 10 (in progress: inc.5 + inc.6
+  remain), 13 (Ashenveil raid), 12 (Ember class) remain; the COMPLETION PROTOCOL is NOT yet met.
+
+- 2026-06-14 (run 49) - **ITEM 10 increment 5 - WIRE the WARLOCK lv10 EVOLUTION branch (stat + look).**
+  Fifth increment of character evolutions: the branch a WARLOCK picks at level 10 (item-10 inc.3) now
+  actually DOES something - a small stat focus AND a distinct look on both the dark-elf body and the
+  Arch Devil form. Druid branches (inc.4) stay intact; ronin/seraph untouched. With NO evo10 the
+  warlock is byte-identical to run 48.
+  WHAT I CHANGED (one file: game/src/combat/pit.js, all additive):
+   (1) STAT FOCUS - generalized `evoStatBonus(k)` to read `EVOLUTIONS[P.char][10]` (was hard-coded to
+       druid). It now grants +EVO_FOCUS_BONUS (6) to the picked road's focus stat for a DRUID or a
+       WARLOCK: warlock binder -> +6 DEX (its summon-swarm caster road), herald -> +6 ATK (its
+       hellfire/devil road); druid warden=CON / alpha=DEX unchanged. Reads ONLY P.evo10 + the
+       EVOLUTIONS data (never calls stat()), so no recursion. Ronin/seraph and an un-evolved
+       druid/warlock all return 0 => their combat numbers are unchanged.
+   (2) LOOK (normal form) - the warlock dark-elf draw is tinted by branch: DREADBINDER (binder) goes a
+       paler bone/violet caster (body #2a2238 / head #b0a8d0 / staff-tip #c080ff); INFERNAL HERALD
+       (herald) goes a redder hellfire cast (body #3a1a26 / head #b08a8a / staff-tip #ff6a4a /
+       weapon #4a2630). Default (no evo10) keeps the original #241a30 / #9a9ab0 / #b070f0 / #3a3046
+       EXACTLY.
+   (3) LOOK (Arch Devil) - the herald road also burns the Arch Devil a brighter hellfire red
+       (hulk body #6e1c26 / head #3a1014); non-herald keeps the original #5a1a24 / #2a0c12. All look
+       code sits in draw() after the `if(!ctx)return` guard, so it is a no-op under headless/gauntlet
+       (ctx=null) - logic-only there.
+  WHY THIS MAGNITUDE: +6 focus mirrors the druid inc.4 nudge - enough that the pick matters
+  (binder a touch swifter/more-summons via DEX, herald a touch harder-hitting via ATK) without
+  breaking the gauntlet's stat climb. The gauntlet warlock auto-picks branch 0 (binder, +6 DEX); its
+  sim stayed in band (16.1 simMin, was 19.9 last sweep - normal run-to-run variance, all VICTORY).
+  VERIFY:
+   - `node --check game/src/combat/pit.js` PASS (tail intact = createPitCombat module.exports footer,
+     NOT truncated; +826 chars vs run 48: 180067 -> 180893).
+   - `node game/tests/headless.js` = 5/5 HEADLESS HARNESS PASS.
+   - `node game/tests/qa_questlines.js` = QA QUESTLINES: PASS (4/4 chars; re-wrote docs/QA_REPORT.md).
+   - `node game/tests/gauntlet.js` = GAUNTLET SWEEP: PASS first try (ronin 8.8 / druid 43.4 / warlock
+     16.1 / seraph 3.2 simMin, all VICTORY 20/20, under the 50 cap). No deadlock at the warlock evo
+     choice; warlock reached lv20 (so it picked + applied an evo) and still won.
+   - Source probe confirmed: evoStatBonus guards `druid||warlock` and reads EVOLUTIONS[P.char][10];
+     EVOLUTIONS.warlock[10] focus = binder:DEX / herald:ATK; body tint locals _wkCol/_wkHead/_wkTip/
+     _wkWpn present; Arch Devil tint locals _adCol/_adHead present.
+  CONSTRAINTS 8 & 9: untouched - this increment adds NO dialogue text (branch labels/desc come from
+  the existing EVOLUTIONS data), so no manifest change and no "VOICES READY".
+  EXACT NEXT STEP (item 10 increment 6 - the lv20 SECOND evolution choice + QA, smallest-safe): the
+  level cap is already 20 (inc.2) and EVOLUTIONS[char][20] tiers exist (each with a `from` naming its
+  tier-10 parent). (a) Extend `maybeOfferEvo()` to ALSO offer at lv20: when `lvl()>=20` && `P.evo10`
+  set && no `P.evo20` yet, present the EVOLUTIONS[P.char][20] branches FILTERED to those whose `from`
+  === P.evo10 (so the lv10 road determines the lv20 options); store the pick on `P.evo20` (mirror to
+  GameState.player.evo20 like evo10), with the SAME 9s auto-default-to-first, deadlock-proof panel.
+  Reset P.evo20=null wherever P.evo10 is reset (the fight-start reset line + GameState). (b) Make
+  evo20 DO something small + additive: extend evoStatBonus to add a second focus bump when P.evo20 is
+  set (read EVOLUTIONS[P.char][20] focus, same +6), and add a tier-20 look accent (reuse the inc.4/5
+  tint pattern - e.g. lich-road a colder cast, archfiend a deeper red). (c) Extend qa_questlines.js to
+  model the lv10 AND lv20 evo beats for druid+warlock (assert the pick resolves + applies, no
+  deadlock). node --check + headless + gauntlet + qa_questlines PASS after. Following: (7) seraph +
+  any final evo polish, then move to item 13 (Ashenveil raid) / item 12 (Ember class). Leave the
+  schedule ENABLED - items 10 (in progress: inc.6 + seraph remain), 13, 12 remain; the COMPLETION
+  PROTOCOL is NOT yet met.

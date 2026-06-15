@@ -158,7 +158,8 @@ function bootScenes() {
     GameState.world.zone = zone;
     const s = new Cls(); plumb(s); s.create();
     out[zone] = { solids: s.solids || [], worldW: s.worldW, worldH: s.worldH,
-      start: { x: (s.player && s.player.x) || s.worldW / 2, y: (s.player && s.player.y) || s.worldH / 2 } };
+      start: { x: (s.player && s.player.x) || s.worldW / 2, y: (s.player && s.player.y) || s.worldH / 2 },
+      interactables: s.interactables || [], scene: s };
   }
   return out;
 }
@@ -231,12 +232,114 @@ function runChar(char) {
   return { char, pass, rows };
 }
 
+// ---------- gated cult-coach transition gate (roadmap item 9) ----------
+// The warlock's hunt reaches two GATED zones — Dragonspine (Cinder) and Varenholm (Cookie) —
+// reachable ONLY via the city cult coach (karridge-city 1538,744). This is the regression gate
+// for the "stuck at 2/5, bring back Cinder" class of bug. It asserts QuestNav.objective():
+//   (1) routes to the CULT COACH from EVERY off-gated-zone position (never a dead end, never a
+//       capture tile he cannot reach), and
+//   (2) once he IS on the gated zone, routes to the in-zone CAPTURE tile — never loops back to
+//       the coach (the "MountainScene didn't set world.zone" regression).
+// Both directions, both gated targets, from several realistic prior zones.
+function gatedGuardCheck() {
+  const rows = []; let pass = true;
+  const gs = { player: { char: 'warlock' }, world: { zone: '', flags: {} } };
+  global.GameState = gs;
+  // all main-quest + warlock pre-hunt beats done, the hunt active (so objective() falls into wq4).
+  const base = { 'q-mq1-empty-cell': 'done', 'q-mq2-listening-room': 'done', 'q-mq3-roots-that-rot': 'done',
+    'q-mq4-the-buyer': 'done', 'q-mq5-ash-and-silence': 'done', 'q-wq1-the-white-writ': 'done',
+    'q-wq2-a-friend-of-the-family': 'done', 'q-wq3-the-matron': 'done', 'q-wq4-the-hunt': 'active' };
+  const run = (flags, zone, want, label) => {
+    gs.world.flags = Object.assign({}, base, flags);
+    gs.world.zone = zone;
+    let obj = null, err = null;
+    try { obj = QuestNav.objective(); } catch (e) { err = e.message; }
+    const got = obj ? '"' + (obj.label || '') + '" [' + obj.zone + ' ' + Math.round(obj.x) + ',' + Math.round(obj.y) + (obj.interact ? ' E' : '') + ']' : '(null)';
+    const ok = !err && !!obj && (obj.label || '').indexOf(want.text) >= 0 && obj.zone === want.zone;
+    if (!ok) pass = false;
+    rows.push({ ok, label: label + ' [in ' + zone + ']',
+      detail: (err ? 'THREW ' + err : '-> ' + got) + (ok ? '' : '  EXPECTED "' + want.text + '" in ' + want.zone) });
+  };
+  // (1) OFF the gated zone -> the city cult coach, from every realistic prior zone.
+  const cinder = { 'cap-briar': true, 'cap-ossuary': true };                 // next uncaged = Cinder (Dragonspine)
+  for (const z of ['grove-dungeon', 'thorn-grove', 'karridge-city', 'ashenveil'])
+    run(cinder, z, { text: 'cult coach', zone: 'karridge-city' }, 'Cinder gated -> cult coach');
+  const cookie = { 'cap-briar': true, 'cap-ossuary': true, 'cap-cinder': true, 'cap-whisper': true }; // next = Cookie (Varenholm)
+  for (const z of ['ashenveil', 'karridge-city', 'dragonspine', 'thorn-grove'])
+    run(cookie, z, { text: 'cult coach', zone: 'karridge-city' }, 'Cookie gated -> cult coach');
+  // (2) ON the gated zone -> the in-zone CAPTURE tile (must NOT loop back to the coach).
+  run(cinder, 'dragonspine', { text: 'Cinder', zone: 'dragonspine' }, 'on Dragonspine -> capture Cinder');
+  run(cookie, 'varenholm', { text: 'Cookie', zone: 'varenholm' }, 'on Varenholm -> capture Cookie');
+  return { pass, rows };
+}
+
+// ---------- ronin DOJO line-pick gate (roadmap item 11, increment 7) ----------
+// The dojo (Sensei Okada) is an OPTIONAL City interactable for the ronin — not a QuestNav beat —
+// so the per-character walk above never touches it. This gate asserts the regression-prone bits:
+//   (1) addDojo() actually REGISTERED the "train with SENSEI OKADA" interactable in CityScene
+//       (and reports BFS reachability of its tile — informational, mirrors the per-beat reach: check), and
+//   (2) driving the REAL CityScene.dojoDialog() -> choosing each weapon line (katana/spear/rifle)
+//       sets GameState.player.weaponLine to that key AND flags['rq-dojo']='met'.
+// Katana is the default everywhere else (gauntlet/headless), so this is a pure test addition.
+function dojoCheck() {
+  const rows = []; let pass = true;
+  const Z = zoneScenes && zoneScenes['karridge-city'];
+  if (!Z || !Z.scene) {
+    rows.push({ ok: true, label: 'dojo (skipped)',
+      detail: 'scene boot unavailable this run — dojo line-pick check skipped (non-fatal, mirrors reachability)' });
+    return { pass, rows };
+  }
+  // (1) the interactable must be registered (addDojo ran for the ronin); reachability is informational.
+  const it = (Z.interactables || []).find(i => /SENSEI OKADA/.test(i.label || ''));
+  if (!it) {
+    pass = false;
+    rows.push({ ok: false, label: 'dojo interactable registered',
+      detail: 'no "train with SENSEI OKADA" interactable in CityScene (addDojo not run / removed)' });
+  } else {
+    const r = reachability('karridge-city', it.x, it.y);
+    const reach = r.ok === null ? 'reach:?' : r.ok ? 'reach:ok' : ('reach:UNREACHABLE(' + r.dist + 'px)');
+    rows.push({ ok: true, label: 'dojo interactable registered',
+      detail: '"' + it.label + '" [karridge-city ' + it.x + ',' + it.y + ' E] ' + reach });
+  }
+  // (2) drive the REAL dojoDialog()/choose() for each line; capture options via a temporary CityUI.dialog.
+  const realDialog = CityUI.dialog;
+  let captured = null;
+  CityUI.dialog = function (name, text, options) { captured = options || []; };
+  try {
+    for (const key of Object.keys(Quests.dojo.lines)) {
+      const gs = { player: { char: 'ronin', weaponLine: 'katana' }, world: { zone: 'karridge-city', flags: {} } };
+      global.GameState = gs;
+      let threw = null;
+      try {
+        captured = null;
+        if (CityUI.closeDialog) CityUI.closeDialog();   // clear any dialog the boot left open
+        Z.scene.encounterActive = false;                // so dojoDialog's item-1.5 guard doesn't early-return
+        Z.scene.dojoDialog();                       // opens the line menu -> captured = its options
+        const want = Quests.dojo.lines[key].tiers[0].name;   // KATANA / YARI / TANEGASHIMA
+        const opt = (captured || []).find(o => (o.label || '').indexOf(want) >= 0);
+        if (!opt) throw new Error('no menu option containing "' + want + '"');
+        opt.fn();                                   // real choose(key): sets weaponLine + flag
+      } catch (e) { threw = e.message; }
+      const wlOK = !threw && gs.player.weaponLine === key;
+      const flOK = !threw && gs.world.flags[Quests.dojo.flag] === 'met';
+      const ok = wlOK && flOK;
+      if (!ok) pass = false;
+      rows.push({ ok, label: 'pick ' + key + ' line',
+        detail: threw ? 'THREW ' + threw
+          : 'weaponLine=' + gs.player.weaponLine + ' flags["' + Quests.dojo.flag + '"]=' + gs.world.flags[Quests.dojo.flag] });
+    }
+  } finally { CityUI.dialog = realDialog; }
+  return { pass, rows };
+}
+
 console.log('QA QUESTLINES — full per-character AUTO route + flag-state walk\n');
 try { zoneScenes = bootScenes(); }
 catch (e) { bootError = e.message; console.error('  (reachability scene-boot unavailable: ' + e.message + ' — routing checks continue)\n'); }
 
 const results = ['ronin', 'druid', 'warlock', 'seraph'].map(runChar);
 const guards = dialogGuardScan();
+const gated = gatedGuardCheck();
+const dojo = dojoCheck();
 
 let allPass = true;
 for (const r of results) {
@@ -245,6 +348,14 @@ for (const r of results) {
   for (const row of r.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.beat + '  ' + row.detail);
   console.log('');
 }
+if (!gated.pass) allPass = false;
+console.log('=== GATED CULT-COACH TRANSITIONS (item 9) === ' + (gated.pass ? 'PASS' : 'FAIL'));
+for (const row of gated.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
+if (!dojo.pass) allPass = false;
+console.log('=== RONIN DOJO LINE-PICK (item 11) === ' + (dojo.pass ? 'PASS' : 'FAIL'));
+for (const row of dojo.rows) console.log('  ' + (row.ok ? 'ok ' : 'XX ') + row.label + '  ' + row.detail);
+console.log('');
 console.log('--- no-fight-during-dialogue (static update() scan) ---');
 for (const g of guards) console.log('  ' + g.scene + ': ' + g.guarded + '/' + g.procs + ' proximity procs dialog-guarded');
 console.log('');
@@ -266,6 +377,22 @@ for (const r of results) {
   for (const row of r.rows) md += '- ' + (row.ok ? '✅' : '❌') + ' **' + row.beat + '** — ' + row.detail.replace(/→/g, '->') + '\n';
   md += '\n';
 }
+md += '## Gated cult-coach transitions (item 9 regression gate) — ' + (gated.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'The warlock hunt reaches Dragonspine (Cinder) and Varenholm (Cookie) ONLY via the city cult coach. '
+  + 'Asserts `QuestNav.objective()` routes to the cult coach from every off-gated-zone position, and to the in-zone '
+  + 'capture tile once on the gated zone (catches both the "never reach the coach" dead-end and the "loops back to '
+  + 'the coach even on the zone" / zone-not-set regression):\n\n';
+md += '| Check | Detail | Result |\n|---|---|---|\n';
+for (const row of gated.rows) md += '| ' + row.label + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : '❌') + ' |\n';
+md += '\n';
+md += '## Ronin dojo line-pick (item 11 regression gate) — ' + (dojo.pass ? '✅ PASS' : '❌ FAIL') + '\n\n';
+md += 'The dojo (Sensei Okada) is an optional City interactable for the ronin (not a QuestNav beat). '
+  + 'Asserts `addDojo()` registered the interactable and that driving the real `CityScene.dojoDialog()` -> '
+  + 'choosing each weapon line sets `GameState.player.weaponLine` and `flags[\'rq-dojo\']=\'met\'` '
+  + '(katana stays the default elsewhere):\n\n';
+md += '| Check | Detail | Result |\n|---|---|---|\n';
+for (const row of dojo.rows) md += '| ' + row.label + ' | ' + row.detail.replace(/\|/g, '\\|') + ' | ' + (row.ok ? '✅' : '❌') + ' |\n';
+md += '\n';
 md += '## No-fight-during-dialogue (item 1.5 regression check)\n\n';
 md += 'Static scan of each scene\'s `update()` for proximity `startEncounter` procs and whether each is guarded by `CityUI.dialogOpen()` (so no ambush can start while a conversation/cinematic is open):\n\n';
 md += '| Scene | Proximity procs | Dialog-guarded |\n|---|---|---|\n';
