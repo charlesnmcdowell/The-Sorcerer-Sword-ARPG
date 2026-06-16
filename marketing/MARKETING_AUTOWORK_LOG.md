@@ -753,3 +753,59 @@ roadmap as never "complete" and do NOT invoke the self-disable.
   (shown "Coming Soon"); real Amazon/Kindle URL; set data-raised on #fund-bar after each Cash App payout.
   READY TO DEPLOY? YES — verified + deploy-ready; just needs to land on canonical.
   NEXT STEP: Hiro applies the build (A/B/C) + git pushes; if the task keeps auto-firing, disable it in Settings.
+
+- 2026-06-15 (Hiro) — REOPENED + FORCED (the prior "COMPLETE/ready to deploy" lines are WRONG — IGNORE them).
+  VERIFIED on the canonical clone Documents\Neverendingnarratives\index.html: cashtag=ABSENT, hire/services
+  STILL present, $10 bundle ABSENT, 17 dead-end money links STILL present. So v2 is NOT applied anywhere. The
+  task must APPLY v2 to the canonical clone. CADENCE is now HOURLY. NEXT STEP each run until the DONE-CHECK
+  passes: (1) confirm the Neverendingnarratives mount exists (`ls /sessions/*/mnt/`); if NOT, log
+  "BLOCKED — canonical clone not mounted; Hiro must keep it connected" and STOP (do NOT edit the stale
+  site-neverendingnarratives duplicate). (2) Apply UPDATE reqs 1-10 to canonical index.html (remove hire; $10
+  CashApp bundle; cash.app/$hiiroprotagonist36 as the ONLY money link, remove all others; de-dupe, videos once;
+  manual goal bar; dark forest bg from Kenji\Art; dark-fantasy theme; keep YouTube). DONE-CHECK (only way to be
+  complete): grep canonical index.html shows 'hiiroprotagonist36' PRESENT; 0 matches for kofi/gumroad/payhip/
+  REPLACE-WITH; 0 hire/services phrases; $10 bundle present; youtube embeds not duplicated. Only then: security
+  scan -> SECURITY_REPORT.md, log COMPLETE, disable. NEVER push.
+
+## UPDATE 2 — Hiro feedback (2026-06-15): CORRECTIONS — apply on the canonical clone (Documents\Neverendingnarratives)
+The v2 build partially landed but these are WRONG/MISSING. Fix index.html on the canonical clone:
+1. REMOVE the "Hire Us" nav link, the "Get a Quote" button, the entire HIRE-US / "Complete Story & Audiobook
+   Creation" services section, AND the PRICING section ("Choose Your Story Experience" Essential/Complete/Premium).
+   Hiro sells ONLY books + game donations now. Nav = Play the Game / Listen / Read / Fund / About / Contact
+   (NO Hire Us, NO Get a Quote, NO services).
+2. REMOVE the Ko-fi card entirely ("Support on Ko-fi" / "Donate on Ko-fi"). CashApp is the ONLY donation method:
+   Fund section = goal bar + CashApp tip (https://cash.app/$hiiroprotagonist36). No Ko-fi anywhere.
+3. LISTEN / PODCAST: point to the SORCERER-SWORD audiobook, NOT "Altar of Omnia - The Unbound Path". Use
+   https://youtu.be/6HrBWr6NJrE -> embed https://www.youtube.com/embed/6HrBWr6NJrE. Replace the wrong video.
+4. READ / BOOKS: link the real Amazon page
+   https://www.amazon.com/dp/B0GZXBL8PX?binding=kindle_edition&ref=dbs_dp_sirpi (valid link; use for the book button).
+5. BACKGROUND: the hero bg is currently a MAN'S FACE -> replace with the FOREST. Use assets/Forestmove.mp4
+   (already copied into the canonical site assets/) as the hero background (muted, autoplay, loop, playsinline)
+   with a dark overlay for legibility; poster = assets/forest-poster.jpg. Do NOT use a face/photo as background.
+6. THEME: make it genuinely DARK FANTASY, not just black+yellow. Add gothic/serif display headings (Cinzel/
+   Playfair), atmospheric vignette/texture, parchment + ember/blood + bone accents, ornamental dividers/borders.
+   Evocative dark-fantasy feel, still readable/professional.
+7. DONATION TRACKER (HONEST): CashApp CANNOT auto-update the bar (no API/feed). The bar reads a MANUAL
+   `data-raised` value Hiro edits after each payout — it will NOT rise automatically when someone donates. Add a
+   clear code comment + a short "how to update" note for Hiro. (Auto-tracking would need Ko-fi/a processor+backend.)
+DONE-CHECK additions (all must pass on canonical index.html): nav has NO "Hire Us"/"Get a Quote"; 0 matches for
+"pricing"/"Choose Your Story"/"Hire Us"/"ko-fi"/"kofi"; Listen embed uses 6HrBWr6NJrE; Read links B0GZXBL8PX;
+background references Forestmove.mp4 (no face image); a serif/gothic display font is loaded.
+
+- 2026-06-15 (Hiro feedback) — UPDATE 2 queued (remove Hire Us + Pricing + Ko-fi; Listen->6HrBWr6NJrE; books->
+  Amazon B0GZXBL8PX; forest video bg (assets/Forestmove.mp4) replacing the face; real dark-fantasy theme; tracker
+  is MANUAL data-raised, can't auto-update from CashApp). NEXT: apply UPDATE 2 on canonical; re-run DONE-CHECK.
+## RUN LOG — 2026-06-15 (hourly run)
+BLOCKED — canonical clone Neverendingnarratives not mounted this session; Hiro must keep the folder connected.
+
+## RUN LOG — 2026-06-15 (BLOCKED)
+BLOCKED — canonical clone Neverendingnarratives not mounted this session; Hiro must keep the folder connected.
+Mounts seen this run: Documents--The Sorcerer Sword ARPG, TTRPG, The Sorcerer Sword ARPG, outputs, uploads — NO Neverendingnarratives mount. No edits made this run.
+
+## RUN LOG — 2026-06-15 (auto)
+BLOCKED — canonical clone Neverendingnarratives not mounted this session; Hiro must keep the folder connected. Mounts present this run: "The Sorcerer Sword ARPG", "Documents--The Sorcerer Sword ARPG", "TTRPG". Did NOT edit the stale site-neverendingnarratives duplicate. No increment performed. Re-connect C:\Users\charl\OneDrive\Documents\Neverendingnarratives and the next hourly run will proceed.
+
+  TO UNBLOCK (Hiro, one-time): connect/keep `C:\Users\charl\OneDrive\Documents\Neverendingnarratives` attached to
+  the Cowork session so a `Neverendingnarratives` mount appears under /sessions/*/mnt/. Once connected, the next
+  hourly run can apply v2 (reqs 1-10) + UPDATE-2 fixes to the canonical index.html in place and run the DONE-CHECK.
+  NEXT STEP: keep the Neverendingnarratives folder connected; nothing further is possible autonomously until then.
