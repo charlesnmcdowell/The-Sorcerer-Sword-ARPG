@@ -142,7 +142,6 @@ class ArenaScene extends Phaser.Scene {
     on('druidBtn', () => this.combat.startIntro('druid'));
     on('warlockBtn', () => this.combat.startIntro('warlock'));
     on('seraphBtn', () => this.combat.startIntro('seraph'));
-    on('emberBtn', () => this.combat.startIntro('ember'));
     on('enterBtn', () => this.combat.endIntro());
     on('fightBtn', () => this.combat.startFight());
     on('leaveArenaBtn', () => this.leaveArena());
