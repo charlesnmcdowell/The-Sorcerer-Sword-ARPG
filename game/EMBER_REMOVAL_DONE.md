@@ -1,0 +1,1 @@
+Ember playable champion fully removed (dead code cleaned in pit.js, questnav.js, CityScene.js, quests.js; disable step verified). All QA passed: node --check clean on all 5 files, no gameplay ember refs, 4 champions (ronin/druid/warlock/seraph) intact, visual ember effects preserved. Completed 2026-06-16.

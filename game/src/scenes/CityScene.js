@@ -211,22 +211,6 @@ class CityScene extends WorldScene {
       CityUI.dialog(MT.name, MT.tip, MT.go.map(label => ({ label, fn: startEpi })), this.portraitInn);
       return;
     }
-    // EMBER EPILOGUE (eq): one quiet closing beat. After the city falls silent, Marlow speaks to the
-    // Ember at the Last Lantern; the exchange sets q-eq-epilogue 'done' and rolls the ember credits.
-    // Conversation-safe (player/AUTO opens it by talking to Marlow); AUTO:FULL clicks the first option
-    // of each dialog it opened, so it walks open -> send -> close -> credits with no human input.
-    if (P.char === 'ember' && flags['q-mq5-ash-and-silence'] === 'done' && flags['q-eq-epilogue'] !== 'done') {
-      const E = Quests.emberEnding.marlow;
-      const close = () => {
-        flags['q-eq-epilogue'] = 'done';
-        CityUI.closeDialog();
-        if (typeof SaveSystem !== 'undefined' && SaveSystem.save) SaveSystem.save();
-        setTimeout(() => CityUI.credits(Quests.emberEnding.credits), 600);
-      };
-      const sendoff = () => CityUI.dialog(E.name, E.send, E.go2.map(label => ({ label, fn: close })), this.portraitInn);
-      CityUI.dialog(E.name, E.open, E.go1.map(label => ({ label, fn: sendoff })), this.portraitInn);
-      return;
-    }
     const N = t => t.replace('{N}', P.nickname);
     const close = () => CityUI.closeDialog();
     const paidOffer = () => {

@@ -103,14 +103,6 @@ const QuestNav = {
         return at('karridge-city', 1538, 744, true, 'the cult coach — ' + next[4]);
       return at(next[1], next[2], next[3], true, next[4]);
     }
-    // EMBER (item 12) shares the char-agnostic mq1-5 SPINE above. Its dedicated epilogue (eq) is a
-    // SINGLE quiet beat: after mq5 'done', return to MARLOW at the Last Lantern for a closing exchange
-    // (CityScene.innDialog sets q-eq-epilogue 'done' + rolls the ember credits). Reuses Marlow's EXISTING
-    // tile (640,704) so the reachability check passes; once q-eq-epilogue is 'done' it falls through to
-    // null (the story RESTS — never a dead-end). qa_questlines walks: mq1-5 -> Marlow -> done -> null.
-    const ember = GS.player && GS.player.char === 'ember';
-    if (ember && f['q-mq5-ash-and-silence'] === 'done' && f['q-eq-epilogue'] !== 'done')
-      return at('karridge-city', 640, 704, true, 'the Last Lantern — Marlow');
     // the ronin's epilogue (rq): after his original ending, Marlow's tip -> the guild clerk.
     // (Beats 2+ — the spine passage, Vorathiel, the temple — are wired in following runs.)
     const ronin = GS.player && GS.player.char === 'ronin';

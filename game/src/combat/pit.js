@@ -47,7 +47,7 @@ let wolves=[],demons=[],fireballs=[],tracers=[];
 const lvl=()=>Math.min(20,Math.floor(P.level||1));
 let buffs=[]; // {k,amt,until} from belt potions
 const buffAmt=k=>{let a=0;for(const b of buffs)if(b.k===k&&b.until>S.time)a+=b.amt;return a;};
-const RKIT=c=>c==='ronin'||c==='ember'; // item-12: the EMBER reuses the RONIN combat kit (kills-snowball, katana, no levels/evo)
+const RKIT=c=>c==='ronin';
 const stat=k=>(RKIT(P.char)?P.base[k]+P.kills*2:P.base[k]+3*(lvl()-1))+buffAmt(k)+lineStatBonus(k)+evoStatBonus(k);
 function usePotion(type){
   if(P.dead)return false;
@@ -1818,7 +1818,6 @@ function lose(){
 /* ============ CHARACTER INTROS (automated demos) ============ */
 const BIOS={
  ronin:'The wandering samurai — said to have never lost a duel. He has traveled from the far east to become the greatest swordsman in the world. No magic. No levels. No enchantments or tricks. Just pure skill, and the vigor of defeated foes.',
- ember:'Forged in the same fire that took her village, she fights with a katana that still smolders. No magic of her own — only borrowed flame and the same hard-won skill the Pit respects: every fallen foe makes her sharper, faster, harder to put down.', // item-12: EMBER reuses the RONIN kit until her own moveset lands
  druid:'From a grove far away, she comes seeking what nature could not teach her. She hates the city — but she has strength to prove, and there is no better place than the kitchen… I mean, the arena…',
  warlock:'A dark elf from even darker realms, beneath the dark recesses of the land. His book is disconcerting. His staff is ominous. More lurks behind his portals than the city guard should logically allow. Welp — too late. He\'s in the arena.',
  seraph:'He is not from the city. He is from the place above, as most angels are. Giant wings. Runic chains. Three heads, and every one of them watching a different sin. He says great evil brews in the land and he has come to find warriors worthy of the cleansing. The crowd believes him completely. Bellow, privately, is not so sure.'};
@@ -1887,7 +1886,6 @@ const DEMOS={
   {at:15.6,run:()=>{P.combo=2;P.comboT=1;seraphSlash();}},
   {at:17.4,cap:'And if something fells him? It earns ten seconds of glory. He gets back up.'},
   {at:19.4,cap:'He seeks the worthy. The Pit will do for a start. — tap ENTER THE PIT'}]};
-DEMOS.ember=DEMOS.ronin; // item-12: the EMBER plays the RONIN intro demo until it gets its own
 function demoReset(){
   const ch=demo.char;
   P.char=ch;P.kills=0;P.level=RKIT(ch)?1:10;P.bladeTier=0;P.weaponLine=P.weaponLine||'katana';P.form='human';P.r=16;
@@ -1911,9 +1909,9 @@ function startIntro(ch){
   show(null);
   demoReset();
   UI.hud(true);UI.controls(false);UI.boss(false,'');
-  UI.name({ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM',ember:'THE EMBER'}[ch]);
+  UI.name({ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM'}[ch]);
   UI.demoCap('');
-  UI.intro(true,{name:{ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM',ember:'THE EMBER'}[ch],bio:BIOS[ch]});}
+  UI.intro(true,{name:{ronin:'THE RONIN',druid:'THE DRUID',warlock:'THE WARLOCK',seraph:'THE SERAPHIM'}[ch],bio:BIOS[ch]});}
 function endIntro(){
   UI.intro(false);
   S.mode='title';

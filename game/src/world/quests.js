@@ -469,24 +469,6 @@ const Quests = {
   // (exists), ronin lines = PLAYER-RONIN (exists). When the wiring run is ready, ADD add()/speakerSlots
   // for VORATHIEL + GUILD CLERK to build_voice_manifest.js, rebuild (count grows; all resolve; none
   // clean to empty), THEN write "VOICES READY TO GENERATE (ronin ending)". NOT claimed this run.
-  // ===== THE EMBER'S EPILOGUE (eq) — item 12 follow-up. A SINGLE quiet closing beat (no new zones,
-  // no new combat, no new interactable placement): after the city falls quiet (q-mq5-ash-and-silence
-  // 'done') the Ember returns to MARLOW at the Last Lantern. Player-opened + AUTO-clickable; ends by
-  // setting q-eq-epilogue 'done' and rolling the ember credits. Marlow is an EXISTING voiced speaker;
-  // these are NEW added lines (constraint 8: ADD only). VOICE WIRING is a deferred follow-up — these
-  // lines are NOT yet extracted into voice_manifest.json, so "VOICES READY" is NOT claimed this run. =====
-  emberEnding: {
-    epiFlag: 'q-eq-epilogue', // set 'done' when the closing exchange finishes -> objective() rests at null
-    gate: { char: 'ember', requires: 'q-mq5-ash-and-silence' }, // also requires that flag === 'done'
-    marlow: {
-      name: 'MARLOW',
-      open: 'The lantern is the only thing still burning on the street; the ash that swallowed the listening-room has settled grey over the rest. Marlow sets down a cup he was never going to drink from. "You walked out of that. I watched the smoke come up over the rooftops and thought — that\'s the end of someone. And here you are, warm as a forge, not a mark on you." He studies the embers where your eyes should be. "Same as your village, I\'d wager. Everything goes, and you keep. Doesn\'t that get heavy?"',
-      go1: ['"Heavy is just weight I haven\'t set down yet."', '"It got me here. That\'s all I ask of it."'],
-      send: '"Then set some of it down here." He nudges the lantern an inch toward you, like an offering. "This town lost its quiet to that cult and bought it back too dear. It could stand to keep one light lit that the wind can\'t reach." A crooked, tired smile. "You\'re the only flame I\'ve ever met that the rain doesn\'t argue with. Stay a season — or don\'t. But the road out is dark, and you\'d light it better than any torch I could sell you."',
-      go2: ['"One light. I can carry one light."', '"The road, then. It\'s darker where I\'m going."'],
-    },
-    credits: 'THE EMBER\'S ASH — she walked out of one more fire, and the last lantern in Karridge never wanted for keeping again',
-  },
   roninEnding: {
     epiFlag: 'q-rq-epilogue', // 'active' after Marlow's tip; 'done' after the final guild report
     gate: { char: 'ronin', requires: 'q-mq5-ash-and-silence' }, // also requires that flag === 'done'
