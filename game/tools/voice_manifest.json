@@ -59,8 +59,8 @@
     "Sylvara": "cold precise aristocratic woman, cutting consonants",
     "Pippa": "bright halfling woman, relentlessly cheerful, quick"
   },
-  "count": 281,
-  "totalChars": 58969,
+  "count": 274,
+  "totalChars": 57630,
   "lines": [
     {
       "id": "0a8752aa",
@@ -68,12 +68,6 @@
       "text": "The wandering samurai — said to have never lost a duel. He has traveled from the far east to become the greatest swordsman in the world. No magic. No levels. No enchantments or tricks. Just pure skill, and the vigor of defeated foes.",
       "note": "character intro bio",
       "vtext": "[clears throat] The wandering samurai — said to have never lost a duel. He has traveled from the far east... to become the greatest swordsman in the world. No magic. No levels. No enchantments or tricks. [short pause] Just pure skill — and the vigor of defeated foes."
-    },
-    {
-      "id": "af9b6df8",
-      "speaker": "NARRATOR",
-      "text": "Forged in the same fire that took her village, she fights with a katana that still smolders. No magic of her own — only borrowed flame and the same hard-won skill the Pit respects: every fallen foe makes her sharper, faster, harder to put down.",
-      "note": "character intro bio"
     },
     {
       "id": "faf257e0",
@@ -3610,108 +3604,6 @@
         {
           "sp": "PLAYER-RONIN",
           "t": "Whoever's starving the gods — the guild will find them. I'll be near.\""
-        }
-      ]
-    },
-    {
-      "id": "297b12ae",
-      "speaker": "MARLOW",
-      "text": "The lantern is the only thing still burning on the street; the ash that swallowed the listening-room has settled grey over the rest. Marlow sets down a cup he was never going to drink from. \"You walked out of that. I watched the smoke come up over the rooftops and thought — that's the end of someone. And here you are, warm as a forge, not a mark on you.\" He studies the embers where your eyes should be. \"Same as your village, I'd wager. Everything goes, and you keep. Doesn't that get heavy?\"",
-      "note": "ember epilogue: marlow open",
-      "split": true,
-      "segs": [
-        {
-          "sp": "NARRATOR",
-          "t": "The lantern is the only thing still burning on the street; the ash that swallowed the listening-room has settled grey over the rest. Marlow sets down a cup he was never going to drink from."
-        },
-        {
-          "sp": "MARLOW",
-          "t": "You walked out of that. I watched the smoke come up over the rooftops and thought — that's the end of someone. And here you are, warm as a forge, not a mark on you."
-        },
-        {
-          "sp": "NARRATOR",
-          "t": "He studies the embers where your eyes should be."
-        },
-        {
-          "sp": "MARLOW",
-          "t": "Same as your village, I'd wager. Everything goes, and you keep. Doesn't that get heavy?"
-        }
-      ]
-    },
-    {
-      "id": "87fb95f4",
-      "speaker": "MARLOW",
-      "text": "\"Then set some of it down here.\" He nudges the lantern an inch toward you, like an offering. \"This town lost its quiet to that cult and bought it back too dear. It could stand to keep one light lit that the wind can't reach.\" A crooked, tired smile. \"You're the only flame I've ever met that the rain doesn't argue with. Stay a season — or don't. But the road out is dark, and you'd light it better than any torch I could sell you.\"",
-      "note": "ember epilogue: marlow send",
-      "split": true,
-      "segs": [
-        {
-          "sp": "MARLOW",
-          "t": "Then set some of it down here."
-        },
-        {
-          "sp": "NARRATOR",
-          "t": "He nudges the lantern an inch toward you, like an offering."
-        },
-        {
-          "sp": "MARLOW",
-          "t": "This town lost its quiet to that cult and bought it back too dear. It could stand to keep one light lit that the wind can't reach."
-        },
-        {
-          "sp": "NARRATOR",
-          "t": "A crooked, tired smile."
-        },
-        {
-          "sp": "MARLOW",
-          "t": "You're the only flame I've ever met that the rain doesn't argue with. Stay a season — or don't. But the road out is dark, and you'd light it better than any torch I could sell you."
-        }
-      ]
-    },
-    {
-      "id": "2de4ff38",
-      "speaker": "PLAYER-EMBER",
-      "text": "\"Heavy is just weight I haven't set down yet.\"",
-      "note": "player line: ember epilogue",
-      "segs": [
-        {
-          "sp": "PLAYER-EMBER",
-          "t": "Heavy is just weight I haven't set down yet."
-        }
-      ]
-    },
-    {
-      "id": "fa339df0",
-      "speaker": "PLAYER-EMBER",
-      "text": "\"It got me here. That's all I ask of it.\"",
-      "note": "player line: ember epilogue",
-      "segs": [
-        {
-          "sp": "PLAYER-EMBER",
-          "t": "It got me here. That's all I ask of it."
-        }
-      ]
-    },
-    {
-      "id": "a377e560",
-      "speaker": "PLAYER-EMBER",
-      "text": "\"One light. I can carry one light.\"",
-      "note": "player line: ember epilogue",
-      "segs": [
-        {
-          "sp": "PLAYER-EMBER",
-          "t": "One light. I can carry one light."
-        }
-      ]
-    },
-    {
-      "id": "e7e6e550",
-      "speaker": "PLAYER-EMBER",
-      "text": "\"The road, then. It's darker where I'm going.\"",
-      "note": "player line: ember epilogue",
-      "segs": [
-        {
-          "sp": "PLAYER-EMBER",
-          "t": "The road, then. It's darker where I'm going."
         }
       ]
     },

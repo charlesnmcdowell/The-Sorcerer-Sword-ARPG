@@ -4039,3 +4039,31 @@ keep a local-only path). NEVER print the key.
   STILL shows enabled:true, the scheduler is ignoring the flag and Hiro must remove/disable the task
   manually from the Cowork schedule UI (Settings) - the code work is 100% done either way.
   EXACT NEXT STEP: none - autowork is complete; schedule disabled (verify it stuck).
+
+
+- 2026-06-17 (run 79) - **AUTOWORK COMPLETE (re-confirmed) - all roadmap items done; schedule already disabled.**
+  list_scheduled_tasks this run shows the task ALREADY enabled:false (the run-78 disable finally stuck), yet
+  it still fired once today (lastRunAt 2026-06-17T11:23) - a stale/queued dispatch, not a re-enable. Per
+  STEP 2/STEP 5 I did NOT invent new work and did NOT repeat the runs 68-71 "perpetual QA watch" anti-pattern
+  beyond the protocol-required final verification. No game/engine/tools/docs CODE was touched this run (only
+  this log entry got new lines).
+  FINAL VERIFICATION (all PASS, FIRST attempt, no flake):
+   - node --check: src/combat/pit.js, src/core/questnav.js, src/world/quests.js, src/scenes/CityScene.js,
+     tools/build_voice_manifest.js + all 4 test files (headless, qa_questlines, ember_smoke, gauntlet) = ALL OK.
+   - node tools/build_voice_manifest.js = 274 lines, 270/274 voiced (4 lines still await acting; none broken).
+   - node tests/headless.js = 10/10 wins, HEADLESS HARNESS PASS.
+   - node tests/ember_smoke.js = 5/5 WIN, EMBER SMOKE PASS.
+   - node tests/qa_questlines.js = exit 0, PASS - all 5 chars; item 1.5 update()-scan green
+     (City 1/1, Grove 2/2, Dungeon 1/1, Varenholm 1/1, Mountain 0/0, Ashenveil 1/1).
+   - node tests/gauntlet.js = GAUNTLET SWEEP: PASS (1st attempt) - ronin tier2 5.4 / druid lv20 5.3 /
+     warlock lv20 17.4 / seraph lv20 3.0 / ember tier0 47.8 simMin, ALL VICTORY 20/20.
+  ROADMAP STATUS: COMPLETE - 1.5 (conversation-safe: all zones), warlock questline incl. journal step e +
+  voice wiring, 2 (Druid questline), 3 (docs refresh), 4 (voice-gap fix), 5 (arch-devil -> seraph -> lich
+  cinematic), plus ITEM 12 epilogue + voice wiring. NO remaining actionable NEXT STEP.
+  CONSTRAINTS: no dialogue text changed (8), no voice_config/build_voice_manifest change & no "VOICES READY"
+  claim (9), no new encounter triggers (1.5 preserved), no git ops (3), no API key printed/moved. OneDrive
+  truncation: none - only this log entry written (via python, bash-side); tail verified intact.
+  ACTION: re-issuing update_scheduled_task(enabled:false) idempotently to keep it pinned off. Already false,
+  so this is belt-and-suspenders; if it keeps firing while showing false, the scheduler is dispatching a
+  stale entry and Hiro should remove the task from the Cowork schedule UI (Settings). Code work is 100% done.
+  EXACT NEXT STEP: none - autowork is complete; schedule is disabled.
