@@ -347,6 +347,7 @@ fs.writeFileSync(out, JSON.stringify({
     'BRIAR': 'Briar', 'OSSUARY': 'Ossuary', 'CINDER': 'Cinder', 'WHISPER': 'Whisper', 'THORNWARDEN': 'Thornwarden',
     'GROVE KEEPER': 'Faelar',
     'THE ARCH DEVIL': 'Warlock', 'THE SERAPHIM': 'Seraphim',
+    'WARLOCK': 'Warlock', 'SERAPHIM': 'Seraphim', // speakerFor() normalizes 'THE ARCH DEVIL'->WARLOCK / 'THE SERAPHIM'->SERAPHIM (outro cinematic voices)
     'GUILD CLERK': 'Sylvara', 'VORATHIEL': 'Nyx', // ronin ending (existing ids)
     'SENSEI OKADA': 'Faelar', // dojo (item 11) — reuse Faelar's serene/ageless male voice
     'THE PERFORMANCE': 'Narrator', 'THE COACH ROAD': 'Narrator', 'THE ROAD SOUTH': 'Narrator',

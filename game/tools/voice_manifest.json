@@ -40,6 +40,8 @@
     "GROVE KEEPER": "Faelar",
     "THE ARCH DEVIL": "Warlock",
     "THE SERAPHIM": "Seraphim",
+    "WARLOCK": "Warlock",
+    "SERAPHIM": "Seraphim",
     "GUILD CLERK": "Sylvara",
     "VORATHIEL": "Nyx",
     "SENSEI OKADA": "Faelar",
@@ -2947,8 +2949,8 @@
       ]
     },
     {
-      "id": "ebb1a198",
-      "speaker": "THE ARCH DEVIL",
+      "id": "8e830b86",
+      "speaker": "WARLOCK",
       "text": "At last - Sheol's gates could not hold me. The mortal plane is mine to take.",
       "note": "arch devil outro",
       "segs": [
@@ -2959,8 +2961,8 @@
       ]
     },
     {
-      "id": "f2e1bd0d",
-      "speaker": "THE ARCH DEVIL",
+      "id": "2605ae40",
+      "speaker": "WARLOCK",
       "text": "Free! An age in the Pit, and now your soft little world will kneel.",
       "note": "arch devil outro",
       "segs": [
@@ -2971,8 +2973,8 @@
       ]
     },
     {
-      "id": "986e31e8",
-      "speaker": "THE ARCH DEVIL",
+      "id": "9d708c16",
+      "speaker": "WARLOCK",
       "text": "Do you feel it? The chains are off. I have CLIMBED OUT of hell.",
       "note": "arch devil outro",
       "segs": [
@@ -2983,8 +2985,8 @@
       ]
     },
     {
-      "id": "a935f3ac",
-      "speaker": "THE ARCH DEVIL",
+      "id": "2c1daff6",
+      "speaker": "WARLOCK",
       "text": "Sheol spat me back up. How generous. Now I remake your sky in fire.",
       "note": "arch devil outro",
       "segs": [
@@ -2995,8 +2997,8 @@
       ]
     },
     {
-      "id": "6cdb5cd2",
-      "speaker": "THE ARCH DEVIL",
+      "id": "b75111ce",
+      "speaker": "WARLOCK",
       "text": "No more pits. No more wardens. The conqueror has arrived, and he is HUNGRY.",
       "note": "arch devil outro",
       "segs": [
@@ -3007,8 +3009,8 @@
       ]
     },
     {
-      "id": "b2ab8dc6",
-      "speaker": "THE ARCH DEVIL",
+      "id": "56ebd648",
+      "speaker": "WARLOCK",
       "text": "I clawed through the floor of the underworld for this - for YOU. Kneel.",
       "note": "arch devil outro",
       "segs": [
@@ -3019,8 +3021,8 @@
       ]
     },
     {
-      "id": "b017c768",
-      "speaker": "THE ARCH DEVIL",
+      "id": "7bd6954d",
+      "speaker": "WARLOCK",
       "text": "The abyss is behind me. Ahead: a whole plane of warm, breathing thrones.",
       "note": "arch devil outro",
       "segs": [
@@ -3031,8 +3033,8 @@
       ]
     },
     {
-      "id": "bb570c30",
-      "speaker": "THE ARCH DEVIL",
+      "id": "dad5b850",
+      "speaker": "WARLOCK",
       "text": "Escaped. Ascended. Unleashed. Sheol held its door open one breath too long.",
       "note": "arch devil outro",
       "segs": [
@@ -3043,8 +3045,8 @@
       ]
     },
     {
-      "id": "95200f94",
-      "speaker": "THE ARCH DEVIL",
+      "id": "cb218be2",
+      "speaker": "WARLOCK",
       "text": "They said no devil leaves the deep. They will be wrong about many things now.",
       "note": "arch devil outro",
       "segs": [
@@ -3055,8 +3057,8 @@
       ]
     },
     {
-      "id": "b7895998",
-      "speaker": "THE ARCH DEVIL",
+      "id": "50cfc14a",
+      "speaker": "WARLOCK",
       "text": "Mortal plane - I waited an age in the dark to swallow you whole.",
       "note": "arch devil outro",
       "segs": [
@@ -3067,8 +3069,8 @@
       ]
     },
     {
-      "id": "7a7c7ea8",
-      "speaker": "THE SERAPHIM",
+      "id": "e7c9f5b0",
+      "speaker": "SERAPHIM",
       "text": "Vile demon - away with you. Back to hell you go.",
       "note": "seraph descent",
       "segs": [
@@ -3488,8 +3490,8 @@
       ]
     },
     {
-      "id": "c8a68730",
-      "speaker": "THE SERAPHIM",
+      "id": "96e1f680",
+      "speaker": "SERAPHIM",
       "text": "Light steps down out of the thin air the way the dragon came down, but kinder — a winged figure, too bright to hold in the eye, settling onto the scarred dawn-stone. \"You closed it,\" the Seraphim says, and there is real gratitude in it. \"I felt it open and could not reach it in time. You have the guild's thanks. You have MINE, which is rarer.\"",
       "note": "ronin ending: seraph thanks",
       "segs": [
@@ -3498,7 +3500,7 @@
           "t": "Light steps down out of the thin air the way the dragon came down, but kinder — a winged figure, too bright to hold in the eye, settling onto the scarred dawn-stone."
         },
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "You closed it,"
         },
         {
@@ -3506,19 +3508,19 @@
           "t": "the Seraphim says, and there is real gratitude in it."
         },
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "I felt it open and could not reach it in time. You have the guild's thanks. You have MINE, which is rarer."
         }
       ]
     },
     {
-      "id": "8894dd30",
-      "speaker": "THE SERAPHIM",
+      "id": "c043fc08",
+      "speaker": "SERAPHIM",
       "text": "\"You came looking for what I want. I will tell you, since you have earned the truth and bled for it. I do not fight your wars, fighter. I am not PERMITTED to — I recruit. I find the worthy, the way I found a champion on this very mountain, and I send them where the gods cannot openly reach. I step in MYSELF only against what no mortal should face alone — the arch devil clawing out of the deep, and things of that weight. A defiled shrine is beneath my office.\" A pause, and the brightness dims a shade, troubled. \"Or it should be.\"",
       "note": "ronin ending: seraph explain",
       "segs": [
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "You came looking for what I want. I will tell you, since you have earned the truth and bled for it. I do not fight your wars, fighter. I am not PERMITTED to — I recruit. I find the worthy, the way I found a champion on this very mountain, and I send them where the gods cannot openly reach. I step in MYSELF only against what no mortal should face alone — the arch devil clawing out of the deep, and things of that weight. A defiled shrine is beneath my office."
         },
         {
@@ -3526,19 +3528,19 @@
           "t": "A pause, and the brightness dims a shade, troubled."
         },
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "Or it should be."
         }
       ]
     },
     {
-      "id": "9b182170",
-      "speaker": "THE SERAPHIM",
+      "id": "88e9f8a6",
+      "speaker": "SERAPHIM",
       "text": "\"But this gate was no accident, and it is not the first. Someone is DEFILING the temples — methodically, across the high country and beyond. Every shrine they foul, the gods above grow a little fainter. And the fainter the gods, the fainter their servant.\" The wings draw in. \"Which means the thing that just made me weaker is exactly the thing I am forbidden to chase directly. So I will do what I do: I will tell the worthy, and hope they are worth it. Take this to your guild, fighter. Tell them their angel is not recruiting today — their angel is asking for HELP.\"",
       "note": "ronin ending: seraph warn",
       "segs": [
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "But this gate was no accident, and it is not the first. Someone is DEFILING the temples — methodically, across the high country and beyond. Every shrine they foul, the gods above grow a little fainter. And the fainter the gods, the fainter their servant."
         },
         {
@@ -3546,7 +3548,7 @@
           "t": "The wings draw in."
         },
         {
-          "sp": "THE SERAPHIM",
+          "sp": "SERAPHIM",
           "t": "Which means the thing that just made me weaker is exactly the thing I am forbidden to chase directly. So I will do what I do: I will tell the worthy, and hope they are worth it. Take this to your guild, fighter. Tell them their angel is not recruiting today — their angel is asking for HELP."
         }
       ]
