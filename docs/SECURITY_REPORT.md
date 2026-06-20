@@ -41,3 +41,12 @@ Durable record of the recurring QA & SECURITY watch scans. Secret values are alw
   (`game/tools/voice_config.json`), `git ls-files` shows it untracked, no `sk_` string in deployed
   `site-neverendingnarratives/play/`, no `tools/`/`tests/` dir deployed, and `play/config.js`
   anthropicApiKey is empty. **Result: CLEAN — no exposed secrets.** The API key was never printed or moved.
+
+- **2026-06-19 (quick-fix run):** After the music/balance/wiki/romance changes were republished
+  (`publish_inplace.py`, build 1781911089), re-ran the post-deploy secret checks on the deployed
+  `Neverendingnarratives/play/`: regex scan for `sk-ant-` / `api[_-]?key = '<value>'` returned no hits
+  (the only `anthropicApiKey`/`apiKey` occurrences are the empty `''` placeholders). Source `game/config.js`
+  `anthropicApiKey` is empty; `git check-ignore` confirms `tools/voice_config.json` is still gitignored and
+  untracked; `tools/` is not deployed. The new content this run is text/JS logic only (no keys, no network
+  calls added beyond the pre-existing companion-AI fetch which already reads the empty-by-default config
+  key). **Result: CLEAN — no exposed secrets; nothing urgent.**
