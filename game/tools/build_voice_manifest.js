@@ -178,8 +178,8 @@ if (DC) {
 // ---- ARCH DEVIL OUTRO (item 5): the devil-expiry cinematic — 10 taunts (Warlock voice) + the Seraphim's banish (Seraphim voice) ----
 const ADO = Quests.archDevilOutro;
 if (ADO) {
-  for (const t of (ADO.taunts || [])) add('THE ARCH DEVIL', t, 'arch devil outro');
-  add('THE SERAPHIM', ADO.seraph, 'seraph descent');
+  for (const t of (ADO.taunts || [])) add('THE ARCH DEVIL', t, 'arch devil outro', { whole: 1 });
+  add('THE SERAPHIM', ADO.seraph, 'seraph descent', { whole: 1 });
 }
 
 // ---- THE RONIN'S ENDING (rq epilogue): Marlow's tip, the Guild Clerk, Vorathiel, the temple Seraphim, the turn-in ----
@@ -277,6 +277,7 @@ for (const [key, c] of Object.entries(Companions)) {
 const SPEAK_WHOLE = new Set(['NARRATOR', 'MARLOW', 'SIGNPOST']);
 function segment(l) {
   const src = l.vtext || l.text;
+  if (l.whole) { l.segs = [{ sp: l.speaker, t: src.replace(/^"|"$/g, '').trim() }]; return; } // cinematic line voiced wholly by its speaker (never demoted to Narrator)
   if ((SPEAK_WHOLE.has(l.speaker) && !l.split) || l.speaker.startsWith('PLAYER-')) {
     if (l.speaker.startsWith('PLAYER-')) {
       const t = src.replace(/\(.*?\)/g, '').replace(/^"|"$/g, '').trim();

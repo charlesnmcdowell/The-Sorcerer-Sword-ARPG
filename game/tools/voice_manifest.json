@@ -2953,9 +2953,10 @@
       "speaker": "WARLOCK",
       "text": "At last - Sheol's gates could not hold me. The mortal plane is mine to take.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "At last - Sheol's gates could not hold me. The mortal plane is mine to take."
         }
       ]
@@ -2965,9 +2966,10 @@
       "speaker": "WARLOCK",
       "text": "Free! An age in the Pit, and now your soft little world will kneel.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "Free! An age in the Pit, and now your soft little world will kneel."
         }
       ]
@@ -2977,9 +2979,10 @@
       "speaker": "WARLOCK",
       "text": "Do you feel it? The chains are off. I have CLIMBED OUT of hell.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "Do you feel it? The chains are off. I have CLIMBED OUT of hell."
         }
       ]
@@ -2989,9 +2992,10 @@
       "speaker": "WARLOCK",
       "text": "Sheol spat me back up. How generous. Now I remake your sky in fire.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "Sheol spat me back up. How generous. Now I remake your sky in fire."
         }
       ]
@@ -3001,9 +3005,10 @@
       "speaker": "WARLOCK",
       "text": "No more pits. No more wardens. The conqueror has arrived, and he is HUNGRY.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "No more pits. No more wardens. The conqueror has arrived, and he is HUNGRY."
         }
       ]
@@ -3013,9 +3018,10 @@
       "speaker": "WARLOCK",
       "text": "I clawed through the floor of the underworld for this - for YOU. Kneel.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "I clawed through the floor of the underworld for this - for YOU. Kneel."
         }
       ]
@@ -3025,9 +3031,10 @@
       "speaker": "WARLOCK",
       "text": "The abyss is behind me. Ahead: a whole plane of warm, breathing thrones.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "The abyss is behind me. Ahead: a whole plane of warm, breathing thrones."
         }
       ]
@@ -3037,9 +3044,10 @@
       "speaker": "WARLOCK",
       "text": "Escaped. Ascended. Unleashed. Sheol held its door open one breath too long.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "Escaped. Ascended. Unleashed. Sheol held its door open one breath too long."
         }
       ]
@@ -3049,9 +3057,10 @@
       "speaker": "WARLOCK",
       "text": "They said no devil leaves the deep. They will be wrong about many things now.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "They said no devil leaves the deep. They will be wrong about many things now."
         }
       ]
@@ -3061,9 +3070,10 @@
       "speaker": "WARLOCK",
       "text": "Mortal plane - I waited an age in the dark to swallow you whole.",
       "note": "arch devil outro",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "WARLOCK",
           "t": "Mortal plane - I waited an age in the dark to swallow you whole."
         }
       ]
@@ -3073,9 +3083,10 @@
       "speaker": "SERAPHIM",
       "text": "Vile demon - away with you. Back to hell you go.",
       "note": "seraph descent",
+      "whole": 1,
       "segs": [
         {
-          "sp": "NARRATOR",
+          "sp": "SERAPHIM",
           "t": "Vile demon - away with you. Back to hell you go."
         }
       ]
