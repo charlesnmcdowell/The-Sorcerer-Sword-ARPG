@@ -95,18 +95,35 @@ then becomes the permanent Demon Lord (NO seraphim, no death, no lich) and Demon
 that blow once then fireball; druid forms last 16s. Verify un-evolved/other-road/other-champions unchanged.
 
 ## STATUS: done 2026-06-21
-All 7 items implemented in src/combat/pit.js and published in-place to Neverendingnarratives/play (build 1782034450).
+All 7 items were already fully implemented in src/combat/pit.js (prior run; "Hiro item N" anchors
+present). This run AUDITED + VERIFIED + PUBLISHED — no source code changes were needed.
 
-1. GLOBAL bone-dragon gas now refreshes a hex-strength ACID DoT (e.acidT, base 15, .5s tick, green #7fd05a) ticked in updEnemy; light paralytic stun kept. All warlock dragons.
-2. UNDEAD (binder): BLACK DRAGON (d.black) — HP x1.7, body #0a0a0a + sickly-green underglow, keeps acid breath/melee, lobs a massive exploding fireball (kind:'fire', aoe:100, ~2.2x, enemies-only) on a 4s cd. Reaper bigger (enterLich P.r 22->27 on binder) + scythe 2x (lichSlash).
-3. DEMON (herald): succubi (incl. arch) never time out; each summon DOUBLED; arch-succubus blast deals NO friendly damage (player + summons spared), she SURVIVES (d.blewOnce) and never re-explodes (fireballs only after).
-4. GLOBAL: SUMMON is PRESS — channel auto-completes (no ladder restart, no FIZZLE), releaseChannel is a no-op, interrupted by hit (hurtPlayer) / paralyze (bolt/venom/frost zones) / silence (wired). Lich half-speed channel still auto-completes.
-5. herald enterDevil 15->25s; archDevilOutro herald branch: NO seraphim/death/lich — plays the EXISTING arch-devil taunt clip (reused as-is, no voice-gen), brief ward (not a helpless paralyze), then enterDemonLord() ~3s later. Non-herald cinematic untouched.
-6. enterDemonLord(): terminal in-fight (outro guarded), bigger black+green warlock (P.r 27, draw tint + green halo/underglow), full warlock kit, summon timings 3s shorter (floored), 3x demons, succubi auto-ARCH (short fuse -> one blast then fireball via d.blewOnce, no friendly damage, survive).
-6b. P.demonLord cleared (P.r restored, labels) in fullReset, demoReset, startEncounter, and the per-wave reset.
-7. DRUID P.formT 6->16 (bear+wolf); '6 seconds' banner -> '16 seconds'; form-timer bar denominators updated.
+Verification performed:
+- node --check on all 26 src/*.js: PASS. pit.js intact (3334 lines, proper module.exports tail).
+- Headless harness (tests/headless.js): 6/6 wins.
+- Gauntlet assist sweep: warlock, ronin, druid, seraph all VICTORY @ fight 20/20 (no crash/softlock; gating intact).
+- New focused harness tests/demonlord_qa.js: PASS. Confirms:
+  * herald arch-devil expiry -> taunt -> PERMANENT Demon Lord (NO seraphim, NO lich); devilT cleared; r=27.
+  * Demon Lord summons arch succubi (3x = 9), all d.arch, survive their blast (d.blewOnce).
+  * Demon Lord terminal within fight; fullReset clears P.demonLord and restores r=16.
+  * binder dragon is BLACK with fireball cooldown (exploding fireball).
+  * herald coven doubles (3->6 succubi) and does NOT time out after 20s.
+- Item anchors confirmed in code: gas->acid DoT (L628/L2275/L1476), binder black dragon+fireball
+  (L554-557,629-635), reaper bigger r=27 + scythe 2x (L903,932), herald succubi no-decay (L572),
+  arch survives/no friendly dmg (L637,651,656,658), press auto-channel (L516,2205-2218),
+  interrupt wiring in hurtPlayer (L1410) + silence (L1781) + paralyze zones (L2261,2281,2288),
+  devilT 25 herald + no-seraphim/Demon-Lord outro (L727,763-779), enterDemonLord (L738-747),
+  resets clear demonLord (L1389,1953,2083,2113), druid formT=16 + banner (L371,374,3151).
+- No voice clips changed; NO ElevenLabs/image/paid API calls made.
 
-QA: node --check OK; headless 6/6; gauntlet sweep ronin/druid/warlock[binder]/seraph/ember all VICTORY 20/20 no softlock; targeted demon-lord harness 16/16 (press-to-summon auto-channel + no-cancel-on-release, herald 25s arch-devil -> Demon Lord no seraphim/lich, auto-arch coven blows once + survives, 9 tripled succubi persist, reset clears Demon Lord, binder black dragon + fireball, druid 16s). No voice clips changed.
+PUBLISHED: build 1782060601 via tools/publish_inplace.py -> Neverendingnarratives/play (verified:
+play/src/combat/pit.js node --check OK, 3334 lines, sizes match; play/index.html ends </html>).
+
+ACTION REQUIRED BY USER: the site git index is locked/corrupted on the OneDrive mount
+("index.lock cannot be unlinked: Operation not permitted" / "cache entry has null sha1"),
+so this run could NOT and did NOT git commit/push. From a normal chat session, commit & push
+Neverendingnarratives/play to deploy the live site.
++ survives, 9 tripled succubi persist, reset clears Demon Lord, binder black dragon + fireball, druid 16s). No voice clips changed.
 
 ENV/OneDrive hazard: the bash mount served a TRUNCATED view of pit.js (frozen at 204174 bytes / line ~3210) even after authoritative edits. Source was reconstructed (good prefix + correct tail, node --check OK, 210524 bytes) before publish; publish size-equality guard passed. Pre-edit safety copy at src/combat/pit.js.bak-predemonlord-truncguard.
 
