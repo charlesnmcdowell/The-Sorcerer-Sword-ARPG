@@ -255,3 +255,9 @@ IDENTIFIER RING present in draw() player block (#fff8e0 outer / #f0c66a inner gr
 build 1782008868; config key scrubbed to ''. Full 20-fight assist gauntlet VICTORY for all five
 champions; sim spot-check confirms binder summons carry dmgMul while un-evolved warlock summons do not.
 Nothing left to ship.
+
+## RE-VERIFIED 2026-06-21 (scheduled re-run, schedule self-disabled): source==published byte-identical
+(cmp clean) for pit.js (3271 L); node --check clean on both source and published; tail intact. Gating
+present: herald x12 / binder x6 / warden x4 guards, dmgMul:3 on binder summons, doubled summon counts;
+PLAYER IDENTIFIER RING present (gold #f0c66a + white #fff8e0). Published build still 1782008868; config
+key scrubbed to ''. No regressions — schedule disabled.

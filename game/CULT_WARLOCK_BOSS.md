@@ -121,3 +121,10 @@ cultwarlock packs present at quests.js L397 (warlock) + L410 (rematch:true), col
 (L325) untouched; published build still 1782008868; config key scrubbed to ''. Targeted crossing sim
 (lv14 druid): boss SUMMONS esuccubus + edragon and applies a real HEX (P.hexedT=8, ~12 dmg/tick).
 Full 20-fight assist gauntlet VICTORY for ronin/druid/warlock/seraph/ember. Nothing left to ship.
+
+## RE-VERIFIED 2026-06-21 (scheduled re-run, schedule self-disabled): source==published byte-identical
+(cmp clean) for pit.js (3271 L) + quests.js (905 L); node --check clean on both source and published;
+tails intact (no truncation). cultwarlock AI present (6 case refs) with esuccubus/edragon minion AIs and
+the P.hexedT player-HEX DoT; quests packs intact at L397 (warlock) + L410 (rematch). The 'collector' boss
+type still exists elsewhere (untouched). Published build still 1782008868; config key scrubbed to ''.
+No regressions — schedule disabled.
