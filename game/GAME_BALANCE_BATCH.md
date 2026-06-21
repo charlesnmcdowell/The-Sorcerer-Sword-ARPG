@@ -180,3 +180,78 @@ cmp-identical to source, HEX FIEND data present, config api key scrubbed).
 NOT git-pushed (never auto-push). USER TODO: commit & push BOTH repos —
   game/ (The Sorcerer Sword ARPG) and the site repo (Neverendingnarratives, the play/ build).
 No voice clips changed this batch, so nothing else to copy.
+
+================================================================
+## STATUS: done 2026-06-21 (follow-up — PLAYER IDENTIFIER RING completed)
+================================================================
+The prior "done 2026-06-21" pass shipped PATHS 1-3 and the evo panel but OMITTED batch item 4 (the
+player identifier ring). This follow-up run wired it and republished.
+
+WHAT WAS ADDED:
+- PLAYER IDENTIFIER RING (item 4): in draw()'s player block, right after the player movement line and
+  BEFORE the form drawFighter chain, a gold+white flat ground ring is drawn under the hero. Geometry
+  matches the shadow ellipse (center P.x, P.y+P.r*0.6; rx ~P.r*1.05, ry ~P.r*0.4) so it hugs the ground
+  plane (correct even for the floating arch-devil/seraph — anchored to P.y, not the lifted body). Double
+  stroke: outer white #fff8e0 (3px) + inner gold #f0c66a (2px), globalAlpha 0.85, soft gold shadowBlur
+  glow, subtle sin(time) pulse, no per-frame allocations. Player only — the whole block is player-only and
+  fight/demo-gated (draw() returns early outside fight/demo at the mode check). Suppressed for a dead hero
+  and during cutscenes: arch-devil outro (archCine), kill-cam zoom/fatal (cam.z>1.12 || S.fatal), and the
+  evo-choice panel (P.evoPick). Enemies/summons are never ringed.
+
+QA (all passed): node --check clean on source AND published copy; full 20-fight assist gauntlet VICTORY for
+ronin/druid/warlock/seraph/ember (no crash/softlock); new render smoke test (ring_smoke.js) drives a mock
+ctx through 8 frames per champion — ring ellipses (#fff8e0/#f0c66a) drawn for ronin, druid (human + forced
+WARDEN bear), warlock (human + forced HERALD + forced BINDER), and seraph with no exceptions, and the ring
+is correctly SUPPRESSED while the evo panel is open. Gating from the prior pass left untouched and re-grepped
+(herald x12 / binder x3 / warden x4 guards present). No voice clips changed.
+
+FS HAZARD (again, see memory epub-editing-fs-hazard): after the Edit the OneDrive Linux mount served a
+STALE, TAIL-TRUNCATED view of pit.js (stuck at 3141 lines, cut mid-statement in evoWrap just before the
+api={} block) even though the desktop file layer was complete and well-formed. publish copies from that
+mount, so I rebuilt the verified file = mount's intact body (lines 1-3141, which already held the ring edit)
++ the exact desktop tail (evoWrap close + api={} + exports), node-checked & gauntlet-tested it in scratch,
+installed it over the mount source (cmp-identical, which refreshed the cache so the mount then read 3167
+lines correctly), and only then published.
+
+Published build 1782004248 -> Neverendingnarratives/play (build.txt bumped for force-update; play/pit.js
+verified 3167 lines, node --check OK, cmp-identical to source, ring + HEX FIEND data present, config api key
+scrubbed to ''). NOT git-pushed. USER TODO unchanged: commit & push BOTH repos (game/ and Neverendingnarratives).
+
+================================================================
+## STATUS: done 2026-06-21 (follow-up — DREADBINDER road wired; player ring confirmed already shipped)
+================================================================
+The prior passes shipped PATHS 1-3, the evo panel, and the player ring but left the WARLOCK OTHER ROAD
+(DREADBINDER / `binder`) "unchanged" (the HEX FIEND pass explicitly skipped it). This run wired the
+binder horde buffs and republished. The PLAYER IDENTIFIER RING (batch item 4) was verified already
+present (draw() player block, gold #f0c66a + white #fff8e0 ground ring, fight/demo + player-only,
+suppressed during cutscenes/evo-panel) — no change needed.
+
+WHAT WAS WIRED (src/combat/pit.js, all gated on P.evo10==='binder' — herald/un-evolved byte-identical):
+- summonDemons(): a PAIR of claw fiends (was 1) and a SIX-strong coven (was 3); the bone dragon stays a
+  single big summon (per the doc's allowance). summonZombies() 3->6, summonArchers() 2->4. The lich's
+  undead come from those same two helpers (channel ladder), so they double on the binder road too.
+- BIGGER: every binder-summoned minion's radius r x1.45 (succubus 10->14.5, etc.).
+- 3x DAMAGE: each binder summon tagged dmgMul:3 (like the druid wolves' dmgMul:1.5) and its outgoing
+  damage multiplied by (d.dmgMul||1) — zombie bite, archer arrow, claw-fiend shove, and the succubus
+  fireball (so the succubus fire is its NORMAL bolt x3; Sheol fire stays HEX-FIEND-only, untouched here).
+- GRANTS text updated to concrete numbers ("DOUBLE the horde: 2 claw fiends, a SIX-strong coven, 6
+  shamblers, 4 bone archers (+2 dragons as a lich). ~45% bigger, 3x damage.").
+
+QA (all passed): node --check clean; full 20-fight assist gauntlet VICTORY for all five champions; FORCED
+binder + herald full gauntlets both reach fight 20 VICTORY (no crash/softlock); targeted summon-count test
+confirms binder coven 6 vs base 3, brutes 2 vs 1, succubus dmgMul===3 and r 14.5>10, while an un-evolved
+warlock's summons carry NO dmgMul (unchanged). Herald/un-evolved gating verified by grep.
+
+FS HAZARD (epub-editing-fs-hazard) hit AGAIN — the OneDrive mount tail-truncated pit.js (~L3113) after the
+edits; rebuilt from intact prefix + exact desktop tail, verified, installed over the mount, re-checked,
+then published. Published build 1782008868 -> Neverendingnarratives/play (build.txt bumped; play/pit.js
+3271 lines, node --check OK, cmp-identical to source, DREADBINDER + ring data present, config key scrubbed).
+NOT git-pushed. USER TODO unchanged: commit & push BOTH repos.
+
+## VERIFIED 2026-06-21 (scheduled re-run): all batch items confirmed shipped. source==published
+byte-identical (cmp clean) for pit.js (3271 L); node --check clean; tail intact. DREADBINDER gating
+present (P.evo10==='binder' guards, dmgMul:3, doubled summonZombies/Archers counts, r x1.45); PLAYER
+IDENTIFIER RING present in draw() player block (#fff8e0 outer / #f0c66a inner ground ring). Published
+build 1782008868; config key scrubbed to ''. Full 20-fight assist gauntlet VICTORY for all five
+champions; sim spot-check confirms binder summons carry dmgMul while un-evolved warlock summons do not.
+Nothing left to ship.
