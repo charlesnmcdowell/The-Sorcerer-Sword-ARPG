@@ -253,6 +253,34 @@ const REGRESSIONS = [
     if(!(unprimed.maxHitPause>1e6)) return 'expected an UNPRIMED clock to FREEZE the sim (hitPause~1e9); it did not — freeze signature changed, re-derive the guard';
     return null;
   }],
+
+  /* ---- REENTRANCY (playtest 2026-06-26): updDemons() walks demons[] by a cached index, but killEnemy()
+         caps the zombie horde with demons.shift() (FRONT removal) and killEnemy fires from INSIDE that
+         loop whenever a summon (zombie/brute/arch-burst) kills an INFECTED foe (infection -> IT RISES).
+         The front-shift slides every index down, so the cached i can point PAST the shrunken array ->
+         demons[i] is undefined -> crash. This surfaced as an intermittent P1 in the pursue-driver:
+         warlock/herald & herald-archfiend "Cannot read properties of undefined (reading 'type'/'life')"
+         at fights 16-20. 5-WHYS: (1) crash reading d.type/d.life; (2) d===demons[i] was undefined;
+         (3) demons[] shrank mid-loop; (4) killEnemy's IT-RISES path did demons.shift() to cap the horde,
+         reentrantly from updDemons; (5) the index-based backward loop assumed demons[] is immutable during
+         iteration. ISHIKAWA -> code-logic (reentrant mutation of an actively-iterated array). Fix: skip
+         empty slots in updDemons (`if(!d)continue;`). This case rebuilds the exact race: an over-cap
+         zombie horde adjacent to a cluster of ~0-hp INFECTED foes; one frame triggers many reentrant
+         kills+shifts. Pre-fix it THROWS; post-fix the loop survives and the horde caps at 12. ---- */
+  ['demon-loop-survives-reentrant-horde-shift (playtest 2026-06-26)', () => {
+    const api = mk(); api.fullReset('warlock');
+    api.startEncounter([{type:'thrall',hp:1}]);
+    api.P.evo10='herald';
+    api.enemies.length=0;
+    for(let i=0;i<6;i++) api.enemies.push(api.mkEnemy({type:'thrall',x:450,y:300,hp:1,maxhp:1,infectT:10}));
+    api.demons.length=0; // stack the horde ABOVE the >=12 cap, all zombies adjacent & ready to bite THIS frame
+    for(let i=0;i<16;i++) api.demons.push({type:'zombie',x:451,y:300,r:13,face:0,hp:50,maxhp:50,life:24,cool:-1,flash:0,walkP:0,dmgMul:5});
+    let t=Date.now();
+    for(let f=0;f<4;f++){ t+=1000/60; api.frame(t); } // pre-fix: throws "reading 'type'/'life' of undefined"
+    if(api.demons.length>12) return 'horde cap breached: demons='+api.demons.length+' (should stay <=12)';
+    if(!api.demons.every(d=>d&&typeof d.type==='string')) return 'demons[] holds an undefined/garbage slot after a reentrant shift';
+    return null;
+  }],
 ];
 for (const [name, fn] of REGRESSIONS) {
   let msg; try { msg = fn(); } catch(e){ msg = 'threw: '+(e&&e.message||e); }

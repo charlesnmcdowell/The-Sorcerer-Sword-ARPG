@@ -5,6 +5,91 @@ fight unwinnable / blocks progression. Every finding becomes a PERMANENT named r
 
 ---
 
+## RUN 2026-06-26
+
+**TL;DR — this run**
+- Drove all 8 champion/road builds through the full 20-fight gauntlet. **Found + fixed a real P1 crash** the
+  fast gate was missing: the warlock **herald / herald-archfiend** road intermittently crashed in the late
+  fights (16–20) with `Cannot read properties of undefined (reading 'type'/'life')` in `updDemons`.
+- Root cause: `killEnemy()` caps the zombie horde with `demons.shift()` (front removal) and is called
+  **reentrantly from inside** `updDemons()`'s index-based loop whenever a summon kills an *infected* foe (the
+  "IT RISES" path). The front-shift slides every index down, so the cached `i` walks off the shrunken array →
+  `demons[i]` is undefined. **Fixed** with a one-line reentrancy guard (`if(!d)continue;`) + a permanent
+  regression case. Smoke (4) + regressions (now **19**) + the 2 perf cases all GREEN; crash did not recur in
+  ~6 driven gauntlet replays (pre-fix it hit ~1-in-8).
+- **NEEDS HIRO:** the fix is real game code and is **saved to the source on disk (verified complete)**, but the
+  OneDrive/FUSE mount again served a **tail-truncated** copy of `pit.js` and `smoke_test.js`, so the
+  in-sandbox gate (`safe_publish.py`) would abort and **could not ship from this session**. Please run
+  `python3 tools/safe_publish.py <Neverendingnarratives path>` from a **fresh chat** (clean mount) to push the
+  fix to the play site — until then players on the herald/archfiend road keep the intermittent late-fight crash.
+
+### P1 — herald/archfiend warlock crashes in late fights: `updDemons` dereferences an undefined demon
+**Status: FIXED in `src/combat/pit.js` (canonical source on disk; NOT yet published — see NEEDS HIRO). Validated against the live engine.**
+
+**What it is.** The competent pursue-driver crashed intermittently on the warlock **herald** and
+**herald-archfiend** roads at fights 16–20: `TypeError: Cannot read properties of undefined (reading 'life')`
+(also `'type'`, depending on `P.lich` state) at `updDemons` (`pit.js:633-634`). The loop is
+`for(let i=demons.length-1;i>=0;i--){const d=demons[i]; ... d.life-=dt;}`. `d` was sometimes `undefined`.
+
+**Why undefined?** `killEnemy()` (the infection / "IT RISES" path) caps the summon horde with
+`while(demons.length>=12){demons.shift();}` — a **front** removal that slides every index down by one — and
+`killEnemy` is invoked **reentrantly from within** `updDemons`'s own loop (a zombie bite at L655, a claw-fiend
+shove at L676, or an arch-succubus burst at L717 killing an *infected* enemy). When the horde is at/over its
+12 cap, that reentrant shift shrinks `demons[]` *underneath* the active loop, so the cached `i` now points
+past the end → `demons[i]` is `undefined` → the next field read throws. Intermittent because it needs: herald
+road + an infected foe dying *inside* a summon's action + horde already ≥12 (it peaks at 18–20 on this road).
+
+**Severity.** P1 — a hard crash that ends the run, on a shipped build/road, reachable in normal play. Not
+balance.
+
+**5 WHYS.**
+1. Why the crash? → `updDemons` read `d.type`/`d.life` where `d` was `undefined`.
+2. Why was `d` undefined? → `demons[i]` (cached index `i`) pointed past the end of the array.
+3. Why past the end? → `demons[]` shrank *during* the loop.
+4. Why did it shrink mid-loop? → `killEnemy()`'s infection-rise capped the horde via `demons.shift()`, and
+   `killEnemy` is called reentrantly from inside `updDemons` (a summon killing an infected foe).
+5. Why wasn't it caught? → the index-based backward loop assumed `demons[]` is immutable during iteration; the
+   reentrant front-shift breaks that invariant. The fast smoke gate never built an over-cap horde beside dying
+   infected foes, so it never exercised the race. (Now pinned by a dedicated regression case.)
+
+**ISHIKAWA / fishbone.**
+- *Code-logic*: ✅ ROOT CAUSE — reentrant mutation (front `shift`) of an array being iterated by cached index.
+- *Tests/metrics*: contributing — the fast gate lacked an over-cap-horde + infected-death scenario; only the
+  deep pursue-driver surfaced it (and only intermittently). Now covered deterministically.
+- *Engine/perf*: not a defect (entity counts stayed bounded; this is a logic race, not growth).
+- *Assets/data, agent-process, platform-mobile*: ruled out (pure engine logic; reproduces headless).
+
+**Repro (headless, deterministic).** `fullReset('warlock')`, `startEncounter([...])`, `P.evo10='herald'`,
+replace `enemies` with 6 foes at one point all `hp:1, infectT:10`, push 16 adjacent `zombie` demons with
+`cool:-1` (ready to bite this frame), then tick ~4 frames: pre-fix it throws on the first frame (the top demon
+bites, rises a zombie, the cap shifts the front, the cached index goes out of bounds); post-fix the loop
+survives and the horde correctly settles at ≤12.
+
+**Fix.** One line in `updDemons` after `const d=demons[i];`: `if(!d)continue;` — skip the empty slot instead of
+dereferencing it. Robust to *any* reentrant shrink of `demons[]` (the four `demons.shift()` cap sites and the
+backward self-splice all stay correct). No behavior change on a stable array. `wolves[]` uses the same loop
+shape but is only spliced by its own loop, and `enemies[]`'s only splice is a safe backward dead-minion cull —
+so `demons[]` was the sole instance of the anti-pattern.
+
+**Regression case (PERMANENT — never delete).** Added to `smoke_test.js` REGRESSIONS[]:
+- `demon-loop-survives-reentrant-horde-shift (playtest 2026-06-26)` — rebuilds the exact race (over-cap zombie
+  horde beside ~0-hp infected foes; one frame of reentrant kills+shifts). Pre-fix it THROWS; post-fix it
+  survives and asserts the horde caps at ≤12 with no undefined slots. Verified: PASS on the fixed engine,
+  THROWS on the unfixed engine.
+
+**Validation done this run.** Because the live mount served a truncated tail of `pit.js`/`smoke_test.js`
+(known hazard), reconstructed both canonical files in-sandbox and ran the full suite against the real engine:
+**4 smoke + 19 regressions + 2 perf cases ALL GREEN.** Deep pursue-driver replays on the fixed engine: no
+crash/NaN/softlock/unbounded growth/unwinnable fight; the herald/archfiend crash did not recur.
+
+### Observation (non-blocking, NOT fixed) — one-off seraph frame-time spike
+Across the driven replays, the seraph build threw a single per-frame compute spike of **51.8 ms** (driver soft
+threshold is 50 ms; seraph's typical max is ~6–9 ms). It appeared once in ~6 runs, the fight still cleared, and
+it looks like a transient (GC pause or a heavy judgement/ascend particle frame), not sustained cost. Logging as
+a suggestion only — not a bug (no softlock, no unwinnable fight). Worth a glance if it ever becomes recurrent.
+
+---
+
 ## RUN 2026-06-25
 
 **TL;DR — this run**

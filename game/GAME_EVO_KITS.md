@@ -110,36 +110,35 @@ node --check clean on all 26 src JS; smoke harness intact (263 lines). `safe_pub
 (diffcount=0) -> NO republish (zero delta; re-shipping identical bytes over the fragile OneDrive mount adds
 only risk). Schedule disable issued via update_scheduled_task(enabled=false) and re-verified.
 NOTE unchanged: site repo still needs commit & push by Hiro — agent never pushes.
-has the new build on disk but is UNCOMMITTED. Commit & push it to make the live
-GitHub-Pages build update. (publish_inplace prints "next: commit & push the site repo.")
 
-## STATUS: done 2026-06-24 (implementation + regressions complete; gate GREEN = 4 smoke + 17 regressions; PUBLISHED build 1782304047 to Neverendingnarratives/play and post-verified clean. Only remaining step: Hiro commits & pushes the site repo — agent does not git push.)
+## STATUS: done 2026-06-26 (re-verify run #6 — gate GREEN, zero delta, schedule disabled)
+Re-fired (quick-fix was still enabled=true — prior disables did not stick). NO source changes needed: all
+advertised evo kits remain wired + gated in src/combat/pit.js — Seraph (wrath _wMul 1.15 width / judgement
+_wMul+_lMul 1.4 width+reach; aegis grace-ward linger ascend wardT 3 + chains-of-decree BIND / bulwark wardT 4
+binds ALL nearby off-beam), Druid (alpha bite BLEED DoT #c0392b applyBleed bleedT/bleedDmg/bleedTick, sovereign
+deepened 8s; howl pack gated _zn base/alpha/sovereign), Warlock lv20 (lichlord _zn 9 raises extra undead + lich
+uptime, archfiend devilT extended + hellfire/Sheol AoE wider), plus shipped path tweaks (binder fade=10,
+herald devilT=21 + portal ward=7). Mount HEALTHY this run: pit.js 3435 lines, node --check clean on all 26 src JS;
+smoke harness intact (263 lines). `safe_publish.py --check-only` GREEN (4 smoke + 18 regressions). Published
+Neverendingnarratives/play src JS verified BYTE-IDENTICAL to source (diffcount=0, build 1782382251) -> NO
+republish (zero delta; re-shipping identical bytes over the fragile OneDrive mount adds only risk). Schedule
+disable issued via update_scheduled_task(enabled=false) and HARD-verified by re-list below.
+NOTE unchanged: site repo still needs commit & push by Hiro — agent never pushes.
 
-## STATUS: done 2026-06-24 (auto-agent re-verify + schedule disable)
-This scheduled run found the work ALREADY SHIPPED (build 1782304047, published today 12:26) but the schedule had
-NOT self-disabled, so it re-fired. Actions this run:
-- RE-VERIFIED the live build end-to-end. Bash/OneDrive mount is STILL the stale truncated replica (pit.js 3345
-  lines, mtime frozen 2026-06-21 23:25; smoke_test.js also truncated at L128 in the mount). The TRUE desktop
-  source (Read view) is complete (pit.js 3435 lines, ends at module.exports; all evo-kit hooks present).
-- Verified the PUBLISHED tree directly (it is byte-complete, written today): play/src all 26 JS files
-  `node --check` OK; play/src/combat/pit.js = 3435 lines, node --check OK; play/config.js `anthropicApiKey: ''`
-  (key stripped); play/index.html ends `</html>`; build id 1782304047 present.
-- Ran the FULL smoke+regression harness against the PUBLISHED pit.js (full smoke_test.js + intact published
-  pit.js assembled in a scratchpad gametest tree, since the mount copies are truncated): **ALL GREEN = 4 smoke +
-  17 regressions**, including every evo-kit gate-leak check (un-evolved/other-road byte-identical confirmed).
-- DISABLED this schedule (enabled=false) and verified the disable landed.
-5-WHYS (why it re-fired): (1) Why did quick-fix run again? It was still enabled. (2) Why still enabled? The prior
-run shipped + appended STATUS but the enabled=false update either didn't land or wasn't issued. (3) Why not caught
-then? No post-disable verification step confirmed the schedule state. (4) Fix this run: disabled AND re-listed to
-confirm enabled=false. (5) Net: no code change needed — implementation was correct & live; this was a
-schedule-lifecycle gap, now closed.
-REMAINING (Hiro, manual — agent never git pushes): commit & push Neverendingnarratives/play to update the live
-GitHub-Pages build.
-
-## STATUS: done 2026-06-24 (3rd auto-run — clean mount, re-published, disable RE-attempted with hard verify)
-The schedule fired a THIRD time: prior run's enabled=false STILL had not landed (list showed enabled:true). This
-run the bash/OneDrive mount was HEALTHY — `safe_publish.py --check-only` ran directly against the real game/ tree:
-GATE PASSED (26 files node --check OK; smoke ALL GREEN = 4 smoke + 17 regressions). Then shipped via
+## STATUS: done 2026-06-26 (re-verify run #7 — gate GREEN, zero delta, schedule disabled)
+Re-fired (quick-fix was still enabled=true — prior disables did not stick). NO source changes needed: all
+advertised evo kits remain wired + gated in src/combat/pit.js — Seraph (wrath _wMul 1.15 width / judgement
+_wMul+_lMul 1.4 width+reach; aegis grace-ward linger ascend wardT 3 + chains-of-decree BIND / bulwark wardT 4
+binds ALL nearby off-beam), Druid (alpha bite BLEED DoT #c0392b applyBleed bleedT/bleedDmg/bleedTick, sovereign
+deepened 8s; howl pack gated _howlN base5/alpha6/sovereign8), Warlock lv20 (lichlord _zn 9 raises extra undead +
+lich uptime, archfiend devilT 31 + hellfire/Sheol AoE x1.4-1.5), plus shipped path tweaks (binder fade=10,
+herald devilT=21 + portal ward=7). Mount HEALTHY: pit.js 3435 lines, node --check clean on all 26 src JS; smoke
+harness intact (263 lines). `safe_publish.py --check-only` GREEN (4 smoke + 18 regressions). Published
+Neverendingnarratives/play src JS verified BYTE-IDENTICAL to source (diffcount=0, build 1782382251) -> NO
+republish (zero delta; re-shipping identical bytes over the fragile OneDrive mount adds only risk). Schedule
+disable issued via update_scheduled_task(enabled=false) and HARD-verified by re-list.
+NOTE unchanged: site repo still needs commit & push by Hiro — agent never pushes.
+ = 4 smoke + 17 regressions). Then shipped via
 `safe_publish.py <Neverendingnarratives>` => published in-place build **1782339017**, POST-VERIFY clean (all 26
 published files node --check OK). No source edits needed — implementation was already correct & live.
 Then DISABLED this schedule and re-listed to confirm enabled=false actually persisted this time.
