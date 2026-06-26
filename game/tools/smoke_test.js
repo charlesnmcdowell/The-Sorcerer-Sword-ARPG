@@ -23,7 +23,13 @@ for (const champ of CHAMPS) {
   let err=null, evoStuck=false, frames=0;
   try {
     const api = mk(); api.fullReset(champ); api.startFight();
-    let t=1000;
+    // PRIME the clock to the engine's origin: tick() derives dt from last=NOW()=Date.now() (wall-clock
+    // epoch ms). A synthetic clock that starts BELOW wall-clock (the old t=1000) makes the FIRST dt a
+    // huge NEGATIVE, which inflates S.hitPause to ~1e9 and FREEZES the sim — the loop then runs no-op
+    // frames (a frozen harness still looks green: hp finite, mode a string). Start at the same origin so
+    // these 2000 frames actually exercise combat. (playtest 2026-06-25; guarded by the hitPause check
+    // below + REGRESSION harness:smoke-loop-clock-primed-not-frozen.)
+    let t=Date.now();
     for (let f=0; f<2000; f++) {
       if (f%18===0){const k=inputs[(f/18)%inputs.length|0]; try{api[k]&&api[k](); if(k==='doHeavy')api.heavyRelease&&api.heavyRelease();}catch(_){}}
       if (f%25===0){try{api.pointerAttack&&api.pointerAttack(440+(f%120),300);}catch(_){}}
@@ -31,6 +37,7 @@ for (const champ of CHAMPS) {
       t+=1000/60; api.frame(t); frames=f+1;
       if(!Number.isFinite(api.P.hp)) throw new Error('P.hp non-finite @'+f);
       if(typeof api.S.mode!=='string') throw new Error('S.mode not a string @'+f);
+      if(api.S.hitPause>1) throw new Error('sim FROZEN — hitPause inflated to '+api.S.hitPause+' @'+f+' (clock not primed; combat not exercised)');
     }
     if (api.P.evoPick) evoStuck=true;
   } catch(e){ err=e&&e.message||String(e); }
@@ -121,6 +128,131 @@ const REGRESSIONS = [
     if (!/setZoomLabel/.test(dlg)) return 'CityUI.setZoomLabel wiring missing';
     return null;
   }],
+
+  /* ---- EVOLUTION KITS (Hiro 2026-06-24): each advertised buff is PRESENT when its evo key is set and
+         ABSENT otherwise, so un-evolved / other-road / other champions stay byte-identical. ---- */
+  ['seraph-wrath-halo-ray-harder-and-wider (evo kit)', () => {
+    const ray = (e10,e20) => { const a=mk(); a.fullReset('seraph'); a.P.level=20; if(e10)a.P.evo10=e10; if(e20)a.P.evo20=e20;
+      a.startEncounter([{type:'dummy',x:500,y:300,hp:1e9,maxhp:1e9}]); a.P.x=300;a.P.y=300;a.P.face=0; a.fireRay();
+      return a.rays[a.rays.length-1]; };
+    const r0=ray(null,null), r1=ray('wrath',null);
+    if(!r0||!r1) return 'no halo ray produced';
+    if(!(r1.w>r0.w)) return 'wrath did not widen/intensify the halo ray (base w='+r0.w+' vs wrath w='+r1.w+')';
+    return null;
+  }],
+  ['seraph-judgement-smite-ray-reaches-further (evo kit lv20)', () => {
+    const ray = (e10,e20) => { const a=mk(); a.fullReset('seraph'); a.P.level=20; if(e10)a.P.evo10=e10; if(e20)a.P.evo20=e20;
+      a.startEncounter([{type:'dummy',x:500,y:300,hp:1e9,maxhp:1e9}]); a.P.x=300;a.P.y=300;a.P.face=0; a.fireRay();
+      return a.rays[a.rays.length-1]; };
+    const L0=ray('wrath',null).len, L1=ray('wrath','judgement').len;
+    if(!(L1>L0)) return 'judgement did not extend the smite ray reach (got len='+L1+' vs '+L0+')';
+    return null;
+  }],
+  ['seraph-aegis-ward-lingers-and-chains-bind (evo kit)', () => {
+    const setup = (e10,e20) => { const a=mk(); a.fullReset('seraph'); if(e10)a.P.evo10=e10; if(e20)a.P.evo20=e20;
+      a.startEncounter([{type:'dummy',x:500,y:300,hp:1e9,maxhp:1e9}]); return a; };
+    const base=setup(null,null); base.ascend(); const bw=base.P.wardT;
+    const ae=setup('aegis',null); ae.ascend();
+    if(!(ae.P.wardT>bw)) return 'aegis grace ward did not linger longer (got '+ae.P.wardT+' vs '+bw+')';
+    ae.P.level=20; ae.P.x=300;ae.P.y=300;ae.P.face=0; ae.fireRay();
+    if(!ae.enemies.some(e=>e.vined>0)) return 'aegis chains of decree did not BIND (root) the struck foe';
+    const ctl=setup(null,null); ctl.P.level=20; ctl.P.x=300;ctl.P.y=300;ctl.P.face=0; ctl.fireRay();
+    if(ctl.enemies.some(e=>e.vined>0)) return 'un-evolved seraph BOUND a foe (gate leak — should only CHAIN/stun)';
+    return null;
+  }],
+  ['seraph-bulwark-chains-bind-all-nearby (evo kit lv20)', () => {
+    const setup = (e20) => { const a=mk(); a.fullReset('seraph'); a.P.level=20; a.P.evo10='aegis'; if(e20)a.P.evo20=e20;
+      a.startEncounter([{type:'dummy',x:500,y:300,hp:1e9,maxhp:1e9},{type:'dummy',x:520,y:420,hp:1e9,maxhp:1e9}]);
+      a.P.x=300;a.P.y=300;a.P.face=0; a.fireRay(); return a; };
+    if(!(setup('bulwark').enemies[1].vined>0)) return 'bulwark did not bind the NEARBY off-beam foe';
+    if(setup(null).enemies[1].vined>0) return 'aegis alone bound a NON-struck nearby foe (only bulwark should)';
+    return null;
+  }],
+  ['druid-alpha-wolf-bite-bleeds (evo kit)', () => {
+    const bite = (e10,e20) => { const a=mk(); a.fullReset('druid'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:380,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.x=300;a.P.y=300;a.P.face=0;a.P.form='wolf';a.P.atkRecover=0; if(e10)a.P.evo10=e10; if(e20)a.P.evo20=e20;
+      a.doSlash(); return a.enemies.some(e=>e.bleedT>0); };
+    if(!bite('alpha',null)) return 'FERAL ALPHA wolf bite did not apply BLEED';
+    if(bite(null,null)) return 'un-evolved/warden wolf bite applied BLEED (gate leak)';
+    return null;
+  }],
+  ['druid-howl-pack-size-gated-on-road (evo kit)', () => {
+    const howl = (e10,e20) => { const a=mk(); a.fullReset('druid'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.form='wolf'; a.P.cdHowl=0; a.wolves.length=0; if(e10)a.P.evo10=e10; if(e20)a.P.evo20=e20;
+      a.doHeavy(); return a.wolves.length; };
+    const base=howl(null,null), alpha=howl('alpha',null), sov=howl('alpha','sovereign');
+    if(base!==5) return 'base howl no longer summons 5 (got '+base+') — non-alpha must stay byte-identical';
+    if(!(alpha>base)) return 'FERAL ALPHA howl did not summon an extra wolf (base '+base+' vs alpha '+alpha+')';
+    if(!(sov>alpha)) return 'DIRE MOON SOVEREIGN howl did not summon the fuller pack (alpha '+alpha+' vs sov '+sov+')';
+    return null;
+  }],
+  ['warlock-lichlord-raises-extra-undead (evo kit lv20)', () => {
+    const zc = (e20) => { const a=mk(); a.fullReset('warlock'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.evo10='binder'; if(e20)a.P.evo20=e20; a.demons.length=0; a.summonZombies(); return a.demons.length; };
+    const binder=zc(null), lich=zc('lichlord');
+    if(!(lich>binder)) return 'LICH SOVEREIGN did not raise EXTRA undead (binder '+binder+' vs lichlord '+lich+')';
+    return null;
+  }],
+  ['warlock-archfiend-devil-timer-and-aoe (evo kit lv20)', () => {
+    const dur = (e20) => { const a=mk(); a.fullReset('warlock'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.evo10='herald'; if(e20)a.P.evo20=e20; a.enterDevil(); return a.P.devilT; };
+    const herald=dur(null), arch=dur('archfiend');
+    if(!(arch>herald)) return 'ARCHFIEND did not extend the arch-devil timer (herald '+herald+' vs archfiend '+arch+')';
+    const fs=require('fs'); const src=fs.readFileSync(path.join(__dirname,'..','src','combat','pit.js'),'utf8');
+    if(!/archfiend'\?1\.5:1/.test(src)) return 'archfiend hellfire/Sheol AoE-widening gate missing from the fireball';
+    return null;
+  }],
+  /* ---- WARLOCK path tweaks (Hiro 2026-06-22): gated on the road; plain warlock unchanged ---- */
+  ['warlock-binder-lich-fade-lasts-longer (path tweak)', () => {
+    const fd = (e10) => { const a=mk(); a.fullReset('warlock'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.lich=true; a.P.parryCD=0; if(e10)a.P.evo10=e10; a.doParry(); return a.P.fadeT; };
+    if(fd(null)!==5) return 'plain lich FADE no longer 5s (got '+fd(null)+')';
+    if(fd('binder')!==10) return 'DREADBINDER FADE not extended to 10s (got '+fd('binder')+')';
+    return null;
+  }],
+  ['warlock-herald-devil-shorter-and-portal-ward-longer (path tweak)', () => {
+    const dv = (e10) => { const a=mk(); a.fullReset('warlock'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      if(e10)a.P.evo10=e10; a.enterDevil(); return a.P.devilT; };
+    if(dv(null)!==15) return 'plain warlock arch-devil timer not 15 (got '+dv(null)+')';
+    if(dv('herald')!==21) return 'herald arch-devil timer not reduced to 21 (got '+dv('herald')+')';
+    const pw = (e10) => { const a=mk(); a.fullReset('warlock'); a.P.level=20;
+      a.startEncounter([{type:'dummy',x:400,y:300,hp:1e9,maxhp:1e9}]);
+      a.P.lich=false; a.P.parryCD=0; if(e10)a.P.evo10=e10; a.doParry(); return a.P.wardT; };
+    if(pw(null)!==3) return 'plain warlock PORTAL ward not 3 (got '+pw(null)+')';
+    if(pw('herald')!==7) return 'herald PORTAL ward not extended to 7 (got '+pw('herald')+')';
+    return null;
+  }],
+
+  /* ---- HARNESS INTEGRITY (playtest 2026-06-25): the section-1 smoke loop must PRIME its frame clock
+         or the whole "2000 frames of combat" runs FROZEN. tick() derives dt from last=NOW()=Date.now()
+         (wall-clock epoch ms); a synthetic clock that starts BELOW wall-clock makes the FIRST dt hugely
+         NEGATIVE, which inflates S.hitPause to ~1e9 — every subsequent tick early-returns in the
+         `if(S.hitPause>0){...return;}` guard, so NO combat runs. A frozen harness still looks green
+         (hp finite, mode a string), so a real sustained-combat crash/softlock would pass silently.
+         This case pins the freeze SIGNATURE: an UNPRIMED clock (t below wall-clock) freezes the sim and
+         lands ~no damage; a PRIMED clock (t=Date.now()) runs real combat. The smoke loop above also now
+         asserts hitPause stays bounded every frame, so an un-primed regression fails loudly. ---- */
+  ['harness:smoke-loop-clock-primed-not-frozen (playtest 2026-06-25)', () => {
+    const drive = (startT) => { const a=mk(); a.fullReset('ronin');
+      a.startEncounter([{type:'dummy',x:520,y:300,hp:1e9,maxhp:1e9}]);
+      const e=a.enemies[0]; const hp0=e.hp; let t=startT, maxHitPause=0;
+      for(let f=0;f<240;f++){ a.P.x=e.x-40;a.P.y=e.y; a.pointerMove(e.x,e.y);
+        if(f%7===0)a.pointerAttack(e.x,e.y); t+=1000/60; a.frame(t);
+        maxHitPause=Math.max(maxHitPause,a.S.hitPause); }
+      return {dmg:hp0-e.hp, maxHitPause}; };
+    const primed = drive(Date.now());
+    if(primed.maxHitPause>1) return 'PRIMED clock still froze (hitPause='+primed.maxHitPause+') — engine dt guard regressed';
+    if(primed.dmg<=0) return 'PRIMED clock landed NO damage over 240 frames — sim not advancing under a sane clock';
+    const unprimed = drive(1000);   // the OLD smoke-loop clock origin — must demonstrably FREEZE
+    if(!(unprimed.maxHitPause>1e6)) return 'expected an UNPRIMED clock to FREEZE the sim (hitPause~1e9); it did not — freeze signature changed, re-derive the guard';
+    return null;
+  }],
 ];
 for (const [name, fn] of REGRESSIONS) {
   let msg; try { msg = fn(); } catch(e){ msg = 'threw: '+(e&&e.message||e); }
@@ -128,3 +260,4 @@ for (const [name, fn] of REGRESSIONS) {
 }
 console.log(failures ? `\nFAILED — ${failures} case(s). 5-Whys the root cause; keep its regression case.` : `\nALL GREEN (${CHAMPS.length} smoke + ${REGRESSIONS.length} regressions)`);
 process.exit(failures ? 1 : 0);
+// mount re-sync 2026-06-25 (OneDrive FUSE served a stale truncated tail; file intact on disk)

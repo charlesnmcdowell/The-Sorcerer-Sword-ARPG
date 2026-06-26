@@ -20,9 +20,15 @@ We aim for continuous improvement so the agent OUT-FINDS Hiro on bugs.
 | Characters de-level (level goes backwards) | scene-layer clamps capped persistent level at 10 while combat capped at 20; world sync floored a fresh snapshot | cap 20 everywhere + Math.max non-decreasing world sync | `level-never-de-levels` ✅ |
 | Mountain enemies too tanky | territoryHpMult too high | 6 -> 3 (HP halved) + slight dmg up | (balance — covered by playtest winnability, not a unit case) |
 | Cult warlock fought as a generic 'collector' (no summons) | enemy reused the collector boss type | new `cultwarlock` AI + esuccubus/edragon + player-hex | (behavior — add a case if it regresses) |
+| Sustained-combat unbounded `enemies[]` (the 2026-06-21 open lead) | dead MINIONS never culled from `enemies[]` | splice dead minion once `deathT>2` (pit.js tick) — now PUBLISHED to play site | `perf:dead-minion-culled-named-foe-kept`, `perf:enemies-array-bounded-under-sustained-combat` ✅ |
+| Fast smoke gate ran FROZEN (agent-found 2026-06-25) | section-1 loop clock started below wall-clock → huge −dt first frame → `hitPause`~1e9 → every tick early-returns; loop ran no-op frames | prime clock to `Date.now()` + per-frame `hitPause` freeze guard | `harness:smoke-loop-clock-primed-not-frozen` ✅ |
 
 ## TODO for the playtest agent (open leads)
-- PERF/HANG: a headless driver that makes the player actively pursue+fight stalled a single champion past 40s for
-  1500 frames (idle runs are instant). 5-Whys this: likely unbounded entity growth or an O(n^2)/while-loop under
-  sustained combat. Confirm it's not a real in-game perf/softlock under long fights; if it is, fix + add a
-  "frame time stays bounded under sustained combat" regression.
+- (RESOLVED 2026-06-24, PUBLISHED by 2026-06-25) PERF/HANG: the pursue-driver stall past 40s/1500 frames was REAL —
+  dead minions accumulated in `enemies[]` (raisers/feeders spawn them forever) so per-frame cost grew unbounded.
+  Fixed by culling dead minions after their death-fade; covered by the two `perf:*` cases in `tools/perf_regressions.js`.
+  The corpse-cull fix is now present in the live `Neverendingnarratives/play` build. NOTE: the deep pursue-driver now
+  lives at `tools/playtest_drive.js` (plays all 8 champion/road builds through the full gauntlet) — re-run it each pass.
+- (NO OPEN LEADS as of 2026-06-25.) Watch: the OneDrive sandbox mount can serve a STALE/tail-truncated copy of a file
+  just edited from chat — verify with `node --check` + a reconstructed-in-sandbox run, and publish/gate from a fresh
+  chat session if the mount looks stale (`safe_publish` correctly aborts on a truncated file).
