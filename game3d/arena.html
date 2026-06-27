@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Sorcerer-Sword 2.5D — Arena (Milestone 1 shell)</title>
+<style>
+  html,body{margin:0;height:100%;background:#0a0710;overflow:hidden;font-family:system-ui,sans-serif;color:#cbb9ff}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  #hud{position:fixed;left:10px;top:8px;font-size:12px;line-height:1.5;z-index:5;
+       background:rgba(20,12,34,.6);padding:8px 10px;border:1px solid #3a2c5a;border-radius:8px;max-width:48ch}
+  #hud b{color:#9cffd6}
+  #verbs{position:fixed;right:10px;bottom:10px;font-size:12px;z-index:5;
+       background:rgba(20,12,34,.6);padding:8px 10px;border:1px solid #3a2c5a;border-radius:8px}
+  #verbs .k{color:#9cffd6}
+  #err{position:fixed;left:10px;bottom:8px;color:#ff9a9a;font-size:12px;white-space:pre-wrap;z-index:6}
+  canvas{image-rendering:auto;border-radius:6px}
+  /* --- GG / BlazBlue two-fighter fighting-game HUD (top of screen) --- */
+  #gghud{position:fixed;left:0;right:0;top:0;z-index:7;pointer-events:none;
+         padding:8px 10px 0;font-family:'Georgia',serif;color:#f3ead0}
+  #gghud .row{display:flex;align-items:flex-start;gap:8px}
+  #gghud .side{flex:1;min-width:0}
+  #gghud .nm{font-size:13px;font-weight:bold;letter-spacing:.5px;text-shadow:0 1px 2px #000;
+             white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #gghud .side.r .nm{text-align:right}
+  /* health bar: skewed GG-style bevel; fill drains toward center (left bar shrinks left, right bar shrinks right) */
+  #gghud .bar{position:relative;height:16px;margin-top:3px;background:#1a1024;
+              border:2px solid #5a3f86;border-radius:3px;overflow:hidden;
+              box-shadow:0 0 10px rgba(150,90,240,.25) inset}
+  #gghud .fill{position:absolute;top:0;bottom:0;transition:width .12s linear}
+  #gghud .side.l .fill{left:0;background:linear-gradient(90deg,#7cffc8,#3df0c8)}
+  #gghud .side.r .fill{right:0;background:linear-gradient(270deg,#ff6a7a,#d03a4a)}
+  /* super / level meter — thin bar under each fighter */
+  #gghud .meter{height:5px;margin-top:3px;background:#160e22;border:1px solid #4a356e;border-radius:2px;overflow:hidden}
+  #gghud .meter .mf{height:100%;width:0;background:linear-gradient(90deg,#f0c66a,#ffe9a8)}
+  #gghud .side.r .meter .mf{margin-left:auto;background:linear-gradient(270deg,#f0c66a,#ffe9a8)}
+  #gghud .center{flex:0 0 auto;text-align:center;padding:0 4px}
+  #gghud .fight{font-size:15px;font-weight:bold;color:#f0c66a;text-shadow:0 1px 3px #000;line-height:1.1}
+  #gghud .vs{font-size:10px;color:#cbb9ff;opacity:.85;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>ARENA — Milestone 1 shell (parity-first)</b><br>
+  Lit normal-mapped warlock on the angled pit floor. Move + the 4 verbs route
+  through a <b>pit.js-shaped combat state</b> (<code>combat.P/S</code>,
+  <code>doSlash/doHeavy/doParry/doRoll/heavyRelease</code>, <code>frame(now)</code>).
+  Verbs emit placeholder FX only — real abilities/summons port in next.<br>
+  <i>Art: Hiro's anime dark-elf warlock — NEW high-res idle still, normal-mapped + Light2D-lit.</i>
+</div>
+<div id="verbs">
+  <span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>
+  <span class="k">Q (hold→release)</span> HEAVY(SUMMON) &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>
+  <span class="k">Space / R-click</span> ROLL(BLINK) &nbsp; <span class="k">aim</span> = mouse
+</div>
+<!-- GG/BlazBlue two-fighter HUD: warlock (left, drains left) vs current opponent (right, drains right),
+     FIGHT n/N counter in the center, a super/level meter under each. Live-updated from frame() via updateGGHud(). -->
+<div id="gghud">
+  <div class="row">
+    <div class="side l">
+      <div class="nm" id="gg-lname">WARLOCK</div>
+      <div class="bar"><div class="fill" id="gg-lhp" style="width:100%"></div></div>
+      <div class="meter"><div class="mf" id="gg-lmeter"></div></div>
+    </div>
+    <div class="center">
+      <div class="fight" id="gg-fight">FIGHT 1 / 21</div>
+      <div class="vs">V S</div>
+    </div>
+    <div class="side r">
+      <div class="nm" id="gg-rname">CHALLENGER</div>
+      <div class="bar"><div class="fill" id="gg-rhp" style="width:100%"></div></div>
+      <div class="meter"><div class="mf" id="gg-rmeter"></div></div>
+    </div>
+  </div>
+</div>
+<div id="wrap"></div>
+<div id="err"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script>
+const BASE = './assets/spike/';   // Milestone-0 placeholder FX art (shadow/glow)
+const SPR  = './assets/sprites/';  // Hiro's real anime art (dark-elf warlock idle sheet)
+const WARLOCK_FRAMES = 1;          // warlock_idle.png = Hiro's NEW high-quality single idle still [256x384], normal-mapped (ingested 2026-06-27, replaced the lower-res 6-frame sheet)
+// SPRITE SCALE FIX (Hiro's #1 bug: warlock huge / dragon tiny). Size every fighter by its
+// TARGET WORLD HEIGHT — NOT its source PNG dims. Render: displayScale = (HERO_PX*SPRITE_TARGET_H[key]) / tex.height,
+// then multiply by the perspective/depth scale. Tune HERO_PX to taste; ratios are the contract.
+const SPRITE_TARGET_H = {
+  warlock_idle:1.0, warlock_walk:1.0, warlock_cast:1.0, warlock_hurt:1.0,
+  lich:1.05, archdevil:1.3, demonlord:1.4,
+  clawfiend:1.2, bonedragon:2.0, blackdragon:2.0, succubus:0.8, archsuccubus:0.9,
+  shambler:1.15, bonearcher:1.05,   // new side-on pit challengers (Hiro drop 2026-06-27)
+};
+// SCALE-FIX constants (Hiro's #1 bug). HERO_PX = the on-screen pixel height of a 1.0-world-unit
+// fighter (the warlock) at the FRONT plane; every sprite renders at (HERO_PX*SPRITE_TARGET_H[key])
+// / tex.height, then × the perspective/depth scale. BASE_R = pit.js base hitbox radii, used to
+// preserve the binder/herald per-summon size SWELL (a bigger d.r reads as a bigger sprite).
+const HERO_PX = 210;
+const BASE_R  = { brute:24, dragon:18, succubus:10 };
+function showErr(m){document.getElementById('err').textContent += m + '\n';}
+window.addEventListener('error', e=>showErr('ERR: '+e.message));
+
+// ---------------------------------------------------------------------------
+// COMBAT STATE — mirror of game/src/combat/pit.js shape so downstream systems
+// (HUD bars, cooldown overlays, autopilot, abilities, summons, transforms)
+// can drop in 1:1 against the original API. Numbers below match pit.js refs.
+// ---------------------------------------------------------------------------
+const S = { mode:'fight', fight:0, shake:0, hitPause:0, time:0, slow:0, fatal:false };
+const P = {
+  x:0, y:0, r:16, face:0, hp:45, kills:0, level:1, char:'warlock', form:'human', dead:false,
+  // cooldown / timing fields read by the verb gates (pit.js names):
+  rollT:0, rollCD:0, heavyCD:0, heavyWind:0, atkRecover:0, atkT:0,
+  parryT:0, parryCD:0, channel:null, paralyzeT:0, silenceT:0, fadeT:0,
+  hexCD:0, hexCDmax:10, flash:0, wardT:0,
+  // stat counters the verbs bump (pit.js P.ft.{rolls,heavy,...})
+  ft:{ rolls:0, heavy:0, slash:0 },
+  // warlock-specific form flags (stubs for now):
+  lich:false, devilT:0, demonLord:false,
+  // EVOLUTION state (pit.js): evo10/evo20 = chosen road keys; evoPick = the open choice array
+  // (the 2 cards), evoPickT = the MANUAL failsafe countdown, evoTier = 10 or 20 being chosen.
+  evo10:null, evo20:null, evoPick:null, evoPickT:0, evoTier:0
+};
+const keys = {};                  // 'w','a','s','d','arrowup'... -> bool (pit.js reads keys[...])
+const stick = { dx:0, dy:0, on:false };  // analog stick stub (mobile parity later)
+let scene = null;                 // set in create(); used by verb FX helpers
+
+// shared sim arrays (pit.js names). enemies[] is a PLACEHOLDER practice roster for now —
+// the real 21-fight gauntlet ladder (pit.js FIGHTS:1389) ports in Milestone 4.
+const fireballs = [];             // projectile sim (pit.js fireballs[]); hex bolts live here
+const enemies  = [];              // foes (pit.js enemies[]); training dummies until gauntlet lands
+const demons   = [];              // the warlock's SUMMONS (pit.js demons[]): claw fiend / dragon / coven
+const swings   = [];              // transient melee arcs (pit.js swings[]) — brute shove, etc.
+const zones    = [];              // lingering ground effects (pit.js zones[]); BONE DRAGON lays 'gas'
+const tracers  = [];              // transient beams (pit.js tracers[]); succubus MEND pink line to the warlock
+
+// math helpers (pit.js: dist:~, ang:~, rnd:~)
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+function ang(a,b){ return Math.atan2(b.y-a.y, b.x-a.x); }
+function rnd(a,b){ return a + Math.random()*(b-a); }
+function lvl(){ return Math.min(20, Math.floor(P.level||1)); }   // pit.js:48
+function rollDice(n,s){ let t=0; for(let i=0;i<n;i++) t+=1+Math.floor(Math.random()*s); return Math.round(t); }  // pit.js:31 (MODS.dmg=1 here)
+function diceN(){ return lvl(); }                                  // pit.js:289 (warlock branch)
+function dmgBonus(){ return 6 + P.kills; }                         // pit.js:285 (STR 10, no ronin kit)
+function dotDamage(e,d,col){ if(e.dead) return; e.hp-=d; e.flash=Math.max(e.flash,.05);   // pit.js:1555
+  scene && scene.popup(e.x+rnd(-7,7), e.y-22, String(d), col); if(e.hp<=0) killEnemy(e); }
+function nearestFoe(){ let best=null,bd=1e9; for(const e of enemies){ if(e.dead)continue; const d=dist(P,e); if(d<bd){bd=d;best=e;} } return best; }
+// GG GAUNTLET (side-on 1v1): the CURRENT opponent is the single foe the duel HUD tracks. Stable across a
+// fight = first ALIVE enemy in array order (vs nearestFoe which jitters). GAUNTLET_N = total gauntlet
+// fights; stub at 21 until pit.js FIGHTS:1389 ports in M4 (then = FIGHTS.length). The rest of the roster
+// waits in the BACKGROUND lineup — see the side-on stage flip (next increment).
+const GAUNTLET_N = 21;
+function currentFoe(){ for(const e of enemies){ if(!e.dead) return e; } return null; }
+// formHP/maxHP — port of pit.js:66,73 (warlock branch; CON/stat scaling not ported yet -> CON 10).
+// Human warlock formHP 0.8 (devil 1.1 / lich 0.8). Used by the succubus MEND check (P.hp<maxHP()).
+function formHP(){ if(P.devilT>0) return 1.1; if(P.lich) return 0.8; return 0.8; }
+function maxHP(){ return Math.round(45*0.85*formHP()); }    // pit.js:73 (warlock 0.85 mult, base 45)
+// applyFire — HEX FIEND succubus burn DoT on ENEMIES only (pit.js:1566). Base coven throws plain
+// fire (no DoT) until the herald evo; kept faithful so it lands 1:1 when evolutions arrive.
+function applyFire(e){ if(e.dead) return;
+  e.fireT=Math.max(e.fireT||0,10); e.fireDmg=15; e.fireTick=e.fireTick||.5; e.flash=Math.max(e.flash,.1);
+  scene && scene.popup(e.x,e.y-40,'BURNING','#f0883d'); }
+// feedSuccubi — succubi are IMMUNE to fire; it HEALS them + raises max HP (pit.js:1576). Herald-only
+// in practice (base fire has no fire flag), but ported faithfully alongside applyFire.
+function feedSuccubi(x,y,rad,amt){ for(const d of demons){ if(d.type!=='succubus'||d.hp<=0) continue;
+  if(Math.hypot(d.x-x,d.y-y)<rad){ d.maxhp+=Math.max(1,Math.round(amt*0.5)); d.hp=Math.min(d.maxhp,d.hp+amt);
+    d.flash=.12; scene && scene.popup(d.x,d.y-d.r-14,'+'+amt,'#2ecc71'); } } }
+// killEnemy — minimal stand-in for pit.js:1280 (mark dead + FX). The real version
+// also runs CONTAGION/infection-rise; those port with the gauntlet roster in M4.
+function killEnemy(e){ if(e.dead) return; e.dead=true; scene && scene.popup(e.x,e.y-40,'SLAIN','#d05a6a'); gainLevel(); }
+
+// ---------------------------------------------------------------------------
+// EVOLUTIONS — port of pit.js:75-269. A branch CHOICE at lv10 + a second at lv20
+// (the lv20 tier is gated by the lv10 road). Picking writes P.evo10 / P.evo20,
+// which lights up the already-ported-but-dormant binder/herald kit (summon swell,
+// black-dragon fireball, hex CD 3s + STACK, succubus burn + fire-heal). AUTO/headless
+// auto-default to road 0 (deadlock-proof); a MANUAL player gets a frozen card panel.
+// (gainLevel/maybeOfferEvo/etc. are function declarations -> hoisted, so killEnemy above
+// can call gainLevel even though it's defined here.)
+// ---------------------------------------------------------------------------
+const UNLOCKS_WARLOCK = {3:'BONE DRAGON UNLOCKED',5:'SUCCUBI UNLOCKED',8:'ARCH DEVIL UNLOCKED'}; // pit.js:75
+const EVOLUTIONS = { warlock:{      // pit.js:103 (warlock branch only — the only champion in scope)
+  10:[
+    {key:'binder', name:'DREADBINDER', focus:'DEX', look:'caster',
+     desc:'The summoner-road — the bone dragon and succubi swarm at his word.',
+     kit:'DOUBLE the horde: 2 claw fiends, a SIX-strong coven, 6 shamblers, 4 bone archers (+2 dragons as a lich). Every summon is ~45% BIGGER and deals 3x damage (succubus fire is its normal bolt x3).'},
+    {key:'herald', name:'HEX FIEND', focus:'ATK', look:'devil',
+     desc:'The devil-road — his hexes burn and his coven hurls hellfire toward the Arch Devil.',
+     kit:'Hex CD 10s->3s & hexes STACK. Bone dragon & claw fiend +35%. Succubi hurl burning fire; the arch succubus throws GREEN Sheol-fire that burns 3x hex and spreads on kill (+5s/jump). Succubi are HEALED by fire.'}
+  ],
+  20:[
+    {from:'binder', key:'lichlord',  name:'LICH SOVEREIGN',      focus:'DEX', look:'lich',
+     desc:'Death made permanent; an undead legion marches at the cold king.',
+     kit:'lich uptime extended; raises extra undead'},
+    {from:'herald', key:'archfiend', name:'ARCHFIEND ASCENDANT', focus:'ATK', look:'devil',
+     desc:'The Sheol-escapee unbound; the hex-fiend\'s hellfire deepens.',
+     kit:'Deepens the HEX FIEND road: +ATK, and the burning coven rages on.'}
+  ]
+}};
+const EVO_FOCUS_BONUS = 6;           // focus-stat points per chosen road (pit.js:264) — lv10 + lv20 stack
+function evoStatBonus(k){            // pit.js:265 — feeds stat() once stat scaling ports (inert today)
+  const E=EVOLUTIONS[P.char]||{}; let b=0;
+  if(P.evo10){const br=(E[10]||[]).find(x=>x.key===P.evo10); if(br&&br.focus===k)b+=EVO_FOCUS_BONUS;}
+  if(P.evo20){const br=(E[20]||[]).find(x=>x.key===P.evo20); if(br&&br.focus===k)b+=EVO_FOCUS_BONUS;}
+  return b;
+}
+function gainLevel(){                // pit.js:140 — +1.5 levels per kill, cap 20; unlock banners + evo offer
+  const ol=lvl();
+  P.level=Math.min(20,(P.level||1)+1.5);
+  if(lvl()>ol){ const u=UNLOCKS_WARLOCK[lvl()];
+    scene && scene.banner('LEVEL '+lvl(), u?u.toLowerCase():'', '#3df0c8');
+    if(u && navigator.vibrate) navigator.vibrate([40,40,80]);
+    scene && scene.popup(P.x,P.y-64,'LEVEL '+lvl(),'#3df0c8'); }
+  maybeOfferEvo();                   // at lv10/20 a warlock chooses an EVOLUTION road
+}
+function maybeOfferEvo(){            // pit.js:159
+  if(P.evoPick) return;
+  if(P.char!=='warlock') return;
+  const E=EVOLUTIONS[P.char]||{};
+  if(!P.evo10 && lvl()>=10){ const br=E[10]; if(!br||!br[0]||!br[1])return;   // lv10: FIRST road (2 options)
+    P.evoPick=br; P.evoPickT=30; P.evoTier=10;
+    scene && scene.banner('EVOLUTION', br[0].name+'  vs  '+br[1].name+' — press 1 or 2','#e7b450'); return; }
+  if(P.evo10 && !P.evo20 && lvl()>=20){                                       // lv20: SECOND choice, gated by lv10 road
+    const br=(E[20]||[]).filter(b=>b.from===P.evo10); if(!br.length)return;
+    P.evoPick=br; P.evoPickT=30; P.evoTier=20;
+    const head=br[1]?br[0].name+'  vs  '+br[1].name:br[0].name;
+    scene && scene.banner('EVOLUTION', head+' — press 1'+(br[1]?' or 2':''),'#e7b450'); }
+}
+function pickEvo(i){                 // pit.js:178 — write the slot for the open tier; persist; never re-offer
+  if(!P.evoPick) return;
+  const b=P.evoPick[i]||P.evoPick[0]; const tier=P.evoTier||10;
+  if(tier===20)P.evo20=b.key; else P.evo10=b.key;
+  P.evoPick=null; P.evoPickT=0; P.evoTier=0;
+  try{ if(typeof window!=='undefined'&&window.GameState&&window.GameState.player){
+    if(tier===20)window.GameState.player.evo20=b.key; else window.GameState.player.evo10=b.key; } }catch(e){}
+  scene && scene.banner('EVOLVED — '+b.name, b.desc||'','#e7b450');
+  scene && scene.popup(P.x,P.y-64,b.name,'#e7b450');
+  if(navigator.vibrate) navigator.vibrate([40,30,60]);
+}
+function evoIsAuto(){                // pit.js:191 — AUTO/headless take the default road IMMEDIATELY
+  if(typeof window==='undefined') return true;
+  try{ if(window.QuestNav&&typeof window.QuestNav.mode==='number'&&window.QuestNav.mode>=1)return true;
+       if(window.Autopilot&&window.Autopilot.on)return true; }catch(e){}
+  return false;
+}
+function evoCardRects(){             // pit.js:201 — SAME geometry for drawing + click hit-testing
+  const br=P.evoPick; if(!br)return[];
+  const W=scene?scene.scale.width:520, H=scene?scene.scale.height:760;
+  const n=Math.min(2,br.length||0), cx=W/2, cy=H/2;
+  const gap=Math.max(16,Math.round(W*0.03));
+  const fit=n===1?Math.min(460,W-2*gap):Math.min(380,(W-gap*3)/2);
+  const pw=Math.max(150,Math.round(fit));
+  const ph=Math.min(H-90,Math.max(300,Math.round(H*0.52)));
+  const py=Math.round(cy-ph*0.42);
+  const out=[];
+  for(let i=0;i<n;i++){ const px=n===1?cx-pw/2:cx+(i===0?-(pw+gap/2):gap/2);
+    out.push({x:px,y:py,w:pw,h:ph,i:i}); }
+  return out;
+}
+function evoClick(x,y){              // pit.js:220 — resolve a tap against the cards
+  if(!P.evoPick)return false;
+  for(const r of evoCardRects()){ if(x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h){ pickEvo(r.i); return true; } }
+  return false;
+}
+function evoTick(dt){                // pit.js:225 — per-frame while a pick is open (deadlock-proof)
+  if(!P.evoPick)return;
+  if(keys['1']){ pickEvo(0); return; }                  // keyboard road 1
+  if(P.evoPick[1]&&keys['2']){ pickEvo(1); return; }    // keyboard road 2 (only if a 2nd road exists)
+  if(evoIsAuto()){ pickEvo(0); return; }                // AUTO / headless -> default road immediately
+  P.evoPickT=(P.evoPickT||0)-dt;                         // MANUAL: a generous failsafe window
+  if(P.evoPickT<=0) pickEvo(0);
+}
+
+// updFireballs — port of pit.js:744 (hex branch). Advances projectiles; on hit a 'hex'
+// bolt applies the rot DoT (10s, 15 dmg, .5s tick). HEX FIEND (herald) STACKS on a hexed foe.
+function updFireballs(dt){
+  for(let i=fireballs.length-1;i>=0;i--){ const b=fireballs[i];
+    b.x+=b.vx*dt; b.y+=b.vy*dt;
+    scene && scene.fxTrail(b.x, b.y, b.kind);
+    let hit=false;
+    for(const e of enemies){ if(e.dead) continue;
+      if(Math.hypot(b.x-e.x, b.y-(e.y-14)) < e.r+b.r){ hit=true;
+        if(b.kind==='arrow'){                             // bone shaft: direct, modest, no splash (pit.js:761)
+          e.hp-=b.dmg; e.flash=.12; scene && scene.popup(e.x,e.y-28,String(b.dmg),'#cfc6b4');
+          if(e.hp<=0) killEnemy(e);
+        }else if(b.kind==='hex'){
+          if(P.evo10==='herald' && e.hexT>0){            // HEX FIEND: hex STACKS (pit.js:766)
+            e.hexDmg=(e.hexDmg||15)+15; e.hexT=Math.max(e.hexT,10); e.hexTick=e.hexTick||.5; e.flash=.14;
+            scene && scene.popup(e.x,e.y-30,'HEX STACK','#b070f0');
+          }else{                                          // base hex: 10s rot (pit.js:770)
+            e.hexT=10; e.hexDmg=15; e.hexTick=.5; e.hexJumps=0; e.flash=.14;
+            scene && scene.popup(e.x,e.y-30,'HEXED','#b070f0');
+          }
+          S.shake=Math.max(S.shake,4);
+        }else{                                            // fire / sheol / black-dragon blast (pit.js:773)
+          e.hp-=b.dmg; e.flash=.16; scene && scene.popup(e.x,e.y-30,String(b.dmg),b.col||'#f0883d');
+          S.shake=Math.max(S.shake,4);
+          if(b.fire) applyFire(e);                        // HEX FIEND: succubus burn DoT (enemies only)
+          const aoe=b.aoe||45;                            // arch fireballs tag aoe:70; default 45 (pit.js:778)
+          if(b.fire) feedSuccubi(e.x,e.y,aoe,6);          // succubi HEALED by the fire (pit.js:779)
+          for(const o of enemies){ if(o.dead||o===e) continue;          // AoE splash (pit.js:780)
+            if(dist(e,o)<aoe){ const sd=Math.round(b.dmg/2); o.hp-=sd; o.flash=.1;
+              scene && scene.popup(o.x,o.y-26,String(sd),b.col||'#f0883d');
+              if(o.hp<=0) killEnemy(o); } }
+          if(e.hp<=0) killEnemy(e);
+        }
+        break; } }
+    if(hit || (scene && scene.outOfArena(b.x,b.y))) fireballs.splice(i,1);
+  }
+}
+// per-enemy hex DoT tick — port of pit.js:1538 (rot ticks every .5s for hexDmg)
+function updEnemies(dt){
+  for(const e of enemies){ if(e.dead) continue;
+    if(e.flash>0) e.flash=Math.max(0,e.flash-dt);
+    if(e.stunT>0) e.stunT=Math.max(0,e.stunT-dt);   // PORTAL swap disorient (pit.js:592)
+    if(e.acidT>0){ e.acidT-=dt; e.acidTick=(e.acidTick||0)-dt;        // BONE DRAGON acid breath DoT ~hex strength (pit.js:1546)
+      if(e.acidTick<=0){ e.acidTick=.5; dotDamage(e, e.acidDmg||15, '#7fd05a'); } }
+    if(e.hexT>0){ e.hexT-=dt; e.hexTick=(e.hexTick||0)-dt;
+      if(e.hexTick<=0){ e.hexTick=.5; e.hp-=(e.hexDmg||15); e.flash=.12;
+        scene && scene.popup(e.x,e.y-26,String(e.hexDmg||15),'#b070f0');
+        if(e.hp<=0){ e.dead=true; scene && scene.popup(e.x,e.y-40,'ROTTED','#b070f0'); } } }
+  }
+}
+
+// ---- verb entry points (signatures mirror pit.js) -------------------------
+// Each currently emits a PLACEHOLDER FX + sets the same cooldown the original
+// uses, so the feel/gating is right before the real ability bodies are ported.
+function autoFace(){ if(scene) P.face = scene.aimAngle(); }
+
+function doSlash(){ // warlock base => HEX bolt (pit.js:307 -> hexBolt:565)
+  if(S.mode!=='fight'||P.dead||P.atkRecover>0||P.heavyWind>0||P.rollT>0||P.channel||P.paralyzeT>0) return;
+  if(P.hexCD>0) return;
+  P.hexCD = (P.evo10==='herald'?3:10); P.atkRecover=0.18;  // herald 3s else 10s (pit.js:565-567)
+  const f=nearestFoe(); if(f) P.face=ang(P,f); else autoFace();   // pit.js:568 faces nearest foe
+  fireballs.push({ x:P.x+Math.cos(P.face)*14, y:P.y+Math.sin(P.face)*14-18,   // pit.js:569
+    vx:Math.cos(P.face)*420, vy:Math.sin(P.face)*420, r:5, kind:'hex' });
+  scene && scene.fxHexCast(P.face);
+}
+function startChannel(){ // SUMMON channel begins (pit.js:573)
+  if(P.channel) return;
+  P.channel = { t:0, dur:3 };                 // ladder 3s/4s/6s -> stub 3s
+  scene && scene.fxChannelStart();
+}
+// releaseChannel — pit.js:577 is a NO-OP: SUMMON is PRESS not HOLD; the channel auto-completes
+// and only an INTERRUPTION (hit/paralyze/silence) ends it early. The rungs now fire from the
+// ladder tick in frame() (pit.js:2285), so releasing the button does nothing.
+function releaseChannel(){ return; }
+// ---- FX / announce / camera shims so the ported pit.js transform code reads 1:1 ----
+function flashFx(a){ scene && scene.flash(0x8a4cff, a); }                         // pit.js flashFx
+function leafBurst(x,y,n,col){ scene && scene.fxPortal(x,y); }                    // burst stand-in (pit.js leafBurst)
+function showBanner(title,sub,ms,col){ scene && scene.banner(title,sub,col); }   // ms ignored (banner self-times)
+function camFocus(x,y,z,t){ /* cinematic camera push-in: no-op in the 2.5D shell (TODO M8) */ }
+function vib(p){ if(navigator.vibrate) navigator.vibrate(p); }
+function archVoice(speaker,line){ try{ if(typeof window!=='undefined'&&window.VoiceMan&&line) window.VoiceMan.say(speaker,line); }catch(e){} }   // pit.js:827
+function archBank(){ return (typeof window!=='undefined'&&window.Quests&&window.Quests.archDevilOutro)||null; }                                  // pit.js:828
+// updateLabels — per-form verb RE-LABELING (pit.js:394). No on-screen verb buttons yet, so reflect the
+// active FORM in the HUD verb panel. Honest about the reroute: CLAW/BITE verb bodies port next run.
+function updateLabels(){
+  const v=document.getElementById('verbs'); if(!v) return;
+  const form = P.demonLord?'DEMON LORD':(P.devilT>0?'ARCH DEVIL':(P.lich?'LICH':null));
+  const baseHTML='<span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>'
+    +'<span class="k">Q (hold→release)</span> HEAVY(SUMMON) &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>'
+    +'<span class="k">Space / R-click</span> ROLL(BLINK) &nbsp; <span class="k">aim</span> = mouse';
+  v.innerHTML = (form
+    ? '<b style="color:'+(P.demonLord?'#2ecc71':'#d03a4a')+'">FORM: '+form+'</b> '
+      +'<span style="opacity:.6">(CLAW/BITE reroute next run)</span><br>'
+    : '') + baseHTML;
+}
+
+// updateGGHud — drive the GG/BlazBlue two-fighter HUD each frame (side-on duel presentation).
+// LEFT = the warlock (hp/maxHP, drains left; super meter = level toward 20). RIGHT = the CURRENT
+// opponent (drains right). CENTER = "FIGHT n / N". Names reflect the active form / foe type.
+// Pure DOM read of the pit.js-shaped state; safe no-op if the nodes are missing.
+function updateGGHud(){
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.style.width=v; };
+  const txt=(id,v)=>{ const el=document.getElementById(id); if(el && el.textContent!==v) el.textContent=v; };
+  // left fighter = warlock; name follows the active form
+  const lform = P.demonLord?'DEMON LORD':(P.devilT>0?'ARCH DEVIL':(P.lich?'LICH':'WARLOCK'));
+  txt('gg-lname', lform);
+  const lhp = Math.max(0, Math.min(1, P.hp/(maxHP()||1)));
+  set('gg-lhp', (lhp*100).toFixed(1)+'%');
+  set('gg-lmeter', (Math.min(20,P.level||1)/20*100).toFixed(0)+'%');   // super/level meter
+  // right fighter = the current single opponent (background lineup waits its turn)
+  const f=currentFoe();
+  if(f){ const rhp=Math.max(0,Math.min(1,f.hp/(f.maxhp||f.hp||1)));
+    set('gg-rhp', (rhp*100).toFixed(1)+'%');
+    txt('gg-rname', (f.name||'CHALLENGER').toUpperCase());
+    set('gg-rmeter', f.hexT>0?'100%':'0%');   // foe "meter" = hexed indicator stub
+  } else { set('gg-rhp','0%'); txt('gg-rname','— DEFEATED —'); set('gg-rmeter','0%'); }
+  txt('gg-fight', 'FIGHT '+Math.min(GAUNTLET_N,(S.fight|0)+1)+' / '+GAUNTLET_N);
+}
+
+/* ---- ARCH DEVIL: the price of the full coven (port of pit.js:789-931) ---- */
+function devilDur(){ return P.evo20==='archfiend'?31:((P.evo10==='herald')?21:15); }   // pit.js:789
+let archCineFight=-1, archLastTaunt=-1;                                                  // softlock / repeat-taunt guards (pit.js:824-825)
+function enterDevil(){                                                                   // pit.js:792
+  if(lvl()<8){ scene && scene.popup(P.x,P.y-64,'ARCH DEVIL AT LEVEL 8','#8a93a8'); return; }
+  const _dur=devilDur();
+  P.devilT=_dur; P.channel=null; P.r=24;                                                 // a bigger warlock for the borrowed form
+  flashFx(.35); S.shake=Math.max(S.shake,12); vib([60,60,120]);
+  leafBurst(P.x,P.y,26,'#d03a4a');
+  showBanner('ARCH DEVIL','he was never summoning FOR himself — '+_dur+' seconds',1800,'#d03a4a');
+  updateLabels();
+}
+function exitDevil(){                                                                    // pit.js:800
+  P.devilT=0; P.r=16;
+  leafBurst(P.x,P.y,16,'#b070f0');
+  showBanner('THE PACT ENDS','',800,'#b070f0');
+  updateLabels();
+}
+function enterDemonLord(){                                                               // pit.js:807 — TERMINAL within a fight (never reverts)
+  P.demonLord=true; P.devilT=0; P.lich=false;
+  P.channel=null; P.heavyWind=0; P.rollT=0; P.parryT=0; P.paralyzeT=0; P.silenceT=0; P.wardT=0;
+  P.r=27;                                                                                // an even BIGGER warlock (black & green)
+  flashFx(.4); S.shake=Math.max(S.shake,16); vib([70,60,140]);
+  leafBurst(P.x,P.y,28,'#2ecc71');
+  showBanner('THE DEMON LORD','the borrowed crown is his now — black fire and green',2400,'#2ecc71');
+  scene && scene.popup(P.x,P.y-64,'DEMON LORD','#2ecc71');
+  updateLabels();
+}
+// archDevilOutro — fires when the devil timer expires (pit.js:830). HERALD road = taunt -> DEMON LORD
+// (fully ported, self-contained — no seraph, no death). NON-HERALD = the original's guaranteed-Lich
+// cinematic; the lich pipeline isn't ported yet, so we play the faithful taunt/seraph/cast-down BANNERS
+// (with VO if VoiceMan exists) then revert. TODO M8: enterLich + seraphim descent + 3-stage resurrect.
+function archDevilOutro(){
+  if(P.char!=='warlock'||P.dead||P.demonLord||S.mode!=='fight'){ exitDevil(); return; }
+  if(S.fight===archCineFight){ exitDevil(); return; }            // already cast down once this fight (pit.js:835)
+  archCineFight=S.fight;
+  const bank=archBank();                                          // REUSE the existing arch-devil taunt clips (no new VO)
+  const taunts=bank?bank.taunts:['The mortal plane is mine to take.'];
+  let ti=Math.floor(Math.random()*taunts.length);
+  if(taunts.length>1&&ti===archLastTaunt)ti=(ti+1)%taunts.length;
+  archLastTaunt=ti; const taunt=taunts[ti];
+  if(P.evo10==='herald'){                                         // HERALD road — he becomes the DEMON LORD (pit.js:838)
+    P.devilT=0; P.r=16; P.channel=null; P.heavyWind=0; updateLabels();
+    P.wardT=Math.max(P.wardT,4);                                  // untouchable through the flourish (still mobile)
+    flashFx(.22); S.shake=Math.max(S.shake,8); leafBurst(P.x,P.y,16,'#d03a4a'); camFocus(P.x,P.y-20,1.6,2.6);
+    showBanner('THE ARCH DEVIL',taunt,7000,'#d03a4a'); archVoice('THE ARCH DEVIL',taunt);
+    setTimeout(()=>{ if(P.char!=='warlock'||P.dead)return; enterDemonLord(); },3000);   // pit.js:852 (taunt end -> transform)
+    return;
+  }
+  // NON-HERALD (binder / un-evolved): the borrowed form falls away; in the original the Seraphim casts
+  // him down and a guaranteed Lich rises. Lich pipeline = M8, so banners-only here, then plain revert.
+  P.devilT=0; P.r=16; P.channel=null; P.heavyWind=0; P.paralyzeT=Math.max(P.paralyzeT,12); updateLabels();
+  flashFx(.22); S.shake=Math.max(S.shake,8); leafBurst(P.x,P.y,16,'#d03a4a'); camFocus(P.x,P.y-20,1.7,3.0);
+  showBanner('THE ARCH DEVIL',taunt,7000,'#d03a4a'); archVoice('THE ARCH DEVIL',taunt);
+  setTimeout(()=>{ const seraph=bank?bank.seraph:'Vile demon - away with you. Back to hell you go.';
+    showBanner('THE SERAPHIM',seraph,5500,'#ffe9a8'); archVoice('THE SERAPHIM',seraph); },7500);   // pit.js:870
+  setTimeout(()=>{ flashFx(.34); S.shake=Math.max(S.shake,14); leafBurst(P.x,P.y,22,'#fff6dc');
+    showBanner('THE DEVIL IS CAST DOWN','(LICH resurrect — Milestone 8)','#9af0c0');
+    P.paralyzeT=0; exitDevil(); },13000);   // pit.js:879 — TODO M8: P.hp=1; lichRiseT=3; summonDemons('dragon'); enterLich()
+}
+// summonDemons — port of pit.js:598. Pushes summons into demons[] (cap 12, oldest
+// dissolves). Only the BRUTE (claw fiend) rung is wired this run; dragon/coven port next.
+// Evolution count/size/dmg multipliers are matched so the kit lands 1:1 when evos arrive.
+function summonDemons(type){
+  while(demons.length>=12){ const old=demons.shift(); scene && scene.fxPortal(old.x,old.y); }   // cap 12 (pit.js:600)
+  S.shake=Math.max(S.shake,6); if(navigator.vibrate) navigator.vibrate([30,50]); scene && scene.flash(0x8a4cff,0.1);
+  const _heraldSummon = P.evo10==='herald' ? 1.35 : 1;                 // HEX FIEND: tougher claw fiend (pit.js:602)
+  const _binder = P.evo10==='binder', _bMul = _binder?3:1, _bR = _binder?1.45:1;   // DREADBINDER swell (pit.js:604)
+  const _cntMul = P.demonLord ? 3 : ((_binder||P.evo10==='herald') ? 2 : 1);       // count mult (pit.js:606)
+  if(type==='brute'){
+    const a=P.face;
+    const _bh=Math.round((30+P.kills*5)*_heraldSummon);               // hp scales with kills (pit.js:609)
+    const _bn=_cntMul;                                                // base 1 -> x2 / x3
+    for(let bi=0;bi<_bn;bi++){ const ba=a+(_bn>1?(bi-(_bn-1)/2)*0.5:0);
+      demons.push({ type:'brute', x:P.x+Math.cos(ba)*55, y:P.y+Math.sin(ba)*55, r:24*_bR, face:ba,
+        hp:_bh, maxhp:_bh, life:18, cool:1, flash:0, walkP:0, dmgMul:_bMul }); }
+    scene && scene.banner('CLAW FIEND','it hungers — they fight IT now','#b070f0');
+  }else if(type==='dragon'){                                          // BONE DRAGON (pit.js:614)
+    let dhp=Math.round((44+P.kills*6)*_heraldSummon);                 // tougher — it is the lich's phylactery (HEX FIEND +35%)
+    if(_binder) dhp=Math.round(dhp*1.7);                              // DREADBINDER: the BLACK DRAGON is even tougher
+    demons.push({ type:'dragon', black:_binder, x:P.x, y:P.y-60, r:18*_bR, face:P.face,
+      hp:dhp, maxhp:dhp, life:15, cool:1.2, flash:0, walkP:0, dmgMul:_bMul, fbCD:2 });
+    scene && scene.banner(_binder?'BLACK DRAGON':'BONE DRAGON',
+      _binder?'acid breath — and hellfire from above':'poison breath — the rot spreads','#7fd05a');
+  }else{                                                             // THE COVEN — succubi (pit.js:620)
+    const _sn=3*_cntMul;                                             // base 3 -> x2 (binder/herald) / x3 (Demon Lord)
+    const _dl=P.demonLord;                                           // Demon Lord: each arrives as an ARCH succubus (deferred to M8)
+    for(let i=0;i<_sn;i++){ const a=i*(6.283/_sn);
+      const _s={ type:'succubus', x:P.x+Math.cos(a)*55, y:P.y+Math.sin(a)*55, r:(_dl?15:10)*_bR, face:a, slot:a,
+        hp:10+P.kills*2, maxhp:10+P.kills*2, life:14, cool:rnd(.5,2), flash:0, walkP:0, dmgMul:_bMul };
+      // (arch fuse/burst — _dl branch — deferred to M8; base coven only here)
+      demons.push(_s); }
+    scene && scene.banner('THE COVEN', _binder?'SIX answer — fire and mending':'three answer — fire and mending','#f06aa0');
+  }
+}
+function hurtDemon(d,dmg){ d.hp-=dmg; d.flash=.12; scene && scene.popup(d.x+rnd(-6,6), d.y-d.r-12, String(dmg), '#d0a8f0'); }
+// updDemons — port of pit.js:632. Life-decay + per-type AI. REENTRANCY GUARD retained:
+// killEnemy can shrink demons[] from inside this loop, sliding indices, so skip empties.
+function updDemons(dt){
+  for(let i=demons.length-1;i>=0;i--){ const d=demons[i];
+    if(!d) continue;                                                  // REENTRANCY GUARD (pit.js:634)
+    if(!(P.lich&&d.type==='dragon') && !(P.evo10==='herald'&&d.type==='succubus')) d.life-=dt;  // phylactery/herald never time out
+    d.flash=Math.max(0,d.flash-dt);
+    if(d.life<=0||d.hp<=0){ scene && scene.fxPortal(d.x,d.y);
+      scene && scene.popup(d.x,d.y-20,'UNSUMMONED','#b070f0'); demons.splice(i,1); continue; }
+    d.cool-=dt;
+    const tgt=enemies.filter(e=>!e.dead).sort((a,b)=>dist(d,a)-dist(d,b))[0];
+    if(d.type==='brute'){                                             // claw fiend: pure aggro tank (pit.js:686)
+      if(!tgt) continue;
+      const dd=dist(d,tgt); d.face=ang(d,tgt);
+      if(dd>d.r+tgt.r+10){ d.x+=Math.cos(d.face)*95*dt; d.y+=Math.sin(d.face)*95*dt; d.walkP+=dt*8; }
+      else if(d.cool<=0){ d.cool=1.4;
+        swings.push({ x:d.x, y:d.y, a:d.face, arc:2.0, range:d.r+36, t:.16, heavy:true, col:'#d05a6a' });
+        S.shake=Math.max(S.shake,4);
+        for(const e of enemies){ if(e.dead) continue;
+          if(dist(d,e)<d.r+e.r+30){                                   // token damage, big shove (pit.js:692)
+            const pa=ang(d,e); e.x+=Math.cos(pa)*70; e.y+=Math.sin(pa)*70; scene && scene.clampArena(e);
+            e.hp-=Math.round((P.evo10==='herald'?2:1)*(d.dmgMul||1)); e.flash=.1;
+            scene && scene.popup(e.x,e.y-26,'SHOVED','#d05a6a');
+            if(e.hp<=0) killEnemy(e); } } }
+    }else if(d.type==='dragon'){                                      // BONE/BLACK DRAGON (pit.js:678)
+      d.y+=Math.sin(S.time*3)*0.4;                                    // hover
+      if(!tgt) continue;
+      const dd=dist(d,tgt); d.face=ang(d,tgt);
+      if(dd>160){ d.x+=Math.cos(d.face)*80*dt; d.y+=Math.sin(d.face)*80*dt; }      // approach/retreat band
+      else if(dd<100){ d.x-=Math.cos(d.face)*60*dt; d.y-=Math.sin(d.face)*60*dt; }
+      if(d.cool<=0 && dd<220){ d.cool=3.2;                            // breath: cone FX + lingering paralytic ACID gas
+        scene && scene.fxBreath(d.x+Math.cos(d.face)*d.r, d.y+Math.sin(d.face)*d.r, d.face);
+        if(navigator.vibrate) navigator.vibrate(20);
+        zones.push({ x:d.x+Math.cos(d.face)*120, y:d.y+Math.sin(d.face)*120, r:110, tele:0, life:4, type:'gas', tick:0 }); }  // pit.js:691
+      if(d.black){ d.fbCD=(d.fbCD||0)-dt;                             // BLACK DRAGON (binder): exploding fireball (pit.js:692)
+        if(d.fbCD<=0 && dd<380){ d.fbCD=4; const fa=ang(d,tgt);
+          fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(fa)*430, vy:Math.sin(fa)*430, r:14, kind:'fire', aoe:100, col:'#9af0c0',
+            dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*2.2) });
+          S.shake=Math.max(S.shake,5); if(navigator.vibrate) navigator.vibrate(25); } }
+    }else if(d.type==='succubus'){                                   // THE COVEN: orbit the warlock, mend or hurl fire (pit.js:699)
+      // (arch fuse/burst + Sheol-green variant deferred to M8 — herald/Demon-Lord territory)
+      d.slot+=dt*.8;                                                 // orbit (pit.js:724)
+      const ox=P.x+Math.cos(d.slot)*58, oy=P.y+Math.sin(d.slot)*58;
+      d.x+=(ox-d.x)*3*dt; d.y+=(oy-d.y)*3*dt+Math.sin(S.time*4+d.slot)*0.5;
+      d.face=tgt?ang(d,tgt):d.slot;
+      if(d.cool<=0){ d.cool=2.2;                                     // pit.js:728
+        if(P.hp<maxHP()){                                            // MEND the warlock (pit.js:729)
+          const amt=6; P.hp=Math.min(maxHP(),P.hp+amt);
+          tracers.push({ x1:d.x, y1:d.y-12, x2:P.x, y2:P.y-16, t:.3, max:.3, col:'#f06aa0' });
+          scene && scene.popup(P.x,P.y-46,'+'+amt,'#f06aa0');
+        }else if(tgt){                                               // else hurl a fire bolt (pit.js:733)
+          const _herald=P.evo10==='herald';                          // HEX FIEND: succubi hurl BURNING fire
+          fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(d.face)*360, vy:Math.sin(d.face)*360,
+            r:6, kind:'fire', aoe:45, fire:_herald,                  // base coven = plain fire bolt (no DoT until herald)
+            dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*1.6*(d.dmgMul||1)) }); } }
+    }
+    const mv=Math.hypot(d.x-(d._lx??d.x), d.y-(d._ly??d.y));          // walk-phase bookkeeping (pit.js:741)
+    d.walkP=(d.walkP||0)+mv*.16; d._mv=mv>0.2; d._lx=d.x; d._ly=d.y;
+    scene && scene.clampArena(d);
+  }
+}
+// updZones — port of pit.js gas branch (:2364). The dragon's gas cloud paralyzes (light stun)
+// and refreshes a hex-strength ACID DoT on any foe standing inside it, every .5s, for its 4s life.
+function updZones(dt){
+  for(let i=zones.length-1;i>=0;i--){ const z=zones[i];
+    if(z.type==='gas'){ z.life-=dt; z.tick=(z.tick||0)-dt;
+      if(z.tick<=0){ z.tick=.5;
+        for(const e of enemies){ if(e.dead) continue;
+          if(dist(z,e)<z.r){ e.stunT=Math.max(e.stunT||0,2);          // light paralytic flavor (pit.js:2368)
+            e.acidT=Math.max(e.acidT||0,3); e.acidDmg=15; e.acidTick=e.acidTick||.5; } } }
+      if(z.life<=0) zones.splice(i,1);
+    } else { z.life-=dt; if(z.life<=0) zones.splice(i,1); }
+  }
+}
+function updSwings(dt){ for(let i=swings.length-1;i>=0;i--){ const s=swings[i]; s.t-=dt; if(s.t<=0) swings.splice(i,1); } }
+function updTracers(dt){ for(let i=tracers.length-1;i>=0;i--){ const t=tracers[i]; t.t-=dt; if(t.t<=0) tracers.splice(i,1); } }  // succubus MEND beam fade (pit.js tracers[])
+function doHeavy(){ // warlock => start the summon channel (pit.js:1154)
+  if(S.mode!=='fight'||P.dead||P.heavyWind>0||P.rollT>0||P.paralyzeT>0||P.silenceT>0) return;
+  startChannel();
+}
+function heavyRelease(){ if(P.char==='warlock') releaseChannel(); }  // pit.js:1163
+function doParry(){ // warlock => PORTAL (pit.js:351 -> portal:581)
+  if(S.mode!=='fight'||P.dead||P.rollT>0||P.heavyWind>0||P.channel||P.paralyzeT>0||P.silenceT>0) return;
+  if(P.parryCD>0) return;
+  // --- faithful port of pit.js portal() :581 ---
+  const fs=enemies.filter(e=>!e.dead);
+  if(!fs.length) return;                        // no foe -> no swap (pit.js:583)
+  P.parryCD=3; P.ft.rolls++;                     // pit.js:584 (CD 3s; stat bump)
+  fs.sort((a,b)=>dist(P,b)-dist(P,a));           // furthest first (pit.js:585)
+  const e=fs[0];                                 // the furthest enemy
+  scene && scene.fxPortal(P.x,P.y);             // leafBurst at caster (pit.js:587)
+  scene && scene.fxPortal(e.x,e.y);             // leafBurst at target
+  const px2=P.x, py2=P.y;                        // swap places (pit.js:589-591)
+  P.x=e.x; P.y=e.y; e.x=px2; e.y=py2;
+  scene && scene.clampArena(P);
+  scene && scene.clampArena(e);
+  e.stunT=Math.max(e.stunT||0,0.6);             // disoriented by the swap (pit.js:592)
+  P.wardT=(P.evo10==='herald')?7:3;             // HEX FIEND/devil road ward 7s else 3s (pit.js:593)
+  if(scene){ scene.popup(P.x,P.y-58,'WARDED','#5ad2ff');
+    scene.popup(P.x,P.y-44,'PORTAL','#b070f0');
+    scene.popup(e.x,e.y-30,'SWAPPED','#b070f0'); }
+  S.shake=Math.max(S.shake,5);                  // pit.js:597 (shake/vib/flash)
+  if(navigator.vibrate) navigator.vibrate(35);
+  if(scene) scene.flash(0x8a4cff,0.12);
+}
+function blink(){ // ROLL => warlock BLINK — faithful port of pit.js:951 (teleport 150 back, WIDE 230px stun, 2.2s CD)
+  if(P.rollCD>0||P.channel) return;
+  P.rollCD = 2.2; P.rollT = 0.25; P.ft.rolls++;           // pit.js:953 (CD + roll lockout + stat bump)
+  const ox=P.x, oy=P.y;                                   // departure point (pit.js:954)
+  for(const e of enemies){ if(e.dead) continue;           // WIDE stun around the departure point (pit.js:955-957)
+    if(dist(P,e)<230){ e.stunT=Math.max(e.stunT||0,4); e.flash=.15;
+      scene && scene.popup(e.x,e.y-28,'STUNNED','#b070f0'); } }
+  const nx = P.x - Math.cos(P.face)*150, ny = P.y - Math.sin(P.face)*150;  // teleport 150 back (pit.js:959)
+  scene && scene.fxBlink(ox, oy, nx, ny);                 // leafBurst at BOTH ends (pit.js:958,960)
+  P.x = nx; P.y = ny; scene && scene.clampArena();
+  S.shake=Math.max(S.shake,4);                            // pit.js:961 (shake/vib/flash)
+  if(navigator.vibrate) navigator.vibrate(30);
+  if(scene) scene.flash(0x8a4cff,0.10);
+}
+function doRoll(){ // pit.js:1168
+  if(S.mode!=='fight'||P.dead||P.rollCD>0||P.rollT>0||P.channel||P.paralyzeT>0) return;
+  if(P.fadeT>0) return;
+  if(P.char==='warlock'){ autoFace(); blink(); return; }
+}
+
+// ---- master tick (mirror of pit.js frame(now)) ----------------------------
+function frame(dt){            // dt in seconds
+  S.time += dt;
+  // EVOLUTION choice open -> FROZEN scene: resolve the pick, run NOTHING else (pit.js drawEvoPanel path).
+  // evoTick auto-defaults under AUTO/headless and on the failsafe timeout, so this can never softlock.
+  if(P.evoPick){ evoTick(dt); return; }
+  // decay cooldown timers (pit.js does the same each frame)
+  for(const k of ['rollT','rollCD','heavyCD','heavyWind','atkRecover','parryT','parryCD','hexCD','paralyzeT','silenceT','fadeT','wardT'])
+    if(P[k]>0) P[k] = Math.max(0, P[k]-dt);
+  // ARCH DEVIL timer -> outro on expiry (pit.js frame devil tick). DEMON LORD is terminal (no timer).
+  if(P.devilT>0 && !P.demonLord){ P.devilT-=dt; if(P.devilT<=0){ P.devilT=0; archDevilOutro(); } }
+  // SUMMON LADDER — port of pit.js channel tick (:2285). Press auto-channels; the rungs
+  // fire on their own at t1/t2/t3 (3s/4s/6s; DEMON LORD .5/1/3s), gated by level + "one alive".
+  if(P.channel){ const c=P.channel; c.t+=dt;
+    const _dl=P.demonLord; const t1=_dl?0.5:3, t2=_dl?1:4, t3=_dl?3:6;
+    if(c.t>=t1 && !c.b){ c.b=true;                                    // rung 1: CLAW FIEND
+      if(!demons.some(d=>d.type==='brute'&&d.hp>0)){ c.any=true; summonDemons('brute'); }
+      else scene && scene.popup(P.x,P.y-58,'FIEND LIVES','#8a93a8'); }
+    if(c.t>=t2 && !c.d){ c.d=true;                                    // rung 2: BONE DRAGON (level 3+)
+      if(lvl()<3) scene && scene.popup(P.x,P.y-58,'DRAGON AT LEVEL 3','#8a93a8');
+      else if(!demons.some(d=>d.type==='dragon'&&d.hp>0)){ c.any=true; summonDemons('dragon'); }
+      else scene && scene.popup(P.x,P.y-58,'DRAGON LIVES','#8a93a8'); }
+    if(c.t>=t3){                                                      // rung 3: THE COVEN (level 5+) -> devil
+      if(lvl()<5) scene && scene.popup(P.x,P.y-58,'COVEN AT LEVEL 5','#8a93a8');
+      else if(!demons.some(d=>d.type==='succubus'&&d.hp>0)){ c.any=true; summonDemons('succubus'); if(!_dl) enterDevil(); }
+      else scene && scene.popup(P.x,P.y-58,'COVEN LIVES','#8a93a8');
+      P.channel=null; }                                              // auto-channel completes here (no fizzle)
+  }
+  // projectile + enemy DoT sim (pit.js updFireballs:744 + hex tick:1538)
+  updFireballs(dt); updEnemies(dt); updDemons(dt); updSwings(dt); updZones(dt); updTracers(dt);   // summons + melee arcs + gas + mend beams (pit.js:632,2364)
+  // movement from keys/stick -> P.x/P.y (speed ~ pit.js warlock walk)
+  let mx=0,my=0;
+  if(keys['a']||keys['arrowleft'])  mx-=1;
+  if(keys['d']||keys['arrowright']) mx+=1;
+  if(keys['w']||keys['arrowup'])    my-=1;
+  if(keys['s']||keys['arrowdown'])  my+=1;
+  if(stick.on){ mx+=stick.dx; my+=stick.dy; }
+  if(mx||my){ const m=Math.hypot(mx,my)||1; const sp=210*dt;
+    if(P.rollT<=0){ P.x+=mx/m*sp; P.y+=my/m*sp; scene && scene.clampArena(); } }
+  updateGGHud();   // drive the GG two-fighter duel HUD (warlock vs current opponent + FIGHT n/N)
+}
+
+// ---------------------------------------------------------------------------
+// PHASER SCENE — promotes the spike floor+lit sprite into a playable shell.
+// ---------------------------------------------------------------------------
+class Arena extends Phaser.Scene{
+  preload(){
+    // Hiro's real anime warlock — normal-mapped idle SHEET (config-object form so the
+    // normalMap binds to the spritesheet; Light2D then shades each frame as it plays).
+    // Hiro's NEW side-on warlock idle is a single full-body still (~336x512) — load as a plain
+    // normal-mapped image (NOT a 256x384 sheet, which cropped the new art / failed sheetOK and fell
+    // back to the old front-facing warlock_diffuse). Light2D shades it; world-scale via SPRITE_TARGET_H.
+    this.load.image('warlock', [SPR+'warlock_idle.png', SPR+'warlock_idle_n.png']);
+    // single-frame fallback (used only if the sheet failed to decode — keeps the build loadable)
+    this.load.image('warlock_f0', [SPR+'warlock_diffuse.png', SPR+'warlock_normal.png']);
+    // Hiro's CAST pose still (staff raised, arcane lightning) — normal-mapped; shown briefly on HEX cast
+    this.load.image('warlock_cast', [SPR+'warlock_cast.png', SPR+'warlock_cast_n.png']);
+    // Hiro's real anime SUMMON / TRANSFORMATION sprites (xAI-generated, on-model; ingested
+    // 2026-06-27). Array form binds each diffuse to its auto-Sobel normal map so Light2D lights them.
+    this.load.image('clawfiend',    [SPR+'clawfiend.png',    SPR+'clawfiend_n.png']);
+    this.load.image('bonedragon',   [SPR+'bonedragon.png',   SPR+'bonedragon_n.png']);
+    this.load.image('blackdragon',  [SPR+'blackdragon.png',  SPR+'blackdragon_n.png']);
+    this.load.image('succubus',     [SPR+'succubus.png',     SPR+'succubus_n.png']);
+    this.load.image('archsuccubus', [SPR+'archsuccubus.png', SPR+'archsuccubus_n.png']);
+    // Warlock action poses (walk/hurt) + the TRANSFORMATION forms (lich/archdevil/demonlord) —
+    // ingested 2026-06-27; same array form (diffuse + auto-Sobel normal). Render swaps the hero
+    // texture by form/state; world-scale via SPRITE_TARGET_H below (size by TARGET height, not px).
+    this.load.image('warlock_walk', [SPR+'warlock_walk.png', SPR+'warlock_walk_n.png']);
+    this.load.image('warlock_hurt', [SPR+'warlock_hurt.png', SPR+'warlock_hurt_n.png']);
+    this.load.image('lich',         [SPR+'lich.png',         SPR+'lich_n.png']);
+    this.load.image('archdevil',    [SPR+'archdevil.png',    SPR+'archdevil_n.png']);
+    this.load.image('demonlord',    [SPR+'demonlord.png',    SPR+'demonlord_n.png']);
+    // NEW side-on pit challengers (Hiro drop 2026-06-27): humanoid undead foes for the gauntlet lineup.
+    this.load.image('shambler',     [SPR+'shambler.png',     SPR+'shambler_n.png']);
+    this.load.image('bonearcher',   [SPR+'bonearcher.png',   SPR+'bonearcher_n.png']);
+    this.load.image('shadow', BASE+'contact_shadow.png');
+    this.load.image('glow',   BASE+'glow.png');
+  }
+  create(){
+    scene = this;
+    const W=this.scale.width, H=this.scale.height, cx=W/2;
+    this.cameras.main.setBackgroundColor('#0a0710');
+
+    // arena bounds (a generous ground oval the warlock walks on)
+    this.bounds = { cx, cyTop:H*0.50, cyBot:H*0.92, halfTop:W*0.16, halfBot:W*0.46 };
+
+    // --- angled 3/4 pit floor (same technique as spike.html) ---
+    const horizon=H*0.42, floorTop=horizon, floorBot=H;
+    const g=this.add.graphics();
+    g.fillStyle(0x140d22,1).fillRect(0,0,W,horizon);
+    g.fillStyle(0x241a36,1);
+    g.beginPath(); g.moveTo(cx-30,floorTop); g.lineTo(cx+30,floorTop);
+    g.lineTo(W+200,floorBot); g.lineTo(-200,floorBot); g.closePath(); g.fillPath();
+    g.lineStyle(2,0x3a2c5a,0.55);
+    for(let i=-6;i<=6;i++) g.lineBetween(cx+i*12,floorTop, cx+i*150,floorBot);
+    for(let r=1;r<=7;r++){ const t=r/8, y=Phaser.Math.Linear(floorTop,floorBot,t*t);
+      const half=Phaser.Math.Linear(30,W*1.2,t*t); g.lineBetween(cx-half,y,cx+half,y); }
+    const vg=this.add.graphics(); vg.fillStyle(0x000000,0.35);
+    vg.fillRect(0,0,W,40); vg.fillRect(0,H-40,W,40);
+
+    // --- lighting (key follows the warlock so shading reads as 3D in motion) ---
+    this.lights.enable().setAmbientColor(0x201a33);
+    this.keyLight = this.lights.addLight(cx, horizon, 520, 0xbfe6ff, 2.2);
+    this.lights.addLight(cx+140, H-60, 320, 0x7cffc8, 1.2);   // green sheol fill
+    this.lights.addLight(cx-150, H-80, 300, 0xff7a5a, 1.0);   // warm torch fill
+
+    // --- warlock + contact shadow ---
+    P.x = cx; P.y = H*0.78;
+    this.shadow = this.add.image(P.x, P.y+86, 'shadow').setAlpha(0.85).setScale(1.05);
+    // --- warlock: real anime side-on idle STILL (single normal-mapped image; falls back to the
+    // old single-frame diffuse only if the new texture failed to decode, to keep the build loadable) ---
+    const heroTex = this.textures.exists('warlock') ? 'warlock' : 'warlock_f0';
+    this.hero = this.add.sprite(P.x, P.y, heroTex)
+                  .setOrigin(0.5,1).setPipeline('Light2D').setScale(0.92);
+    this.aimDot = this.add.image(P.x, P.y-300, 'glow').setBlendMode(Phaser.BlendModes.ADD).setScale(0.5).setAlpha(0.5);
+    this.fxLayer = this.add.container(0,0);
+
+    // TEST stand-in: leveling ports with the gauntlet in M4. Set lvl 5 so the FULL SUMMON
+    // LADDER is reachable for Hiro's vibe check this run — CLAW FIEND (lv1) -> BONE DRAGON
+    // (lv3) -> THE COVEN (lv5). The coven rung also fires the enterDevil() banner stub
+    // (real ARCH DEVIL transform = M8).
+    P.level = 5;
+    // TEST stand-in: start a little below max so the COVEN's MEND visibly ticks the warlock
+    // back up (pink beams) before the succubi switch to hurling fire. Real HP/maxHP wiring +
+    // enemy damage land with the gauntlet in M4; until then nothing else drains HP.
+    P.hp = Math.max(1, maxHP()-12);
+    // --- PLACEHOLDER practice dummies (swapped for the gauntlet roster in M4) ---
+    // gives doSlash's hex a target so the projectile + DoT plumbing runs live.
+    enemies.length=0;
+    // named so the GG HUD's right health bar reads the current opponent (first = the active duel foe,
+    // the rest stand in for the BACKGROUND lineup until the side-on stage flip lands next increment).
+    [['Shambler',cx-90,H*0.62],['Bone Archer',cx+110,H*0.66]].forEach(([nm,ex,ey])=>{
+      enemies.push({ name:nm, x:ex, y:ey, r:20, hp:80, maxhp:80, dead:false, flash:0,
+                     hexT:0, hexDmg:0, hexTick:0, hexJumps:0 });
+    });
+    this.zoneGfx  = this.add.graphics();   // lingering ground effects (BONE DRAGON gas cloud)
+    this.zoneGfx.setDepth(1);              // on the floor, beneath units
+    this.enemyGfx = this.add.graphics();   // simple dummy + hex-aura render
+    this.demonGfx = this.add.graphics();   // summoned demons (claw fiend / dragon) + hp bars + swing arcs
+    this.demonSprites = new Map();         // demon -> its real lit Sprite (lazily made, reaped on unsummon)
+    this.projGfx  = this.add.graphics();   // projectile bodies
+
+    // --- input: keyboard ---
+    this.input.keyboard.on('keydown', e=>{ const k=e.key.toLowerCase(); keys[k]=true;
+      if(P.evoPick){ if(k==='1')pickEvo(0); else if(k==='2')pickEvo(1); return; }  // frozen: only the choice keys
+      if(k==='j') doSlash();
+      else if(k==='q'){ if(!P.channel) doHeavy(); }
+      else if(k==='k') doParry();
+      else if(k===' ') doRoll();
+      else if(k==='l') gainLevel();   // DEBUG (test affordance): +1.5 lv/press to reach the lv10/20 EVOLUTION panel until the gauntlet's real kill-growth lands (M4)
+      else if(k==='v'){ P.level=Math.max(P.level,8); if(!P.demonLord){ if(P.devilT>0) archDevilOutro(); else enterDevil(); } }  // DEBUG: vibe-check ARCH DEVIL (press again -> outro -> DEMON LORD on herald road)
+    });
+    this.input.keyboard.on('keyup', e=>{ const k=e.key.toLowerCase(); keys[k]=false;
+      if(k==='q') heavyRelease();           // hold-to-channel, release-to-summon (parity feel)
+    });
+    // --- input: pointer aim + click verbs ---
+    this.input.mouse && this.input.mouse.disableContextMenu();
+    this.input.on('pointermove', p=>{ this.mouse={x:p.x,y:p.y}; });
+    this.input.on('pointerdown', p=>{ this.mouse={x:p.x,y:p.y};
+      if(P.evoPick){ evoClick(p.x,p.y); return; }   // frozen scene: a tap picks a card (pit.js evoClick)
+      if(p.rightButtonDown && p.rightButtonDown()) { doRoll(); return; }
+      if(p.button===2){ doRoll(); return; }
+      autoFace(); doSlash();
+    });
+    this.mouse = {x:P.x, y:P.y-100};
+    this.last = performance.now();
+  }
+
+  aimAngle(){ return Math.atan2(this.mouse.y-P.y, this.mouse.x-P.x); }
+  clampArena(ent){
+    const e=ent||P, b=this.bounds;
+    // map y to an allowed half-width (perspective oval), clamp x to it
+    const ty = Phaser.Math.Clamp((e.y-b.cyTop)/(b.cyBot-b.cyTop), 0, 1);
+    const half = Phaser.Math.Linear(b.halfTop, b.halfBot, ty);
+    e.x = Phaser.Math.Clamp(e.x, b.cx-half, b.cx+half);
+    e.y = Phaser.Math.Clamp(e.y, b.cyTop, b.cyBot);
+  }
+
+  // ---- HEX (real): cast flash at the staff; the bolt itself is a real fireballs[] entry ----
+  fxHexCast(face){
+    const m=this.add.image(P.x+Math.cos(face)*14, P.y-60+Math.sin(face)*14, 'glow')
+      .setBlendMode(Phaser.BlendModes.ADD).setTint(0xb070f0).setScale(0.5).setAlpha(0.8);
+    this.tweens.add({targets:m, scale:0.1, alpha:0, duration:200, onComplete:()=>m.destroy()});
+    this.flash(0x8a4cff,0.08);
+    this.castPose();   // swap the hero to Hiro's CAST sprite for the cast beat, then back to idle
+  }
+  // Brief CAST-pose swap: show warlock_cast (normal-mapped, Light2D-lit) ~0.35s on HEX, then revert.
+  // Guarded so it can't break the build if the cast texture failed to load; cancels a prior swap.
+  castPose(){
+    if(!this.hero || !this.textures.exists('warlock_cast')) return;
+    if(this._castTimer){ this._castTimer.remove(false); this._castTimer=null; }
+    this.hero.anims && this.hero.anims.stop();
+    this.hero.setTexture('warlock_cast');
+    this._castTimer = this.time.delayedCall(350, ()=>{
+      this._castTimer=null;
+      if(!this.hero) return;
+      const back = this.textures.exists('warlock') ? 'warlock' : 'warlock_f0';
+      this.hero.setTexture(back);
+      if(back==='warlock' && this.anims.exists('warlock_idle')) this.hero.play('warlock_idle');
+    });
+  }
+  fxTrail(x,y,kind){ // purple motes trailing the hex bolt (pit.js particle trail :746)
+    const t=this.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(kind==='hex'?0xb070f0:0xf0883d).setScale(0.16).setAlpha(0.7);
+    this.tweens.add({targets:t, alpha:0, scale:0.05, duration:160, onComplete:()=>t.destroy()});
+  }
+  popup(x,y,txt,col){ // pit.js popup(): floating combat text
+    const t=this.add.text(x, y, txt, {fontFamily:'system-ui',fontSize:'13px',color:col||'#fff',
+      stroke:'#000',strokeThickness:3}).setOrigin(0.5).setDepth(99999);
+    this.tweens.add({targets:t, y:y-22, alpha:0, duration:700, onComplete:()=>t.destroy()});
+  }
+  banner(title,sub,col){ // pit.js showBanner(): big centered announce that fades
+    const W=this.scale.width, y=this.scale.height*0.30;
+    const t=this.add.text(W/2, y, title, {fontFamily:'system-ui',fontSize:'26px',fontStyle:'bold',
+      color:col||'#fff',stroke:'#000',strokeThickness:5}).setOrigin(0.5).setDepth(100000);
+    const s=this.add.text(W/2, y+26, sub||'', {fontFamily:'system-ui',fontSize:'13px',
+      color:'#d8c8ff',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setDepth(100000);
+    this.tweens.add({targets:[t,s], alpha:0, y:'-=18', delay:900, duration:600,
+      onComplete:()=>{t.destroy();s.destroy();}});
+  }
+  outOfArena(x,y){ const b=this.bounds; return Math.hypot(x-b.cx, y-b.cyBot) > Math.max(b.halfBot,b.cyBot-b.cyTop)+120; }
+  fxChannelStart(){
+    this.channelRing = this.add.image(P.x, P.y-40, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x7cffc8).setScale(0.3).setAlpha(0.7);
+    this.tweens.add({targets:this.channelRing, scale:1.6, duration:3000, ease:'Sine.inOut'});
+  }
+  fxSummon(){
+    if(this.channelRing){ this.channelRing.destroy(); this.channelRing=null; }
+    const e=this.add.image(P.x, P.y-30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x7cffc8).setScale(0.4);
+    this.tweens.add({targets:e, scale:2.4, alpha:0, duration:520, onComplete:()=>e.destroy()});
+    this.flash(0x2cffa6,0.16);
+  }
+  fxPortal(x,y){ // portal burst (leafBurst stand-in) at a given point, defaults to caster
+    const cx=(x==null?P.x:x), cy=(y==null?P.y:y)-30;
+    const a=this.add.image(cx, cy, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x4ad0ff).setScale(0.2);
+    this.tweens.add({targets:a, scale:1.8, alpha:0, duration:480, onComplete:()=>a.destroy()});
+  }
+  fxBreath(x,y,face){ // BONE DRAGON poison-green breath cone (pit.js:685 particle burst)
+    for(let k=0;k<14;k++){ const ba=face+rnd(-0.5,0.5), bs=rnd(80,240);
+      const p=this.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x7fd05a)
+        .setScale(rnd(0.12,0.22)).setAlpha(0.85);
+      this.tweens.add({targets:p, x:x+Math.cos(ba)*bs*0.7, y:y+Math.sin(ba)*bs*0.7,
+        alpha:0, scale:0.04, duration:600, onComplete:()=>p.destroy()}); }
+  }
+  fxBlink(ox,oy,nx,ny){
+    const a=this.add.image(ox, oy-30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0xb070f0).setScale(0.8);
+    this.tweens.add({targets:a, alpha:0, scale:0.2, duration:300, onComplete:()=>a.destroy()});
+    const c=this.add.image(nx, ny-30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0xb070f0).setScale(0.4);
+    this.tweens.add({targets:c, alpha:0, scale:1.2, duration:300, onComplete:()=>c.destroy()});
+  }
+  flash(color,dur){ this.cameras.main.flash(dur*1000, (color>>16)&255,(color>>8)&255,color&255); }
+
+  update(now){
+    const dt = Math.min(0.05, (now-this.last)/1000); this.last=now;
+    frame(dt);                                   // advance the pit.js-shaped state
+    if(S.shake>0){ this.cameras.main.shake(120, 0.004*S.shake); S.shake=0; }  // pit.js screen shake
+    // reflect state -> sprites
+    this.hero.x=P.x; this.hero.y=P.y; this.hero.setFlipX(Math.cos(P.face)<0);
+    this.shadow.x=P.x; this.shadow.y=P.y+86;
+    // depth by y (y-sort) + slight scale for distance (the 2.5D ground feel)
+    const b=this.bounds, ty=Phaser.Math.Clamp((P.y-b.cyTop)/(b.cyBot-b.cyTop),0,1);
+    const sc=Phaser.Math.Linear(0.78,1.0,ty);
+    // SCALE-FIX (Hiro #1): size the hero by its TARGET WORLD HEIGHT, not the source PNG dims.
+    // displayScale = (HERO_PX * SPRITE_TARGET_H[formKey]) / tex.height, then × perspective scale (sc).
+    // The form key (warlock/lich/archdevil/demonlord) drives the world target so the borrowed forms
+    // still read bigger; dividing by the LIVE texture height normalizes absolute size (fixes "huge warlock").
+    const heroKey=P.demonLord?'demonlord':(P.devilT>0?'archdevil':(P.lich?'lich':'warlock_idle'));
+    const heroWorldH=HERO_PX*(SPRITE_TARGET_H[heroKey]||1.0);
+    this.hero.setScale(sc*heroWorldH/(this.hero.height||heroWorldH));
+    this.shadow.setScale(Math.max(0.15, this.hero.displayWidth/(this.shadow.width||1)*0.95));
+    if(P.demonLord) this.hero.setTint(0x9affc0);                   // DEMON LORD: black & green
+    else if(P.devilT>0) this.hero.setTint(0xff9a9a);              // ARCH DEVIL: hellfire red
+    else this.hero.clearTint();
+    this.hero.setDepth(P.y); this.shadow.setDepth(P.y-1);
+    // key light tracks the warlock so shading wraps as he moves
+    this.keyLight.x = P.x; this.keyLight.y = P.y-120;
+    // aim indicator
+    this.aimDot.x = P.x+Math.cos(P.face)*70; this.aimDot.y = P.y-60+Math.sin(P.face)*70;
+    if(this.channelRing){ if(P.channel){ this.channelRing.x=P.x; this.channelRing.y=P.y-40; }
+      else { this.fxSummon(); } }   // channel ended -> burst + clear the ring
+
+    // --- draw enemies (placeholder dummies) + hex aura + hp bar ---
+    const eg=this.enemyGfx; eg.clear();
+    for(const e of enemies){ if(e.dead) continue;
+      const hexed=e.hexT>0;
+      if(hexed){ eg.fillStyle(0xb070f0, 0.18+0.12*Math.sin(now/120)); eg.fillCircle(e.x, e.y-14, e.r+8); }
+      eg.fillStyle(e.flash>0?0xffffff:(hexed?0x6a4a8a:0x7a3a3a),1); eg.fillCircle(e.x, e.y-14, e.r);
+      eg.lineStyle(2, hexed?0xb070f0:0x402030, 1); eg.strokeCircle(e.x, e.y-14, e.r);
+      eg.fillStyle(0x000000,0.6); eg.fillRect(e.x-22, e.y-e.r-26, 44, 5);
+      eg.fillStyle(0x9cff6a,1); eg.fillRect(e.x-21, e.y-e.r-25, 42*Math.max(0,e.hp/e.maxhp), 3);
+      if(e.stunT>0){ eg.lineStyle(2, 0x5ad2ff, 0.7+0.3*Math.sin(now/80)); eg.strokeCircle(e.x, e.y-e.r-14, 5); } // PORTAL stun marker
+      eg.setDepth(e.y);
+    }
+    // --- WARD shield ring around the warlock (PORTAL grant; pit.js P.wardT) ---
+    if(P.wardT>0){ eg.lineStyle(2.5, 0x5ad2ff, 0.4+0.25*Math.sin(now/100)); eg.strokeCircle(P.x, P.y-14, P.r+12); }
+    // --- draw lingering GAS clouds (BONE DRAGON breath) on the floor ---
+    const zg=this.zoneGfx; zg.clear();
+    for(const z of zones){ if(z.type!=='gas') continue;
+      const lf=Math.max(0,z.life/4), puff=0.10+0.05*Math.sin(now/180);
+      zg.fillStyle(0x7fd05a, (0.10+puff)*Math.min(1,lf*1.5)); zg.fillCircle(z.x, z.y, z.r);
+      zg.fillStyle(0x9af0c0, 0.06*lf); zg.fillCircle(z.x, z.y, z.r*0.6);
+    }
+    // --- draw SUMMONS (claw fiend / bone dragon) + life ring + hp bar + melee swing arcs ---
+    const dg=this.demonGfx; dg.clear();
+    for(const s of swings){ const al=Math.max(0,s.t/0.16); const c=Phaser.Display.Color.HexStringToColor(s.col).color;
+      dg.lineStyle(3, c, 0.5*al); dg.beginPath(); dg.arc(s.x, s.y-14, s.range, s.a-s.arc/2, s.a+s.arc/2); dg.strokePath(); }
+    const _seenD=new Set();
+    for(const d of demons){
+      const lifeFrac=Math.max(0,d.life/(d.type==='dragon'?15:(d.type==='succubus'?14:18)));
+      // pick Hiro's real sprite for this summon; null -> graphics body fallback (build stays loadable)
+      const texKey = d.type==='brute' ? 'clawfiend'
+                   : d.type==='dragon' ? (d.black?'blackdragon':'bonedragon')
+                   : d.type==='succubus' ? (d.arch?'archsuccubus':'succubus') : null;
+      const hasTex = texKey && this.textures.exists(texKey);
+      if(d.type==='dragon'){                                          // hovering, poison-green (or black for binder)
+        const bob=Math.sin(now/220)*5, body=d.black?0x141414:0xcfc6b4, under=d.black?0x173a17:0x7fd05a;
+        dg.fillStyle(under, 0.18+0.08*Math.sin(now/150)); dg.fillEllipse(d.x, d.y-6, d.r*3, d.r*1.1); // ground glow
+        dg.fillStyle(0x000000,0.28); dg.fillEllipse(d.x, d.y, d.r*1.6, d.r*0.5);                       // shadow under hover
+        if(!hasTex){
+          dg.fillStyle(d.flash>0?0xffffff:body,1); dg.fillCircle(d.x, d.y-22+bob, d.r);                  // body
+          dg.fillStyle(d.flash>0?0xffffff:body,1); dg.fillCircle(d.x+Math.cos(d.face)*d.r, d.y-22+bob+Math.sin(d.face)*4, d.r*0.55); // head
+          dg.lineStyle(2, under, 0.6+0.3*lifeFrac); dg.strokeCircle(d.x, d.y-22+bob, d.r);
+        }
+        dg.fillStyle(0x000000,0.6); dg.fillRect(d.x-24, d.y-d.r-40, 48, 5);
+        dg.fillStyle(0x7fd05a,1); dg.fillRect(d.x-23, d.y-d.r-39, 46*Math.max(0,d.hp/d.maxhp), 3);
+      } else if(d.type==='succubus'){                                 // small, pink/violet, little wings (pit.js:3025)
+        const bob=Math.sin(now/200+d.slot)*3;
+        dg.fillStyle(0xf06aa0, 0.14+0.08*Math.sin(now/130+d.slot)); dg.fillCircle(d.x, d.y-12+bob, d.r+5); // pink aura
+        if(!hasTex){
+          dg.fillStyle(0xc46ad0, 0.5); // little wings
+          dg.fillTriangle(d.x-d.r, d.y-16+bob, d.x-d.r-9, d.y-22+bob, d.x-d.r-2, d.y-8+bob);
+          dg.fillTriangle(d.x+d.r, d.y-16+bob, d.x+d.r+9, d.y-22+bob, d.x+d.r+2, d.y-8+bob);
+          dg.fillStyle(d.flash>0?0xffffff:0xb05a8a,1); dg.fillCircle(d.x, d.y-12+bob, d.r);
+          dg.lineStyle(2, 0xf06aa0, 0.5+0.4*lifeFrac); dg.strokeCircle(d.x, d.y-12+bob, d.r);
+        }
+        dg.fillStyle(0x000000,0.6); dg.fillRect(d.x-20, d.y-d.r-22, 40, 5);
+        dg.fillStyle(0xf06aa0,1); dg.fillRect(d.x-19, d.y-d.r-21, 38*Math.max(0,d.hp/d.maxhp), 3);
+      } else {
+        const bob=Math.sin((d.walkP||0))*2;
+        dg.fillStyle(0xd05a6a, 0.16+0.1*Math.sin(now/140)); dg.fillCircle(d.x, d.y-14+bob, d.r+6); // hungering aura
+        if(!hasTex){
+          dg.fillStyle(d.flash>0?0xffffff:0x7a2a3a,1); dg.fillCircle(d.x, d.y-14+bob, d.r);
+          dg.lineStyle(2, 0xd05a6a, 0.5+0.4*lifeFrac); dg.strokeCircle(d.x, d.y-14+bob, d.r); // life fades the rim
+        }
+        dg.fillStyle(0x000000,0.6); dg.fillRect(d.x-22, d.y-d.r-26, 44, 5);
+        dg.fillStyle(0xff6a7a,1); dg.fillRect(d.x-21, d.y-d.r-25, 42*Math.max(0,d.hp/d.maxhp), 3);
+      }
+      // overlay Hiro's real lit sprite on top of the UI graphics (lazily created; bone->black swap supported)
+      if(hasTex){
+        let spr=this.demonSprites.get(d);
+        if(!spr){ spr=this.add.sprite(d.x, d.y, texKey).setOrigin(0.5,0.9).setPipeline('Light2D'); spr._k=texKey; this.demonSprites.set(d,spr); }
+        else if(spr._k!==texKey){ spr.setTexture(texKey); spr._k=texKey; }
+        // SCALE-FIX: size summons by the SPRITE_TARGET_H world table (dragon TOWERS, succubus human-ish),
+        // × perspective for their floor depth, × the binder/herald per-summon swell (d.r vs base r).
+        const dKey = d.type==='brute'?'clawfiend':d.type==='dragon'?(d.black?'blackdragon':'bonedragon'):(d.arch?'archsuccubus':'succubus');
+        const dty=Phaser.Math.Clamp((d.y-b.cyTop)/(b.cyBot-b.cyTop),0,1), dsc=Phaser.Math.Linear(0.78,1.0,dty);
+        const dWorldH=HERO_PX*(SPRITE_TARGET_H[dKey]||1.0)*(d.r/(BASE_R[d.type]||d.r));
+        const sbob = d.type==='dragon' ? Math.sin(now/220)*5 : 0;
+        spr.setScale(dsc*dWorldH/(spr.height||dWorldH));
+        spr.x=d.x; spr.y=d.y-(d.type==='dragon'?20:4)+sbob; spr.setFlipX(Math.cos(d.face)<0);
+        spr.setDepth(d.y+0.5); spr.setVisible(true);
+        if(d.flash>0) spr.setTintFill(0xffffff); else spr.clearTint();
+        _seenD.add(d);
+      }
+      dg.setDepth(d.y);
+    }
+    // reap sprites whose demon was unsummoned (pit.js demons[] shrank)
+    for(const [d,spr] of this.demonSprites){ if(!_seenD.has(d)){ spr.destroy(); this.demonSprites.delete(d); } }
+    // --- succubus MEND beams (pink tracer to the warlock) ---
+    for(const t of tracers){ const al=Math.max(0,t.t/(t.max||0.3));
+      const c=Phaser.Display.Color.HexStringToColor(t.col||'#f06aa0').color;
+      dg.lineStyle(2, c, 0.7*al); dg.lineBetween(t.x1, t.y1, t.x2, t.y2); }
+    // --- draw projectiles (hex bolts) ---
+    const pg=this.projGfx; pg.clear(); pg.setDepth(99998);
+    for(const b of fireballs){ pg.fillStyle(b.kind==='hex'?0xd0a0ff:0xffb070,1); pg.fillCircle(b.x,b.y,b.r);
+      pg.fillStyle(0xffffff,0.7); pg.fillCircle(b.x,b.y,b.r*0.4); }
+
+    // --- EVOLUTION choice panel (frozen-scene card UI; port of pit.js drawEvoPanel:3359) ---
+    if(P.evoPick){ if(!this.evoUI) this.buildEvoUI(); this.updateEvoUI(); }
+    else if(this.evoUI){ this.clearEvoUI(); }
+  }
+
+  // Build the frozen evo panel as a high-depth container (full-screen scrim + 1-2 cards).
+  // Geometry comes from evoCardRects() so on-screen rects == the click hit-test (pit.js parity).
+  buildEvoUI(){
+    const W=this.scale.width, H=this.scale.height, cx=W/2;
+    const br=P.evoPick, n=Math.min(2,br.length||0), rs=evoCardRects();
+    const topY=Math.round(rs[0]?rs[0].y:H/2);
+    const c=this.add.container(0,0).setDepth(200000);
+    const g=this.add.graphics(); g.fillStyle(0x06040a,0.90); g.fillRect(0,0,W,H); c.add(g);
+    c.add(this.add.text(cx, topY-52, 'CHOOSE YOUR EVOLUTION',
+      {fontFamily:'Georgia,serif',fontSize:'26px',fontStyle:'bold',color:'#f0c66a',
+       stroke:'#000',strokeThickness:4}).setOrigin(0.5,0));
+    this._evoHint=this.add.text(cx, topY-24, '', {fontFamily:'Georgia,serif',fontSize:'15px',
+       fontStyle:'bold',color:'#efe6d2',stroke:'#000',strokeThickness:3}).setOrigin(0.5,0);
+    c.add(this._evoHint);
+    for(let i=0;i<n;i++){ const r=rs[i], col=i===0?'#8fd27a':'#c79bff';
+      const ci=Phaser.Display.Color.HexStringToColor(col).color;
+      g.fillStyle(0x120d09,0.98); g.fillRect(r.x,r.y,r.w,r.h);
+      g.lineStyle(2.5,ci,1); g.strokeRect(r.x+1.5,r.y+1.5,r.w-3,r.h-3);
+      g.lineStyle(1,0xf0c66a,0.35); g.strokeRect(r.x+5,r.y+5,r.w-10,r.h-10);
+      const mx=Math.round(r.x+r.w/2), innerW=r.w-30; let yy=r.y+22;
+      c.add(this.add.text(mx, yy, (i+1)+'.  '+br[i].name,
+        {fontFamily:'Georgia,serif',fontSize:'21px',fontStyle:'bold',color:col,stroke:'#000',
+         strokeThickness:3,align:'center',wordWrap:{width:innerW}}).setOrigin(0.5,0)); yy+=40;
+      if(br[i].focus){ c.add(this.add.text(mx, yy, 'FOCUS: '+br[i].focus,
+        {fontFamily:'Georgia,serif',fontSize:'13px',fontStyle:'bold',color:'#f7d98a',
+         backgroundColor:'rgba(240,198,106,0.18)',padding:{x:9,y:4}}).setOrigin(0.5,0)); yy+=36; }
+      const desc=this.add.text(mx, yy, br[i].desc||'',
+        {fontFamily:'Georgia,serif',fontSize:'15px',color:'#e7ddc6',align:'center',
+         wordWrap:{width:innerW}}).setOrigin(0.5,0); c.add(desc); yy+=desc.height+16;
+      c.add(this.add.text(mx, yy, 'GRANTS',
+        {fontFamily:'Georgia,serif',fontSize:'15px',fontStyle:'bold',color:'#f0c66a'}).setOrigin(0.5,0)); yy+=24;
+      c.add(this.add.text(mx, yy, br[i].kit||'',
+        {fontFamily:'Georgia,serif',fontSize:'14px',color:'#efe6d2',align:'center',
+         wordWrap:{width:innerW}}).setOrigin(0.5,0));
+    }
+    this.evoUI=c;
+  }
+  updateEvoUI(){
+    if(!this._evoHint)return;
+    const n=Math.min(2,(P.evoPick||[]).length||0);
+    const base=n>1?'press 1 / 2  or click a card':'press 1  or click the card';
+    this._evoHint.setText(base+(P.evoPickT>0?'    ('+Math.ceil(P.evoPickT)+'s)':''));
+  }
+  clearEvoUI(){ if(this.evoUI){ this.evoUI.destroy(true); this.evoUI=null; this._evoHint=null; } }
+}
+
+new Phaser.Game({
+  type:Phaser.AUTO, parent:'wrap',
+  width:Math.min(window.innerWidth,520), height:Math.min(window.innerHeight,760),
+  backgroundColor:'#0a0710', scene:Arena,
+  scale:{mode:Phaser.Scale.FIT, autoCenter:Phaser.Scale.CENTER_BOTH}
+});
+</script>
+</body>
+</html>

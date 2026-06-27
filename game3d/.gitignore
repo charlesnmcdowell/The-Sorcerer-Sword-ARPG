@@ -1,0 +1,16 @@
+tools/xai_key.txt
+tools/*_key.txt
+art_in/_*.png
+art_in/*_src.png
+art_in/*.bak
+
+# python bytecode cache — never commit
+tools/__pycache__/
+**/__pycache__/
+
+# raw source art dumps (kept locally; cleaned outputs live in assets/sprites/ + art_in/)
+art_in/raw/
+assets/sprites/_src/
+
+# abandoned low-poly 3D (per GAME3D_UPLIFT_PLAN.md 2026-06-26 pivot to anime 2.5D — GLBs retired)
+*.glb

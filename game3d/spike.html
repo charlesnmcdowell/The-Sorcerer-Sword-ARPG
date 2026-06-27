@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Sorcerer-Sword 2.5D Look Spike — Milestone 0</title>
+<style>
+  html,body{margin:0;height:100%;background:#0a0710;overflow:hidden;font-family:system-ui,sans-serif}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  #note{position:fixed;left:10px;top:8px;color:#cbb9ff;font-size:12px;line-height:1.5;
+        background:rgba(20,12,34,.6);padding:8px 10px;border:1px solid #3a2c5a;border-radius:8px;max-width:46ch;z-index:5}
+  #note b{color:#9cffd6}
+  #err{position:fixed;left:10px;bottom:8px;color:#ff9a9a;font-size:12px;white-space:pre-wrap;z-index:5}
+  canvas{image-rendering:auto;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="note">
+  <b>MILESTONE 0 — 2.5D anime look spike</b><br>
+  Phaser Light2D lights a <b>normal-mapped</b> warlock sprite. Watch the light
+  orbit: shading wraps the figure &amp; staff (the "3D" trick). Move mouse / tap to
+  drag the light. Contact shadow + additive glow FX active.<br>
+  <i>Placeholder art — swap for Hiro-approved anime dark-elf sprite.</i>
+</div>
+<div id="wrap"></div>
+<div id="err"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script>
+const BASE = './assets/spike/';
+function showErr(m){document.getElementById('err').textContent += m + '\n';}
+window.addEventListener('error', e=>showErr('ERR: '+e.message));
+
+class Spike extends Phaser.Scene{
+  preload(){
+    // diffuse + normal map as a pair -> Light2D shades the flat art
+    this.load.image('warlock', [BASE+'warlock_diffuse.png', BASE+'warlock_normal.png']);
+    this.load.image('shadow', BASE+'contact_shadow.png');
+    this.load.image('glow',   BASE+'glow.png');
+  }
+  create(){
+    const W=this.scale.width, H=this.scale.height, cx=W/2;
+    this.cameras.main.setBackgroundColor('#0a0710');
+
+    // ---- angled "3/4" pit floor: perspective grid converging to a horizon ----
+    const horizon = H*0.42, floorTop=horizon, floorBot=H;
+    const g=this.add.graphics();
+    g.fillStyle(0x140d22,1).fillRect(0,0,W,horizon);          // back wall
+    g.fillStyle(0x241a36,1);
+    g.beginPath();
+    g.moveTo(cx-30,floorTop); g.lineTo(cx+30,floorTop);
+    g.lineTo(W+200,floorBot); g.lineTo(-200,floorBot); g.closePath(); g.fillPath();
+    // perspective floor lines
+    g.lineStyle(2,0x3a2c5a,0.55);
+    for(let i=-6;i<=6;i++){ g.lineBetween(cx+i*12,floorTop, cx+i*150,floorBot); }
+    for(let r=1;r<=7;r++){ const t=r/8, y=Phaser.Math.Linear(floorTop,floorBot,t*t);
+      const half=Phaser.Math.Linear(30,W*1.2,t*t); g.lineBetween(cx-half,y,cx+half,y); }
+    // vignette ring of "torches" feel via dark edges
+    const vg=this.add.graphics(); vg.fillStyle(0x000000,0.35);
+    vg.fillRect(0,0,W,40); vg.fillRect(0,H-40,W,40);
+
+    // ---- lighting ----
+    this.lights.enable().setAmbientColor(0x201a33);
+    this.keyLight = this.lights.addLight(cx, horizon, 520, 0xbfe6ff, 2.4); // cool key
+    this.lights.addLight(cx+140, H-60, 320, 0x7cffc8, 1.4);                // green sheol fill
+    this.lights.addLight(cx-150, H-80, 300, 0xff7a5a, 1.1);                // warm torch fill
+
+    // ---- contact shadow (under feet, on the floor plane) ----
+    const groundY = H*0.80;
+    this.shadow=this.add.image(cx, groundY+86, 'shadow').setAlpha(0.85).setScale(1.05);
+
+    // ---- warlock sprite, lit via Light2D using its normal map ----
+    this.hero=this.add.image(cx, groundY, 'warlock').setOrigin(0.5,1)
+      .setPipeline('Light2D').setScale(0.92);
+
+    // ---- additive glow FX at the staff gem ----
+    this.glow=this.add.image(cx+72, groundY-300, 'glow')
+      .setBlendMode(Phaser.BlendModes.ADD).setScale(1.0);
+    this.tweens.add({targets:this.glow, scale:1.5, alpha:0.6, yoyo:true,
+      repeat:-1, duration:900, ease:'Sine.inOut'});
+    // subtle idle bob
+    this.tweens.add({targets:[this.hero], y:groundY-6, yoyo:true, repeat:-1,
+      duration:1600, ease:'Sine.inOut'});
+
+    // drag the key light with pointer
+    this.input.on('pointermove',p=>{ if(p.isDown){this.keyLight.x=p.x; this.keyLight.y=p.y;} });
+
+    this.t=0;
+  }
+  update(_,dt){
+    this.t += dt/1000;
+    // orbit the key light so the normal-mapped shading visibly sweeps the figure
+    if(!this.input.activePointer.isDown){
+      const cx=this.scale.width/2, cy=this.scale.height*0.5;
+      this.keyLight.x = cx + Math.cos(this.t*0.9)*220;
+      this.keyLight.y = cy + Math.sin(this.t*0.9)*120;
+    }
+  }
+}
+
+new Phaser.Game({
+  type:Phaser.AUTO,
+  parent:'wrap',
+  width:Math.min(window.innerWidth,520),
+  height:Math.min(window.innerHeight,760),
+  backgroundColor:'#0a0710',
+  scene:Spike,
+  scale:{mode:Phaser.Scale.FIT, autoCenter:Phaser.Scale.CENTER_BOTH}
+});
+</script>
+</body>
+</html>

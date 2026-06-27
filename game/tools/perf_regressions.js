@@ -56,6 +56,32 @@ const CASES = [
     if(api.enemies.length>2) return 'enemies[] did not drain to the living named foe (got '+api.enemies.length+')';
     return null;
   }],
+  // 3) UNIT: wolves[] is lifespan/hp-culled -> the pack is BOUNDED under sustained combat (playtest 2026-06-27).
+  //    Found via the immortal-boss sustained-stress sweep: a long druid fight grows wolves[] toward a FINITE
+  //    equilibrium (spawn-rate x lifespan), never unbounded, because every wolf is removed on w.life<=0 || w.hp<=0
+  //    (updWolves). If that cull regressed, a long druid/warden fight would pile wolves without bound — the same
+  //    unbounded-growth hazard already pinned for demons[] (cap) and enemies[] (corpse cull). Pin the wolf cull:
+  //    expired + zero-hp wolves must drain within a couple seconds; a still-living wolf is kept.
+  ['wolves-bounded-by-lifespan-cull (perf — playtest 2026-06-27)', () => {
+    const api = mk(); api.fullReset('druid');
+    api.startEncounter([{type:'door',x:300,y:300,hp:1e9,maxhp:1e9}]);
+    let t=100000; api.frame(t); t+=16; api.frame(t);     // prime the frame clock so dt is sane
+    const W = api.wolves;                                 // live array (getter returns the real wolves[])
+    if(!Array.isArray(W)) return 'api.wolves is not an array';
+    const mkWolf = (o) => Object.assign({x:400,y:300,r:12,face:0,hp:40,maxhp:40,life:12,cool:.2,lungeT:0,bit:false,walkP:0,converted:false,dmgMul:1}, o);
+    for(let i=0;i<20;i++) W.push(mkWolf({life:0.05}));    // 20 wolves about to expire (life -> <=0 within a few frames)
+    for(let i=0;i<10;i++) W.push(mkWolf({hp:0}));         // 10 wolves already at zero hp (culled on sight)
+    const keeper = mkWolf({life:99, hp:9e8, maxhp:9e8});  // 1 long-lived, unkillable wolf — MUST survive the cull
+    W.push(keeper);
+    const before = api.wolves.length;                     // expect 31
+    const door = api.enemies.find(e=>e.type==='door');
+    for(let f=0;f<10;f++){ door.hp=1e9; door.dead=false; api.P.hp=api.maxHP(); t+=16; api.frame(t); } // ~0.16s sustained
+    const survivors = api.wolves.length;
+    if(before!==31) return 'setup wrong (pushed '+before+', expected 31) — wolves getter may not be the live array';
+    if(survivors>2) return survivors+' wolves remain after life/hp expired — cull regressed; wolves[] would grow UNBOUNDED in a long druid fight';
+    if(!api.wolves.includes(keeper)) return 'the still-living wolf was culled — cull is too aggressive (would delete the active pack)';
+    return null;
+  }],
 ];
 for (const [name, fn] of CASES) {
   let msg; try { msg = fn(); } catch(e){ msg = 'threw: '+(e&&e.message||e); }

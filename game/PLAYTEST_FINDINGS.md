@@ -5,6 +5,60 @@ fight unwinnable / blocks progression. Every finding becomes a PERMANENT named r
 
 ---
 
+## RUN 2026-06-27 — SLOPE-BASED UNBOUNDED-GROWTH SWEEP (all 9 builds)
+
+**TL;DR — this run**
+- **Floor + gauntlet GREEN.** 4 smoke + 19 regressions + 2 perf cases pass; the competent pursue-driver
+  clears all 8 champion/road builds (no crash/NaN/softlock/unbounded growth/unwinnable; max frame ≤16.5 ms).
+- **NO new real bugs.** Built a harder probe than the gauntlet — a 9-build *immortal-boss sustained-combat
+  stress* (`stress_immortal.js`) that pins a fight open and uses a **least-squares slope** over the 2nd half
+  of a long run to catch *unbounded* growth (not just peak). Two arrays flagged a positive slope; **both chased
+  to ground as non-bugs** (details below). Added **1 new permanent perf regression** hardening the wolf pack
+  against a future unbounded-growth regression.
+- **NEEDS HIRO:** nothing blocking. No game code changed (only `tools/perf_regressions.js` gained a case), so
+  nothing ships to players. One *standing balance call* re-surfaced with hard data (uncapped FORMER-CHAMPION
+  thralls) — already deferred as a suggestion; left unchanged per policy. The OneDrive mount again served a
+  **stale/tail-truncated** copy of the edited test file; the **canonical on-disk file is complete (92 lines)**
+  and the suite was validated by in-sandbox reconstruction (all 3 perf cases GREEN vs the live engine).
+
+### Two slope signals — BOTH non-bugs (do not chase as regressions next run)
+1. **ronin `enemies[]` → 192 and climbing (+10/1k) — NOT a bug.** Locked to fight 18 (the thrall feeder) with
+   the boss(es) **artificially immortal**, `enemies[]` grew linearly. Instrumented the breakdown: it is **100 %
+   LIVING thralls** (`live=187, dead=0, deadMinion=0`) — the prior corpse-cull fix is intact (zero corpses
+   accumulate). It grows *only* because the harness makes the boss unkillable so the fight never ends; the
+   FORMER CHAMPION's thrall spawn is **uncapped** (the standing balance suggestion from RUN 2026-06-24). In real
+   play the boss dies in tens of seconds, bounding the living count (~7–14). **Not progression-blocking** (the
+   driver clears fight 18), so per policy it stays a *suggestion*, not a change. Hard data now refutes the old
+   "stays moderate" assumption: living thralls are genuinely *uncapped*, bounded only by fight duration.
+2. **druid/warden `wolves[]` → 47 (+2.2/1k) — NOT a bug (equilibrium approach).** `wolves[]` has a hard
+   lifespan/hp cull (`updWolves`: remove on `w.life<=0 || w.hp<=0`), so a long fight reaches a **finite
+   equilibrium** (spawn-rate × lifespan), consistent with RUN 2026-06-26 (B)'s 60k-frame oscillation (131→178,
+   non-monotonic). The +2.2/1k at 18k frames is sub-equilibrium climb, not unbounded growth. Confirmed the cull
+   is the sole bound — see the new regression.
+
+### New permanent regression (never delete) — pins the wolf-pack bound
+- `perf:wolves-bounded-by-lifespan-cull (playtest 2026-06-27)` in `tools/perf_regressions.js`. Pushes 31 wolves
+  (20 about-to-expire + 10 zero-hp + 1 long-lived keeper), sustains ~0.16 s, and asserts the 30 expired/dead
+  wolves **drain** while the living keeper is **kept**. **Validated discriminating:** PASS on the live engine
+  (survivors=1); on a mutant engine with the `wolves.splice` cull disabled it correctly **FAILS** (survivors=31,
+  "cull regressed"). This closes the last unbounded-growth array (`demons[]` cap + `enemies[]` corpse-cull were
+  already pinned; `wolves[]` was not) — so if the wolf lifespan cull ever regresses, a long druid/warden fight
+  can no longer silently grow the pack without bound.
+
+**5 WHYS (why no bug despite two growth signals).** 1) Why did arrays grow? → the harness pinned the fight open
+with an immortal boss. 2) Why does that grow them? → spawners (thralls, wolves) keep producing while the fight
+can't end. 3) Why is that not a real defect? → real fights END (boss is killable), bounding duration → bounding
+counts. 4) Why trust that bound? → wolves are lifespan-culled (finite equilibrium) and dead minions are
+corpse-culled (RUN 2026-06-24); only *living* thralls are uncapped, and that's a winnable design pressure, not a
+blocker. 5) Why pin a case anyway? → the wolf bound rested on one un-tested invariant (the cull); a future edit
+could remove it and only a *sustained* fight would reveal it — now caught deterministically.
+
+**ISHIKAWA.** *Tests/metrics*: ✅ closed a coverage gap (no prior assertion on the wolf cull). *Code-logic /
+engine-perf*: no defect (culls/equilibria correct). *Agent-process*: the immortal-boss harness is a harder probe
+than the gauntlet and surfaced the un-pinned invariant. *Assets/platform*: ruled out.
+
+---
+
 ## RUN 2026-06-26 (B) — PUBLISH + DEEP-STRESS SWEEP
 
 **TL;DR — this run**

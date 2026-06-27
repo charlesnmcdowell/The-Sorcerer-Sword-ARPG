@@ -2,3 +2,6 @@ node_modules/
 *.log
 site-neverendingnarratives/
 game/tools/voice_config.json
+
+# accidental nested copy of the repo-named folder (stray build-output path) — never commit
+/The Sorcerer Sword ARPG/
