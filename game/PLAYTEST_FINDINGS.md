@@ -5,6 +5,67 @@ fight unwinnable / blocks progression. Every finding becomes a PERMANENT named r
 
 ---
 
+## RUN 2026-06-26 (B) — PUBLISH + DEEP-STRESS SWEEP
+
+**TL;DR — this run**
+- **SHIPPED the standing P1.** The herald/archfiend `updDemons` reentrancy fix (RUN 2026-06-26 A) was fixed
+  on disk but had **never reached players** — confirmed the live play-site `pit.js` was missing the guard at
+  the exact crash site. Reconstructed the truncated mount source in-sandbox, ran it through the gate
+  (`safe_publish.py`) from the verified-complete tree, and **published build 1782514927**: guard now live,
+  post-verify `node --check` clean on all 26 published files. This closes the cross-run "NEEDS HIRO: publish
+  from chat" item.
+- **Floor + driver GREEN.** 4 smoke + 19 regressions + 2 perf cases all pass against the live engine; the
+  competent pursue-driver clears all 8 champion/road builds (no crash/NaN/softlock/unbounded growth/unwinnable;
+  entities bounded, frame ≤~24 ms worst-case binder).
+- **Deep-stress sweep (new, harder than the gauntlet): NO new real bugs.** Structurally proved `demons[]` was
+  the *sole* reentrant-shift loop (see below) and the guard holds across **every** real summon kill-site. Three
+  raw stress signals were all chased to ground as **harness artifacts / non-bugs** (details below) — important
+  so they're not mistaken for regressions next run.
+- **NEEDS HIRO:** nothing blocking. The fix is published to `play/` but **not committed/pushed** (policy: never
+  git push) — commit & push the site repo when ready. Source mount still served tail-truncated `pit.js`/
+  `smoke_test.js` (known OneDrive hazard); canonical disk files are complete and were validated by in-sandbox
+  reconstruction.
+
+### Confirmed shipped — P1 reentrancy guard now LIVE on the play site
+The RUN-A fix (`if(!d)continue;` in `updDemons`) was verified ABSENT from `Neverendingnarratives/play/src/combat/pit.js`
+(guard count 0; loop went straight to `d.life-=dt` — the crash site). Published via the gate from a
+reconstructed-complete source tree; re-checked the published file: guard present, `node --check` clean,
+`build.txt` = 1782514927. Players on herald / herald-archfiend no longer carry the intermittent late-fight crash.
+
+### Negative result (valuable) — `demons[]` is the only reentrant-shift hazard; guard holds everywhere
+Audited `killEnemy()` and every backward index-cached loop (`demons`, `fireballs`, `wolves`, `bullets`,
+`zones`, `particles`, `popups`, `swings`, `rays`, `limbs`, `tracers`, enemies-cull). `killEnemy()` synchronously
+mutates **only** `demons[]` (`shift`/`push` for the horde cap + IT-RISES) and *flags* enemies dead (no splice);
+its win path is **deferred** via `setTimeout`, so it can't shrink an array mid-iteration. The reentrancy
+torture (over-cap horde of zombie-bite / brute-shove / mixed kill-sites beside ~0-hp infected foes) caps cleanly
+at 12 with no undefined slots. So the single guard fully closes this bug class.
+
+### Three raw stress signals — ALL artifacts / non-bugs (do not chase as regressions)
+1. **`P.hp` → NaN in the devil/lich cycle (NOT a bug — harness artifact).** Trapped to `hurtPlayer` at
+   `pit.js:1501` via `rnd(10,15)*e.dmgScale`. The synthetic boss was built with `startEncounter([{...}])` (raw
+   objects), which **bypasses** the `e.dmgScale=1+S.fight*0.16` assignment that real `startFight` applies
+   (`pit.js:1457`). Every real spawn + every summon site (thrall/skel/hound/esuccubus/edragon) sets `dmgScale`,
+   so `undefined*rnd = NaN` cannot occur in real play. The devil entry was a red herring (the boss merely took
+   ~120 frames to land its first hit). The real-spawn pursue-driver correctly never hit this.
+2. **Arch-succubus horde "cap breach" to 18 (NOT a bug — harness artifact).** I injected 18 herald succubi
+   directly (which by design never time out) with no subsequent summon; the `while(demons.length>=12)shift()`
+   cap only runs **at push time**, so a manually over-stuffed horde simply stays put. In real play the cap
+   applies on every summon, bounding total `demons[]` at 12.
+3. **Druid `wolves[]` ~150–200 under a 60k-frame immortal-boss fight (NOT a bug — bounded steady-state).**
+   Trajectory oscillates (f10k=164 → f20k=131 → f50k=144 → fEND=178) — it does **not** grow monotonically, so
+   it's an equilibrium of summon-rate × lifespan, not unbounded growth. Real fights end fast (gauntlet
+   max wolves = 22). Logged as a perf *suggestion* only (a soft wolf cap, mirroring the `demons[]` cap, would
+   harden against pathological sustained fights), **not changed** per policy.
+
+### Suggestions (NOT bugs — logged, not changed)
+- *Test-robustness:* synthetic-enemy harnesses should set `dmgScale` (and the deep-stress driver now does); a
+  one-line defensive `if(!Number.isFinite(dmg))return;` at the top of `hurtPlayer` would make the engine
+  self-protecting against any *future* spawn site that forgets `dmgScale`. Defense-in-depth only — unreachable today.
+- *Perf parity:* an optional soft cap on `wolves[]` (e.g. cull oldest beyond N) would match the `demons[]`
+  treatment; growth is already lifespan-bounded so this is purely defensive.
+
+---
+
 ## RUN 2026-06-26
 
 **TL;DR — this run**
