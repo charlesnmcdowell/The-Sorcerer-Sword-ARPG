@@ -30,11 +30,20 @@ CAP   = 512
 # = targetWorldH / sprite.pixelHeight). Source px size is irrelevant to this.
 TARGET_WORLD_H = {
     "warlock_idle": 1.0, "warlock_walk": 1.0, "warlock_cast": 1.0, "warlock_hurt": 1.0,
+    "warlock_summon": 1.0,  # SUMMON-channel pose (Hiro drop 2026-06-28) — same world height as warlock
+    # FX sprites (not characters): height is render-time, listed for documentation only
+    "fireball": 0.5, "fireball_hit": 0.7,
     "lich": 1.05, "archdevil": 1.3, "demonlord": 1.4,
     "clawfiend": 1.2, "bonedragon": 2.0, "blackdragon": 2.0,
     "succubus": 0.8, "archsuccubus": 0.9,
     # new side-on pit challengers (Hiro drop 2026-06-27): humanoid undead foes
     "shambler": 1.15, "bonearcher": 1.05,
+    # pit.js FIGHTS[] roster foes (Hiro drop 2026-06-27 21:5x) — heights derived from the
+    # original hitbox radii (warlock r~16 = 1.0): hound11 stitch13 hook14 gunner14 pyre15
+    # necro15 grave16 master17 chain18 champ20 brute21 door26 beast30.
+    "door": 1.5, "hook": 0.95, "chain": 1.15, "pyre": 1.0, "gunner": 0.95,
+    "grave": 1.05, "stitch": 0.95, "brute": 1.35, "master": 1.1, "hound": 0.8,
+    "necro": 1.0, "champ": 1.3, "beast": 1.9, "skel": 0.9,
 }
 
 def normal_from_alpha(rgba):

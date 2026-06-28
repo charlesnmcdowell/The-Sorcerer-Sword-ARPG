@@ -4,6 +4,229 @@ Mission (Hiro): out-find Hiro on bugs — catch them before he can. Balance is N
 fight unwinnable / blocks progression. Every finding becomes a PERMANENT named regression case.
 
 ---
+## RUN 2026-06-28 (J) — LOGIC CLEAN
+
+**TL;DR.** Floor `smoke_test.js` = **4 smoke + 20 regressions PASS** (exit 0). Deep pursue-driver `playtest_drive.js`
+played all **8** champion/road builds (ronin, druid/warden+alpha, warlock ×4: herald, binder, herald→archfiend,
+binder→lichlord, seraph) — **outcome=CLEARED each** (19/20 waves), **no crash / NaN / softlock / unbounded growth /
+unwinnable fight**. Entities bounded (maxE≤18, maxD≤20, maxW≤22, maxFire≤5), maxFrameMs≤11.21. The 2026-06-21
+unbounded-`enemies[]` and 2026-06-24 pursue-driver-stall open leads remain RESOLVED & PUBLISHED. No new logic case.
+
+---
+## RUN 2026-06-28 (I) — LOGIC CLEAN
+
+**TL;DR.** Floor `smoke_test.js` = **4 smoke + 20 regressions PASS** (exit 0). Deep pursue-driver `playtest_drive.js`
+(ran intact this run) played all **8** champion/road builds — ronin, druid/warden+alpha, warlock ×4
+(herald, binder, herald→archfiend, binder→lichlord), seraph — **outcome=CLEARED each** (19/20 waves), **no crash /
+NaN / softlock / unbounded growth / unwinnable fight**. Entities bounded (maxE≤16, maxD≤20, maxW≤22), maxFrameMs≤10.05.
+Pursue-driver open lead still **RESOLVED** (no stall on any build). No new logic case needed. (Visual lane: see
+PLAYTEST_FINDINGS_VISUAL run I — one P1 = new anim_coverage instrumentation gap, logged there.)
+
+---
+## RUN 2026-06-28 (H) — LOGIC CLEAN
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor `smoke_test.js` = 4 smoke + 20 regressions PASS (exit 0). Deep pursue-driver
+  (`tools/playtest_drive.js`, ran intact this run) played all **8** champion/road builds — ronin, druid/warden+alpha,
+  warlock ×4 (herald, binder, herald→archfiend, binder→lichlord), seraph — **outcome=CLEARED each** (19/20 waves),
+  no crash / NaN / softlock / unbounded growth / unwinnable. Entities bounded (maxE≤15, maxD≤20, maxW≤22).
+- **Pursue-driver open lead: still RESOLVED** (REGRESSION_TESTS.md L28-29) — no stall on any build.
+- **One soft-threshold flag, NOT a new bug:** warlock/binder-lichlord threw a single per-frame compute spike of
+  **50.4 ms** (driver soft threshold 50 ms; that build's typical max ~6–9 ms). Same one-off variance class already
+  characterized below (seraph 51.8 ms, "~once in 6 runs, fight still cleared"). Fight CLEARED, spike is transient
+  (1 frame of 27,431), entities bounded. Logged as variance — no permanent hard per-frame cap added (a flaky
+  one-off cap would manufacture false failures). Watch for recurrence / sustained drift.
+- **Mount note (env, not a game bug):** OneDrive sandbox mount again served TRUNCATED tails of `parity_lint.js`
+  (140/158) and `arena.html` (1088 lines, no Phaser.Game/</html> tail) to bash → node SyntaxError / the lint's own
+  truncation guard would bail INDETERMINATE. Real files on disk verified WHOLE via Read (parity_lint ends clean at
+  158; arena.html continues well past 1088). `smoke_test.js` + `playtest_drive.js` came through intact.
+- **Visual lane: PASS.** Live auditor `latest.json` FRESH (ts ~minutes old), verdict PASS, **0 P1 fails** — canvas
+  100%×100%, touch stick+4 btns, warlock 34% H, all 3 backdrop layers; P2 lighting pass (light2d+bloom+vignette;
+  `embers=False` the only sub-item, already a logged planned P3). See PLAYTEST_FINDINGS_VISUAL.md.
+- **Needs Hiro:** nothing blocking. Auditor is running — keep it up (`python game3d/tools/visual_audit.py --watch`).
+
+---
+## RUN 2026-06-28 (G) — LOGIC CLEAN
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor = 4 smoke + 19 regressions PASS, + 3 perf cases PASS (dead-minion cull /
+  enemies[] bounded / wolves lifespan-cull — the old 2026-06-21 open lead). Deep pursue-driver (reconstructed
+  in /outputs to dodge active mount truncation, run vs live `src/combat/pit.js`, 3436 lines) cleared **all 8**
+  champion/road builds — ronin, druid/warden+alpha, warlock ×4 roads, seraph — **outcome=CLEARED each**, no
+  crash / NaN / softlock / unbounded growth / unwinnable. maxFrameMs ≤ 14.2ms; maxE 20, maxD 20, maxW 24, all
+  well under caps.
+- **Pursue-driver open lead: still RESOLVED** (REGRESSION_TESTS.md lines 28-29) — no stall on any build.
+- **Mount note (env, not a game bug):** OneDrive sandbox mount again served TRUNCATED tails of `parity_lint.js`
+  (140/157) and `playtest_drive.js` (108/134) — node SyntaxError on the cut copies. `smoke_test.js`,
+  `perf_regressions.js`, `pit.js` came through intact this run. Files on disk are whole (verified via Read/Grep).
+  Workaround used: drove from a sandbox copy against live pit.js. Visual lane: see PLAYTEST_FINDINGS_VISUAL.md (H).
+- **Needs Hiro:** restart the visual auditor (`python game3d/tools/visual_audit.py --watch`) — latest.json ~91 min stale.
+
+---
+## RUN 2026-06-27 (F) — LOGIC CLEAN (3rd green today)
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor = 4 smoke + 19 regressions PASS. Deep pursue-driver (reconstructed in /tmp to
+  dodge the active mount truncation, run vs live `src/combat/pit.js`) cleared **all 8** champion/road builds —
+  ronin, druid/warden+alpha, warlock ×4 roads, seraph — **19/20 fights each, outcome=CLEARED**, no crash / NaN /
+  softlock / unbounded growth / unwinnable. maxFrameMs ≤ 8.1ms, entity arrays well under caps.
+- **Pursue-driver open lead: still RESOLVED.** No stall on any build.
+- **Mount note (env, not a game bug):** the OneDrive sandbox mount served *every* game/game3d tool file
+  tail-truncated this run (`tools/playtest_drive.js` 108/134, `game3d/tools/parity_lint.js` 140/158,
+  `visual_audit.py` 174/full, `arena.html` ~1088/~2190). The Read tool confirms the real files on disk are
+  INTACT — this is the known OneDrive tail-truncation hazard, so the in-sandbox driver was run from a clean
+  reconstructed copy. No file written back through the truncated mount.
+
+| build | outcome | fights | maxE | maxFrameMs |
+|---|---|---|---|---|
+| ronin | CLEARED | 19/20 | 12 | 3.47 |
+| druid/warden | CLEARED | 19/20 | 10 | 7.45 |
+| druid/alpha | CLEARED | 19/20 | 10 | 4.40 |
+| warlock/herald | CLEARED | 19/20 | 20 | 7.38 |
+| warlock/binder | CLEARED | 19/20 | 12 | 8.11 |
+| warlock/herald-archfiend | CLEARED | 19/20 | 14 | 7.36 |
+| warlock/binder-lichlord | CLEARED | 19/20 | 14 | 6.22 |
+| seraph | CLEARED | 19/20 | 6 | 4.83 |
+
+**STATUS:** Logic CLEAN. No new regression case (nothing failed). Visual lane unchanged — see VISUAL run (G).
+
+---
+## RUN 2026-06-27 (E) — LOGIC CLEAN (2nd green today)
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor = 4 smoke + 19 regressions PASS. Deep pursue-driver (reconstructed in-sandbox
+  to dodge the mount truncation, run vs live `pit.js`) cleared all 8 champion/road builds — ronin,
+  druid/warden+alpha, warlock ×4 roads, seraph: **19/20 each, CLEARED**, no crash / NaN / softlock /
+  unbounded growth / unwinnable fight. Peak frame ≤6.7 ms; arrays bounded (maxE≤16, maxD≤20, maxW≤22,
+  maxFire≤7). No `game/src` change → nothing to ship.
+- **Mount-truncation hazard re-confirmed (tooling, not a game bug):** this run the OneDrive mount served
+  `playtest_drive.js`, `parity_lint.js`, `visual_audit.py` AND `arena.html` all tail-truncated. Worked
+  around via Read (full cloud copy) + sandbox reconstruction. Already in memory.
+- **NEEDS HIRO:** nothing on logic. Visual lane has one escalation — see `game3d/PLAYTEST_FINDINGS_VISUAL.md`
+  run (E): the DC visual gate is reporting 2 phantom P1s (auditor reads `window.__AUDIT__` null though the
+  screenshot proves the scene renders correctly); fix = seed `__AUDIT__` in `create()` and/or poll in the auditor.
+
+---
+## RUN 2026-06-27 (D) — LOGIC CLEAN; MOUNT TRUNCATION RE-CONFIRMED ON TOOLS
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor = 4 smoke + 19 regressions PASS. Deep pursue-driver cleared all 8
+  champion/road builds (ronin, druid/warden+alpha, warlock ×4 roads, seraph): 19/20 each, no crash /
+  NaN / softlock / unbounded growth / unwinnable fight. Peak frame ≤10.8 ms; arrays bounded
+  (maxE≤21, maxD≤20, maxW≤30, maxFire≤6). No `game/src` change → nothing to ship.
+- **No new logic bug.** Open lead (pursue-driver stall) remains RESOLVED + published.
+- **Tooling hazard re-confirmed (not a game bug):** the OneDrive mount served `tools/playtest_drive.js`
+  TRUNCATED (108 of 135 lines → `SyntaxError` mid-template-literal at the tail). The authoritative cloud
+  copy is intact (verified via the editor). Worked around by reconstructing the driver in the sandbox
+  scratchpad from the true source and running it against the live `pit.js`. Same hazard hit `arena.html`
+  and `parity_lint.js` (see visual findings). **Persistent in-sandbox QA hazard, already in memory.**
+- **NEEDS HIRO:** nothing on logic. Visual lane: confirm the visual auditor is reading the CURRENT
+  `arena.html` (its 18:29 verdict predates the now-synced `window.__AUDIT__` hook) — see VISUAL findings.
+
+---
+## RUN 2026-06-27 (C) — VARIANCE-VS-BLOCKER HARNESS HARDENING; ENGINE CLEAN
+
+**TL;DR — this run**
+- **Logic: ALL GREEN.** Floor = 4 smoke + 19 regressions PASS. Deep pursue-driver cleared all 8
+  champion/road builds (ronin, druid/warden+alpha, warlock/herald+binder+herald-archfiend+binder-lichlord,
+  seraph): no crash / NaN / softlock / unbounded growth / unwinnable fight; max frame ≤10 ms; arrays bounded.
+- **OPEN LEAD investigated → it was RNG variance, not a blocker.** First driver run showed
+  `warlock/binder DIED@fight3 (picks=0)`; 4 confirmation re-runs cleared 19/20 (binder also cleared every time;
+  a later run saw `druid/alpha DIED@fight20` once). Deaths land at random fights on random champions — pure
+  variance from the engine's unseeded `Math.random`. **Binder dies BEFORE any road divergence** (road10/road20
+  only differ at the lv10/20 evo pick; a fight-3 death with picks=0 is pre-divergence), proving it's not a
+  binder-specific blocker.
+- **1 QA-tool defect FIXED (tooling, not the game):** `playtest_drive.js` flagged every single-run `DIED` as
+  `[REVIEW]`, so RNG losses masqueraded as findings and forced a manual 4× re-run every session to tell variance
+  from a real bug. Hardened: a `DIED`/`STALL` now auto-CONFIRMS via up to 2 re-runs — clears-on-retry →
+  non-failing `[VARIANCE]` note; fails-every-attempt → `[REVIEW]` (a real lead). No `game/src` changed (QA tool
+  only), so nothing ships to players.
+- **NEEDS HIRO:** nothing blocking on logic. (Visual lane escalations are in `PLAYTEST_FINDINGS_VISUAL.md` /
+  this run's chat TL;DR: start the visual auditor; touch-controls P1 still open.) OneDrive tail-truncation struck
+  the mount again right after the edit (caught: `node --check` on the mount failed on a truncated tail) — the
+  authoritative cloud copy was verified complete via the editor and the new branch logic was unit-checked in the
+  sandbox before trusting it.
+
+### Finding — pursue-driver flagged RNG-variance deaths as findings (P3, tests/metrics)
+- **What.** Driven combat is non-deterministic (unseeded `Math.random` in rolls/foe-AI). A "competent but not
+  optimal" driver will, on bad luck, occasionally lose a winnable fight. The old driver flagged *any* single
+  `DIED` as `[REVIEW] (balance or blocker — inspect)`, indistinguishable from a true unwinnable/blocker.
+- **Impact.** False-positive churn: every prior run had to manually re-play the driver ~4× to decide
+  variance-vs-blocker (see RUN A/B notes), wasting the cycle and risking a real blocker being dismissed as "just
+  variance" by pattern-fatigue.
+- **Repro.** `node tools/playtest_drive.js` on consecutive runs → a different champion `DIED@fight{n}` each time
+  (binder@3, herald@18, herald-archfiend@14, druid/alpha@20 observed across runs); each clears on re-run.
+- **5 WHYS.** 1) Why noisy? single-run death flagged as a finding. 2) Why is a single death uninformative? the
+  sim is RNG-driven and the driver is sub-optimal, so loss probability per run is non-zero on hard fights. 3) Why
+  flagged anyway? the harness had no notion of variance — one run, one verdict. 4) Why did that persist? prior
+  runs worked around it by hand (re-running 4×) instead of encoding the confirmation. 5) **Root cause:** a
+  metrics gap — the harness conflated a stochastic outcome with a deterministic defect; the fix is to *measure
+  repeatably* (confirm before flagging).
+- **ISHIKAWA.** *tests/metrics:* single-sample verdict on a stochastic process (root). *code-logic:* engine RNG
+  unseeded (by design — real gameplay variance; not changing it). *agent-process:* manual re-run workaround never
+  codified. *engine/perf:* n/a (no crash/growth). *assets/data:* n/a.
+- **Fix (QA tool only).** `playtest_drive.js` now CONFIRMS a `DIED`/`STALL` with up to `CONFIRM_RETRIES=2`
+  re-runs: any clear → `[VARIANCE]` (non-failing, printed); all attempts fail → `[REVIEW]` (genuine lead).
+  **Permanent guard** = the confirmation logic itself (newest driver behaviour); branch verified with a stub over
+  die-then-clear / die-die-clear / all-die / clean / stall-consistent (correct VARIANCE vs REVIEW each time).
+  No `smoke_test.js` REGRESSIONS[] case added: this is not a game bug (the engine is correct; deaths are
+  intended variance), so a hard regression assertion would be wrong.
+
+---
+
+## RUN 2026-06-27 (B) — POST-GAME TRANSITIONS + MOBILE SWEEP; QA-TOOL DEFECT FIXED
+
+**TL;DR — this run**
+- **Played all 8 champion/road builds + 3 mobile resolutions. Engine is CLEAN.** Floor green (4 smoke + 19
+  regressions + 3 perf). Deep pursue-driver clears all builds (no crash/NaN/softlock/unbounded growth; max
+  frame ≤11.4 ms). Immortal-boss stress CLEAN (every array bounded). NEW: death/victory→restart hygiene probe
+  and a mobile/portrait/tablet + mid-fight-rotation probe — both CLEAN.
+- **1 real defect found & FIXED — in the QA tooling, not the game:** `tools/stress_immortal.js` carried a
+  stale hardcoded default engine path from a prior session's mount, so on any future run *without an explicit
+  absolute path it silently `LOAD FAIL`s* (exits 2) — a perf detector that can't load the engine would mask a
+  real regression. Fixed to self-locate (`__dirname`-relative default; relative argv resolves against cwd) like
+  `playtest_drive.js`. Verified: runs CLEAN from `tools/` with no path arg.
+- **NEEDS HIRO:** nothing blocking. No `game/src` changed (only a QA tool), so nothing ships to players.
+  The two driver `DIED` REVIEW flags (herald @ fight18, herald-archfiend @ fight14) are **RNG variance, not a
+  blocker**: with the engine's 36 unseeded `Math.random` calls the dumb driver is non-deterministic; across 4
+  driver runs herald cleared 3/4 and herald-archfiend 3/4, and both clear fight 18 under the immortal stress —
+  the fights are winnable, so per policy it stays balance/feel, not a bug. OneDrive tail-truncation struck once
+  mid-edit (caught by `node --check`); reconstructed from the canonical git blob + atomic write.
+
+### Finding — `stress_immortal.js` silently fails to load the engine (P3, agent-process/tooling)
+- **Repro:** `cd game/tools && node stress_immortal.js` (no args) → `LOAD FAIL Cannot find module
+  '/sessions/fervent-dreamy-gauss/mnt/Documents--The Sorcerer Sword ARPG/game/src/combat/pit.js'`, exit 2.
+- **Severity P3** (tooling, not player-facing) but consequential: a perf/unbounded-growth detector that no-ops
+  can let an array-growth regression slip past a run that *looks* like it exercised the stress.
+- **Fix:** `const PIT = process.argv[2] ? path.resolve(process.cwd(), process.argv[2]) : path.join(__dirname,
+  '..','src','combat','pit.js')`. Durable guard is structural: **no session-specific absolute path is hardcoded
+  anymore**, so it can't go stale; it resolves relative to the tool itself. Verified CLEAN no-args run.
+- **5 WHYS.** 1) Why did the tool fail to load? → its default `PIT` was an absolute path into a *previous*
+  session's mount. 2) Why was that path there? → it was written as a convenience default when the tool was first
+  authored in that session. 3) Why does that break now? → sandbox mount roots are per-session
+  (`blissful-fervent-shannon` ≠ `fervent-dreamy-gauss`), so last session's absolute path doesn't exist this run.
+  4) Why wasn't it caught? → the tool was always invoked with an explicit absolute path in the run that created
+  it, so the default branch was never exercised. 5) Why does it matter? → a silent `LOAD FAIL` (exit 2) can be
+  mistaken for "ran and found nothing," hiding a future unbounded-growth regression — the exact class this tool
+  exists to catch.
+- **ISHIKAWA.** *Agent-process*: ✅ root cause — hardcoded mount path is non-portable across sessions (now
+  removed). *Tests/metrics*: a load-failure could masquerade as a clean run; mitigated by self-location + the
+  tool still exiting 2 loudly. *Code-logic/engine/assets/platform*: ruled out — game engine unaffected.
+
+### New coverage this run (probes kept for re-run; no game code changed)
+- **Transition-hygiene probe** (`outputs/transition_probe.js`): drives each champion to real death/victory, then
+  `fullReset`→`startFight` ×4, asserting no leaked entities, no stuck mode, no NaN, no evo/form bleed, and that
+  the restarted fight resumes. Result: CLEAN (ronin/druid/warlock/seraph).
+- **Mobile/resolution probe**: 390×844, 360×640, 820×1180 + mid-fight rotation across ronin/warlock/seraph —
+  no crash/NaN. (Covers the platform-mobile fishbone branch the 900×600 gauntlet skips.)
+
+**Process note for next run.** The `DIED` REVIEW flags from `playtest_drive.js` are inherently noisy because the
+engine RNG is unseeded and the driver is intentionally dumb. To make a true *unwinnable/blocker* distinguishable
+from variance deterministically, a future hardening could seed `Math.random` in the harness and flag P1 only when
+a build dies under *all* seeds. Not done this run (would touch a tool, not the game); logged as a lead.
+
+---
+
 
 ## RUN 2026-06-27 — SLOPE-BASED UNBOUNDED-GROWTH SWEEP (all 9 builds)
 

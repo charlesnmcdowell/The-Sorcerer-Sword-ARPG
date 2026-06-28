@@ -281,6 +281,14 @@ const REGRESSIONS = [
     if(!api.demons.every(d=>d&&typeof d.type==='string')) return 'demons[] holds an undefined/garbage slot after a reentrant shift';
     return null;
   }],
+  ['tooling:playtest_drive-source-not-truncated (OneDrive tail-trunc guard, 2026-06-27)', () => {
+    const cp = require('child_process'); const fs = require('fs');
+    const f = path.join(__dirname, 'playtest_drive.js');
+    let s; try { s = fs.readFileSync(f, 'utf8'); } catch(e){ return 'playtest_drive.js unreadable: '+(e&&e.message||e); }
+    if (!/process\.exit\(/.test(s.slice(-400))) return 'playtest_drive.js tail missing process.exit() — looks truncated (OneDrive tail-trunc)';
+    try { cp.execSync('node --check "'+f+'"', {stdio:'pipe'}); } catch(e){ return 'playtest_drive.js fails node --check (truncated/corrupt): '+(e.stderr?e.stderr.toString().split(String.fromCharCode(10))[0]:e.message); }
+    return null;
+  }],
 ];
 for (const [name, fn] of REGRESSIONS) {
   let msg; try { msg = fn(); } catch(e){ msg = 'threw: '+(e&&e.message||e); }

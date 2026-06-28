@@ -14,3 +14,5 @@ assets/sprites/_src/
 
 # abandoned low-poly 3D (per GAME3D_UPLIFT_PLAN.md 2026-06-26 pivot to anime 2.5D — GLBs retired)
 *.glb
+tools/audit/
+tools/refs/

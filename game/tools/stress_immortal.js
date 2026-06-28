@@ -6,7 +6,10 @@
    and frame-time blow-up / O(n^2). A flat/oscillating series at high frame count = bounded =
    healthy. Run: node stress_immortal.js [pit.js] */
 const path = require('path');
-const PIT = process.argv[2] || path.join('/sessions/fervent-dreamy-gauss/mnt/Documents--The Sorcerer Sword ARPG/game','src','combat','pit.js');
+// self-locating: default to the engine next to this tool's tree (../src/combat/pit.js);
+// a relative argv[2] resolves against cwd. Never hardcode a session-specific mount path
+// (a stale absolute path silently LOAD-FAILs and can mask a regression). [playtest 2026-06-27]
+const PIT = process.argv[2] ? path.resolve(process.cwd(), process.argv[2]) : path.join(__dirname, '..', 'src', 'combat', 'pit.js');
 let createPitCombat;
 try { ({ createPitCombat } = require(PIT)); } catch (e) { console.error('LOAD FAIL', e.message); process.exit(2); }
 

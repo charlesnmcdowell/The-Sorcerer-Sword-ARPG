@@ -37,6 +37,30 @@
   #gghud .center{flex:0 0 auto;text-align:center;padding:0 4px}
   #gghud .fight{font-size:15px;font-weight:bold;color:#f0c66a;text-shadow:0 1px 3px #000;line-height:1.1}
   #gghud .vs{font-size:10px;color:#cbb9ff;opacity:.85;letter-spacing:2px}
+  /* --- DRAGON'S-CROWN TOUCH CONTROLS (Hiro asked 3x): virtual stick (L) + verb cluster (R).
+         Hidden on desktop; shown when a coarse/touch pointer is present (or ?touch=1). Routes into the
+         SAME globals the keyboard uses: stick.{dx,dy,on} for move, doSlash/doHeavy+heavyRelease/doParry/doRoll. --- */
+  #touch{position:fixed;inset:0;z-index:8;pointer-events:none;display:none;touch-action:none}
+  #touch.on{display:block}
+  #stickBase{position:fixed;left:20px;bottom:20px;width:130px;height:130px;border-radius:50%;
+    pointer-events:auto;touch-action:none;
+    background:radial-gradient(circle at 50% 38%,rgba(64,42,100,.55),rgba(18,11,30,.72));
+    border:2px solid #6b4ea0;box-shadow:0 0 18px rgba(150,90,240,.35),inset 0 0 18px rgba(0,0,0,.55)}
+  #stickNub{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;
+    background:radial-gradient(circle at 50% 34%,#cbb9ff,#5a3f86);border:2px solid #e7d6ff;
+    box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 14px rgba(150,90,240,.5);will-change:transform}
+  #btns{position:fixed;right:18px;bottom:18px;width:212px;height:212px;pointer-events:none}
+  #btns .btn{position:absolute;width:76px;height:76px;border-radius:50%;border:2px solid #8a6fc0;
+    font:bold 14px 'Georgia',serif;letter-spacing:.5px;color:#f3ead0;pointer-events:auto;touch-action:none;
+    background:radial-gradient(circle at 50% 34%,rgba(80,54,128,.85),rgba(26,15,40,.92));
+    box-shadow:0 2px 10px rgba(0,0,0,.5),0 0 14px rgba(150,90,240,.3),inset 0 0 10px rgba(0,0,0,.45);
+    text-shadow:0 1px 2px #000;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+  #btns .btn.act{transform:scale(.9);filter:brightness(1.45)}
+  /* diamond cluster: HEX bottom (thumb rest) · SUMMON right · DODGE left · WARD top */
+  #btns .btn.hex   {right:68px;bottom:0;  border-color:#9cffd6;box-shadow:0 0 16px rgba(60,240,200,.45),inset 0 0 10px rgba(0,0,0,.45)}
+  #btns .btn.summon{right:0;  bottom:68px;border-color:#e7b450;box-shadow:0 0 16px rgba(231,180,80,.4), inset 0 0 10px rgba(0,0,0,.45)}
+  #btns .btn.dodge {right:136px;bottom:68px;border-color:#cbb9ff}
+  #btns .btn.ward  {right:68px;bottom:136px;border-color:#5ad2ff;box-shadow:0 0 16px rgba(90,210,255,.4), inset 0 0 10px rgba(0,0,0,.45)}
 </style>
 </head>
 <body>
@@ -75,10 +99,22 @@
 </div>
 <div id="wrap"></div>
 <div id="err"></div>
+<!-- Dragon's-Crown TOUCH CONTROLS: left virtual stick + right verb cluster. Shown only on touch devices
+     (or ?touch=1). Wired at the end of the script into the same input globals the keyboard verbs use. -->
+<div id="touch" aria-hidden="true">
+  <div id="stickBase"><div id="stickNub"></div></div>
+  <div id="btns">
+    <button class="btn hex"    id="bHex">HEX</button>
+    <button class="btn summon" id="bSummon">SUM</button>
+    <button class="btn dodge"  id="bDodge">DASH</button>
+    <button class="btn ward"   id="bWard">WARD</button>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
 <script>
 const BASE = './assets/spike/';   // Milestone-0 placeholder FX art (shadow/glow)
 const SPR  = './assets/sprites/';  // Hiro's real anime art (dark-elf warlock idle sheet)
+const BG   = './assets/bg/';       // painted Dragon's-Crown parallax backdrop layers (Hiro drop 2026-06-27)
 const WARLOCK_FRAMES = 1;          // warlock_idle.png = Hiro's NEW high-quality single idle still [256x384], normal-mapped (ingested 2026-06-27, replaced the lower-res 6-frame sheet)
 // SPRITE SCALE FIX (Hiro's #1 bug: warlock huge / dragon tiny). Size every fighter by its
 // TARGET WORLD HEIGHT — NOT its source PNG dims. Render: displayScale = (HERO_PX*SPRITE_TARGET_H[key]) / tex.height,
@@ -88,13 +124,27 @@ const SPRITE_TARGET_H = {
   lich:1.05, archdevil:1.3, demonlord:1.4,
   clawfiend:1.2, bonedragon:2.0, blackdragon:2.0, succubus:0.8, archsuccubus:0.9,
   shambler:1.15, bonearcher:1.05,   // new side-on pit challengers (Hiro drop 2026-06-27)
+  // pit.js FIGHTS[] roster foes (Hiro drop 2026-06-27 21:5x) — heights from original hitbox radii
+  door:1.5, hook:0.95, chain:1.15, pyre:1.0, gunner:0.95, grave:1.05, stitch:0.95,
+  brute:1.35, master:1.1, hound:0.8, necro:1.0, champ:1.3, beast:1.9, skel:0.9,
 };
 // SCALE-FIX constants (Hiro's #1 bug). HERO_PX = the on-screen pixel height of a 1.0-world-unit
 // fighter (the warlock) at the FRONT plane; every sprite renders at (HERO_PX*SPRITE_TARGET_H[key])
 // / tex.height, then × the perspective/depth scale. BASE_R = pit.js base hitbox radii, used to
 // preserve the binder/herald per-summon size SWELL (a bigger d.r reads as a bigger sprite).
-const HERO_PX = 210;
+// VIEWPORT (Hiro FEEDBACK #7 #1+#2): canvas fills the whole window and the warlock reads ~⅓ of
+// screen height like a Dragon's Crown hero — so HERO_PX must SCALE with the viewport, not be a fixed
+// 210px (which shrank to ~15% on a tall window). At the ground line the warlock's perspective sc≈0.96,
+// so HERO_PX≈0.355×H lands his on-screen height at ~34% of the viewport. Clamp for tiny/huge windows.
+const VIEW_W = Math.max(640, window.innerWidth  || 960);
+const VIEW_H = Math.max(480, window.innerHeight || 540);
+const HERO_PX = Math.round(Math.min(Math.max(VIEW_H*0.355, 240), 520));
 const BASE_R  = { brute:24, dragon:18, succubus:10 };
+// SIDE-ON 1v1 GG GAUNTLET (Hiro locked direction): present the pit as an eye-level side-on duel.
+// STATIC SHELL this run — warlock pinned LEFT facing RIGHT, ONE opponent staged RIGHT, the rest of
+// the roster frozen as a BACKGROUND lineup, magenta pit ring. Duel loop + camera-whirl land next.
+const SIDEON          = true;
+const SIDEON_GROUND_FR = 0.84;   // fraction of canvas H where the fighters' feet rest (eye-level)
 function showErr(m){document.getElementById('err').textContent += m + '\n';}
 window.addEventListener('error', e=>showErr('ERR: '+e.message));
 
@@ -130,6 +180,7 @@ const demons   = [];              // the warlock's SUMMONS (pit.js demons[]): cl
 const swings   = [];              // transient melee arcs (pit.js swings[]) — brute shove, etc.
 const zones    = [];              // lingering ground effects (pit.js zones[]); BONE DRAGON lays 'gas'
 const tracers  = [];              // transient beams (pit.js tracers[]); succubus MEND pink line to the warlock
+const foeShots = [];              // ENEMY projectiles (pyre embers / gunner shot) — per-type ranged foe AI; damage the warlock
 
 // math helpers (pit.js: dist:~, ang:~, rnd:~)
 function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
@@ -142,15 +193,145 @@ function dmgBonus(){ return 6 + P.kills; }                         // pit.js:285
 function dotDamage(e,d,col){ if(e.dead) return; e.hp-=d; e.flash=Math.max(e.flash,.05);   // pit.js:1555
   scene && scene.popup(e.x+rnd(-7,7), e.y-22, String(d), col); if(e.hp<=0) killEnemy(e); }
 function nearestFoe(){ let best=null,bd=1e9; for(const e of enemies){ if(e.dead)continue; const d=dist(P,e); if(d<bd){bd=d;best=e;} } return best; }
-// GG GAUNTLET (side-on 1v1): the CURRENT opponent is the single foe the duel HUD tracks. Stable across a
-// fight = first ALIVE enemy in array order (vs nearestFoe which jitters). GAUNTLET_N = total gauntlet
-// fights; stub at 21 until pit.js FIGHTS:1389 ports in M4 (then = FIGHTS.length). The rest of the roster
-// waits in the BACKGROUND lineup — see the side-on stage flip (next increment).
-const GAUNTLET_N = 21;
+// foeDmg — per-foe melee bite. Small, scales loosely with hitbox r so a brute hurts more than a succubus
+// (pit.js enemy atk damage is form-specific; this is a faithful-feel stand-in until the real ATK bodies port).
+function foeDmg(f){ return Math.round(3 + (f&&f.r?f.r:20)*0.12 + rollDice(1,4)); }   // ~6-12
+// hurtWarlock — the foe's lunge connects. WARD (PORTAL grant) and roll/blink i-frames negate it, else
+// chip P.hp + red hero flash + shake + damage popup. HP is FLOORED at 1 for now: there's no KO/respawn
+// flow in the shell yet, so the duel keeps trading instead of dead-ending (true KO is a later increment).
+function hurtWarlock(dmg){
+  if(P.dead) return;
+  if(P.wardT>0){ scene && scene.popup(P.x, P.y-50, 'WARD', '#5ad2ff'); return; }
+  if(P.rollT>0 || P.fadeT>0){ scene && scene.popup(P.x, P.y-50, 'DODGE', '#bcd'); return; }   // roll/blink i-frames
+  P.hp = Math.max(1, P.hp - dmg);            // floor at 1 — no KO/respawn yet (next increment)
+  P.flash = 0.14;
+  S.shake = Math.max(S.shake, 7);
+  scene && scene.popup(P.x+rnd(-6,6), P.y-50, String(dmg), '#ff6a7a');
+}
+// ---------------------------------------------------------------------------
+// FIGHTS[] — the real gauntlet ladder, ported 1:1 from pit.js:1389 (M4). 20 fights:
+// solo openers -> paired/grouped mid-card -> SIEGE WORKS (4 foes) -> THE FORMER CHAMPION
+// -> BELLOW'S SECRET (beast + boss). Names/taunts/foe composition are faithful; HP/spd/r/col
+// preserved. ART NOTE: dedicated gladiator side-on sprites aren't generated yet, so each foe
+// renders via a STAND-IN key (ranged -> bonearcher, melee -> shambler); a gen-sprites pass for
+// door/hook/chain/pyre/gunner/grave/stitch/brute/master/hound/necro/champ/beast is the follow-up.
+// ---------------------------------------------------------------------------
+const FIGHTS = [
+ {name:'THE DOOR', taunt:'No banner, no name. I\'ll make it quick.',
+  foes:[{type:'door',hp:90,spd:52,r:26,col:'#7d7468'}]},
+ {name:'TWIN HOOKS', taunt:'Pick which of us kills you.',
+  foes:[{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'},{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'}]},
+ {name:'THE CHAIN', taunt:'The sand inside my circle belongs to me.',
+  foes:[{type:'chain',hp:95,spd:78,r:18,col:'#6f7a6a'}]},
+ {name:'PYRE', taunt:'The Pit was a quarry. I will make it a kiln.',
+  foes:[{type:'pyre',hp:85,spd:95,r:15,col:'#a4502c',ranged:true}]},
+ {name:'THE POWDER SAINT', taunt:'The Pit also takes my bribes.',
+  foes:[{type:'gunner',hp:78,spd:115,r:14,col:'#5e5a72',ranged:true}]},
+ {name:'THE GRAVE COUNT', taunt:'Swing wildly, please. My blade prefers volunteers.',
+  foes:[{type:'grave',hp:120,spd:105,r:16,col:'#5a5e6e'}]},
+ {name:'THE STITCHER', taunt:'Break them. I\'ll just sew faster.',
+  foes:[{type:'stitch',hp:70,spd:125,r:13,col:'#7a8a6a'},{type:'brute',hp:75,spd:72,r:21,col:'#6a5440'},{type:'brute',hp:75,spd:72,r:21,col:'#6a5440'}]},
+ {name:'HOUND MASTER', taunt:'They haven\'t been fed. Apologies.',
+  foes:[{type:'master',hp:100,spd:70,r:17,col:'#7a6048'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
+ {name:'THE GRAVEDIGGER', taunt:'The Pit buries its losers shallow.',
+  foes:[{type:'necro',hp:92,spd:100,r:15,col:'#4a5444'}]},
+ {name:'THE KENNEL & THE NEEDLE', taunt:'Patch the hounds. Let the famous one tire himself.',
+  foes:[{type:'master',hp:200,spd:70,r:17,col:'#7a6048'},{type:'stitch',hp:140,spd:125,r:13,col:'#7a8a6a'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
+ {name:'LEAD & BONE', taunt:'You shoot, I raise. A fine partnership.',
+  foes:[{type:'gunner',hp:156,spd:115,r:14,col:'#5e5a72',ranged:true},{type:'necro',hp:184,spd:100,r:15,col:'#4a5444'}]},
+ {name:'THE WALL HOLDS', taunt:'The Door got friends.',
+  foes:[{type:'door',hp:180,spd:52,r:26,col:'#7d7468'},{type:'pyre',hp:170,spd:95,r:15,col:'#a4502c',ranged:true},{type:'stitch',hp:140,spd:125,r:13,col:'#7a8a6a'}]},
+ {name:'THE COUNT\'S COMPANY', taunt:'Swing wildly. My associates insist.',
+  foes:[{type:'grave',hp:240,spd:105,r:16,col:'#5a5e6e'},{type:'hook',hp:96,spd:150,r:14,col:'#8a6a4a'},{type:'hook',hp:96,spd:150,r:14,col:'#8a6a4a'}]},
+ {name:'POWDER & THE WALL', taunt:'Make the legend come to us.',
+  foes:[{type:'door',hp:180,spd:52,r:26,col:'#7d7468'},{type:'gunner',hp:156,spd:115,r:14,col:'#5e5a72',ranged:true}]},
+ {name:'THE COVEN OF KILNS', taunt:'Fire, frost, or lightning — pick your last word.',
+  foes:[{type:'pyre',hp:170,spd:95,r:15,col:'#a4502c',ranged:true},{type:'pyre',hp:170,spd:95,r:15,col:'#b4602c',ranged:true},{type:'stitch',hp:140,spd:125,r:13,col:'#7a8a6a'}]},
+ {name:'THE UNDYING WALL', taunt:'We\'ll have him standing before you catch your breath.',
+  foes:[{type:'door',hp:180,spd:52,r:26,col:'#7d7468'},{type:'stitch',hp:140,spd:125,r:13,col:'#7a8a6a'},{type:'stitch',hp:140,spd:125,r:13,col:'#8a9a7a'}]},
+ {name:'THE DUELIST\'S SECOND', taunt:'Swing and I counter. Hesitate and he fires.',
+  foes:[{type:'grave',hp:240,spd:105,r:16,col:'#5a5e6e'},{type:'gunner',hp:156,spd:115,r:14,col:'#5e5a72',ranged:true}]},
+ {name:'SIEGE WORKS', taunt:'This isn\'t a fight. It\'s a demolition.',
+  foes:[{type:'door',hp:180,spd:52,r:26,col:'#7d7468'},{type:'gunner',hp:156,spd:115,r:14,col:'#5e5a72',ranged:true},{type:'pyre',hp:170,spd:95,r:15,col:'#a4502c',ranged:true},{type:'stitch',hp:140,spd:125,r:13,col:'#7a8a6a'}]},
+ {name:'THE FORMER CHAMPION', taunt:'The Pit gave it to me first.', boss:true,
+  foes:[{type:'champ',hp:200,spd:115,r:20,col:'#8a3a3a'}]},
+ {name:'BELLOW\'S SECRET', taunt:'You weren\'t supposed to get this far.', boss:true,
+  foes:[{type:'beast',hp:340,spd:88,r:30,col:'#3f3a44'},{type:'grave',hp:1400,spd:110,r:22,col:'#5a2a34',boss:true}]}
+];
+function typeLabel(t){ return ({door:'The Door',hook:'Hook',chain:'The Chain',pyre:'Pyre',gunner:'Gunner',
+  grave:'Grave Count',stitch:'Stitcher',brute:'Brute',master:'Hound Master',hound:'Hound',necro:'Gravedigger',
+  champ:'Former Champion',beast:'Bellow\'s Beast'})[t] || t; }
+// mkFoe — build one live enemy from a FIGHTS spec, seeded with the foe-AI + DoT fields syncSideOn/updEnemies read.
+function mkFoe(o,x,y){ const f=Object.assign({x,y,dead:false,flash:0,hexT:0,hexDmg:0,hexTick:0,hexJumps:0,
+  stunT:0,aiState:'idle',aiCd:rnd(0.5,1.2),_tele:false}, o); f.maxhp=f.hp; return f; }
+// spawnFight — populate enemies[] for fight idx (pit.js spawnFight:1456). i = per-fight stat scale,
+// dmgScale = per-fight damage scale; after fight 3 Bellow stacks a stitch HEALER + a random wildcard
+// then DOUBLES all enemy HP (Hiro's pit.js rule). Foes spread along the right of the lane in a shallow
+// depth band; spriteKey = stand-in art (ranged->bonearcher, melee->shambler) until gladiator art exists.
+function spawnFight(idx){
+  const F=FIGHTS[idx]; if(!F) return;
+  const i=1+idx*0.30, dmgScale=1+idx*0.16;
+  const W=(scene&&scene.scale)?scene.scale.width:(window.innerWidth||960);
+  const H=(scene&&scene.scale)?scene.scale.height:(window.innerHeight||540);
+  const gy=H*SIDEON_GROUND_FR;
+  enemies.length=0;
+  F.foes.forEach((spec,k)=>{
+    const o=Object.assign({},spec);
+    const x=Math.min(W*(0.66+0.075*k), W*0.94), y=gy-((k%2)?H*0.06:0);   // shallow up/down depth band
+    const f=mkFoe(o,x,y);
+    f.hp=Math.round(o.hp*i); f.maxhp=f.hp; f.dmgScale=dmgScale;
+    f.spriteKey=foeTexFor(o.type,o.ranged);   // real on-model roster sprite (was shambler/bonearcher stand-in)
+    f.name=(F.foes.length===1)?F.name:typeLabel(o.type);
+    enemies.push(f);
+  });
+  if(idx>=3){                                                            // pit.js:1459 — Bellow stacks the deck
+    const hh=Math.round(120*i);
+    const heal=mkFoe({type:'stitch',spd:125,r:13,col:'#7a8a6a',hp:hh,ranged:false},W*0.78,gy-H*0.03);
+    heal.hp=hh; heal.maxhp=hh; heal.dmgScale=dmgScale; heal.spriteKey=foeTexFor('stitch',false); heal.name='Stitcher';
+    enemies.push(heal);
+    const wilds=[{type:'door',hp:200,spd:52,r:26,col:'#7d7468'},{type:'gunner',hp:150,spd:115,r:14,col:'#5e5a72',ranged:true},
+                 {type:'necro',hp:170,spd:100,r:15,col:'#4a5444'},{type:'pyre',hp:160,spd:95,r:15,col:'#a4502c',ranged:true}];
+    const w=Object.assign({},wilds[Math.floor(Math.random()*wilds.length)]);
+    const wh=Math.round(w.hp*i), wf=mkFoe(w,W*0.84,gy);
+    wf.hp=wh; wf.maxhp=wh; wf.dmgScale=dmgScale; wf.spriteKey=foeTexFor(w.type,w.ranged); wf.name=typeLabel(w.type);
+    enemies.push(wf);
+    for(const e of enemies){ e.hp=Math.round(e.hp*2); e.maxhp=Math.round(e.maxhp*2); }   // Hiro: DOUBLE all HP after fight 3
+  }
+  S.gauntletDone=false;
+}
+// GG GAUNTLET (side-on): the CURRENT opponent is the first ALIVE foe the duel HUD tracks (vs nearestFoe
+// which jitters). GAUNTLET_N = total gauntlet fights = FIGHTS.length (now that the roster has ported).
+const GAUNTLET_N = FIGHTS.length;
 function currentFoe(){ for(const e of enemies){ if(!e.dead) return e; } return null; }
+// FOE_TYPES — the pit.js enemy `type`s that now have their own on-model side-on sprite (ingested
+// 2026-06-27 21:5x). foeTexFor() prefers the type's real sprite; falls back to the ranged/melee
+// stand-ins (bonearcher/shambler) for any unmapped type so the build stays renderable.
+const FOE_TYPES = new Set(['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']);
+function foeTexFor(type, ranged){ return FOE_TYPES.has(type) ? type : (ranged?'bonearcher':'shambler'); }
+// foeKeyFor — map a gauntlet foe's NAME to its side-on sprite key (assets/sprites/<key>.png). Order
+// matters: match the most specific token first (arch-/bone-/black- before the bare type). Falls back to
+// 'shambler' so an unmapped challenger still renders. Used by syncSideOn() when the duel foe steps up.
+function foeKeyFor(name){
+  const n=String(name||'').toLowerCase();
+  if(/archer/.test(n))            return 'bonearcher';
+  if(/black\s*drag/.test(n))      return 'blackdragon';
+  if(/bone\s*drag/.test(n))       return 'bonedragon';
+  if(/claw/.test(n))              return 'clawfiend';
+  if(/arch\s*succ/.test(n))       return 'archsuccubus';
+  if(/succ/.test(n))              return 'succubus';
+  if(/arch\s*devil/.test(n))      return 'archdevil';
+  if(/demon\s*lord/.test(n))      return 'demonlord';
+  if(/lich|reaper/.test(n))       return 'lich';
+  return 'shambler';
+}
 // formHP/maxHP — port of pit.js:66,73 (warlock branch; CON/stat scaling not ported yet -> CON 10).
 // Human warlock formHP 0.8 (devil 1.1 / lich 0.8). Used by the succubus MEND check (P.hp<maxHP()).
 function formHP(){ if(P.devilT>0) return 1.1; if(P.lich) return 0.8; return 0.8; }
+// heroFormTex — the LOADED TEXTURE KEY for the warlock's CURRENT body (transformation-aware).
+// Demon lord (terminal) > arch devil (timed) > lich > base warlock idle. Returns texture keys
+// ('demonlord'/'archdevil'/'lich'/'warlock'), NOT the SPRITE_TARGET_H scale keys (those use
+// 'warlock_idle'). The render loop + castPose use this so the borrowed forms actually SWAP sprite.
+function heroFormTex(){ return P.demonLord?'demonlord':(P.devilT>0?'archdevil':(P.lich?'lich':'warlock')); }
 function maxHP(){ return Math.round(45*0.85*formHP()); }    // pit.js:73 (warlock 0.85 mult, base 45)
 // applyFire — HEX FIEND succubus burn DoT on ENEMIES only (pit.js:1566). Base coven throws plain
 // fire (no DoT) until the herald evo; kept faithful so it lands 1:1 when evolutions arrive.
@@ -164,7 +345,12 @@ function feedSuccubi(x,y,rad,amt){ for(const d of demons){ if(d.type!=='succubus
     d.flash=.12; scene && scene.popup(d.x,d.y-d.r-14,'+'+amt,'#2ecc71'); } } }
 // killEnemy — minimal stand-in for pit.js:1280 (mark dead + FX). The real version
 // also runs CONTAGION/infection-rise; those port with the gauntlet roster in M4.
-function killEnemy(e){ if(e.dead) return; e.dead=true; scene && scene.popup(e.x,e.y-40,'SLAIN','#d05a6a'); gainLevel(); }
+function killEnemy(e,word,col){ if(e.dead) return; e.dead=true;
+  scene && scene.popup(e.x,e.y-40,word||'SLAIN',col||'#d05a6a'); gainLevel();
+  // (M4) Per-kill no longer advances the fight — a FIGHT is a whole GROUP now. The wave-cleared check in
+  // frame() (after the sim updates) advances S.fight + spawnFight()s the next wave when ALL foes are dead.
+  // (Done there, not here, to avoid mutating enemies[] mid-iteration of the kill's calling loop.)
+}
 
 // ---------------------------------------------------------------------------
 // EVOLUTIONS — port of pit.js:75-269. A branch CHOICE at lv10 + a second at lv20
@@ -277,8 +463,11 @@ function updFireballs(dt){
     let hit=false;
     for(const e of enemies){ if(e.dead) continue;
       if(Math.hypot(b.x-e.x, b.y-(e.y-14)) < e.r+b.r){ hit=true;
+        const gm=foeGuard(e, false, Math.atan2(b.vy,b.vx));   // GRAVE parries (gm 0) / THE WALL chips (gm .25) the bolt too
+        if(gm<=0) break;                                       // parried — bolt negated, the Count ripostes
+        const bd=gm<1 ? Math.max(2,Math.round(b.dmg*gm)) : b.dmg;  // door guard chips the direct hit
         if(b.kind==='arrow'){                             // bone shaft: direct, modest, no splash (pit.js:761)
-          e.hp-=b.dmg; e.flash=.12; scene && scene.popup(e.x,e.y-28,String(b.dmg),'#cfc6b4');
+          e.hp-=bd; e.flash=.12; scene && scene.popup(e.x,e.y-28,String(bd),'#cfc6b4');
           if(e.hp<=0) killEnemy(e);
         }else if(b.kind==='hex'){
           if(P.evo10==='herald' && e.hexT>0){            // HEX FIEND: hex STACKS (pit.js:766)
@@ -290,7 +479,7 @@ function updFireballs(dt){
           }
           S.shake=Math.max(S.shake,4);
         }else{                                            // fire / sheol / black-dragon blast (pit.js:773)
-          e.hp-=b.dmg; e.flash=.16; scene && scene.popup(e.x,e.y-30,String(b.dmg),b.col||'#f0883d');
+          e.hp-=bd; e.flash=.16; scene && scene.popup(e.x,e.y-30,String(bd),b.col||'#f0883d');
           S.shake=Math.max(S.shake,4);
           if(b.fire) applyFire(e);                        // HEX FIEND: succubus burn DoT (enemies only)
           const aoe=b.aoe||45;                            // arch fireballs tag aoe:70; default 45 (pit.js:778)
@@ -302,6 +491,8 @@ function updFireballs(dt){
           if(e.hp<=0) killEnemy(e);
         }
         break; } }
+    if(hit && b.kind==='fire' && scene) scene.fireBurst(b.x,b.y);   // painterly bloom on FIRE-bolt impact
+    if(hit && b.kind==='hex'  && scene) scene.fireBurst(b.x,b.y,0xb070f0,0xb070f0); // painterly PURPLE bloom on HEX-bolt impact
     if(hit || (scene && scene.outOfArena(b.x,b.y))) fireballs.splice(i,1);
   }
 }
@@ -310,12 +501,357 @@ function updEnemies(dt){
   for(const e of enemies){ if(e.dead) continue;
     if(e.flash>0) e.flash=Math.max(0,e.flash-dt);
     if(e.stunT>0) e.stunT=Math.max(0,e.stunT-dt);   // PORTAL swap disorient (pit.js:592)
+    if(e.brokenT>0){ e.brokenT=Math.max(0,e.brokenT-dt);            // THE WALL guard reforms after the 2s break
+      if(e.brokenT===0) scene && scene.popup(e.x,e.y-e.r-14,'GUARD UP','#9aa0a8'); }
     if(e.acidT>0){ e.acidT-=dt; e.acidTick=(e.acidTick||0)-dt;        // BONE DRAGON acid breath DoT ~hex strength (pit.js:1546)
       if(e.acidTick<=0){ e.acidTick=.5; dotDamage(e, e.acidDmg||15, '#7fd05a'); } }
     if(e.hexT>0){ e.hexT-=dt; e.hexTick=(e.hexTick||0)-dt;
       if(e.hexTick<=0){ e.hexTick=.5; e.hp-=(e.hexDmg||15); e.flash=.12;
         scene && scene.popup(e.x,e.y-26,String(e.hexDmg||15),'#b070f0');
-        if(e.hp<=0){ e.dead=true; scene && scene.popup(e.x,e.y-40,'ROTTED','#b070f0'); } } }
+        if(e.hp<=0) killEnemy(e,'ROTTED','#b070f0'); } }   // route through the single kill funnel (advances S.fight + levels)
+  }
+}
+// ---------------------------------------------------------------------------
+// foeGuard — per-type defensive INTERRUPTS that gate/scale a warlock strike before damage lands
+// (port of pit.js:1185-1199 guard checks). Returns a DAMAGE MULTIPLIER: 0 = fully negated (grave parry),
+// 0.25 = chipped off a guard (door CLANG), 1 = clean hit. Every warlock-damage site funnels through this.
+function foeGuard(e, heavy, a){
+  // THE GRAVE COUNT riposte (pit.js:1196): a strike into its parry stance is CAUGHT — it counters, no bleed.
+  if(e.type==='grave' && e.stance==='parry'){
+    scene && scene.popup(e.x, e.y-30, 'PARRIED', '#e7b450');
+    e.tele=0.25; e.teleMax=0.25; e.stance='riposte'; e.stanceT=1.1; e.attacking=false; vib(20);
+    return 0;
+  }
+  // THE WALL frontal guard (pit.js:1187): the door blocks its FRONT. A HEAVY strike BREAKS the guard for 2s
+  // (and still bites); a LIGHT strike CLANGs for 25% chip. e.face tracks the warlock, so the only way past is
+  // a HEAVY hit or FLANKING — step up/down the depth plane so your hit lands off its facing arc.
+  if(e.type==='door' && !(e.brokenT>0)){
+    let fd=Math.atan2(P.y-e.y, P.x-e.x)-(e.face||0);
+    while(fd>Math.PI)fd-=2*Math.PI; while(fd<-Math.PI)fd+=2*Math.PI;
+    if(Math.abs(fd)<0.9){                                  // hit landed on the shielded front
+      if(heavy){ e.brokenT=2.0; e.flash=.12;
+        scene && scene.popup(e.x, e.y-e.r-16, 'GUARD BROKEN', '#e7b450');
+        S.shake=Math.max(S.shake,7); vib(40); return 1; }  // breaks AND the heavy still lands full
+      scene && scene.popup(e.x, e.y-e.r-14, 'CLANG — flank or HEAVY', '#9aa0a8');
+      S.shake=Math.max(S.shake,3); return 0.25;            // light pings off — chip only
+    }
+  }
+  return 1;
+}
+// updFoeAI — the GENERIC foe brain (port of pit.js updEnemyVs:1580 helpers: chase / beginAttack /
+// telegraphThenHit). Until this landed the roster sprites stood INERT (only DoTs ticked) — this is the
+// #1 brawler gap: it makes every foe actually MOVE on the shallow plane (2D chase, up/down + left/right)
+// and FIGHT — telegraph -> melee arc -> hurtWarlock, or standoff -> ranged shot for gunner/pyre.
+// Per-type AI bodies (door guard-break, grave riposte, master pack-release, pyre 3-spell channel) layer
+// on top of this baseline in later runs; the FEEL fields (spd/r/dmgScale) already differentiate them.
+const FOE_AI = {   // wind = telegraph seconds, dmg = [min,max] (×dmgScale), standoff for ranged
+  door  :{wind:.50, dmg:[10,15], heavy:true,  shake:5},   // THE WALL — slow, big, ground-shaking
+  chain :{wind:.60, dmg:[ 9,14], heavy:true,  shake:4, arc:Math.PI*2, range:150},  // ring sweep
+  grave :{wind:.42, dmg:[ 7,11], heavy:false, shake:3},
+  hook  :{wind:.38, dmg:[ 6,10], heavy:false, shake:3},
+  hound :{wind:.42, dmg:[ 4, 7], heavy:false, shake:3, fast:true},   // quick lunge
+  brute :{wind:.55, dmg:[10,14], heavy:true,  shake:5},
+  champ :{wind:.45, dmg:[ 9,13], heavy:true,  shake:5},
+  beast :{wind:.55, dmg:[12,17], heavy:true,  shake:6},
+  necro :{wind:.45, dmg:[ 7,11], heavy:false, shake:3},
+  master:{wind:.45, dmg:[ 7,10], heavy:false, shake:3},
+  stitch:{wind:.40, dmg:[ 3, 6], heavy:false, shake:2, healer:true},  // mostly mends; weak poke
+  pyre  :{ranged:true, wind:.80, dmg:[ 9,14], fire:true,  standoff:170, col:'#f0883d'},
+  gunner:{ranged:true, wind:.80, dmg:[ 5, 8], fire:false, standoff:200, col:'#ffd24a'},
+};
+function foeAIFor(e){ return FOE_AI[e.type] || (e.ranged?FOE_AI.gunner:{wind:.4,dmg:[6,10],heavy:false,shake:3}); }
+function updFoeAI(dt){
+  if(P.dead) return;
+  for(const e of enemies){
+    if(e.dead) continue;
+    if(e.stunT>0) continue;                                  // scythe stun / gas paralysis freezes the foe (updEnemies decays it)
+    const A=foeAIFor(e), dToP=dist(e,P), spd=e.spd||90, reach=e.r+(P.r||16);
+    e.cool=(e.cool||0)-dt;
+    e.face = SIDEON ? ((P.x>=e.x)?0:Math.PI) : ang(e,P);     // sprite faces the warlock (horizontal in side-on so it reads)
+    // STITCHER: mends the most-hurt ally instead of fighting (pit.js healer), weak poke only at point blank
+    if(A.healer){
+      const hurt=enemies.filter(o=>!o.dead&&o!==e&&o.hp<o.maxhp).sort((a,b)=>(a.hp/a.maxhp)-(b.hp/b.maxhp))[0];
+      if(hurt && e.cool<=0){ e.cool=2.4; const amt=Math.round(14*(e.dmgScale||1));
+        hurt.hp=Math.min(hurt.maxhp,hurt.hp+amt); hurt.flash=.12;
+        tracers.push({x1:e.x,y1:e.y-12,x2:hurt.x,y2:hurt.y-12,t:.3,max:.3,col:'#7fe0a0'});
+        scene && scene.popup(hurt.x,hurt.y-30,'+'+amt,'#7fe0a0'); }
+      const a=ang(e,P); if(dToP>reach+90){ e.x+=Math.cos(a)*spd*.5*dt; e.y+=Math.sin(a)*spd*.5*dt; }
+      else { e.x-=Math.cos(a)*spd*.6*dt; e.y-=Math.sin(a)*spd*.6*dt; }   // keep its distance, behind the line
+      scene && scene.clampArena(e); continue;
+    }
+    // THE GRAVE COUNT — open/parry/riposte stance machine (pit.js:1655). The parry-interrupt in foeGuard()
+    // flips it to 'riposte'; here it ticks the counter and, in 'open', cycles a guard up and pokes.
+    if(e.type==='grave'){
+      if(!e.stance){ e.stance='open'; e.stanceT=1; }        // self-init if spawnFight didn't seed the stance
+      e.stanceT=(e.stanceT??1)-dt;
+      if(e.stance==='riposte'){                              // counter-swing, then drop back to open
+        e.tele=(e.tele||0)-dt;
+        if(e.tele<=0){
+          e.stance='open'; e.stanceT=1.1;
+          swings.push({ x:e.x, y:e.y, a:ang(e,P), arc:1.6, range:64, t:.15, heavy:true, col:'#e7b450' });
+          S.shake=Math.max(S.shake,5); if(navigator.vibrate) navigator.vibrate(22);
+          if(dToP < reach+44) hurtWarlock(Math.round(rnd(12,17)*(e.dmgScale||1)));
+          scene && scene.popup(e.x, e.y-e.r-14, 'RIPOSTE', '#e7b450');
+        }
+      } else {                                               // open <-> parry on the stance timer
+        if(e.stanceT<=0){ e.stance = e.stance==='parry'?'open':'parry'; e.stanceT = e.stance==='parry'?1.3:1.0;
+          scene && scene.popup(e.x, e.y-e.r-16, e.stance==='parry'?'GUARD':'!', e.stance==='parry'?'#9aa0a8':'#c8443a'); }
+        if(dToP>reach+22){ const a2=ang(e,P), ms=spd*(e.stance==='parry'?.4:1);   // slow advance while guarding
+          e.x+=Math.cos(a2)*ms*dt; e.y+=Math.sin(a2)*ms*dt; }
+        if(e.stance==='open' && e.cool<=0 && dToP<reach+40){ e.cool=1.4;          // open jab (light)
+          swings.push({ x:e.x, y:e.y, a:ang(e,P), arc:1.4, range:58, t:.13, heavy:false, col:'#9aa0a8' });
+          if(P.rollT<=0) hurtWarlock(Math.round(rnd(7,11)*(e.dmgScale||1))); }
+      }
+      const mvd0=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvd0*.16; e._mv=mvd0>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE PYRE — stationary 3-spell zone caster + mage-shield (pit.js:1635). It REFUSES melee: kites to a
+    // standoff, then CHANNELS a 2s spell (taking damage INTERRUPTS it), dropping a TELEGRAPHED ground zone at
+    // the warlock's FEET — FIRE AoE -> ICE burst -> BOLT, cycling — and raises a damage-absorbing mage-shield
+    // on each successful cast. The zone lands on P.x/P.y so it reads no matter where the pyre sprite stands.
+    if(e.type==='pyre'){
+      if(e.castT>0){                                          // mid-channel
+        if(e.hp < (e._castHp||e.hp)){ e.castT=0; e.cool=1.6;  // a warlock hit broke the channel
+          scene && scene.popup(e.x,e.y-32,'INTERRUPTED','#c8443a'); }
+        else{ e.castT-=dt;
+          if(e.castT<=0){                                     // channel complete -> unleash the cycled spell
+            const sp2=e.spell||0; e.spell=(sp2+1)%3; e.cool=2.6;
+            const ds=(e.dmgScale||1);
+            if(sp2===0)      zones.push({x:P.x,y:P.y,r:54,tele:.75,life:3.5,type:'fire',dmg:Math.round(8*ds),tick:0});
+            else if(sp2===1) zones.push({x:P.x,y:P.y,r:62,tele:.75,life:.1, type:'ice', dmg:Math.round(10*ds)});
+            else             zones.push({x:P.x,y:P.y,r:70,tele:.75,life:.1, type:'bolt',dmg:Math.round(14*ds)});
+            if(!e.mageShield){ e.mageShield=true; e.hp+=e.maxhp; e.maxhp*=2;   // shield on a successful cast
+              scene && scene.popup(e.x,e.y-34,'SHIELDED','#5ad2ff'); }
+          }
+        }
+      } else {
+        if(dToP<170){ const aw=ang(P,e); e.x+=Math.cos(aw)*spd*dt; e.y+=Math.sin(aw)*spd*dt; }   // back away to range
+        if(e.cool<=0){ e.castT=2; e._castHp=e.hp; scene && scene.popup(e.x,e.y-32,'CASTING','#e08030'); }
+      }
+      const mvdp=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdp*.16; e._mv=mvdp>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE HOUND MASTER — pack-RELEASE (pit.js:1678). Keeps a handler's standoff and, on cooldown, either
+    // WHISTLES a fresh pair of hounds into the pit (RELEASE ×2, capped at 6 alive) or cracks a TELEGRAPHED
+    // WHIP zone at the warlock's feet. The spawns turn a single wave into a self-replenishing DC swarm — the
+    // one verb that keeps the brawl crowded instead of bleeding down to the boss.
+    if(e.type==='master'){
+      if(dToP>reach+170){ const a=ang(e,P); e.x+=Math.cos(a)*spd*.8*dt; e.y+=Math.sin(a)*spd*.8*dt; }  // hold handler range
+      if(e.cool<=0){ e.cool=1.5;
+        const packAlive=enemies.filter(x=>x.type==='hound'&&!x.dead).length;
+        if(packAlive<6 && Math.random()<.6){                  // RELEASE: two fresh hounds flank in
+          const gy=(scene&&scene.scale)?scene.scale.height*SIDEON_GROUND_FR:e.y;
+          for(let h=0;h<2;h++){
+            const hd=mkFoe({type:'hound',spd:200,r:11,col:'#4a4038',hp:Math.round(66*(e.dmgScale||1)),ranged:false},
+              e.x+rnd(-40,40), Math.min(e.y+rnd(-30,30), gy));
+            hd.maxhp=hd.hp; hd.dmgScale=e.dmgScale||1; hd.spriteKey=foeTexFor('hound',false); hd.name='Hound';
+            enemies.push(hd);
+          }
+          scene && scene.popup(e.x,e.y-e.r-16,'RELEASE ×2','#c8923a');
+        } else if(dToP<200){                                  // WHIP: telegraphed crack at the warlock's feet
+          zones.push({x:P.x,y:P.y,r:44,tele:.6,life:.1,type:'whipcrack',dmg:Math.round(8*(e.dmgScale||1))});
+          scene && scene.popup(e.x,e.y-e.r-16,'WHIP','#c8923a');
+        }
+      }
+      const mvdm=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdm*.16; e._mv=mvdm>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE GUNNER — tracking aim-line LOCK (pit.js:1687). Holds a lane standoff, then raises an aim-line that
+    // TRACKS the warlock through the first part of the wind-up but LOCKS for the last ~0.28s before firing a
+    // FAST bolt straight down the locked lane — the "sidestep the lock" read that rewards the shallow-plane
+    // dodge. Distinct from the generic ranged aim+fire (which simply re-aims at release). The aim-line itself
+    // (drawn in zoneGfx) is the telegraph; e._tele lights the sprite yellow while it lines you up.
+    if(e.type==='gunner'){
+      const a=ang(e,P);
+      if(!e.aiming){
+        if(dToP<190){ e.x-=Math.cos(a)*spd*dt; e.y-=Math.sin(a)*spd*dt; }              // too close: back off the lane
+        else if(dToP>300){ e.x+=Math.cos(a)*spd*.6*dt; e.y+=Math.sin(a)*spd*.6*dt; }   // too far: close the gap
+        if(e.cool<=0 && dToP<540){ e.aiming=true; e.aimT=.8; e.aimA=a;                   // begin lining up
+          scene && scene.popup(e.x,e.y-e.r-14,'AIM','#ffd24a'); }
+      } else {
+        e.aimT-=dt;
+        if(e.aimT>.28) e.aimA=ang(e,P);                          // tracks the warlock... then LOCKS for the last .28s
+        if(e.aimT<=0){ e.aiming=false; e.cool=2.0; S.shake=Math.max(S.shake,4);          // commit: fast bolt down the locked lane
+          foeShots.push({ x:e.x+Math.cos(e.aimA)*(e.r+6), y:(e.y-10)+Math.sin(e.aimA)*(e.r+6),
+            vx:Math.cos(e.aimA)*470, vy:Math.sin(e.aimA)*470, r:5,
+            dmg:Math.round(rnd(13,17)*(e.dmgScale||1)), fire:false, col:'#ffd24a' });
+          scene && scene.popup(e.x,e.y-e.r-14,'FIRE','#c8923a'); }
+      }
+      e._tele = !!e.aiming;                                       // telegraph tint (duel L1518 + crowd L1612)
+      e.face = SIDEON ? ((Math.cos(e.aimA!=null?e.aimA:a)>=0)?0:Math.PI) : (e.aimA!=null?e.aimA:a);
+      const mvdg=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdg*.16; e._mv=mvdg>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE NECRO — undead RAISE (pit.js:1702). Kites away while it stays at range and, on a ~1.9s cool,
+    // RAISES a fresh PAIR of skeleton minions (capped at 8 alive) that fight via the generic 'skel' melee AI.
+    // The second self-replenishing swarm alongside the master's hounds — keeps the wave crowded as you cull it.
+    if(e.type==='necro'){
+      const a=ang(e,P); e.face = SIDEON ? ((P.x>=e.x)?0:Math.PI) : a;
+      if(dToP<240){ e.x-=Math.cos(a)*spd*dt; e.y-=Math.sin(a)*spd*dt; }     // kite back, keep its distance
+      e.raiseT=(e.raiseT===undefined?1.2:e.raiseT)-dt;
+      if(e.raiseT<=0){ e.raiseT=1.9;
+        const skels=enemies.filter(x=>x.type==='skel'&&!x.dead).length;
+        if(skels<8){
+          const gy=(scene&&scene.scale)?scene.scale.height*SIDEON_GROUND_FR:e.y;
+          for(let k2=0;k2<2;k2++){ const ra=rnd(0,Math.PI*2);
+            const sx=e.x+Math.cos(ra)*60, sy=Math.min(e.y+Math.sin(ra)*60, gy);
+            const sk=mkFoe({type:'skel',spd:125,r:11,col:'#b8b0a0',hp:Math.round(48*(e.dmgScale||1)),ranged:false}, sx, sy);
+            sk.maxhp=sk.hp; sk.dmgScale=e.dmgScale||1; sk.spriteKey=foeTexFor('skel',false); sk.name='Risen';
+            enemies.push(sk);
+            scene && scene.popup(sx, sy-20, 'RISE', '#7a8a6a');
+          }
+        }
+      }
+      const mvdn=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdn*.16; e._mv=mvdn>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE HOUND — lunge-pounce (pit.js:1668). Distinct from the generic melee swing: it CHASES tight, then on a
+    // crouch wind-up POUNCES — a 340-speed committed dash down the locked lane that BITES once on contact. The
+    // "read the crouch, sidestep the leap" verb. With the master's RELEASE feeding fresh hounds, the pack rakes
+    // you with relentless low-damage lunges from every angle — pure DC swarm pressure rather than a stand-and-trade.
+    if(e.type==='hound'){
+      e.face = SIDEON ? ((P.x>=e.x)?0:Math.PI) : ang(e,P);
+      if(e.lungeT>0){ e.lungeT-=dt; e._mv=true;                  // the pounce itself — a fast committed dash
+        e.x+=Math.cos(e.lungeA)*340*dt; e.y+=Math.sin(e.lungeA)*340*dt;
+        if(dToP<e.r+(P.r||16)+4 && !e.bit){ e.bit=true; hurtWarlock(Math.round(rnd(4,7)*(e.dmgScale||1))); S.shake=Math.max(S.shake,3); }
+        if(e.lungeT<=0) e.bit=false;
+      } else if(e.attacking){ e.tele=(e.tele||0)-dt; e._tele=true;   // crouch wind-up before the leap
+        if(e.tele<=0){ e.attacking=false; e._tele=false; e.cool=rnd(1.2,2);
+          e.lungeT=.28; e.lungeA=ang(e,P); e.bit=false; vib(14); }
+      } else {                                                   // chase tight, then crouch-and-pounce from range
+        if(dToP>e.r+(P.r||16)+18){ const a=ang(e,P); e.x+=Math.cos(a)*spd*dt; e.y+=Math.sin(a)*spd*dt; e._mv=true; } else e._mv=false;
+        if(e.cool<=0 && dToP<140){ e.attacking=true; e.tele=.42; e.teleMax=.42; e.lockA=ang(e,P);
+          scene && scene.popup(e.x,e.y-e.r-14,'!','#c8923a'); }
+      }
+      const mvdh=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdh*.16; e._mv=mvdh>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE CHAMPION (boss, fight 19) — throws THRALLS in and FEEDS (pit.js:1765). Every ~3.25s it hurls 2 helpless
+    // captives into the pit; if one is nearer than the warlock it BARRELS over to devour it, healing and growing
+    // (+speed +damage +size). The DC "cull the adds before the boss eats them" read; otherwise a heavy overhead.
+    if(e.type==='champ'){
+      e.thrallT=(e.thrallT===undefined?2:e.thrallT)-dt;
+      if(e.thrallT<=0){ e.thrallT=3.25;
+        const gy=(scene&&scene.scale)?scene.scale.height*SIDEON_GROUND_FR:e.y;
+        for(let k2=0;k2<2;k2++){ const aa=rnd(0,Math.PI*2);
+          const tx=e.x+Math.cos(aa)*100, ty=Math.min(e.y+Math.sin(aa)*60, gy);
+          const th=mkFoe({type:'skel',spd:46,r:12,col:'#6a6258',hp:Math.round(42*(e.dmgScale||1)),ranged:false}, tx, ty);
+          th.maxhp=th.hp; th.dmgScale=e.dmgScale||1; th.thrall=true; th.spriteKey=foeTexFor('skel',false); th.name='Thrall';
+          enemies.push(th);
+        }
+        scene && scene.popup(e.x,e.y-e.r-18,'THRALLS THROWN IN','#c8443a'); S.shake=Math.max(S.shake,4);
+      }
+      const meal=enemies.filter(x=>x.thrall&&!x.dead).sort((a,b)=>dist(e,a)-dist(e,b))[0];
+      if(meal && dist(e,meal) < dToP*1.4){                        // a meal is closer than the warlock — go feed
+        const a=ang(e,meal); e.face=SIDEON?((meal.x>=e.x)?0:Math.PI):a;
+        e.x+=Math.cos(a)*spd*1.1*dt; e.y+=Math.sin(a)*spd*1.1*dt; e._mv=true;
+        if(dist(e,meal)<e.r+meal.r+8){ meal.dead=true; meal.hp=0;
+          e.hp=Math.min(e.maxhp, e.hp+22); e.spd=(e.spd||100)+8; e.dmgScale=(e.dmgScale||1)+.18; e.r+=1;
+          scene && scene.popup(e.x,e.y-e.r-18,'HE FEEDS  +STATS','#c8443a'); S.shake=Math.max(S.shake,6); vib(40); }
+      } else if(e.attacking){ e.tele=(e.tele||0)-dt; e._tele=true;
+        if(e.tele<=0){ e.attacking=false; e._tele=false; e.cool=rnd(1.0,1.8);
+          swings.push({ x:e.x, y:e.y, a:e.face, arc:1.8, range:e.r+50, t:.15, heavy:true, col:'#c8443a' });
+          S.shake=Math.max(S.shake,5); vib(18);
+          if(dToP<e.r+(P.r||16)+46){ let da=ang(e,P)-(e.lockA||e.face); while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
+            if(Math.abs(da)<1.3) hurtWarlock(Math.round(rnd(11,16)*(e.dmgScale||1))); } }
+      } else { e.face=SIDEON?((P.x>=e.x)?0:Math.PI):ang(e,P);
+        if(dToP>e.r+(P.r||16)+30){ const a=ang(e,P); e.x+=Math.cos(a)*spd*dt; e.y+=Math.sin(a)*spd*dt; e._mv=true; } else e._mv=false;
+        if(e.cool<=0 && dToP<e.r+60){ e.attacking=true; e.tele=.42; e.teleMax=.42; e.lockA=ang(e,P);
+          scene && scene.popup(e.x,e.y-e.r-16,'!','#c8443a'); } }
+      const mvdc=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdc*.16; e._mv=mvdc>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    // THE BEAST (boss, fight 20) — a two-PHASE chained brute (pit.js:1787). It SLAMS the ground in a full RING
+    // (heavy AoE) rather than a directional swing; at <50% HP it SHEDS ITS CHAINS -> phase 2 (×1.5 speed, and the
+    // slam also drops a shock zone at your feet). In phase 2 it also CHARGES across the plane: a 0.5s telegraph then
+    // a 430-speed ram. The DC big-boss read — watch the ring tell vs the charge tell.
+    if(e.type==='beast'){
+      if(!e.phase) e.phase=1;
+      if(e.hp < e.maxhp*.5 && e.phase===1){ e.phase=2; e.spd=(e.spd||88)*1.5; e.col='#5a2a34';
+        scene && scene.popup(e.x,e.y-e.r-22,'IT SHEDS ITS CHAINS','#c8443a'); S.shake=Math.max(S.shake,12); vib(60); }
+      if(e.chargeWind>0){ e.chargeWind-=dt; e._tele=true;        // charge telegraph (the wind-up tell)
+        if(e.chargeWind<=0){ e.chargeT=.5; e.chargeA=ang(e,P); e.rammed=false; e._tele=false; } }
+      else if(e.chargeT>0){ e.chargeT-=dt; e._mv=true;           // the ram itself
+        e.x+=Math.cos(e.chargeA)*430*dt; e.y+=Math.sin(e.chargeA)*430*dt;
+        if(dToP<e.r+(P.r||16)+4 && !e.rammed){ e.rammed=true; hurtWarlock(Math.round(rnd(12,18)*(e.dmgScale||1))); S.shake=Math.max(S.shake,8); }
+        if(e.chargeT<=0) e.rammed=false; }
+      else if(e.attacking){ e.tele=(e.tele||0)-dt; e._tele=true; // ring-slam wind-up
+        if(e.tele<=0){ e.attacking=false; e._tele=false; e.cool=e.phase===2?1.0:1.7;
+          S.shake=Math.max(S.shake,11); vib(60);
+          swings.push({ x:e.x, y:e.y, a:0, arc:Math.PI*2, range:e.r+85, t:.22, heavy:true, col:'#c8443a', ring:true });
+          if(dToP<e.r+85) hurtWarlock(Math.round(rnd(13,19)*(e.dmgScale||1)));
+          if(e.phase===2) zones.push({x:P.x,y:P.y,r:50,tele:.55,life:.1,type:'whipcrack',dmg:Math.round(10*(e.dmgScale||1))}); } }
+      else { e.face=SIDEON?((P.x>=e.x)?0:Math.PI):ang(e,P);
+        if(dToP>e.r+(P.r||16)+38){ const a=ang(e,P); e.x+=Math.cos(a)*spd*dt; e.y+=Math.sin(a)*spd*dt; e._mv=true; } else e._mv=false;
+        if(e.cool<=0){
+          if(e.phase===2 && dToP>200 && Math.random()<.5){ e.chargeWind=.5; e.cool=2.2;
+            scene && scene.popup(e.x,e.y-e.r-22,'!','#c8443a'); }
+          else if(dToP<e.r+95){ e.attacking=true; e.tele=.62; e.teleMax=.62;
+            scene && scene.popup(e.x,e.y-e.r-18,'SLAM','#c8443a'); } } }
+      const mvdb=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));
+      e.walkP=(e.walkP||0)+mvdb*.16; e._mv=mvdb>0.2; e._lx=e.x; e._ly=e.y;
+      scene && scene.clampArena(e); continue;
+    }
+    if(e.attacking){                                         // --- telegraph -> resolve (pit.js telegraphThenHit) ---
+      e.tele=(e.tele||0)-dt;
+      // commit-creep toward the locked aim during the wind-up so the strike reads
+      if(!A.ranged && dToP>reach+10){ e.x+=Math.cos(e.lockA||e.face)*spd*.35*dt; e.y+=Math.sin(e.lockA||e.face)*spd*.35*dt; }
+      if(e.tele<=0){
+        e.attacking=false; e.cool = A.ranged?2.0:rnd(1.0,1.8);
+        if(A.ranged){                                        // fire a shot down the lane at the warlock
+          const aimX=P.x-e.x, aimY=(P.y-18)-e.y, m=Math.hypot(aimX,aimY)||1;
+          foeShots.push({ x:e.x+aimX/m*e.r, y:e.y-10+aimY/m*e.r, vx:aimX/m*380, vy:aimY/m*380,
+            r:A.fire?7:5, dmg:Math.round(rnd(A.dmg[0],A.dmg[1])*(e.dmgScale||1)), fire:A.fire, col:A.col });
+          scene && scene.popup(e.x,e.y-e.r-14, A.fire?'PYRE':'FIRE', A.col); S.shake=Math.max(S.shake,3);
+        }else{                                               // melee arc + damage if the warlock is still in front + in reach
+          const arc=A.arc||1.6, range=A.range||(reach+30);
+          swings.push({ x:e.x, y:e.y, a:e.face, arc, range, t:.14, heavy:!!A.heavy, col:e.col||'#c8443a', ring:!!A.arc });
+          S.shake=Math.max(S.shake, A.shake||3); if(navigator.vibrate&&A.heavy) navigator.vibrate(18);
+          if(dToP<range+4){
+            let da=ang(e,P)-(e.lockA||e.face); while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
+            if(A.arc>3 || Math.abs(da)<1.3) hurtWarlock(Math.round(rnd(A.dmg[0],A.dmg[1])*(e.dmgScale||1)));
+          }
+        }
+      }
+    }else if(A.ranged){                                      // --- ranged idle: keep the standoff, then aim+fire ---
+      const so=A.standoff||180;
+      if(dToP<so){ const a=ang(P,e); e.x+=Math.cos(a)*spd*dt; e.y+=Math.sin(a)*spd*dt; }   // back away
+      else if(dToP>so*2.2){ const a=ang(e,P); e.x+=Math.cos(a)*spd*.6*dt; e.y+=Math.sin(a)*spd*.6*dt; }  // close if too far
+      if(e.cool<=0 && dToP<520){ e.attacking=true; e.tele=A.wind; e.teleMax=A.wind; e.lockA=ang(e,P);
+        scene && scene.popup(e.x,e.y-e.r-14,'AIM','#ffd24a'); }
+    }else{                                                   // --- melee idle: chase, then telegraph a strike ---
+      if(dToP>reach+22){ const a=ang(e,P); const ms=spd*(A.fast?1.25:1);
+        e.x+=Math.cos(a)*ms*dt; e.y+=Math.sin(a)*ms*dt; e._mv=true; }
+      else e._mv=false;
+      if(e.cool<=0 && dToP<reach+40){ e.attacking=true; e.tele=A.wind; e.teleMax=A.wind; e.lockA=ang(e,P);
+        scene && scene.popup(e.x,e.y-e.r-16,'!','#c8443a'); }
+    }
+    const mvd=Math.hypot(e.x-(e._lx??e.x), e.y-(e._ly??e.y));   // walk-phase bookkeeping for the render pose-swap
+    e.walkP=(e.walkP||0)+mvd*.16; e._mv=mvd>0.2; e._lx=e.x; e._ly=e.y;
+    scene && scene.clampArena(e);
+  }
+}
+// updFoeShots — ENEMY projectile sim (pyre ember / gunner shot). Mirrors updFireballs but in reverse: the
+// foe's ranged AI spawns these, they fly at the warlock, and on contact call hurtWarlock(). Render-light:
+// reuses scene.fxTrail for the streak. Roll/ward/fade i-frames are honoured inside hurtWarlock itself.
+function updFoeShots(dt){
+  for(let i=foeShots.length-1;i>=0;i--){ const s=foeShots[i];
+    s.x+=s.vx*dt; s.y+=s.vy*dt;
+    scene && scene.fxTrail(s.x, s.y, 'fire');
+    if(!P.dead && Math.hypot(s.x-P.x, s.y-(P.y-18)) < (P.r||16)+s.r){
+      hurtWarlock(s.dmg);
+      scene && scene.popup(P.x, P.y-58, s.fire?'BURN':'HIT', s.col||'#ffd24a');
+      if(s.fire) S.shake=Math.max(S.shake,4);
+      foeShots.splice(i,1); continue;
+    }
+    if(scene && scene.outOfArena(s.x,s.y)) foeShots.splice(i,1);
   }
 }
 
@@ -326,6 +862,8 @@ function autoFace(){ if(scene) P.face = scene.aimAngle(); }
 
 function doSlash(){ // warlock base => HEX bolt (pit.js:307 -> hexBolt:565)
   if(S.mode!=='fight'||P.dead||P.atkRecover>0||P.heavyWind>0||P.rollT>0||P.channel||P.paralyzeT>0) return;
+  if(P.devilT>0){ devilClaw(); return; }   // ARCH DEVIL light verb => CLAW (pit.js:310), not HEX
+  if(P.lich){ lichSlash(); return; }       // LICH light verb => SCYTHE (pit.js:309), not HEX
   if(P.hexCD>0) return;
   P.hexCD = (P.evo10==='herald'?3:10); P.atkRecover=0.18;  // herald 3s else 10s (pit.js:565-567)
   const f=nearestFoe(); if(f) P.face=ang(P,f); else autoFace();   // pit.js:568 faces nearest foe
@@ -336,12 +874,81 @@ function doSlash(){ // warlock base => HEX bolt (pit.js:307 -> hexBolt:565)
 function startChannel(){ // SUMMON channel begins (pit.js:573)
   if(P.channel) return;
   P.channel = { t:0, dur:3 };                 // ladder 3s/4s/6s -> stub 3s
-  scene && scene.fxChannelStart();
+  scene && scene.channelBeat();   // fix #4: gather-inward telegraph the instant the channel begins
 }
 // releaseChannel — pit.js:577 is a NO-OP: SUMMON is PRESS not HOLD; the channel auto-completes
 // and only an INTERRUPTION (hit/paralyze/silence) ends it early. The rungs now fire from the
 // ladder tick in frame() (pit.js:2285), so releasing the button does nothing.
 function releaseChannel(){ return; }
+// ---- ARCH DEVIL VERBS (port of pit.js:903-940) — the borrowed form trades HEX/SUMMON for CLAW/BITE.
+// In the side-on duel the warlock fights ONE foe (currentFoe); CLAW dashes in for a 2.0x carve, BITE is a
+// moderate 1.0x strike that ASCENDS a succubus assist if one is in lane (feeding both), else carves the foe.
+function devilClaw(){ // CLAW: roll to the foe, then a massive hit (pit.js:903)
+  if(P.atkRecover>0 || P.hexCD>0) return;                       // shares the light-verb cadence
+  P.hexCD = (P.evo10==='herald'?3:10);                          // same gate the HEX it replaces uses
+  const f=currentFoe(); if(!f){ devilStrike(2.0,false); return; }
+  P.face=ang(P,f);
+  if(dist(P,f) > P.r+f.r+12){                                   // rolling dash that lands beside the foe (pit.js:907)
+    P.x = f.x-Math.cos(P.face)*(f.r+P.r+6);
+    P.y = f.y-Math.sin(P.face)*(f.r+P.r+6);
+    scene && scene.clampArena(P);
+    scene && scene.fxPortal(P.x,P.y);                           // red dash sparks stand-in (leafBurst)
+    S.shake=Math.max(S.shake,5);
+  }
+  devilStrike(2.0,false);
+}
+function devilStrike(mult,heals){ // CLAW(2.0) / BITE(1.0,heals) carve (pit.js:917)
+  P.atkRecover = 0.18*(mult>1.5?1.3:0.9);
+  P.face = scene ? scene.aimAngle() : P.face;
+  const f=currentFoe(); if(f) P.face=ang(P,f);                  // face the duel foe
+  swings.push({ x:P.x, y:P.y, a:P.face, arc:2.0, range:98, t:.16, heavy:mult>1.5, col:'#d03a4a' });
+  S.shake=Math.max(S.shake, mult>1.5?7:4); vib(mult>1.5?35:18);
+  const dmg=Math.round((rollDice(diceN(),8)+dmgBonus())*mult);
+  if(heals){                                                    // BITE feeds him — ASCEND a succubus assist (pit.js:929)
+    const sc=demons.find(d=>d.hp>0 && d.type==='succubus' && !d.arch);
+    if(sc){ sc.arch=true; sc.r=15; sc.archT=7; leafBurst(sc.x,sc.y,14,'#f06aa0');
+      scene && scene.popup(sc.x,sc.y-sc.r-24,'ARCH SUCCUBUS','#f06aa0');
+      showBanner('ARCH SUCCUBUS','she BURSTS in 7 — Portal away.',1700,'#d03a4a'); return; }
+  }
+  if(!f) return;                                                // summons gone or no foe — the swing still played
+  let diff=ang(P,f)-P.face; while(diff>Math.PI)diff-=2*Math.PI; while(diff<-Math.PI)diff+=2*Math.PI;
+  if(dist(P,f)<98+f.r && Math.abs(diff)<1.2){
+    const gm=foeGuard(f, mult>1.5, P.face);                     // 0 parry · .25 door chip · 1 clean
+    if(gm>0){ const dd=Math.round(dmg*gm);
+      f.hp-=dd; f.flash=.14; scene && scene.fxPortal(f.x,f.y);
+      scene && scene.popup(f.x,f.y-30, dd+(heals?' BITE':' CLAW'), '#d03a4a');
+      S.shake=Math.max(S.shake, mult>1.5?7:4);
+      if(f.hp<=0) killEnemy(f, mult>1.5?'CARVED':'DEVOURED', '#d03a4a');
+    }
+  }
+}
+// ---- LICH VERB (port of pit.js:998) — the reaper trades HEX for the SCYTHE: light harm, heavy law.
+// Side-on duel: a green arc on currentFoe() that REAPS — half-dice dmg, a 5s stun + a long knockback hurl.
+// (Q stays SUMMON for the lich; K=FADE reroute still pending — see STATUS.)
+function lichSlash(){ // SCYTHE (pit.js:998)
+  if(P.fadeT>0){ scene && scene.popup(P.x,P.y-44,'FADED — only the dead answer','#8a93a8'); return; }
+  if(P.atkRecover>0 || P.hexCD>0) return;                       // shares the light-verb cadence
+  P.hexCD = (P.evo10==='herald'?3:10);                          // same gate the HEX it replaces uses
+  P.atkRecover = 0.18*1.3; P.ft.slash++;                        // pit.js: atkRec()*1.3
+  const f=currentFoe(); if(f) P.face=ang(P,f); else P.face = scene?scene.aimAngle():P.face;
+  swings.push({ x:P.x, y:P.y, a:P.face, arc:2.2, range:96, t:.18, heavy:true, col:'#9af0c0' });
+  S.shake=Math.max(S.shake,6); vib(30);
+  const dmg=Math.round((rollDice(Math.max(1,Math.ceil(diceN()/2)),8)+Math.floor(dmgBonus()/2))*0.8*(P.evo10==='binder'?2:1)); // DREADBINDER scythe x2 (pit.js:1001)
+  if(!f) return;                                                // swing still played, no foe to reap
+  let diff=ang(P,f)-P.face; while(diff>Math.PI)diff-=2*Math.PI; while(diff<-Math.PI)diff+=2*Math.PI;
+  if(dist(P,f)<96+f.r && Math.abs(diff)<1.1){
+    const gm=foeGuard(f, true, P.face);                          // scythe is always heavy → door guard BREAKS, gm 1; grave parry gm 0
+    if(gm>0){
+      const pa=ang(P,f); f.x+=Math.cos(pa)*220; f.y+=Math.sin(pa)*220; scene && scene.clampArena(f); // hurled across the sand (pit.js:1011)
+      f.stunT=Math.max(f.stunT||0,5); f._tele=false; f.flash=.14;  // 5s stun freezes the foe AI (frame L1044)
+      scene && scene.fxPortal(f.x,f.y);
+      scene && scene.popup(f.x,f.y-44,'REAPED — STUNNED','#9af0c0');
+      const dd=Math.round(dmg*gm); f.hp-=dd; scene && scene.popup(f.x,f.y-30, dd+' SCYTHE','#9af0c0');
+      S.shake=Math.max(S.shake,6);
+      if(f.hp<=0) killEnemy(f,'REAPED','#9af0c0');
+    }
+  }
+}
 // ---- FX / announce / camera shims so the ported pit.js transform code reads 1:1 ----
 function flashFx(a){ scene && scene.flash(0x8a4cff, a); }                         // pit.js flashFx
 function leafBurst(x,y,n,col){ scene && scene.fxPortal(x,y); }                    // burst stand-in (pit.js leafBurst)
@@ -358,10 +965,15 @@ function updateLabels(){
   const baseHTML='<span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>'
     +'<span class="k">Q (hold→release)</span> HEAVY(SUMMON) &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>'
     +'<span class="k">Space / R-click</span> ROLL(BLINK) &nbsp; <span class="k">aim</span> = mouse';
-  v.innerHTML = (form
-    ? '<b style="color:'+(P.demonLord?'#2ecc71':'#d03a4a')+'">FORM: '+form+'</b> '
-      +'<span style="opacity:.6">(CLAW/BITE reroute next run)</span><br>'
-    : '') + baseHTML;
+  // ARCH DEVIL / DEMON LORD now actually reroute the verbs: J => CLAW, Q => BITE (devilClaw/devilStrike).
+  const devil = (P.devilT>0 || P.demonLord);
+  const formHTML = form
+    ? '<b style="color:'+(P.demonLord?'#2ecc71':'#d03a4a')+'">FORM: '+form+'</b>'
+      + (devil ? ' <span style="opacity:.7"><span class="k">J</span> CLAW &nbsp; <span class="k">Q</span> BITE</span>'
+               : (P.lich ? ' <span style="opacity:.7"><span class="k">J</span> SCYTHE &nbsp; <span class="k">Q</span> SUMMON &nbsp; <span class="k">K</span> FADE</span>' : ''))
+      + '<br>'
+    : '';
+  v.innerHTML = formHTML + baseHTML;
 }
 
 // updateGGHud — drive the GG/BlazBlue two-fighter HUD each frame (side-on duel presentation).
@@ -404,6 +1016,37 @@ function exitDevil(){                                                           
   leafBurst(P.x,P.y,16,'#b070f0');
   showBanner('THE PACT ENDS','',800,'#b070f0');
   updateLabels();
+}
+// ---- LICH FORM (port of pit.js:970/981) — the reaper. Minimal entry so the SCYTHE reroute is
+// vibe-checkable; the full death->rise->phylactery pipeline (TODO M8) is still pending.
+function syncBodyTex(){ if(scene && scene.hero && scene.textures && scene.textures.exists(heroFormTex())) scene.hero.setTexture(heroFormTex()); }
+function enterLich(){                                                                    // pit.js:970
+  P.lich=true; P.hp=Math.round(maxHP()*0.5); P.r=(P.evo10==='binder')?27:22;            // DREADBINDER: a BIGGER reaper
+  P.channel=null; P.heavyWind=0; P.parryT=0; P.parryCD=0; P.rollT=0; P.hexCD=0; P.wardT=0;
+  if(P.devilT>0) P.devilT=0;
+  P.fadeT=0; P.fadeCD=0;
+  flashFx(.35); S.shake=Math.max(S.shake,14); vib([70,60,130]);
+  leafBurst(P.x,P.y,26,'#9af0c0');
+  showBanner('THE PACT DEEPENS','the bone dragon refuses the ledger — LICH',2200,'#9af0c0');
+  scene && scene.popup(P.x,P.y-64,'GUARD THE DRAGON — IT HOLDS YOUR SOUL','#9af0c0');
+  syncBodyTex(); updateLabels();
+}
+function exitLich(){                                                                     // pit.js:981 resurrectWarlock
+  P.lich=false; P.hp=maxHP(); P.r=16; P.fadeT=0; P.fadeCD=0;
+  leafBurst(P.x,P.y,22,'#b070f0');
+  showBanner('BACK TO THE LIVING','the ledger reopens — a warlock again',2000,'#b070f0');
+  syncBodyTex(); updateLabels();
+}
+// fade — the LICH defensive verb (pit.js:991). Replaces PORTAL while P.lich: the reaper steps OUT of
+// reach for 5s (10s on the DREADBINDER/lich road), beyond targeting — hurtWarlock() already negates all
+// damage while P.fadeT>0 (L159), and lichSlash/doRoll already refuse to fire mid-fade. Only the summons
+// answer while he is gone. parryCD goes to 9 (long, matches the original's defensive cadence).
+function fade(){
+  P.fadeT=(P.evo10==='binder')?10:5; P.parryCD=9; P.ft.rolls++;   // binder/lich road: 10s else 5s (pit.js:992)
+  leafBurst(P.x,P.y,14,'#9af0c0');
+  scene && scene.popup(P.x,P.y-52,'FADED','#9af0c0');
+  showBanner('FADE','five seconds beyond reach — raise the dead',1100,'#9af0c0');
+  vib(30); flashFx(.1);
 }
 function enterDemonLord(){                                                               // pit.js:807 — TERMINAL within a fight (never reverts)
   P.demonLord=true; P.devilT=0; P.lich=false;
@@ -461,12 +1104,15 @@ function summonDemons(type){
     const _bh=Math.round((30+P.kills*5)*_heraldSummon);               // hp scales with kills (pit.js:609)
     const _bn=_cntMul;                                                // base 1 -> x2 / x3
     for(let bi=0;bi<_bn;bi++){ const ba=a+(_bn>1?(bi-(_bn-1)/2)*0.5:0);
-      demons.push({ type:'brute', x:P.x+Math.cos(ba)*55, y:P.y+Math.sin(ba)*55, r:24*_bR, face:ba,
+      const _bx=P.x+Math.cos(ba)*55, _by=P.y+Math.sin(ba)*55;
+      scene && scene.spawnBurst(_bx,_by,0xb070f0);                    // fix #4: ground-rune spawn burst at the claw fiend
+      demons.push({ type:'brute', x:_bx, y:_by, r:24*_bR, face:ba,
         hp:_bh, maxhp:_bh, life:18, cool:1, flash:0, walkP:0, dmgMul:_bMul }); }
     scene && scene.banner('CLAW FIEND','it hungers — they fight IT now','#b070f0');
   }else if(type==='dragon'){                                          // BONE DRAGON (pit.js:614)
     let dhp=Math.round((44+P.kills*6)*_heraldSummon);                 // tougher — it is the lich's phylactery (HEX FIEND +35%)
     if(_binder) dhp=Math.round(dhp*1.7);                              // DREADBINDER: the BLACK DRAGON is even tougher
+    scene && scene.spawnBurst(P.x, P.y-60, _binder?0x9aff70:0x7fd05a);   // fix #4: spawn burst at the (black/bone) dragon
     demons.push({ type:'dragon', black:_binder, x:P.x, y:P.y-60, r:18*_bR, face:P.face,
       hp:dhp, maxhp:dhp, life:15, cool:1.2, flash:0, walkP:0, dmgMul:_bMul, fbCD:2 });
     scene && scene.banner(_binder?'BLACK DRAGON':'BONE DRAGON',
@@ -475,7 +1121,9 @@ function summonDemons(type){
     const _sn=3*_cntMul;                                             // base 3 -> x2 (binder/herald) / x3 (Demon Lord)
     const _dl=P.demonLord;                                           // Demon Lord: each arrives as an ARCH succubus (deferred to M8)
     for(let i=0;i<_sn;i++){ const a=i*(6.283/_sn);
-      const _s={ type:'succubus', x:P.x+Math.cos(a)*55, y:P.y+Math.sin(a)*55, r:(_dl?15:10)*_bR, face:a, slot:a,
+      const _sx=P.x+Math.cos(a)*55, _sy=P.y+Math.sin(a)*55;
+      scene && scene.spawnBurst(_sx,_sy,0xf06aa0);                    // fix #4: spawn burst per succubus in the coven
+      const _s={ type:'succubus', x:_sx, y:_sy, r:(_dl?15:10)*_bR, face:a, slot:a,
         hp:10+P.kills*2, maxhp:10+P.kills*2, life:14, cool:rnd(.5,2), flash:0, walkP:0, dmgMul:_bMul };
       // (arch fuse/burst — _dl branch — deferred to M8; base coven only here)
       demons.push(_s); }
@@ -490,6 +1138,7 @@ function updDemons(dt){
     if(!d) continue;                                                  // REENTRANCY GUARD (pit.js:634)
     if(!(P.lich&&d.type==='dragon') && !(P.evo10==='herald'&&d.type==='succubus')) d.life-=dt;  // phylactery/herald never time out
     d.flash=Math.max(0,d.flash-dt);
+    if(d._atkPulse>0) d._atkPulse-=dt;                                // SIDEON assist strike-dart timer: set at each real attack, drives the render lunge (peaks WITH the damage)
     if(d.life<=0||d.hp<=0){ scene && scene.fxPortal(d.x,d.y);
       scene && scene.popup(d.x,d.y-20,'UNSUMMONED','#b070f0'); demons.splice(i,1); continue; }
     d.cool-=dt;
@@ -498,7 +1147,7 @@ function updDemons(dt){
       if(!tgt) continue;
       const dd=dist(d,tgt); d.face=ang(d,tgt);
       if(dd>d.r+tgt.r+10){ d.x+=Math.cos(d.face)*95*dt; d.y+=Math.sin(d.face)*95*dt; d.walkP+=dt*8; }
-      else if(d.cool<=0){ d.cool=1.4;
+      else if(d.cool<=0){ d.cool=1.4; d._atkPulse=0.30;             // SIDEON: fire the assist lunge in sync with the real shove
         swings.push({ x:d.x, y:d.y, a:d.face, arc:2.0, range:d.r+36, t:.16, heavy:true, col:'#d05a6a' });
         S.shake=Math.max(S.shake,4);
         for(const e of enemies){ if(e.dead) continue;
@@ -513,12 +1162,13 @@ function updDemons(dt){
       const dd=dist(d,tgt); d.face=ang(d,tgt);
       if(dd>160){ d.x+=Math.cos(d.face)*80*dt; d.y+=Math.sin(d.face)*80*dt; }      // approach/retreat band
       else if(dd<100){ d.x-=Math.cos(d.face)*60*dt; d.y-=Math.sin(d.face)*60*dt; }
-      if(d.cool<=0 && dd<220){ d.cool=3.2;                            // breath: cone FX + lingering paralytic ACID gas
-        scene && scene.fxBreath(d.x+Math.cos(d.face)*d.r, d.y+Math.sin(d.face)*d.r, d.face);
+      if(d.cool<=0 && dd<220){ d.cool=3.2; d._atkPulse=0.30;          // breath: cone FX + lingering paralytic ACID gas (+ SIDEON assist surge synced to the breath)
+        const _bf=SIDEON?(tgt.x>=d.x?0:Math.PI):d.face;                // fix #5: side-on breath fires STRAIGHT down the lane (cos=±1, sin=0), not diagonally up at the hovering tgt
+        scene && scene.fxBreath(d.x+Math.cos(_bf)*d.r, d.y+Math.sin(_bf)*d.r, _bf);
         if(navigator.vibrate) navigator.vibrate(20);
-        zones.push({ x:d.x+Math.cos(d.face)*120, y:d.y+Math.sin(d.face)*120, r:110, tele:0, life:4, type:'gas', tick:0 }); }  // pit.js:691
+        zones.push({ x:d.x+Math.cos(_bf)*120, y:d.y+Math.sin(_bf)*120, r:110, tele:0, life:4, type:'gas', tick:0 }); }  // pit.js:691
       if(d.black){ d.fbCD=(d.fbCD||0)-dt;                             // BLACK DRAGON (binder): exploding fireball (pit.js:692)
-        if(d.fbCD<=0 && dd<380){ d.fbCD=4; const fa=ang(d,tgt);
+        if(d.fbCD<=0 && dd<380){ d.fbCD=4; const fa=SIDEON?(tgt.x>=d.x?0:Math.PI):ang(d,tgt); d._atkPulse=Math.max(d._atkPulse||0,0.30);  // fix #5: side-on fireball flies STRAIGHT down the lane (hadouken), else aim at tgt
           fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(fa)*430, vy:Math.sin(fa)*430, r:14, kind:'fire', aoe:100, col:'#9af0c0',
             dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*2.2) });
           S.shake=Math.max(S.shake,5); if(navigator.vibrate) navigator.vibrate(25); } }
@@ -534,8 +1184,10 @@ function updDemons(dt){
           tracers.push({ x1:d.x, y1:d.y-12, x2:P.x, y2:P.y-16, t:.3, max:.3, col:'#f06aa0' });
           scene && scene.popup(P.x,P.y-46,'+'+amt,'#f06aa0');
         }else if(tgt){                                               // else hurl a fire bolt (pit.js:733)
+          d._atkPulse=0.30;                                          // SIDEON assist surge synced to the fire bolt (mend keeps the succubus resting in lane)
           const _herald=P.evo10==='herald';                          // HEX FIEND: succubi hurl BURNING fire
-          fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(d.face)*360, vy:Math.sin(d.face)*360,
+          const _ff=SIDEON?(tgt.x>=d.x?0:Math.PI):d.face;            // fix #5: side-on fire bolt flies STRAIGHT down the lane (cos=±1, sin=0)
+          fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(_ff)*360, vy:Math.sin(_ff)*360,
             r:6, kind:'fire', aoe:45, fire:_herald,                  // base coven = plain fire bolt (no DoT until herald)
             dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*1.6*(d.dmgMul||1)) }); } }
     }
@@ -554,6 +1206,26 @@ function updZones(dt){
           if(dist(z,e)<z.r){ e.stunT=Math.max(e.stunT||0,2);          // light paralytic flavor (pit.js:2368)
             e.acidT=Math.max(e.acidT||0,3); e.acidDmg=15; e.acidTick=e.acidTick||.5; } } }
       if(z.life<=0) zones.splice(i,1);
+    } else if(z.type==='fire'||z.type==='ice'||z.type==='bolt'){   // THE PYRE zones (pit.js:1644-1647)
+      if(z.tele>0){ z.tele-=dt;                                    // telegraph window: ring flashes, no damage yet
+        if(z.tele<=0 && (z.type==='ice'||z.type==='bolt')){        // ICE/BOLT detonate the instant the tele ends
+          if(dist(z,P)<z.r) hurtWarlock(z.dmg||10);
+          scene && scene.popup(z.x,z.y-20, z.type==='bolt'?'BOLT':'SHATTER', z.type==='bolt'?'#f0e05a':'#5ad2ff');
+          S.shake=Math.max(S.shake, z.type==='bolt'?7:4);
+          zones.splice(i,1);
+        }
+      } else { z.life-=dt; z.tick=(z.tick||0)-dt;                  // FIRE lingers + ticks every .5s while you stand in it
+        if(z.tick<=0){ z.tick=.5; if(dist(z,P)<z.r) hurtWarlock(z.dmg||8); }
+        if(z.life<=0) zones.splice(i,1);
+      }
+    } else if(z.type==='whipcrack'){                              // THE HOUND MASTER whip (pit.js:2339): tele-only,
+      z.tele=(z.tele||0)-dt;                                      // detonates once where you stood when the crack lands
+      if(z.tele<=0){
+        if(dist(z,P)<z.r) hurtWarlock(z.dmg||8);
+        swings.push({x:z.x,y:z.y,a:0,arc:7,range:z.r,t:.15,heavy:false,col:'#c8923a',ring:true});  // the lash ring
+        S.shake=Math.max(S.shake,4); if(navigator.vibrate) navigator.vibrate(14);
+        zones.splice(i,1);
+      }
     } else { z.life-=dt; if(z.life<=0) zones.splice(i,1); }
   }
 }
@@ -561,12 +1233,14 @@ function updSwings(dt){ for(let i=swings.length-1;i>=0;i--){ const s=swings[i]; 
 function updTracers(dt){ for(let i=tracers.length-1;i>=0;i--){ const t=tracers[i]; t.t-=dt; if(t.t<=0) tracers.splice(i,1); } }  // succubus MEND beam fade (pit.js tracers[])
 function doHeavy(){ // warlock => start the summon channel (pit.js:1154)
   if(S.mode!=='fight'||P.dead||P.heavyWind>0||P.rollT>0||P.paralyzeT>0||P.silenceT>0) return;
+  if(P.devilT>0){ devilStrike(1.0,true); return; }   // ARCH DEVIL heavy verb => BITE (pit.js:1158), not SUMMON
   startChannel();
 }
 function heavyRelease(){ if(P.char==='warlock') releaseChannel(); }  // pit.js:1163
-function doParry(){ // warlock => PORTAL (pit.js:351 -> portal:581)
+function doParry(){ // warlock => PORTAL (pit.js:351 -> portal:581); LICH => FADE (pit.js:357)
   if(S.mode!=='fight'||P.dead||P.rollT>0||P.heavyWind>0||P.channel||P.paralyzeT>0||P.silenceT>0) return;
   if(P.parryCD>0) return;
+  if(P.lich){ fade(); return; }                 // LICH defensive verb => FADE (pit.js:357), not PORTAL — fires with no foe present
   // --- faithful port of pit.js portal() :581 ---
   const fs=enemies.filter(e=>!e.dead);
   if(!fs.length) return;                        // no foe -> no swap (pit.js:583)
@@ -615,7 +1289,7 @@ function frame(dt){            // dt in seconds
   // evoTick auto-defaults under AUTO/headless and on the failsafe timeout, so this can never softlock.
   if(P.evoPick){ evoTick(dt); return; }
   // decay cooldown timers (pit.js does the same each frame)
-  for(const k of ['rollT','rollCD','heavyCD','heavyWind','atkRecover','parryT','parryCD','hexCD','paralyzeT','silenceT','fadeT','wardT'])
+  for(const k of ['rollT','rollCD','heavyCD','heavyWind','atkRecover','parryT','parryCD','hexCD','paralyzeT','silenceT','fadeT','wardT','flash'])
     if(P[k]>0) P[k] = Math.max(0, P[k]-dt);
   // ARCH DEVIL timer -> outro on expiry (pit.js frame devil tick). DEMON LORD is terminal (no timer).
   if(P.devilT>0 && !P.demonLord){ P.devilT-=dt; if(P.devilT<=0){ P.devilT=0; archDevilOutro(); } }
@@ -637,7 +1311,15 @@ function frame(dt){            // dt in seconds
       P.channel=null; }                                              // auto-channel completes here (no fizzle)
   }
   // projectile + enemy DoT sim (pit.js updFireballs:744 + hex tick:1538)
-  updFireballs(dt); updEnemies(dt); updDemons(dt); updSwings(dt); updZones(dt); updTracers(dt);   // summons + melee arcs + gas + mend beams (pit.js:632,2364)
+  updFireballs(dt); updEnemies(dt); updFoeAI(dt); updFoeShots(dt); updDemons(dt); updSwings(dt); updZones(dt); updTracers(dt);   // status DoTs THEN foe brain (chase+telegraph+strike) + summons + arcs + gas + mend beams + foe shots (pit.js:1580,632,2364)
+  // WAVE ADVANCE (M4): the whole fight cleared -> roll to the next FIGHTS[] wave (pit.js nextFight:1953).
+  // Safe here: every upd* loop above has finished iterating enemies[] for this frame, so spawnFight()
+  // may replace the array. Runs AFTER the sim, BEFORE movement/render so syncSideOn sees the new foe.
+  if(!S.gauntletDone && enemies.length && enemies.every(e=>e.dead)){
+    if((S.fight|0) < GAUNTLET_N-1){ S.fight=(S.fight|0)+1; spawnFight(S.fight);
+      scene && scene.banner(FIGHTS[S.fight].name, 'fight '+(S.fight+1)+' / '+GAUNTLET_N, '#e7b450'); }
+    else { S.gauntletDone=true; scene && scene.banner('GAUNTLET CLEARED','the Pit has no one left','#3df0c8'); }
+  }
   // movement from keys/stick -> P.x/P.y (speed ~ pit.js warlock walk)
   let mx=0,my=0;
   if(keys['a']||keys['arrowleft'])  mx-=1;
@@ -645,8 +1327,16 @@ function frame(dt){            // dt in seconds
   if(keys['w']||keys['arrowup'])    my-=1;
   if(keys['s']||keys['arrowdown'])  my+=1;
   if(stick.on){ mx+=stick.dx; my+=stick.dy; }
-  if(mx||my){ const m=Math.hypot(mx,my)||1; const sp=210*dt;
-    if(P.rollT<=0){ P.x+=mx/m*sp; P.y+=my/m*sp; scene && scene.clampArena(); } }
+  P.moving=false;                                                // ★ FIX #3: drives the idle↔walk pose swap + walk bounce in the render loop
+  if(SIDEON){                                                    // ★ HIRO FIX #1: LOCK TO A 2D PLANE — GG/SF ground line, LEFT/RIGHT only.
+    my=0;                                                        // vertical input ignored (W/S reserved for jump/crouch later)
+    if(mx && P.rollT<=0){ P.x += Math.sign(mx)*210*dt; P.moving=true; }  // walk along the lane at warlock walk speed
+    const f=(typeof currentFoe==='function')?currentFoe():null;  // ★ FIX #2 seed: aim = facing = the side the foe is on
+    if(f) P.face = (f.x>=P.x)?0:Math.PI;                          // pure-horizontal face so hex/summon bolts fire STRAIGHT (cos=±1, sin=0)
+    scene && scene.clampArena();                                 // keep X inside the pit ring
+    if(scene) P.y = scene.scale.height*SIDEON_GROUND_FR;          // ...then PIN feet to the ground line — kills ALL vertical drift
+  } else if(mx||my){ const m=Math.hypot(mx,my)||1; const sp=210*dt;
+    if(P.rollT<=0){ P.x+=mx/m*sp; P.y+=my/m*sp; scene && scene.clampArena(); P.moving=true; } }
   updateGGHud();   // drive the GG two-fighter duel HUD (warlock vs current opponent + FIGHT n/N)
 }
 
@@ -677,14 +1367,43 @@ class Arena extends Phaser.Scene{
     // texture by form/state; world-scale via SPRITE_TARGET_H below (size by TARGET height, not px).
     this.load.image('warlock_walk', [SPR+'warlock_walk.png', SPR+'warlock_walk_n.png']);
     this.load.image('warlock_hurt', [SPR+'warlock_hurt.png', SPR+'warlock_hurt_n.png']);
+    this.load.image('warlock_summon',[SPR+'warlock_summon.png', SPR+'warlock_summon_n.png']); // SUMMON-channel pose (Hiro drop 2026-06-28)
     this.load.image('lich',         [SPR+'lich.png',         SPR+'lich_n.png']);
     this.load.image('archdevil',    [SPR+'archdevil.png',    SPR+'archdevil_n.png']);
     this.load.image('demonlord',    [SPR+'demonlord.png',    SPR+'demonlord_n.png']);
     // NEW side-on pit challengers (Hiro drop 2026-06-27): humanoid undead foes for the gauntlet lineup.
     this.load.image('shambler',     [SPR+'shambler.png',     SPR+'shambler_n.png']);
     this.load.image('bonearcher',   [SPR+'bonearcher.png',   SPR+'bonearcher_n.png']);
+    // pit.js FIGHTS[] roster challengers (Hiro drop 2026-06-27 21:5x) — each enemy `type` in
+    // pit.js:1389 FIGHTS now has its own on-model side-on sprite (diffuse + auto-Sobel normal).
+    this.load.image('door',     [SPR+'door.png',     SPR+'door_n.png']);
+    this.load.image('hook',     [SPR+'hook.png',     SPR+'hook_n.png']);
+    this.load.image('chain',    [SPR+'chain.png',    SPR+'chain_n.png']);
+    this.load.image('pyre',     [SPR+'pyre.png',     SPR+'pyre_n.png']);
+    this.load.image('gunner',   [SPR+'gunner.png',   SPR+'gunner_n.png']);
+    this.load.image('grave',    [SPR+'grave.png',    SPR+'grave_n.png']);
+    this.load.image('stitch',   [SPR+'stitch.png',   SPR+'stitch_n.png']);
+    this.load.image('brute',    [SPR+'brute.png',    SPR+'brute_n.png']);
+    this.load.image('master',   [SPR+'master.png',   SPR+'master_n.png']);
+    this.load.image('hound',    [SPR+'hound.png',    SPR+'hound_n.png']);
+    this.load.image('necro',    [SPR+'necro.png',    SPR+'necro_n.png']);
+    this.load.image('champ',    [SPR+'champ.png',    SPR+'champ_n.png']);
+    this.load.image('beast',    [SPR+'beast.png',    SPR+'beast_n.png']);
+    this.load.image('skel',     [SPR+'skel.png',     SPR+'skel_n.png']);
     this.load.image('shadow', BASE+'contact_shadow.png');
     this.load.image('glow',   BASE+'glow.png');
+    // Painterly FIRE-BOLT art (Hiro drop 2026-06-28): the in-flight bolt sprite (oriented to velocity in the
+    // projectile draw) + its impact bloom one-shot (fireBurst). Array form binds each to its auto-Sobel normal
+    // map so Light2D shades them. Guarded by textures.exists('fireball') so a missing decode falls back to the
+    // old fillCircle — build stays loadable. (Completes the 00:56 intake: render code shipped, preload was missing.)
+    this.load.image('fireball',     [SPR+'fireball.png',     SPR+'fireball_n.png']);
+    this.load.image('fireball_hit', [SPR+'fireball_hit.png', SPR+'fireball_hit_n.png']);
+    // --- painted Dragon's-Crown PARALLAX BACKDROP (Hiro FEEDBACK #6): 3 full-bleed 1280x720 layers.
+    // far = amphitheater walls + spectators + braziers + god-rays (carries most of the baked lighting);
+    // floor = bloodstained sand ground band; fg = keyed pillars/chains/braziers at the edges, drawn over. ---
+    this.load.image('bg_far',   BG+'bg_pit_far.png');
+    this.load.image('bg_floor', BG+'bg_pit_floor.png');
+    this.load.image('bg_fg',    BG+'bg_pit_fg.png');
   }
   create(){
     scene = this;
@@ -696,7 +1415,7 @@ class Arena extends Phaser.Scene{
 
     // --- angled 3/4 pit floor (same technique as spike.html) ---
     const horizon=H*0.42, floorTop=horizon, floorBot=H;
-    const g=this.add.graphics();
+    const g=this.floorGfx=this.add.graphics();   // ref so buildSideOn can hide it under the painted backdrop
     g.fillStyle(0x140d22,1).fillRect(0,0,W,horizon);
     g.fillStyle(0x241a36,1);
     g.beginPath(); g.moveTo(cx-30,floorTop); g.lineTo(cx+30,floorTop);
@@ -734,15 +1453,11 @@ class Arena extends Phaser.Scene{
     // back up (pink beams) before the succubi switch to hurling fire. Real HP/maxHP wiring +
     // enemy damage land with the gauntlet in M4; until then nothing else drains HP.
     P.hp = Math.max(1, maxHP()-12);
-    // --- PLACEHOLDER practice dummies (swapped for the gauntlet roster in M4) ---
-    // gives doSlash's hex a target so the projectile + DoT plumbing runs live.
-    enemies.length=0;
-    // named so the GG HUD's right health bar reads the current opponent (first = the active duel foe,
-    // the rest stand in for the BACKGROUND lineup until the side-on stage flip lands next increment).
-    [['Shambler',cx-90,H*0.62],['Bone Archer',cx+110,H*0.66]].forEach(([nm,ex,ey])=>{
-      enemies.push({ name:nm, x:ex, y:ey, r:20, hp:80, maxhp:80, dead:false, flash:0,
-                     hexT:0, hexDmg:0, hexTick:0, hexJumps:0 });
-    });
+    // --- GAUNTLET ROSTER (M4): spawn the real pit.js FIGHTS[] ladder, starting at fight 0. ---
+    // Replaces the old 2-dummy placeholder; spawnFight populates enemies[] (currentFoe + the
+    // background lineup advance off this). Waves advance in frame() when the whole fight is cleared.
+    S.fight=S.fight|0;
+    spawnFight(S.fight);
     this.zoneGfx  = this.add.graphics();   // lingering ground effects (BONE DRAGON gas cloud)
     this.zoneGfx.setDepth(1);              // on the floor, beneath units
     this.enemyGfx = this.add.graphics();   // simple dummy + hex-aura render
@@ -759,6 +1474,7 @@ class Arena extends Phaser.Scene{
       else if(k===' ') doRoll();
       else if(k==='l') gainLevel();   // DEBUG (test affordance): +1.5 lv/press to reach the lv10/20 EVOLUTION panel until the gauntlet's real kill-growth lands (M4)
       else if(k==='v'){ P.level=Math.max(P.level,8); if(!P.demonLord){ if(P.devilT>0) archDevilOutro(); else enterDevil(); } }  // DEBUG: vibe-check ARCH DEVIL (press again -> outro -> DEMON LORD on herald road)
+      else if(k==='b'){ P.level=Math.max(P.level,10); if(!P.demonLord){ if(P.lich) exitLich(); else enterLich(); } }  // DEBUG: vibe-check LICH form -> J=SCYTHE (press again to revert)
     });
     this.input.keyboard.on('keyup', e=>{ const k=e.key.toLowerCase(); keys[k]=false;
       if(k==='q') heavyRelease();           // hold-to-channel, release-to-summon (parity feel)
@@ -773,9 +1489,537 @@ class Arena extends Phaser.Scene{
       autoFace(); doSlash();
     });
     this.mouse = {x:P.x, y:P.y-100};
+    if(SIDEON) this.buildSideOn();   // flip the stage to the eye-level side-on 1v1 duel shell
+    this.applyCameraGrade();         // DC PAINTERLY POST-FX: warm ColorMatrix + Bloom + Vignette (FEEDBACK #6 B-2)
+    this.buildAtmosphere();          // DC LIVING PIT: rising embers + raking god-rays + drifting dust (render-only)
     this.last = performance.now();
   }
 
+  // --- CAMERA POST-FX GRADE (Hiro FEEDBACK #6 B-2) — the single highest-leverage push from ~80% -> ~90%
+  // DRAGON'S CROWN LOOK. Applies a main-camera post-pipeline (composited AFTER the whole scene + Light2D
+  // sprites render) to get Vanillaware's PAINTERLY glow + contrast: (1) a warm, mildly-contrasty, slightly
+  // saturated ColorMatrix GRADE; (2) soft BLOOM for the dreamy magic-lit halo; (3) a VIGNETTE that frames
+  // the brawl and deepens the pit's edges. PURELY VISUAL — touches no sim/combat/targeting/render path.
+  // WebGL-only (postFX is a WebGL feature); guarded + try/caught so a Canvas fallback stays loadable. ---
+  applyCameraGrade(){
+    try{
+      const cam = this.cameras && this.cameras.main;
+      if(!cam || !cam.postFX || (this.renderer && this.renderer.type !== Phaser.WEBGL)) return;
+      // (1) WARM GRADE: a single custom 4x5 ColorMatrix combining ~1.16 saturation, ~1.08 contrast (around
+      // 0.5, so it also deepens shadows), and a warm tint (R x1.04 / B x0.94). Hand-composed so it's one
+      // deterministic call rather than chained presets. Offsets (~ -0.04) darken slightly for the painterly
+      // contrast Vanillaware leans on.
+      const cm = cam.postFX.addColorMatrix();
+      cm.set([
+         1.265, -0.1285, -0.0130, 0, -0.0416,
+        -0.0367, 1.1292, -0.0125, 0, -0.0400,
+        -0.0345, -0.1162, 1.1660, 0, -0.0376,
+         0,       0,       0,      1,  0
+      ]);
+      // (2) SOFT BLOOM: warm-white halo over the magic FX / rim light. Moderate strength so it glows
+      // without washing the art out. addBloom(color, offsetX, offsetY, blurStrength, strength, steps).
+      cam.postFX.addBloom(0xffe6c0, 1, 1, 1.05, 0.58, 6);
+      // (3) VIGNETTE last so it frames the brawl + darkens the pit rim, over the graded+bloomed image.
+      // addVignette(x, y, radius, strength) — radius/strength in 0..1.
+      cam.postFX.addVignette(0.5, 0.5, 0.72, 0.42);
+      this._graded = true;
+    }catch(e){ /* never break loadability over a cosmetic grade */ if(window.console) console.warn('camera grade skipped:', e && e.message); }
+  }
+
+  // --- SIDE-ON 1v1 GG STAGE (static shell): eye-level pit, warlock LEFT facing RIGHT, one opponent
+  // staged RIGHT, the rest of the roster frozen as a hazy BACKGROUND lineup, magenta pit ring.
+  // Source art faces: warlock/allies RIGHT, enemies LEFT — so foes need no flip to face the warlock. ---
+  buildSideOn(){
+    const W=this.scale.width, H=this.scale.height, gy=H*SIDEON_GROUND_FR;
+    this._gy = gy;
+    // --- PAINTED DRAGON'S-CROWN PARALLAX BACKDROP (Hiro FEEDBACK #6) — replaces the old flat fills.
+    // far (amphitheater walls + crowd + braziers + god-rays; carries the baked lighting) -> floor (sand
+    // band) -> ACTORS (y-sorted, depth = world-y) -> fg (keyed pillars/chains, drawn OVER everyone).
+    // far/floor sit at NEGATIVE depth (behind every depth>=0 actor + FX graphic); fg rides depth 9000.
+    // Subtle player-relative parallax is applied each frame in syncSideOn(). ---
+    if(this.textures.exists('bg_far') && this.textures.exists('bg_floor')){
+      if(this.floorGfx) this.floorGfx.setVisible(false);      // hide the create() procedural angled floor
+      const cover=tex=>{ const s=this.textures.get(tex).getSourceImage();
+        return Math.max(W/((s&&s.width)||W), H/((s&&s.height)||H)); };
+      this._bgCx=W/2;
+      this.bgFar  =this.add.image(W/2,H/2,'bg_far'  ).setDepth(-100).setScrollFactor(0).setScale(cover('bg_far'));
+      this.bgFloor=this.add.image(W/2,H/2,'bg_floor').setDepth(-99 ).setScrollFactor(0).setScale(cover('bg_floor'));
+      if(this.textures.exists('bg_fg'))
+        this.bgFg =this.add.image(W/2,H/2,'bg_fg'   ).setDepth(9000).setScrollFactor(0).setScale(cover('bg_fg'));
+    } else {
+      // FALLBACK (backdrop art missing): the old procedural flat fills + magenta pit ring — keeps the
+      // build loadable and vibe-checkable exactly as before.
+      const bg=this.add.graphics().setDepth(2);
+      bg.fillStyle(0x140d22,1).fillRect(0,0,W,gy*0.55);
+      bg.fillStyle(0x1d1430,1).fillRect(0,gy*0.55,W,gy-gy*0.55);
+      bg.fillStyle(0x0c0814,1).fillRect(0,gy,W,H-gy);
+      bg.fillStyle(0x3a0d28,0.55).fillEllipse(W/2,gy+10,W*0.92,H*0.12);
+      bg.lineStyle(6,0xff3aa0,0.9).strokeEllipse(W/2,gy+4,W*0.92,H*0.12);
+      bg.lineStyle(2,0xff8ad0,0.5).strokeEllipse(W/2,gy+4,W*0.74,H*0.085);
+      bg.fillStyle(0x05030a,0.6).fillRect(0,0,W,8);
+    }
+    // --- FLICKERING BRAZIER POINT-LIGHTS (Hiro FEEDBACK #6 part B-1): warm Light2D torches placed at the
+    // painted brazier hotspots keyed into bg_fg (two flanking the pit on each edge). They throw live, jittering
+    // torchlight ACROSS the warlock + foes as they move (the normal-mapped sprites already bake the response),
+    // turning the static painted glow into real moving light — the highest-impact live-FX layer toward DC.
+    // Each stores base x/y/intensity/radius + a phase; syncSideOn() flickers them + tracks the fg parallax.
+    // Only built when bg_fg exists (the braziers are baked there); the fallback stage simply has no torches. ---
+    this._brazLights=[];
+    if(this.textures.exists('bg_fg')){
+      const brazPos=[[0.085,0.73],[0.185,0.66],[0.885,0.70],[0.805,0.58]];   // [xFrac,yFrac] of the painted braziers
+      brazPos.forEach(([fxr,fyr],i)=>{
+        const L=this.lights.addLight(W*fxr, H*fyr, 300, 0xff7a30, 1.7);
+        L._bx=W*fxr; L._by=H*fyr; L._bi=1.7; L._br=300; L._ph=i*1.9;          // base + per-torch flicker phase
+        this._brazLights.push(L);
+      });
+    }
+    // --- frozen BACKGROUND lineup of upcoming challengers (small, hazy, behind the duelists) ---
+    this.lineupSprites=[];
+    const lineup=['lich','demonlord','archdevil','clawfiend','bonedragon','succubus','archsuccubus','bonearcher'];
+    lineup.forEach((key,i)=>{
+      if(!this.textures.exists(key)) return;
+      const x=W*0.50 + (i-(lineup.length-1)/2)*W*0.088;
+      const s=this.add.sprite(x, gy-H*0.13, key).setOrigin(0.5,1).setPipeline('Light2D').setDepth(3);
+      const wh=HERO_PX*(SPRITE_TARGET_H[key]||1)*0.42;            // distant => small
+      s.setScale(wh/(s.height||wh)).setAlpha(0.5).setTint(0x5a5a82);
+      this.lineupSprites.push(s);
+    });
+    // --- CURRENT opponent: real side-on sprite anchored RIGHT, already facing LEFT (no flip) ---
+    const foeKey=(enemies[0] && (enemies[0].spriteKey || foeKeyFor(enemies[0].name))) || 'shambler';
+    if(this.textures.exists(foeKey)){
+      const fx=W*0.72;
+      this.foeShadow=this.add.image(fx,gy+6,'shadow').setAlpha(0.8).setDepth(gy-1);
+      this.foeSprite=this.add.sprite(fx,gy,foeKey).setOrigin(0.5,1).setPipeline('Light2D').setDepth(gy);
+      const fwh=HERO_PX*(SPRITE_TARGET_H[foeKey]||1);
+      this.foeSprite.setScale(fwh/(this.foeSprite.height||fwh));
+      this.foeShadow.setScale(Math.max(0.2,this.foeSprite.displayWidth/(this.foeShadow.width||1)*0.95));
+      this.lights.addLight(fx, gy-160, 300, 0xff6a8a, 1.1);       // rim light on the foe side
+    }
+    // --- pin the WARLOCK to the LEFT third, facing RIGHT (eye-level duel anchor) ---
+    P.x=W*0.30; P.y=gy; P.face=0;
+    this.hero.setPosition(P.x,P.y); this.hero.setFlipX(false);
+    if(this.keyLight){ this.keyLight.x=W*0.40; this.keyLight.y=gy-160; }
+    this._foeName = (currentFoe()||{}).name || null;   // seed the duel tracker so frame 1 doesn't re-step
+    this._foeStepping = false;                          // true only while a foe is collapsing/stepping in
+    this._foeHomeX = W*0.72;                            // the foe's neutral standing x (returns here after a lunge)
+    const f0=currentFoe(); if(f0){ f0.aiState='approach'; f0.aiCd=rnd(0.5,1.1); }
+  }
+
+  // --- DUEL LOOP (side-on, increment 1): bind the RIGHT-side foe sprite to currentFoe(). When the active
+  // gauntlet foe changes (the prior one was SLAIN), the old sprite COLLAPSES (defeated leaves), the next
+  // foe's sprite STEPS IN from the right, and the front of the background lineup advances (shrinks by one).
+  // Per-frame it also reflects the live foe's hurt-flash + hex tint. No foe AI/approach yet (next run);
+  // this makes the static tableau react to the duel the warlock is already winning via HEX/summons. ---
+  syncSideOn(now){
+    // PAINTED-BACKDROP PARALLAX (Hiro FEEDBACK #6): nudge the far + fg layers opposite the warlock's
+    // offset from centre so the pit gains depth as he walks — far drifts a little (distant), fg drifts
+    // more (closest to camera). Screen-fixed layers (scrollFactor 0); render-only.
+    if(this.bgFar){ const dx=(P.x-(this._bgCx||this.scale.width/2));
+      this.bgFar.x=(this._bgCx||this.scale.width/2) - dx*0.06;
+      const fgShift=-dx*0.16;
+      if(this.bgFg) this.bgFg.x=(this._bgCx||this.scale.width/2) + fgShift;
+      // FLICKER + parallax-track the brazier lights so the torchlight jitters and stays pinned to the
+      // painted braziers as the fg layer drifts. Two stacked sines (a slow waver + a fast crackle) give a
+      // living flame; intensity 0.78x-1.10x base, radius gently breathes with it. Render-only (no sim).
+      if(this._brazLights && this._brazLights.length){ const t=(now||0)/1000;
+        for(const L of this._brazLights){
+          const f=0.78+0.20*Math.sin(t*6.5+L._ph)+0.10*Math.sin(t*21.7+L._ph*2.3);
+          L.x=L._bx+fgShift; L.y=L._by;
+          L.intensity=L._bi*f; L.radius=L._br*(0.90+0.16*f);
+        }
+      }
+    }
+    if(!this.foeSprite) return;
+    const f=currentFoe();
+    if(f && f.name!==this._foeName){
+      // a NEW foe is up (the prior one was just SLAIN). FINISHER BEAT + camera WHIRL, then COLLAPSE the
+      // old sprite and step the new one in. (priority-4 transition between fights.)
+      this._foeName=f.name;
+      this._foeStepping=true;                                      // freeze AI while the new foe walks on
+      const W=this.scale.width, gy=this._gy, key=(f.spriteKey||foeKeyFor(f.name)), homeX=this._foeHomeX||W*0.72;
+      f.aiState='approach'; f.aiCd=rnd(0.4,1.0);                   // fresh foe enters in approach
+      this.finisherWhirl();                                        // flash+shake+banner + self-resetting cam punch
+      // front of the lineup steps forward => remove one hazy challenger so the back row visibly shrinks
+      if(this.lineupSprites && this.lineupSprites.length){
+        const ls=this.lineupSprites.shift();
+        if(ls) this.tweens.add({targets:ls, alpha:0, y:ls.y+18, duration:260, onComplete:()=>ls.destroy()});
+      }
+      const swapIn=()=>{
+        if(!this.foeSprite || !this.textures.exists(key)){ this._foeStepping=false; return; }
+        this.foeSprite.setTexture(key);
+        const fwh=HERO_PX*(SPRITE_TARGET_H[key]||1);
+        this.foeSprite.setScale(fwh/(this.foeSprite.height||fwh)).clearTint().setAlpha(0);
+        this.foeShadow.setScale(Math.max(0.2,this.foeSprite.displayWidth/(this.foeShadow.width||1)*0.95)).setAlpha(0);
+        this.foeSprite.x=W*0.86; this.foeShadow.x=W*0.86;          // start off to the right, then walk in
+        this.tweens.add({targets:[this.foeSprite], x:homeX, alpha:1, duration:360, ease:'Quad.out',
+                         onComplete:()=>{ this._foeStepping=false; }});   // hand control to foeAI
+        this.tweens.add({targets:[this.foeShadow], x:homeX, alpha:0.8, duration:360, ease:'Quad.out'});
+      };
+      // collapse the previous occupant (a SLAIN foe), then bring the next one in
+      this.tweens.add({ targets:[this.foeSprite,this.foeShadow], alpha:0, duration:200,
+                        onComplete:()=>swapIn() });
+      return;
+    }
+    if(f){
+      // drive the side-on foe AI (approach -> wind-up -> lunge -> recover); sets f._tele during the telegraph
+      this.foeAI(now,f);
+      // live duel reactions (priority): white hurt-flash > yellow wind-up telegraph > magenta hex > natural rim
+      if(f.flash>0)        this.foeSprite.setTint(0xffffff);
+      else if(f._tele)     this.foeSprite.setTint(0xffd24a);
+      else if(f.hexT>0)    this.foeSprite.setTint(0xc79bff);
+      else                 this.foeSprite.clearTint();
+    } else {
+      // whole gauntlet cleared — fade the last foe out (a finisher beat lands in a later increment)
+      if(this.foeSprite.alpha>0.02) this.foeSprite.setAlpha(Math.max(0,this.foeSprite.alpha-0.04));
+    }
+  }
+
+  // --- FOE CROWD (priority-1/2, DC multi-foe wave): EVERY alive foe that ISN'T the current duel foe is
+  // drawn as a real side-on sprite waiting in a shallow back depth band — deeper foes stand higher, smaller
+  // and hazier — so a multi-foe wave LOOKS like a Dragon's Crown crowd instead of one duelist + invisible mob.
+  // A per-foe {spr,shadow} pool keyed off the enemy object; culled when a foe dies or the wave swaps. A thin
+  // HP pip floats over each. Render-only — reads e.x/e.flash/e.hexT/e.hp but never writes sim state. ---
+  syncFoeCrowd(now){
+    if(!SIDEON) return;
+    const W=this.scale.width, H=this.scale.height, gy=this._gy||H*SIDEON_GROUND_FR;
+    const cur=currentFoe();
+    this._foeCrowd = this._foeCrowd || new Map();
+    const pool=this._foeCrowd;
+    if(!this._crowdGfx) this._crowdGfx=this.add.graphics();
+    const cg=this._crowdGfx; cg.clear(); cg.setDepth(8000);
+    // LUNGE-LANE decal layer: a faint ground oval marking the charger's COMMITTED strike window, drawn on the
+    // floor BENEATH the units (depth 1, same band as zoneGfx) so the player can SEE where the charge will land
+    // and step off. Render-only — cleared each frame, writes no sim state.
+    if(!this._laneGfx) this._laneGfx=this.add.graphics();
+    const lg=this._laneGfx; lg.clear(); lg.setDepth(1);
+    // cull sprites whose foe died, left the wave, OR got promoted to the current duel foe (foeSprite owns it)
+    for(const [e,o] of pool){ if(e.dead || e===cur || enemies.indexOf(e)<0){ if(o.shadow)o.shadow.destroy(); o.spr.destroy(); pool.delete(e); } }
+    // gather the WAITING foes (alive, not the active duel foe currentFoe handles)
+    const waiting=[]; for(const e of enemies){ if(!e.dead && e!==cur) waiting.push(e); }
+    // DC CROWD LIGHT-AI: occasionally ONE back-row foe breaks formation, charges the player, throws a swing,
+    // then rotates back to its slot. RENDER-ONLY (no sim/HP/damage written — the duel sim stays authoritative
+    // and the build stays safe); a cosmetic pressure read so the wing feels alive instead of idly leaning.
+    // MULTI-FOE CROWD PRESSURE (BRAWLER MIGRATION, step 1): up to _maxChargers back-row foes may break
+    // formation AT ONCE, each driving its OWN commit-lock -> lunge -> sidestep-whiff -> lane-decal arc off a
+    // per-foe SLOT object {foe,t0,struck,aimX,aimY}. Single-copy logic (the override below reads the slot, no
+    // duplicated arc). Still RENDER-ONLY (no sim/HP authority); every landed chip routes through hurtWarlock
+    // (i-frame-safe, HP FLOORED at 1) so two simultaneous pressers can never KO or softlock the warlock.
+    this._chargers = this._chargers || [];
+    this._maxChargers = 2;
+    // cull finished/invalid slots (foe died, became the duel foe, or left the wave)
+    this._chargers = this._chargers.filter(s => s.foe && !s.foe.dead && s.foe!==cur && enemies.indexOf(s.foe)>=0);
+    if(this._chargers.length < this._maxChargers && waiting.length>=2 && now>(this._nextCharge||0)){
+      // ROTATE across the wing: prefer foes that haven't charged this round AND aren't already charging, so
+      // EVERY back-row foe takes a turn. The recent-set resets once everyone's gone -> a fresh rotation.
+      const recent=this._recentChargers||(this._recentChargers=new Set());
+      const busy=new Set(this._chargers.map(s=>s.foe));
+      let fresh=[]; for(const e of waiting){ if(!recent.has(e) && !busy.has(e)) fresh.push(e); }
+      if(!fresh.length){ recent.clear(); fresh=waiting.filter(e=>!busy.has(e)); }
+      if(fresh.length){
+        const pick=fresh[(Math.random()*fresh.length)|0];
+        this._chargers.push({foe:pick, t0:now, struck:false, aimX:null, aimY:null});  // new slot, own lunge-commit lock
+        recent.add(pick);
+        // STAGGER the next break to 0.7-1.7s — deliberately UNDER the 1.4s arc so a 2nd presser usually joins
+        // while the 1st is still mid-lunge (genuine two-at-once pressure), but offset so they don't perfectly
+        // sync. Cap 2 + the 1.4s arc bound the rate to ~2 active with a brief breather, not a wall of charges.
+        this._nextCharge=now + 700 + Math.random()*1000;
+      }
+    }
+    waiting.forEach((e,i)=>{
+      const key=e.spriteKey||foeKeyFor(e.name);
+      if(!this.textures.exists(key)) return;
+      let o=pool.get(e);
+      if(!o || o.spr.texture.key!==key){
+        if(o){ if(o.shadow)o.shadow.destroy(); o.spr.destroy(); }
+        const spr=this.add.sprite(0,0,key).setOrigin(0.5,1).setPipeline('Light2D');
+        const shadow=this.add.image(0,0,'shadow').setAlpha(0.45);
+        o={spr,shadow}; pool.set(e,o);
+      }
+      const spr=o.spr, sh=o.shadow;
+      // 2-row back formation, clamped on-screen; the deeper row sits higher + smaller (depth read)
+      const row=i%2, col=Math.floor(i/2);
+      const baseX=Math.min(W*0.96, W*(0.80 + 0.05*col + (row?0.025:0)));
+      // DC CROWD PRESSURE: each waiting foe restlessly LEANS IN toward the player and rocks back, staggered by
+      // a per-foe phase, so the back rows visibly press the brawl instead of standing frozen. Render-only and
+      // bounded — x can never cross the standoff line (W*0.66) into the duel/player zone and it always eases
+      // back, so the formation can't walk off; a small synced bob sells the shuffling step.
+      const ph=now*0.0019 + i*0.85;
+      const press=Math.sin(ph)*0.5+0.5;                          // 0..1 forward-lean cycle
+      let dx=Math.max(W*0.66, baseX - press*W*0.07);             // default: restless lean, clamped at standoff
+      const depthFrac=0.07 + (row?0.075:0) + 0.012*col;
+      const fy=gy - H*depthFrac + Math.sin(ph*1.7)*H*0.009;      // restless vertical bob
+      // CHARGE OVERRIDE: if this is the chosen charger, drive a windup -> lunge -> strike -> recover arc
+      // toward the player and back. Bounded by the arc; auto-clears at t>=1 so it can never stick off-slot.
+      let charging=false, hot=false;
+      const slot = this._chargers ? this._chargers.find(s=>s.foe===e) : null;
+      if(slot){
+        charging=true;
+        const t=Math.min(1,(now-(slot.t0||now))/1400);
+        // LUNGE-COMMIT LOCK: at the windup->lunge boundary (t>=0.22) freeze the target spot ONCE from the
+        // player's position THEN, and aim the whole arc at it. The old hitX re-read live P.x every frame, so
+        // the charger rubber-banded onto the player (it could stick / re-aim mid-lunge). Committing to a fixed
+        // point stops the stick AND lets a SIDESTEP off the committed lane avoid the swing (see the strike test).
+        if(t>=0.22 && slot.aimX==null && typeof P!=='undefined' && P){
+          slot.aimX=P.x; slot.aimY=P.y;                                            // committed player spot
+        }
+        const aimX=(slot.aimX!=null)?slot.aimX:((typeof P!=='undefined'&&P)?P.x:W*0.30);
+        const homeX=baseX, hitX=aimX+48;                                            // stop just right of the COMMITTED spot
+        if(t<0.22){ dx=homeX + W*0.03*(t/0.22); }                                   // windup: rear back
+        else if(t<0.50){ const u=(t-0.22)/0.28, e2=1-(1-u)*(1-u); dx=homeX+W*0.03+(hitX-homeX-W*0.03)*e2; } // lunge in
+        else if(t<0.62){ dx=hitX; hot=true; }                                       // strike at the committed spot
+        else{ const u=(t-0.62)/0.38, e2=u<0.5?2*u*u:1-Math.pow(-2*u+2,2)/2; dx=hitX+(homeX-hitX)*e2; }      // recover
+        if(t>=1){ this._chargers=this._chargers.filter(s=>s!==slot); }              // arc done -> free this slot
+        // LUNGE-LANE TELEGRAPH: once the charge COMMITS (aim locked at t>=0.22) until the strike resolves
+        // (t<0.62), paint a faint oval on the ground at the committed strike spot, sized to the EXACT dodge
+        // window the strike test uses (|x-aimX|<56, |y-aimY|<34 -> 112x68 oval). It fills in as the lunge
+        // closes, so the player can READ where to step off (left/right OR into depth). Render-only: drawn on
+        // _laneGfx (depth 1, under feet); writes NO sim state — purely a visual reinforcement of the dodge.
+        if(slot.aimX!=null && t<0.62){
+          const lx=slot.aimX, ly=(slot.aimY!=null)?slot.aimY:fy;
+          const u=Math.min(1,Math.max(0,(t-0.22)/0.28));            // 0->1 as the lunge closes toward the strike
+          const pulse=0.5+0.5*Math.abs(Math.sin(now/55));
+          lg.fillStyle(0xffd24a,(0.06+0.12*u)*pulse); lg.fillEllipse(lx,ly,112,68);                 // danger fill
+          lg.lineStyle(2.5,0xffae3a,0.35+0.4*pulse);  lg.strokeEllipse(lx,ly,112,68);               // boundary ring
+          lg.fillStyle(0xffffff,0.10*u);              lg.fillEllipse(lx,ly,112*(1-u*0.6),68*(1-u*0.6)); // closing core
+        }
+      }
+      // STRIKE SPARK: one colored burst at the player the instant the charger lands its swing
+      if(hot && slot && !slot.struck){
+        slot.struck=true;
+        // SIDESTEP DODGE: the swing lands at the COMMITTED spot (locked at lunge-commit above). If the warlock
+        // has stepped off that spot on the shallow plane — in lane (x) OR depth (y) — the swing WHIFFS: grey dust
+        // + MISS, no spark, no chip. So a clean sidestep now avoids the charge like a WARD/roll does; the connect
+        // path (spark + i-frame-gated chip + recoil) only runs when the warlock is still inside the lane window.
+        const _aimX=(slot.aimX!=null)?slot.aimX:((typeof P!=='undefined'&&P)?P.x:W*0.30);
+        const _aimY=(slot.aimY!=null)?slot.aimY:fy;
+        const _inLane=(typeof P!=='undefined'&&P)&&Math.abs(P.x-_aimX)<56&&Math.abs(P.y-_aimY)<34;
+        if(_inLane){
+        const tx=((typeof P!=='undefined'&&P)?P.x:W*0.30)+18, ty=fy-14;
+        const tint=key.indexOf('dragon')>=0?0x7fd05a:(key.indexOf('succub')>=0?0xf06aa0:0xff6a7a);
+        for(let k=0;k<6;k++){ const a=(k/6)*Math.PI*2+rnd(-0.3,0.3), d=rnd(20,46);
+          const p=this.add.image(tx,ty,'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(rnd(0.10,0.20)).setDepth(9000);
+          this.tweens.add({targets:p,x:tx+Math.cos(a)*d,y:ty+Math.sin(a)*d,alpha:0,scale:0.02,duration:rnd(240,420),ease:'Quad.out',onComplete:()=>p.destroy()}); }
+        if(typeof S!=='undefined'&&S) S.shake=Math.max(S.shake||0,4);                // tiny pressure kick
+        // SMALL REAL CHIP (teeth): the landed swing now bites. Routed through hurtWarlock so it OBEYS every
+        // i-frame gate (ward/roll/blink-fade all negate it -> popup, no HP loss) and HP is FLOORED at 1 inside
+        // hurtWarlock, so a back-row charge can never KO/softlock. Half a normal foe bite (~3-6), telegraphed by
+        // the ~0.5s windup->lunge arc above, so a dodge or WARD during the wind cleanly avoids it.
+        if(typeof hurtWarlock==='function' && typeof P!=='undefined' && P && !P.dead){
+          const _hp0=P.hp;
+          hurtWarlock(Math.max(2, Math.round(foeDmg(e)*0.5)));
+          // HURT/RECOIL TELL (FEEDBACK #6 follow-up — make the chip READ as contact). Fires ONLY when the
+          // chip actually CONNECTED: hurtWarlock leaves P.hp unchanged when WARD/roll/blink-fade negate the
+          // hit, so `P.hp < _hp0` is exactly "it landed" — an i-frame'd hit produces NO knock/flash. The
+          // knock shoves the warlock AWAY from the charger's lunge side and clampArena re-pins him inside the
+          // pit ring (same shove+clamp pattern as the hurl at L920), so it can't desync or walk him off-arena.
+          if(P.hp < _hp0){
+            const kdir = (P.x <= dx) ? -1 : 1;                       // away from the charger (it lunges from the right -> knock left)
+            P.x += kdir*18; this.clampArena(P);                      // small recoil step, re-clamped into the ring
+            P.flash = Math.max(P.flash||0, 0.20);                    // a touch longer white/hurt-pose pop than the base chip's 0.14
+            if(typeof S!=='undefined'&&S) S.shake=Math.max(S.shake||0,8);   // a firmer connect kick than the 4 windup spark
+            const wfx=this.add.image(P.x, P.y-16, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0xffffff).setScale(0.24).setDepth(9001);
+            this.tweens.add({targets:wfx, scale:0.04, alpha:0, duration:200, ease:'Quad.out', onComplete:()=>wfx.destroy()});
+          }
+        }
+        } else {
+          // WHIFF: the warlock sidestepped the committed lane — grey dust at the empty strike spot + MISS popup,
+          // NO spark and NO chip (hurtWarlock is never called), so a clean sidestep fully negates the charge.
+          const _mx=_aimX+18, _my=fy-14;
+          for(let k=0;k<5;k++){ const a=rnd(0,Math.PI*2), d=rnd(10,26);
+            const dp=this.add.image(_mx,_my,'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x9a9aa6).setScale(rnd(0.06,0.12)).setDepth(8990);
+            this.tweens.add({targets:dp,x:_mx+Math.cos(a)*d,y:_my+Math.sin(a)*d+8,alpha:0,scale:0.02,duration:rnd(200,340),ease:'Quad.out',onComplete:()=>dp.destroy()}); }
+          if(typeof this.popup==='function') this.popup(_aimX, fy-30, 'MISS', '#9aa');
+        }
+      }
+      const scl=Math.max(0.45, 0.82 - (row?0.10:0) - 0.02*col);
+      const wh=HERO_PX*(SPRITE_TARGET_H[key]||1)*scl;
+      spr.x=dx; spr.y=fy; spr.setScale(wh/(spr.height||wh)).setFlipX(false).setDepth(charging?fy+40:fy).setAlpha(0.9);
+      if(e.flash>0)       spr.setTint(0xffffff);
+      else if(charging)   spr.setTint(0xffd24a);                 // charger telegraphs HOT as it breaks formation
+      else if(e._tele)    spr.setTint(0xffd24a);
+      else if(e.hexT>0)   spr.setTint(0xc79bff);
+      else                spr.setTint(0x8f8fa8);                 // hazy "waiting in the wings" desaturate
+      sh.x=dx; sh.y=fy+5; sh.setDepth(fy-1).setScale(Math.max(0.18, spr.displayWidth/(sh.width||1)*0.85));
+      // thin HP pip over each waiting foe (DC enemy health bar)
+      const bw=Math.max(20, spr.displayWidth*0.7), bx=dx-bw/2, by=fy-spr.displayHeight-8;
+      cg.fillStyle(0x000000,0.55); cg.fillRect(bx-1,by-1,bw+2,5);
+      cg.fillStyle(0xff5a6a,1);    cg.fillRect(bx,by,bw*Math.max(0,e.hp/(e.maxhp||1)),3);
+    });
+  }
+
+  // --- FINISHER BEAT + CAMERA WHIRL (priority-4): fired the instant the active gauntlet foe changes
+  // (i.e. the prior one was slain). A white flash + screen-shake + "DOWN!" banner land the kill, then the
+  // camera punches IN (zoom) and WHIPS toward the entry side as the next challenger steps up, settling back
+  // to a centred eye-level frame. Every effect is self-resetting (zoomTo→1.0, pan→centre) so an interrupted
+  // beat can't leave the camera stuck off-centre or zoomed — the build stays vibe-checkable. ---
+  finisherWhirl(){
+    const cam = this.cameras && this.cameras.main; if(!cam) return;
+    const W=this.scale.width, H=this.scale.height;
+    this.flash(0xffffff,0.16);                       // bright impact pop
+    S.shake=Math.max(S.shake,13);                    // routed through update()'s cameras.main.shake
+    S.hitPause=Math.max(S.hitPause,0.12);            // brief FULL FREEZE on the kill (GG hit-stop)
+    S.slow=Math.max(S.slow,0.45);                    // then a short SLOW-MO as the next challenger enters
+    this.finisherBurst();                            // radial spark pop + white flare on the slain foe
+    this.banner('DOWN!','next challenger steps up','#ff6a8a');
+    cam.zoomTo(1.14,170,'Quad.easeOut');             // punch in on the finish
+    cam.pan(W*0.66,H*0.5,200,'Sine.easeInOut');      // whip toward the right where the next foe enters
+    this.time.delayedCall(520, ()=>{                 // ...then settle back to the neutral centred frame
+      const c=this.cameras && this.cameras.main; if(!c) return;
+      c.zoomTo(1.0,360,'Quad.easeInOut');
+      c.pan(W*0.5,H*0.5,360,'Sine.easeInOut');
+    });
+  }
+
+  // --- FINISHER BURST (priority-4 polish): a radial spark pop + a quick white scale-flare on the SLAIN
+  // foe's body. Called from finisherWhirl() BEFORE the collapse tween / texture swap, so this.foeSprite
+  // still marks the kill spot. Particles ride Phaser's clock so they play over the hit-stop freeze. ---
+  finisherBurst(){
+    const s=this.foeSprite; if(!s) return;
+    const bx=s.x, by=s.y-30;
+    s.setTint(0xffffff);                                              // death flash on the body
+    this.tweens.add({targets:s, scaleX:s.scaleX*1.12, scaleY:s.scaleY*1.12, yoyo:true, duration:90});
+    for(let k=0;k<18;k++){ const a=(k/18)*Math.PI*2+rnd(-0.2,0.2), d=rnd(50,150);
+      const p=this.add.image(bx,by,'glow').setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(0xff6a8a).setScale(rnd(0.12,0.24)).setDepth(9000);
+      this.tweens.add({targets:p, x:bx+Math.cos(a)*d, y:by+Math.sin(a)*d,
+        alpha:0, scale:0.03, duration:rnd(380,620), ease:'Quad.out', onComplete:()=>p.destroy()}); }
+  }
+  // TRANSFORM BEAT — radial spark + expanding ring on the warlock when his form swaps (arch devil /
+  // lich / demon lord / revert). Render-only (rides Phaser's clock, self-destructing tweens); the form
+  // colour matches the body tint so the morph reads at a glance. Called once per genuine form change.
+  formMorphBurst(ft){
+    const h=this.hero; if(!h) return;
+    const bx=h.x, by=h.y-40;
+    const col = ft==='archdevil'?0xff5a5a : ft==='demonlord'?0x9affc0 : ft==='lich'?0x8ad8ff : 0xffffff;
+    // expanding shock ring
+    const ring=this.add.image(bx,by,'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(col).setScale(0.1).setAlpha(0.95).setDepth(9001);
+    this.tweens.add({targets:ring, scale:2.2, alpha:0, duration:380, ease:'Quad.out', onComplete:()=>ring.destroy()});
+    // upward spark column (a "rising power" read for the borrowed form)
+    for(let k=0;k<16;k++){ const a=rnd(-0.5,0.5)-Math.PI/2, d=rnd(60,150);
+      const p=this.add.image(bx+rnd(-18,18),by,'glow').setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col).setScale(rnd(0.10,0.20)).setDepth(9002);
+      this.tweens.add({targets:p, x:p.x+Math.cos(a)*d, y:by+Math.sin(a)*d,
+        alpha:0, scale:0.03, duration:rnd(340,560), ease:'Quad.out', onComplete:()=>p.destroy()}); }
+    // brief white flash on the body itself + a pop of scale
+    h.setTintFill && h.setTintFill(0xffffff);
+    this.time.delayedCall(70, ()=>{ if(this.hero) this.hero.clearTint(); });
+    this.tweens.add({targets:h, scaleX:h.scaleX*1.10, scaleY:h.scaleY*1.10, yoyo:true, duration:110});
+    if(S) S.shake=Math.max(S.shake||0, 1.2);
+  }
+
+  // CHANNEL BEAT (fix #4) — a "gathering" telegraph on the warlock the instant the summon channel
+  // begins: motes of power are PULLED INWARD to the caster + a violet caster glow, so the summon reads
+  // as a deliberate build-up rather than an instant pop. Render-only (rides Phaser's clock). ---
+  channelBeat(){
+    const h=this.hero; if(!h) return;
+    const bx=h.x, by=h.y-30, col=0x8a4cff;
+    // soft caster glow that swells then fades under the warlock
+    const g=this.add.image(bx,by,'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(col).setScale(0.2).setAlpha(0.0).setDepth(8400);
+    this.tweens.add({targets:g, scale:1.1, alpha:0.5, duration:260, yoyo:true, ease:'Sine.inOut', onComplete:()=>g.destroy()});
+    // motes converging INWARD onto the caster (the "gather")
+    for(let k=0;k<14;k++){ const a=(k/14)*Math.PI*2+rnd(-0.2,0.2), d=rnd(70,130);
+      const p=this.add.image(bx+Math.cos(a)*d, by+Math.sin(a)*d*0.7, 'glow').setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col).setScale(rnd(0.06,0.14)).setAlpha(0).setDepth(8401);
+      this.tweens.add({targets:p, x:bx, y:by, alpha:0.9, duration:rnd(260,420), ease:'Quad.in',
+        onComplete:()=>{ this.tweens.add({targets:p, alpha:0, scale:0.02, duration:120, onComplete:()=>p.destroy()}); } }); }
+  }
+
+  // SPAWN BURST (fix #4) — fired at the exact point a summoned creature appears: a flat GROUND RUNE that
+  // expands out from its feet + a quick vertical light flash + radial spark motes, tinted to the creature
+  // family (claw=violet, dragon=green, coven=pink). Render-only, self-destructing tweens. ---
+  spawnBurst(x,y,col){
+    if(x==null) return; col=col||0xb070f0;
+    // flat expanding ground rune (squished ellipse at the feet)
+    const rune=this.add.image(x,y,'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(col).setScale(0.18,0.07).setAlpha(0.95).setDepth(8500);
+    this.tweens.add({targets:rune, scaleX:1.9, scaleY:0.62, alpha:0, duration:440, ease:'Quad.out', onComplete:()=>rune.destroy()});
+    // bright vertical flash where the body materialises
+    const flash=this.add.image(x,y-26,'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xffffff).setScale(0.32,0.8).setAlpha(0.9).setDepth(8502);
+    this.tweens.add({targets:flash, scaleX:0.04, scaleY:1.2, alpha:0, duration:300, ease:'Quad.out', onComplete:()=>flash.destroy()});
+    // radial spark motes kicking up from the rune
+    for(let k=0;k<14;k++){ const a=rnd(-0.6,0.6)-Math.PI/2, d=rnd(45,120);
+      const p=this.add.image(x+rnd(-14,14),y,'glow').setBlendMode(Phaser.BlendModes.ADD)
+        .setTint(col).setScale(rnd(0.08,0.18)).setDepth(8501);
+      this.tweens.add({targets:p, x:p.x+Math.cos(a)*d, y:y+Math.sin(a)*d,
+        alpha:0, scale:0.03, duration:rnd(320,520), ease:'Quad.out', onComplete:()=>p.destroy()}); }
+    if(S) S.shake=Math.max(S.shake||0, 2.0);
+  }
+
+  // --- DUEL LOOP (side-on, increment 2): simple side-on foe AI. The current foe walks LEFT toward the
+  // warlock to a melee spacing, telegraphs a WIND-UP (yellow tint, f._tele), LUNGES in (fast dash) and on
+  // contact calls hurtWarlock() so HP trades both ways, then RECOVERS back to its home x. Stun/hex pause it.
+  // Facing: enemy art already faces LEFT (toward the warlock on the left), so no flip needed. ---
+  foeAI(now,f){
+    if(this._foeStepping || !this.foeSprite) return;
+    if(f.ranged){ this.foeRangedAI(now,f); return; }       // pyre/gunner: hold range + SHOOT, not melee-lunge
+    const dt=this.dt||0.016, spr=this.foeSprite, sh=this.foeShadow;
+    const homeX=this._foeHomeX||this.scale.width*0.72;
+    const meleeX=P.x+88;                                   // standing distance for the wind-up
+    if(f.stunT>0){ f._tele=false; return; }                // PORTAL stun freezes the foe
+    f.aiState=f.aiState||'approach'; f.aiCd=Math.max(0,(f.aiCd||0)-dt); f._tele=false;
+    switch(f.aiState){
+      case 'approach':
+        spr.x = Math.max(meleeX, spr.x - 72*dt);             // walk in ~72 px/s toward melee spacing
+        if(spr.x<=meleeX+2 && f.aiCd<=0){ f.aiState='windup'; f.windT=0.34; }
+        break;
+      case 'windup':
+        f._tele=true; f.windT-=dt;
+        spr.x=Math.min(homeX, spr.x+38*dt);                 // small lean back as it loads the lunge
+        if(f.windT<=0){ f.aiState='lunge'; f.lungeT=0.20; f._hit=false; }
+        break;
+      case 'lunge':
+        f.lungeT-=dt;
+        spr.x=Math.max(P.x+40, spr.x-360*dt);               // fast dash in, clamped just short of the warlock
+        if(!f._hit && spr.x<=P.x+62){ f._hit=true; hurtWarlock(foeDmg(f)); }
+        if(f.lungeT<=0){ f.aiState='recover'; f.recT=0.45; }
+        break;
+      case 'recover':
+        f.recT-=dt;
+        spr.x=Math.min(homeX, spr.x+140*dt);                // back-pedal to neutral
+        if(f.recT<=0){ f.aiState='approach'; f.aiCd=rnd(0.6,1.4); }
+        break;
+    }
+    sh.x=spr.x;                                             // shadow tracks the body
+  }
+  // --- RANGED FOE AI (per-type, pit.js pyre/gunner): the foe REFUSES melee — it holds a long standoff,
+  // telegraphs a wind-up (yellow _tele), then FIRES a foeShots[] projectile at the warlock and reloads.
+  // Keeps distance from either side so the player must close or dodge the shot (DC ranged-pressure read). ---
+  foeRangedAI(now,f){
+    const dt=this.dt||0.016, spr=this.foeSprite, sh=this.foeShadow;
+    const homeX=this._foeHomeX||this.scale.width*0.72;
+    const standX=Math.min(homeX, P.x+300);                 // ranged standoff — hold the line, don't close
+    if(f.stunT>0){ f._tele=false; return; }                // PORTAL stun freezes the foe
+    f.aiState=f.aiState||'approach'; f.aiCd=Math.max(0,(f.aiCd||0)-dt); f._tele=false;
+    switch(f.aiState){
+      case 'approach':                                      // keep range: drift toward the standoff x from either side
+        if(spr.x < standX-4)      spr.x=Math.min(standX, spr.x+60*dt);
+        else if(spr.x > standX+4) spr.x=Math.max(standX, spr.x-60*dt);
+        if(Math.abs(spr.x-standX)<6 && f.aiCd<=0){ f.aiState='windup'; f.windT=0.45; }
+        break;
+      case 'windup':
+        f._tele=true; f.windT-=dt;
+        spr.x=Math.min(homeX, spr.x+24*dt);                 // small brace back as it draws/aims
+        if(f.windT<=0){ this.foeShoot(f,spr); f.aiState='recover'; f.recT=rnd(0.9,1.5); }
+        break;
+      case 'recover':
+        f.recT-=dt;
+        if(f.recT<=0){ f.aiState='approach'; f.aiCd=rnd(0.5,1.1); }
+        break;
+    }
+    sh.x=spr.x;
+  }
+  foeShoot(f,spr){                                          // spawn one enemy projectile aimed at the warlock
+    const sx=spr.x, sy=((spr.y!=null)?spr.y:P.y)-20;
+    const a=Math.atan2((P.y-18)-sy, P.x-sx), sp=320;
+    const fire=(f.type==='pyre');
+    foeShots.push({ x:sx, y:sy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:7,
+      dmg:foeDmg(f)+2, fire, col:(fire?'#f0883d':'#ffd24a') });
+    this.flash && this.flash(fire?0xff8040:0xfff0a0, 0.05);
+    if(typeof S!=='undefined'&&S) S.shake=Math.max(S.shake||0,3);
+  }
   aimAngle(){ return Math.atan2(this.mouse.y-P.y, this.mouse.x-P.x); }
   clampArena(ent){
     const e=ent||P, b=this.bounds;
@@ -804,7 +2048,10 @@ class Arena extends Phaser.Scene{
     this._castTimer = this.time.delayedCall(350, ()=>{
       this._castTimer=null;
       if(!this.hero) return;
-      const back = this.textures.exists('warlock') ? 'warlock' : 'warlock_f0';
+      // revert to the CURRENT FORM body (arch devil / lich / demon lord), not always the warlock,
+      // so casting a HEX mid-transformation doesn't snap him back to the plain warlock sprite.
+      let back = heroFormTex();
+      if(!this.textures.exists(back)) back = this.textures.exists('warlock') ? 'warlock' : 'warlock_f0';
       this.hero.setTexture(back);
       if(back==='warlock' && this.anims.exists('warlock_idle')) this.hero.play('warlock_idle');
     });
@@ -839,6 +2086,16 @@ class Arena extends Phaser.Scene{
     this.tweens.add({targets:e, scale:2.4, alpha:0, duration:520, onComplete:()=>e.destroy()});
     this.flash(0x2cffa6,0.16);
   }
+  fireBurst(x,y,tint,flashCol){ // painterly impact bloom for a FIRE/HEX bolt — one-shot fireball_hit sprite (Hiro drop 2026-06-28). tint/flashCol optional: hex passes purple.
+    if(this.textures.exists('fireball_hit')){
+      const e=this.add.image(x, y, 'fireball_hit').setOrigin(0.5).setBlendMode(Phaser.BlendModes.ADD)
+        .setScale(0.10).setAlpha(0.95).setDepth(99999);
+      if(tint!=null) e.setTint(tint);
+      this.tweens.add({targets:e, scale:0.42, alpha:0, duration:300, ease:'Quad.out', onComplete:()=>e.destroy()});
+    }
+    if(this.flash) this.flash(flashCol!=null?flashCol:0xff8a3d, 0.10);
+    S.shake=Math.max(S.shake,5);
+  }
   fxPortal(x,y){ // portal burst (leafBurst stand-in) at a given point, defaults to caster
     const cx=(x==null?P.x:x), cy=(y==null?P.y:y)-30;
     const a=this.add.image(cx, cy, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0x4ad0ff).setScale(0.2);
@@ -859,8 +2116,74 @@ class Arena extends Phaser.Scene{
   }
   flash(color,dur){ this.cameras.main.flash(dur*1000, (color>>16)&255,(color>>8)&255,color&255); }
 
+  // --- ATMOSPHERIC PARTICLE LAYER (DC "living pit", FEEDBACK toward ~88% LOOK) — the highest-leverage push
+  // now the grade has landed: a static-but-graded frame reads as a SCREENSHOT; DC pits constantly BREATHE.
+  // Three render-only layers, behind the actors (depth -50/-49: over the painted backdrop at -100/-99, under
+  // every depth>=0 actor/FX): (1) slow raking GOD-RAY shafts, (2) rising warm EMBERS, (3) cool drifting DUST.
+  // Self-managed pool of 'glow' images recycled on Phaser's clock + real delta (alive through hit-stop). It
+  // writes NO sim/combat/targeting state and is guarded by the 'glow' texture so the build stays loadable. ---
+  buildAtmosphere(){
+    if(!this.textures.exists('glow')) return;
+    const W=this.scale.width, H=this.scale.height;
+    this._atmoW=W; this._atmoH=H;
+    // (1) GOD-RAY shafts: tall soft columns raking down from the upper-right, very low alpha, each slowly
+    // breathing out of phase so the shafts shimmer like dusty light through the amphitheater rim.
+    this._rays=[];
+    for(let i=0;i<4;i++){
+      const r=this.add.image(W*(0.26+0.18*i), H*0.06, 'glow')
+        .setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe6b0)
+        .setOrigin(0.5,0).setScrollFactor(0).setDepth(-50);
+      r.setAngle(18).setScale(0.95,7.6);
+      r._a0=0.05+0.03*Math.random(); r._ph=i*1.7; r.setAlpha(r._a0);
+      this._rays.push(r);
+    }
+    // (2)+(3) EMBER/DUST motes: warm embers rise briskly; every 4th is a slower, cooler dust speck.
+    this._embersArr=[];
+    for(let i=0;i<34;i++){
+      const dust=(i%4===0);
+      const m=this.add.image(0,0,'glow')
+        .setBlendMode(Phaser.BlendModes.ADD).setScrollFactor(0).setDepth(-49)
+        .setTint(dust?0x9ab0d0:(Math.random()<0.5?0xff9a40:0xffd060));
+      this._initMote(m,dust,true);
+      this._embersArr.push(m);
+    }
+    this._embers=true;   // flips the __AUDIT__ embers flag true (auditor was scoring it FAIL)
+  }
+  _initMote(m,dust,anywhere){
+    const W=this._atmoW||this.scale.width, H=this._atmoH||this.scale.height;
+    m._dust=dust;
+    m.x=Math.random()*W; m._x0=m.x;
+    m.y=anywhere?Math.random()*H:(H+10);
+    m._vy=dust?-(6+Math.random()*10):-(18+Math.random()*30);   // px/s upward
+    m._sway=0.4+Math.random()*1.1; m._swA=8+Math.random()*22; m._ph=Math.random()*6.283;
+    m._s=dust?(0.03+Math.random()*0.04):(0.04+Math.random()*0.06);
+    m._a=dust?(0.10+Math.random()*0.10):(0.22+Math.random()*0.28);
+    m.setScale(m._s).setAlpha(0);
+  }
+  stepAtmosphere(now,dt){
+    if(!this._embers) return;
+    const H=this._atmoH||this.scale.height, t=(now||0)/1000;
+    if(this._rays) for(const r of this._rays) r.setAlpha(r._a0*(0.6+0.4*Math.sin(t*0.6+r._ph)));
+    if(this._embersArr) for(const m of this._embersArr){
+      m.y += m._vy*dt;
+      m.x  = m._x0 + Math.sin(t*m._sway+m._ph)*m._swA;
+      const fy=Phaser.Math.Clamp(m.y/H,0,1);                    // 1 at the floor, 0 at the rim
+      const fade=Math.min(1,fy*2)*Math.min(1,(1-fy)*3+0.15);    // fade in off the floor, out toward the top
+      m.setAlpha(m._a*fade);
+      if(m.y<-10) this._initMote(m,m._dust,false);              // recycle at the bottom
+    }
+  }
+
   update(now){
-    const dt = Math.min(0.05, (now-this.last)/1000); this.last=now;
+    const rdt = Math.min(0.05, (now-this.last)/1000); this.last=now;
+    // HIT-STOP / SLOW-MO (GG finisher feel, priority-4 polish): S.hitPause fully FREEZES the sim for a
+    // beat on a kill, then S.slow runs it at 35% for a short slow-mo before resuming. Both tick down in
+    // REAL time (rdt) so the freeze can never get stuck; camera shake/tweens use Phaser's own clock and
+    // are unaffected, so the finisher whirl still plays over the frozen fighters.
+    let dt = rdt;
+    if(S.hitPause>0){ S.hitPause=Math.max(0,S.hitPause-rdt); dt=0; }
+    else if(S.slow>0){ S.slow=Math.max(0,S.slow-rdt); dt=rdt*0.35; }
+    this.dt = dt;                                // expose (scaled) dt to side-on foe AI (syncSideOn/foeAI)
     frame(dt);                                   // advance the pit.js-shaped state
     if(S.shake>0){ this.cameras.main.shake(120, 0.004*S.shake); S.shake=0; }  // pit.js screen shake
     // reflect state -> sprites
@@ -875,9 +2198,39 @@ class Arena extends Phaser.Scene{
     // still read bigger; dividing by the LIVE texture height normalizes absolute size (fixes "huge warlock").
     const heroKey=P.demonLord?'demonlord':(P.devilT>0?'archdevil':(P.lich?'lich':'warlock_idle'));
     const heroWorldH=HERO_PX*(SPRITE_TARGET_H[heroKey]||1.0);
+    // FORM SWAP (transformations, side-on): show the actual borrowed-form sprite — arch devil / lich /
+    // demon lord — not just a tinted+scaled warlock. Re-asserts each frame so it survives a cast-pose
+    // revert and any form change; skipped while the brief CAST pose is showing (castPose owns it then).
+    if(!this._castTimer){
+      // FORM IDENTITY (transformation-aware) vs POSE (state animation). The base warlock now swaps
+      // among idle/walk/hurt by STATE (fix #3); the borrowed forms (lich/archdevil/demonlord) have
+      // one body each, so their pose IS their form. Cast pose is owned by castPose (guarded above).
+      const baseForm=heroFormTex();
+      let ft=baseForm;
+      if(baseForm==='warlock')
+        ft = P.flash>0 ? 'warlock_hurt' : (P.channel ? 'warlock_summon' : (P.moving ? 'warlock_walk' : 'warlock')); // SUMMON-channel pose (Hiro drop 2026-06-28)
+      if(this.textures.exists(ft) && this.hero.texture.key!==ft){
+        this.hero.anims && this.hero.anims.stop();
+        this.hero.setTexture(ft);
+        if(ft==='warlock' && this.anims.exists('warlock_idle')) this.hero.play('warlock_idle');
+      }
+      // TRANSFORM BEAT (side-on, render-only): a morph flash + radial spark the instant the FORM
+      // IDENTITY changes (warlock→lich/archdevil/demonlord) — NOT on idle/walk/hurt pose swaps —
+      // so a transformation reads as a fighting-game install, not an instant texture pop.
+      if(this._lastForm!==undefined && this._lastForm!==baseForm) this.formMorphBurst(baseForm);
+      this._lastForm=baseForm;
+    }
     this.hero.setScale(sc*heroWorldH/(this.hero.height||heroWorldH));
     this.shadow.setScale(Math.max(0.15, this.hero.displayWidth/(this.shadow.width||1)*0.95));
-    if(P.demonLord) this.hero.setTint(0x9affc0);                   // DEMON LORD: black & green
+    // PROCEDURAL JUICE (fix #3): a brisk WALK BOUNCE while moving + a gentle BREATHING bob at idle.
+    // Visual y-offset only — P.y stays pinned to the ground line, and the shadow stays flat on it.
+    { const tb=(now||0)/1000;
+      const bob = (heroFormTex()==='warlock')
+        ? (P.moving ? -Math.abs(Math.sin(tb*11))*6 : Math.sin(tb*2.2)*2)
+        : Math.sin(tb*1.8)*1.5;
+      this.hero.y = P.y + bob; }
+    if(P.flash>0) this.hero.setTint(0xff5a5a);                     // HURT: red flash (foe lunge connected)
+    else if(P.demonLord) this.hero.setTint(0x9affc0);              // DEMON LORD: black & green
     else if(P.devilT>0) this.hero.setTint(0xff9a9a);              // ARCH DEVIL: hellfire red
     else this.hero.clearTint();
     this.hero.setDepth(P.y); this.shadow.setDepth(P.y-1);
@@ -888,9 +2241,30 @@ class Arena extends Phaser.Scene{
     if(this.channelRing){ if(P.channel){ this.channelRing.x=P.x; this.channelRing.y=P.y-40; }
       else { this.fxSummon(); } }   // channel ended -> burst + clear the ring
 
+    if(SIDEON) this.syncSideOn(now);   // bind the RIGHT-side foe sprite to the current gauntlet duel
+    if(SIDEON) this.syncFoeCrowd(now); // render EVERY other alive foe as a side-on sprite (DC wave crowd)
+    this.stepAtmosphere(now, rdt);     // drift embers/god-rays/dust on REAL time (alive through hit-stop)
+
+    // --- VISUAL AUDIT HOOK (tools/visual_audit.py contract) — publish the TRUE on-screen numbers the
+    // headless DC-parity auditor scores: warlock height as % of viewport, which backdrop layers are live,
+    // and which lighting FX are active. PURELY a read-out of already-rendered state; never mutates the sim.
+    // Without this the auditor defaults warlock_scale / backdrop_layers / lighting_fx to FAIL (it was blind).
+    try{
+      window.__AUDIT__ = {
+        warlockPctH: (this.hero && this.scale.height) ? (this.hero.displayHeight / this.scale.height * 100) : null,
+        layers: { far: !!this.bgFar, floor: !!this.bgFloor, fg: !!this.bgFg },
+        fx: {
+          light2d:  !!(this.lights && this.lights.active),
+          bloom:    !!this._graded,
+          vignette: !!this._graded,
+          embers:   !!this._embers
+        }
+      };
+    }catch(e){ /* never break the render loop over an audit read-out */ }
+
     // --- draw enemies (placeholder dummies) + hex aura + hp bar ---
     const eg=this.enemyGfx; eg.clear();
-    for(const e of enemies){ if(e.dead) continue;
+    for(const e of enemies){ if(e.dead||SIDEON) continue;   // SIDEON: the duel foe is a real side-on sprite (buildSideOn)
       const hexed=e.hexT>0;
       if(hexed){ eg.fillStyle(0xb070f0, 0.18+0.12*Math.sin(now/120)); eg.fillCircle(e.x, e.y-14, e.r+8); }
       eg.fillStyle(e.flash>0?0xffffff:(hexed?0x6a4a8a:0x7a3a3a),1); eg.fillCircle(e.x, e.y-14, e.r);
@@ -909,12 +2283,69 @@ class Arena extends Phaser.Scene{
       zg.fillStyle(0x7fd05a, (0.10+puff)*Math.min(1,lf*1.5)); zg.fillCircle(z.x, z.y, z.r);
       zg.fillStyle(0x9af0c0, 0.06*lf); zg.fillCircle(z.x, z.y, z.r*0.6);
     }
+    // --- draw THE PYRE spell zones: a pulsing TELEGRAPH ring closing in (move off it!), then the lingering
+    // FIRE pool. ICE/BOLT detonate instantly so they only flash the telegraph + the popup. ---
+    for(const z of zones){
+      if(z.type!=='fire'&&z.type!=='ice'&&z.type!=='bolt') continue;
+      const col=z.type==='fire'?0xf0883d:z.type==='ice'?0x5ad2ff:0xf0e05a;
+      if(z.tele>0){ const tp=Math.max(0,1-z.tele/0.75);            // 0->1 fill closing in as the tele runs out
+        zg.lineStyle(3, col, 0.45+0.4*Math.abs(Math.sin(now/55))); zg.strokeCircle(z.x, z.y, z.r);
+        zg.fillStyle(col, 0.10+0.14*tp); zg.fillCircle(z.x, z.y, z.r*tp);
+      } else if(z.type==='fire'){ const flf=Math.max(0,z.life/3.5);
+        zg.fillStyle(0xf0883d, (0.14+0.06*Math.sin(now/120))*Math.min(1,flf*1.5)); zg.fillCircle(z.x, z.y, z.r);
+        zg.fillStyle(0xffd24a, 0.10*flf); zg.fillCircle(z.x, z.y, z.r*0.6);
+      }
+    }
+    // --- THE HOUND MASTER whip: a tan TELEGRAPH ring that closes in as the crack lands (leave the circle!) ---
+    for(const z of zones){ if(z.type!=='whipcrack') continue;
+      const wp=Math.max(0,1-(z.tele||0)/0.6);
+      zg.lineStyle(3, 0xc8923a, 0.5+0.4*Math.abs(Math.sin(now/45))); zg.strokeCircle(z.x, z.y, z.r);
+      zg.fillStyle(0xc8923a, 0.10+0.16*wp); zg.fillCircle(z.x, z.y, z.r*wp);
+    }
+    // --- THE GUNNER aim-line LOCK (pit.js:1687/2944): a thin tracking beam down the lane that turns RED and
+    // snaps solid for the last ~0.28s before the bolt fires — sidestep the locked line. Drawn on the floor for
+    // every aiming gunner (duel foe AND any crowd gunner), so the "dodge the laser" read works in a melee. ---
+    for(const e of enemies){
+      if(e.dead || e.type!=='gunner' || !e.aiming || e.aimA==null) continue;
+      const len=640, sx=e.x, sy=e.y-10, ex=sx+Math.cos(e.aimA)*len, ey=sy+Math.sin(e.aimA)*len;
+      if(e.aimT<=0.28){                                          // LOCKED: solid red danger line + muzzle dot
+        zg.lineStyle(3.5, 0xff4a4a, 0.85); zg.beginPath(); zg.moveTo(sx,sy); zg.lineTo(ex,ey); zg.strokePath();
+        zg.fillStyle(0xff5a5a, 0.9); zg.fillCircle(sx+Math.cos(e.aimA)*(e.r+6), sy+Math.sin(e.aimA)*(e.r+6), 4);
+      } else {                                                   // TRACKING: faint pulsing yellow guide
+        zg.lineStyle(1.5, 0xffd24a, 0.30+0.25*Math.abs(Math.sin(now/60)));
+        zg.beginPath(); zg.moveTo(sx,sy); zg.lineTo(ex,ey); zg.strokePath();
+      }
+    }
     // --- draw SUMMONS (claw fiend / bone dragon) + life ring + hp bar + melee swing arcs ---
     const dg=this.demonGfx; dg.clear();
     for(const s of swings){ const al=Math.max(0,s.t/0.16); const c=Phaser.Display.Color.HexStringToColor(s.col).color;
       dg.lineStyle(3, c, 0.5*al); dg.beginPath(); dg.arc(s.x, s.y-14, s.range, s.a-s.arc/2, s.a+s.arc/2); dg.strokePath(); }
-    const _seenD=new Set();
+    const _seenD=new Set(); let _aSlot=0;
     for(const d of demons){
+      // SIDEON (priority-5): relocate each living summon to an ASSIST LANE at the warlock's LEFT, darting
+      // RIGHT to strike the current foe. We override d.x/d.y for the RENDER ONLY (restored at the end of the
+      // body), so the existing top-down draw code lays the body/aura/hp-bar/lit-sprite out side-on, in formation.
+      let _oxs, _oys;
+      if(SIDEON){
+        const slot=_aSlot++, gy=this._gy||d.y;
+        // SIDEON dart now SYNCS to the real sim attack: updDemons sets d._atkPulse (~0.30s) at each
+        // shove/breath/fireball/fire-bolt, so the lunge peaks WITH the damage instead of on a free clock.
+        // The succubus MEND never sets the pulse, so a healing succubus simply rests in lane.
+        const lunge=(d._atkPulse>0)?Math.sin((1-d._atkPulse/0.30)*Math.PI):0; // 0->1->0 strike arc, peak ~0.15s after the hit
+        const reach=(d.type==='dragon'||d.type==='succubus')?0.55:1.0;        // ranged assists surge partway; the melee claw fiend crosses
+        _oxs=d.x; _oys=d.y;
+        const restX = P.x - 52 - slot*30;                                   // neutral assist slot at the warlock's LEFT
+        const foeX  = (this._foeHomeX || this.scale.width*0.72) - 36;        // just shy of the current foe
+        d.x = restX + lunge*reach*Math.max(0,foeX-restX);                   // lunge toward the foe on the synced strike, then return to lane
+        d.y = gy - (d.type==='dragon'?64:0) - (slot%2)*8;                    // dragons hover; slight 2-row stagger
+        // STRIKE SPARK on the foe — one pop per dart (gated by d._lungeHot so it fires once, not every frame)
+        if(lunge>0.85 && !d._lungeHot){ d._lungeHot=true;
+          const sx=foeX+18, sy=gy-42, col=d.type==='dragon'?0x7fd05a:d.type==='succubus'?0xf06aa0:0xff6a7a;
+          for(let q=0;q<6;q++){ const ang=rnd(0,Math.PI*2), dd=rnd(20,46);
+            const sp=this.add.image(sx,sy,'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(col).setScale(rnd(0.1,0.2)).setDepth(9000);
+            this.tweens.add({targets:sp,x:sx+Math.cos(ang)*dd,y:sy+Math.sin(ang)*dd,alpha:0,scale:0.02,duration:rnd(220,360),onComplete:()=>sp.destroy()}); }
+        } else if(lunge<0.4){ d._lungeHot=false; }
+      }
       const lifeFrac=Math.max(0,d.life/(d.type==='dragon'?15:(d.type==='succubus'?14:18)));
       // pick Hiro's real sprite for this summon; null -> graphics body fallback (build stays loadable)
       const texKey = d.type==='brute' ? 'clawfiend'
@@ -967,11 +2398,13 @@ class Arena extends Phaser.Scene{
         const sbob = d.type==='dragon' ? Math.sin(now/220)*5 : 0;
         spr.setScale(dsc*dWorldH/(spr.height||dWorldH));
         spr.x=d.x; spr.y=d.y-(d.type==='dragon'?20:4)+sbob; spr.setFlipX(Math.cos(d.face)<0);
+        if(SIDEON){ spr.setFlipX(false); spr.setScale(spr.scaleX*0.85, spr.scaleY*0.85); }  // assists face the foe (right), secondary scale
         spr.setDepth(d.y+0.5); spr.setVisible(true);
         if(d.flash>0) spr.setTintFill(0xffffff); else spr.clearTint();
         _seenD.add(d);
       }
       dg.setDepth(d.y);
+      if(SIDEON){ d.x=_oxs; d.y=_oys; }   // restore the sim position (the lane move was render-only)
     }
     // reap sprites whose demon was unsummoned (pit.js demons[] shrank)
     for(const [d,spr] of this.demonSprites){ if(!_seenD.has(d)){ spr.destroy(); this.demonSprites.delete(d); } }
@@ -981,8 +2414,25 @@ class Arena extends Phaser.Scene{
       dg.lineStyle(2, c, 0.7*al); dg.lineBetween(t.x1, t.y1, t.x2, t.y2); }
     // --- draw projectiles (hex bolts) ---
     const pg=this.projGfx; pg.clear(); pg.setDepth(99998);
-    for(const b of fireballs){ pg.fillStyle(b.kind==='hex'?0xd0a0ff:0xffb070,1); pg.fillCircle(b.x,b.y,b.r);
-      pg.fillStyle(0xffffff,0.7); pg.fillCircle(b.x,b.y,b.r*0.4); }
+    if(!this.fireSprites) this.fireSprites=new Map();
+    const _seenB=new Set(), _haveFire=this.textures.exists('fireball');
+    for(const b of fireballs){
+      if((b.kind==='fire'||b.kind==='hex') && _haveFire){
+        // FIRE + HEX bolts now draw as the painterly fireball SPRITE oriented to velocity (HEX tinted purple) — replaces the flat fillCircle
+        let spr=this.fireSprites.get(b);
+        if(!spr){ spr=this.add.image(b.x,b.y,'fireball').setOrigin(0.5).setDepth(99998); this.fireSprites.set(b,spr); }
+        spr.x=b.x; spr.y=b.y; spr.rotation=Math.atan2(b.vy,b.vx);
+        spr.setScale((b.r*2.8)/(spr.height||1));
+        const _ftint = b.col ? Phaser.Display.Color.HexStringToColor(b.col).color : (b.kind==='hex'?0xb070f0:null);
+        if(_ftint!=null){ spr.setTint(_ftint); } else spr.clearTint();
+        spr.setVisible(true); _seenB.add(b);
+      } else {
+        pg.fillStyle(b.kind==='hex'?0xd0a0ff:0xffb070,1); pg.fillCircle(b.x,b.y,b.r);
+        pg.fillStyle(0xffffff,0.7); pg.fillCircle(b.x,b.y,b.r*0.4);
+      }
+    }
+    // reap fireball sprites whose projectile despawned (mirror of the demonSprites reaper)
+    for(const [b,spr] of this.fireSprites){ if(!_seenB.has(b)){ spr.destroy(); this.fireSprites.delete(b); } }
 
     // --- EVOLUTION choice panel (frozen-scene card UI; port of pit.js drawEvoPanel:3359) ---
     if(P.evoPick){ if(!this.evoUI) this.buildEvoUI(); this.updateEvoUI(); }
@@ -1035,12 +2485,56 @@ class Arena extends Phaser.Scene{
   clearEvoUI(){ if(this.evoUI){ this.evoUI.destroy(true); this.evoUI=null; this._evoHint=null; } }
 }
 
+// CANVAS FILLS THE VIEWPORT (Hiro FEEDBACK #7 #1): internal resolution == window size, so FIT scales
+// 1:1 with NO letterbox/black margins (the old 520×760 portrait cap was the ~half-black-screen bug).
+// FIT (not RESIZE) keeps every scale.width/height-relative placement + the cover()-scaled backdrop
+// valid with zero reflow, so the build stays loadable. The HUD panels are fixed over the play field.
 new Phaser.Game({
   type:Phaser.AUTO, parent:'wrap',
-  width:Math.min(window.innerWidth,520), height:Math.min(window.innerHeight,760),
+  width:VIEW_W, height:VIEW_H,
   backgroundColor:'#0a0710', scene:Arena,
   scale:{mode:Phaser.Scale.FIT, autoCenter:Phaser.Scale.CENTER_BOTH}
 });
+
+// ---------------------------------------------------------------------------
+// TOUCH CONTROLS (Hiro asked 3x) — virtual stick + DC verb cluster, routed into the SAME globals the
+// keyboard uses so there is ZERO new combat path: the stick writes stick.{dx,dy,on} (read each frame in
+// movement) and the buttons call the global verbs (doSlash/doHeavy+heavyRelease/doParry/doRoll). SUMMON
+// mirrors the Q hold-to-channel / release-to-summon feel. Pointer Events (unified mouse+touch+pen).
+// ---------------------------------------------------------------------------
+(function(){
+  const touch=document.getElementById('touch'); if(!touch) return;
+  const isCoarse = ('ontouchstart' in window) || (navigator.maxTouchPoints>0)
+                || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
+  if(isCoarse || /[?&]touch=1/.test(location.search)){
+    touch.classList.add('on');
+    const legend=document.getElementById('verbs'); if(legend) legend.style.display='none';  // keyboard hint overlaps the cluster
+  }
+  // --- virtual stick: nub follows the finger within a radius; writes the analog vector the sim reads ---
+  const base=document.getElementById('stickBase'), nub=document.getElementById('stickNub'), R=46;
+  let sid=null;
+  const setNub=(x,y)=>{ nub.style.transform='translate('+x+'px,'+y+'px)'; };
+  function resetStick(){ if(typeof stick!=='undefined'){ stick.on=false; stick.dx=0; stick.dy=0; } setNub(0,0); sid=null; }
+  function moveStick(cx,cy){ const r=base.getBoundingClientRect();
+    let dx=cx-(r.left+r.width/2), dy=cy-(r.top+r.height/2); const m=Math.hypot(dx,dy)||1;
+    const cl=Math.min(m,R); setNub(dx/m*cl, dy/m*cl);
+    if(typeof stick!=='undefined'){ const mag=Math.min(1,m/R); stick.dx=dx/m*mag; stick.dy=dy/m*mag; stick.on=true; } }
+  base.addEventListener('pointerdown',e=>{ e.preventDefault(); sid=e.pointerId; try{base.setPointerCapture(e.pointerId);}catch(_){}; moveStick(e.clientX,e.clientY); });
+  base.addEventListener('pointermove',e=>{ if(e.pointerId!==sid)return; e.preventDefault(); moveStick(e.clientX,e.clientY); });
+  const stickEnd=e=>{ if(e.pointerId!==sid)return; resetStick(); };
+  base.addEventListener('pointerup',stickEnd); base.addEventListener('pointercancel',stickEnd);
+  // --- verb buttons: down/up so SUMMON can hold-to-channel, release-to-summon (Q parity) ---
+  function wire(id,onDown,onUp){ const el=document.getElementById(id); if(!el) return;
+    el.addEventListener('pointerdown',e=>{ e.preventDefault(); el.classList.add('act'); onDown&&onDown(); });
+    const up=e=>{ e&&e.preventDefault&&e.preventDefault(); el.classList.remove('act'); onUp&&onUp(); };
+    el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',e=>{ el.classList.remove('act'); }); }
+  const G=fn=>(typeof window[fn]==='function');   // verbs are top-level fn declarations -> window.<fn>
+  wire('bHex',    ()=>{ if(typeof P!=='undefined'&&P.evoPick){ if(G('pickEvo'))pickEvo(0); return; } if(G('doSlash'))doSlash(); });
+  wire('bSummon', ()=>{ if(typeof P!=='undefined'&&P.evoPick){ if(G('pickEvo'))pickEvo(1); return; } if(typeof P!=='undefined'&&!P.channel&&G('doHeavy'))doHeavy(); },
+                  ()=>{ if(G('heavyRelease'))heavyRelease(); });
+  wire('bDodge',  ()=>{ if(G('doRoll'))doRoll(); });
+  wire('bWard',   ()=>{ if(G('doParry'))doParry(); });
+})();
 </script>
 </body>
 </html>

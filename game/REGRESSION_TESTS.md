@@ -31,11 +31,12 @@ We aim for continuous improvement so the agent OUT-FINDS Hiro on bugs.
   Fixed by culling dead minions after their death-fade; covered by the two `perf:*` cases in `tools/perf_regressions.js`.
   The corpse-cull fix is now present in the live `Neverendingnarratives/play` build. NOTE: the deep pursue-driver now
   lives at `tools/playtest_drive.js` (plays all 8 champion/road builds through the full gauntlet) — re-run it each pass.
-- (OPEN as of 2026-06-26 — SHIP ITEM) The herald/archfiend `updDemons` reentrancy crash is FIXED in the source on
-  disk and fully validated (4 smoke + 19 regressions + 2 perf GREEN against a reconstructed engine), but the fix is
-  **NOT yet published**: the sandbox mount served a tail-truncated `pit.js`/`smoke_test.js` this run, so the in-sandbox
-  gate could not ship. ACTION: from a fresh chat (clean mount) run `python3 tools/safe_publish.py <Neverendingnarratives>`
-  to push to the play build. Until then the herald/archfiend road keeps the intermittent late-fight crash.
+- (RESOLVED + PUBLISHED, confirmed 2026-06-27) The herald/archfiend `updDemons` reentrancy crash is FIXED and the fix
+  is LIVE. Source `game/src/combat/pit.js` and the deployed `Neverendingnarratives/play/src/combat/pit.js` are now
+  byte-identical (md5 `ecaae3e3128b56f6dcb79679a10b387d`, 0 diff lines), both carry the REENTRANCY GUARD at pit.js:634,
+  and the deep pursue-driver (`tools/playtest_drive.js`, reconstructed in-sandbox to dodge the mount truncation) cleared
+  ALL 8 champion/road builds — including herald-archfiend — with no crash/NaN/softlock/unbounded growth (peak enemies 20,
+  peak demons 20, peak frame 7.3ms). Covered by `regression:demon-loop-survives-reentrant-horde-shift` (smoke GREEN).
 - Watch: the OneDrive sandbox mount can serve a STALE/tail-truncated copy of a file just edited from chat — verify with
   `node --check` + a reconstructed-in-sandbox run, and publish/gate from a fresh chat session if the mount looks stale
   (`safe_publish` correctly aborts on a truncated file).
