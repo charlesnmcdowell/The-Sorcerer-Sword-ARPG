@@ -6,7 +6,7 @@ There is **no build step**. "Building" = editing `.js`/`.html` and reloading. "D
 
 | Repo | Path | Role |
 |---|---|---|
-| **Game source** | `C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG` | Where you edit. The game is in `game/`. |
+| **Game source** | `C:\Users\charl\The Sorcerer Sword ARPG` | Where you edit. The game is in `game/`. (Moved out of `OneDrive\Documents\` on 2026-06-27 to escape the OneDrive tail-truncation hazard described below — guards remain as defense-in-depth.) |
 | **Website (live site)** | `C:\Users\charl\OneDrive\Documents\Neverendingnarratives` | A GitHub-Pages repo. The game is published into its `play/` folder. Live at https://neverendingnarratives.com/play/ |
 
 You **publish** from the game repo into the website repo's `play/` folder using a script, then commit + push the website repo. GitHub Pages serves it.
@@ -19,7 +19,7 @@ Open `game/index.html` in a browser. That's it. (Companion AI chat needs a key i
 
 ```sh
 # 1. From the game repo, run the publisher (copies runtime files into the website repo's play/):
-cd "C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG"
+cd "C:\Users\charl\The Sorcerer Sword ARPG"
 python game/tools/publish_site.py "C:\Users\charl\OneDrive\Documents\Neverendingnarratives"
 
 # 2. Commit the GAME repo (your source changes):

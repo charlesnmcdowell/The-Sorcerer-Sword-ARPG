@@ -16,3 +16,4 @@ assets/sprites/_src/
 *.glb
 tools/audit/
 tools/refs/
+tools/gen_batch_log.txt

@@ -15,7 +15,7 @@ Run from game3d/tools:  python ingest_art.py            # all pending
                         python ingest_art.py lich demonlord
 Idempotent-ish: pass names to redo specific sprites (overwrites).
 """
-import os, sys
+import os, sys, json, re
 import numpy as np
 from PIL import Image, ImageFilter
 
@@ -25,6 +25,7 @@ ARTIN = os.path.join(G3D, "art_in")
 DEST  = os.path.join(G3D, "assets", "sprites")
 SRC   = os.path.join(DEST, "_src")
 CAP   = 512
+ANIMS = os.path.join(DEST, "anims.json")   # keyframe manifest arena.html loads: {"<ent>_<act>": N}
 
 # per-type TARGET WORLD HEIGHT (Hiro's scale-normalize table; render applies displayScale
 # = targetWorldH / sprite.pixelHeight). Source px size is irrelevant to this.
@@ -75,6 +76,29 @@ def cap(im):
     s = CAP / m
     return im.resize((max(1, round(w * s)), max(1, round(hgt * s))), Image.LANCZOS)
 
+def set_crop(name_frames):
+    """ANIMATION KEYFRAME REGISTRATION: gen_sprites leaves keyframes FULL-CANVAS (per-frame bbox
+    cropping would re-center every frame on its own silhouette -> the cycle jitters/slides on
+    playback). Crop the whole SET with ONE union bbox instead: registered AND reasonably tight."""
+    imgs = {}
+    base = None
+    for name in name_frames:
+        im = Image.open(os.path.join(ARTIN, name + ".png")).convert("RGBA")
+        if base is None: base = im.size
+        elif im.size != base: im = im.resize(base, Image.LANCZOS)   # same set = same canvas
+        imgs[name] = im
+    u = None
+    for im in imgs.values():
+        a = np.asarray(im)[..., 3]
+        ys, xs = np.where(a > 40)
+        if len(xs) == 0: continue
+        bb = [xs.min(), ys.min(), xs.max(), ys.max()]
+        u = bb if u is None else [min(u[0],bb[0]), min(u[1],bb[1]), max(u[2],bb[2]), max(u[3],bb[3])]
+    if u is None: return imgs
+    pad = 12; w, h = base
+    box = (max(0,u[0]-pad), max(0,u[1]-pad), min(w,u[2]+pad), min(h,u[3]+pad))
+    return {n: im.crop(box) for n, im in imgs.items()}
+
 def main():
     os.makedirs(SRC, exist_ok=True)
     args = sys.argv[1:]
@@ -92,11 +116,24 @@ def main():
     if not names:
         print("Nothing pending in art_in/ (all ingested).")
         return
+    # split ANIMATION KEYFRAMES (<ent>_<act>_<n>) from base stills; keyframes crop as a registered SET
+    kf_re = re.compile(r"^(.+_[a-z]+)_(\d+)$")
+    groups, stills = {}, []
     for name in names:
+        m = kf_re.match(name)
+        if m and os.path.exists(os.path.join(ARTIN, name + ".png")):
+            groups.setdefault(m.group(1), []).append(name)
+        else:
+            stills.append(name)
+    ready = {}
+    for setname, members in groups.items():
+        ready.update(set_crop(sorted(members)))
+        print(f"  set-cropped {setname}: {len(members)} frame(s), one shared bbox (registered)")
+    for name in stills + sorted(ready.keys()):
         ip = os.path.join(ARTIN, name + ".png")
         if not os.path.exists(ip):
             print(f"skip {name}: no art_in/{name}.png"); continue
-        im = Image.open(ip).convert("RGBA")
+        im = ready.get(name) or Image.open(ip).convert("RGBA")
         im = cap(im)
         im.save(os.path.join(DEST, name + ".png"))
         normal_from_alpha(im).save(os.path.join(DEST, name + "_n.png"))
@@ -104,7 +141,33 @@ def main():
         Image.open(ip).convert("RGBA").save(os.path.join(SRC, name + ".png"))
         tH = TARGET_WORLD_H.get(name, "?")
         print(f"  ingested {name}: {im.size} +_n  targetWorldH={tH}")
+    rebuild_anims_manifest()
     print("Done. Wire any NEW names into arena.html preload + the world-scale table.")
+
+def rebuild_anims_manifest():
+    """Scan assets/sprites/ for keyframe sets named <entity>_<action>_<n>.png (the gen_sprites
+    --from-needs output) and write anims.json = {"<entity>_<action>": maxContiguousN}. arena.html's
+    loadAnimFrames() reads this at boot and builds real Phaser anims.create cycles from the frames —
+    this manifest is what upgrades an entity from a still/pose-swap to a true multi-frame animation."""
+    sets = {}
+    frame_re = re.compile(r"^(.+)_(\d+)\.png$")
+    for fn in os.listdir(DEST):
+        if fn.endswith("_n.png") or fn.startswith("_"):
+            continue
+        m = frame_re.match(fn)
+        if not m:
+            continue
+        sets.setdefault(m.group(1), set()).add(int(m.group(2)))
+    manifest = {}
+    for name, nums in sorted(sets.items()):
+        n = 0
+        while (n + 1) in nums:   # count contiguous frames from 1 (a gap ends the playable cycle)
+            n += 1
+        if n >= 2:
+            manifest[name] = n
+    json.dump(manifest, open(ANIMS, "w"), indent=1)
+    print(f"  anims.json: {len(manifest)} multi-frame set(s)" +
+          (" — " + ", ".join(f"{k}x{v}" for k, v in list(manifest.items())[:8]) if manifest else ""))
 
 if __name__ == "__main__":
     main()

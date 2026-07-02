@@ -3,6 +3,14 @@ Autonomous job: turn neverendingnarratives.com into a Sorcerer-Sword PRODUCT HUB
 audiobook chapters · buy the books · fund development) AND produce a marketing content kit Hiro can post.
 Each run is a FRESH session — DISK is the state. Read this every run; do ONE increment; verify; log.
 
+## UPDATE — GAME REPO PATH MOVED (Hiro 2026-06-27)
+The game repo (this clone — the one containing `marketing/`, `game/`, `game3d/`, etc.) moved from
+`C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG` to **`C:\Users\charl\The Sorcerer Sword ARPG`**
+to escape the OneDrive tail-truncation hazard. The CANONICAL SITE clone is unchanged
+(`C:\Users\charl\OneDrive\Documents\Neverendingnarratives`, still in OneDrive). Historical run-logs below
+still show the old game-repo path — that's accurate history; only the current paths-of-record (in the
+TARGETS / PATHS section near the top) should be read as moved.
+
 ## UPDATE — REOPENED (Hiro 2026-06-15): new requirements + CANONICAL CLONE FIX (do this update first)
 CANONICAL SITE CLONE IS NOW `C:\Users\charl\OneDrive\Documents\Neverendingnarratives` (the real deployed repo;
 the prior marketing layer was ported there). EDIT ONLY THAT clone (bash: /sessions/*/mnt/Neverendingnarratives —

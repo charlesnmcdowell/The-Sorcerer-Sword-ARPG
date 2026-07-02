@@ -5,7 +5,7 @@ The game ships with **node test harnesses** that run the real game logic with a 
 ## How to run
 
 ```sh
-cd "C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG\game"
+cd "C:\Users\charl\The Sorcerer Sword ARPG\game"
 node tests/<name>.js
 ```
 
@@ -14,7 +14,7 @@ A test prints a final line ending in `PASS` (good) or `FAIL`/`CRASH` (something 
 ## Run-them-all (do this before every deploy)
 
 ```sh
-cd "C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG\game"
+cd "C:\Users\charl\The Sorcerer Sword ARPG\game"
 node tests/gauntlet.js && \
 node tests/abilities.js && \
 node tests/headless.js && \

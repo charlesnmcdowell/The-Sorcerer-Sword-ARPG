@@ -86,6 +86,39 @@ original code ref. The build prioritizes closing MISSING/PARTIAL gaps so nothing
 - Harvest: when a piece works, scrub it generic + bank it in game3d/blocks/ with its gotcha (Phaser-AE method).
 - Never git push. No paid API calls.
 
+## STATUS: 2026-06-28 03:1x UTC  — ★★ HEX NOW DEBUFFS MOBILITY — HEXED FOES CRAWL AT 0.6× (pit.js:1554 parity; the purple DoT finally rewards hex→kite) ★★
+ART INTAKE (priority-0): the four 00:56 drops (`fireball`, `fireball_hit`, `warlock_summon`, `bg_pit_far`) are ALL
+ALREADY INGESTED **and wired** — `assets/sprites/*` + `assets/bg/bg_pit_far.png` (01:00–01:02) are NEWER than the
+art_in sources (00:56–00:57); `fireball`/`fireball_hit` are loaded (arena.html L1399-1400) + render the bolt/impact,
+`warlock_summon` is loaded (L1370) + drives the SUMMON-channel pose-swap (L2211 `P.channel?'warlock_summon'`), and
+`bg_far` loads the new far plate (L1404). Nothing new to process. (gen-sprites NOT run — paid xAI, forbidden.)
+CONTEXT: the 00:0x STATUS named its NEXT STEP as the CHAMP/BEAST boss phases — but on inspection BOTH are ALREADY
+DONE (arena.html L738 champ thrall-feed+grow, L775 beast two-phase enrage + ring-slam + phase-2 charge/whipcrack;
+a prior run shipped them, the 00:0x "still generic" claim was stale). Per-type foe AI is now PRESENT across the whole
+roster (grave·door·pyre·master·gunner·necro·hound·champ·beast). So re-benchmarked and took the next REAL parity gap
+from the checklist that I could confirm in live code: the HEX bolt applied its DoT (HEXED, 10s/15dmg/.5s tick, purple
+tint) but NOT pit.js's movement SLOW on hexed foes (pit.js:1554, dt×0.6). Its prerequisite ("needs enemy movement/AI
+first") is now satisfied (updFoeAI exists), so the TODO is unblocked.
+CHANGED — `game3d/arena.html`, 1 edit (re-read WHOLE on fresh disk via the Read tool — edit region L568-572 AND a
+deep tail region L2250+ both coherent, the `__AUDIT__` block intact; no truncation): folded the hex factor into the
+per-foe `spd` local at the top of `updFoeAI` — `spd=(e.spd||90)*(e.hexT>0?0.6:1)`. Every chase/kite/approach/feed
+branch reads this local, so a HEXED foe now crawls at 0.6× across all of them (one chokepoint, full coverage). The two
+committed DASH constants (hound lunge 340, beast charge 430) are intentionally left at full speed — a launched
+pounce/ram still lands, which is faithful and keeps bosses threatening.
+VERIFIED: isolated `node` harness on the exact `spd` expression PASSED all asserts — unhexed=120 (full), hexed=72
+(0.6×120), default-spd fallback+hex=54 (0.6×90), hexT=0→100 (DoT-expired foe regains full speed), and a 1s
+integration shows a hexed foe covers exactly 0.600× the ground of an unhexed one. Pure single-expression change,
+syntactically safe; build stays loadable; live `game/` untouched; game3d NOT published.
+PARITY-COMPARE: inline (the bash diff subagent still reads the truncated FUSE mount → garbage, as every prior run).
+NEXT STEP (single, priority-aligned): from the same HEX checklist row — CONTAGION (pit.js:1290): on a hexed foe's
+DEATH, the hex JUMPS to the nearest un-hexed foe (`hexJumps` field already exists on `mkFoe`, currently unused). That
+turns hex into the AoE-pressure tool it is in the original and pairs naturally with the new slow. (The other open HEX
+sub-item, the herald GREEN-Sheol spread, is gated behind M8 arch-succubi and is the bigger lift.)
+READY FOR HIRO VIBE CHECK — open game3d/arena.html over http: hex any chaser (the purple-tinted bolt). It now visibly
+DRAGS — a hexed hound/brute/gladiator crawls toward you while the rot ticks, so you can kite a hexed pack and thin
+them with the slow working FOR you. (A hound mid-lunge or the beast mid-charge still completes that one committed
+dash — by design.)
+
 ## STATUS: 2026-06-28 02:25 UTC  — ★★★ BRAWLER MIGRATION step 1 — TWO CROWD FOES NOW PRESS AT ONCE: the single rotating charger became a SLOT ARRAY (cap 2), so a 2nd back-row foe commits + lunges + strikes on its OWN lane while the 1st is still mid-swing. The charter true-north (multi-foe DC pressure) gets its first real foothold — render-only, i-frame-safe, build loadable. ★★★
 (NB clock skew vs the 03:0x lunge-lane entry below is same-cycle, not a rewind. THIS is the newest run; it builds directly on the 03:0x lunge-lane decal.)
 ART INTAKE (first): `art_in/` re-checked. The only Jun-28 source PNGs (warlock_summon/fireball/fireball_hit/bg_pit_far, 00:56–00:57)
@@ -620,22 +653,21 @@ documented TRUNCATED ~1075-line stale tail — `wc`/`node --check` over the FUSE
     duel/crowd path, not e.x).
 (2) `updZones` (L1041): NEW fire/ice/bolt branch — `tele` ticks down with NO damage; ICE/BOLT DETONATE once at
     tele-end (`hurtWarlock` if `dist(z,P)<z.r`, SHATTER/BOLT popup + shake, then splice); FIRE then lingers and
-    ticks its dmg every .5s for its life while you stand inside. Routes through `hurtWarlock` so roll/ward/fade
-    i-frames already negate it.
-(3) `zoneGfx` render (L1956): NEW pyre-zone draw — a pulsing TELEGRAPH ring whose fill closes in as the tele
-    runs out (move off it!), then the lingering FIRE pool (orange, breathing alpha). ICE/BOLT are instant so
-    they show only the telegraph + the detonation popup. Drawn on the floor graphics (depth 1) under the actors.
-VERIFIED: isolated `node` behavior harness on the EXACT edited blocks PASSED all 13 asserts (channel starts →
-completes → FIRE zone + shield doubles hp; mid-channel damage INTERRUPTS, no zone; FIRE 0-dmg during tele then
-ticks then expires; BOLT full dmg + shake on detonation then consumed; ICE misses when the player flees the
-ring). All 3 edited regions re-read brace-balanced via the Read tool; file WHOLE on disk (`new Phaser.Game`
-L2125, `</script>` L2171, `</html>` L2173 — 2174 lines real). Build stays loadable; live `game/` untouched;
-game3d NOT published.
-PARITY-COMPARE: inline (a bash-driven diff subagent reads the truncated mount → garbage, as every prior run).
-PER-TYPE FOE AI — PYRE zone-caster + mage-shield now PRESENT (joins grave riposte + door guard-break). Remaining
-signature verbs: MASTER pack-RELEASE (hound spawns), GUNNER aim-line lock (sidestep-the-laser), HOUND-pack flank,
-NECRO raise, CHAMP/BEAST boss phases (pit.js:1670-1805).
-NOTE (debt, for a later run): the VISIBLE current-foe pyre still ALSO runs the scene `foeRangedAI`→`foeShoot`
+    ticks its dmg every .5s for its life while you stan
+## 🧩 BUILD SPLIT + FILE OWNERSHIP (2026-06-28) — game3d-build vs game3d-anim (avoid OneDrive file races)
+Two parallel builders now. STRICT ownership — never two schedules editing one file (that's what truncates):
+- **game3d-build** OWNS arena.html + world/combat/enemies/UI. FIRST TASK: MODULARIZE arena.html into game3d/src/
+  modules (e.g. world.js, combat.js, enemies.js, actors.js, ui.js) + a thin arena.html that loads them. Smaller
+  files truncate far less (also helps the OneDrive hazard) AND makes the split safe. Then wire the rig (below).
+- **game3d-anim** OWNS game3d/src/rig.js + game3d/rigs/*.json + rig_test.html + ANIM_STATUS.md ONLY. Builds the
+  skeletal rig + parametric clips + the animState() API + populates window.__AUDIT__.entities. NEVER touches arena.html.
+- INTEGRATION SEAM: game3d-build imports rig.js and, per actor each frame, calls rig.update()/animState(), and sets
+  `window.__AUDIT__.entities` from `window.__riggedEntities()`. game3d-anim leaves wiring notes in ANIM_STATUS.md.
+- Neither writes the OTHER's files or this plan's STATUS section out of turn. game3d-anim logs to ANIM_STATUS.md.
+ONEDRIVE ANTI-CORRUPTION: keep files SMALL/modular; ALWAYS `node --check` + verify wc/tail after each edit and
+reconstruct head+tail if the mount serves a stale tail; one writer per file. (Root cure if it persists: move the repo
+OUT of OneDrive to a plain folder + sync via git/GitHub — atomic, hash-checked, no half-synced tails.)
+e scene `foeRangedAI`→`foeShoot`
 straight-ember on its own clock, so a duel pyre now both zone-channels (sim) AND pokes an ember (scene). Harmless
 extra pressure, but the faithful move is to route the scene pyre path into this same channel and retire the ember.
 NEXT STEP (single, priority-2/3): THE MASTER pack-RELEASE (pit.js:1684) — a per-type branch that periodically
@@ -1970,3 +2002,35 @@ Re-skin the floor to the Sorcerer-Sword pit identity: a glowing PINK/MAGENTA RIN
 BLOOD-SPLATTER decals, GREEN HEX/POISON pools, damage numbers + health bars over units (like the original).
 Keep the lit, normal-mapped anime sprites + depth (y-sort, contact shadows) so it still "looks 3D" but reads
 clearly as the first game's pit from a high angle. Do the SCALE-NORMALIZATION fix FIRST, then this re-skin.
+
+## ⛔ STOP FEEL-POLISH — FORCED ORDER (2026-06-28 03:10) — game3d-build do these NEXT, in order, before ANY more polish
+The build keeps adding small feel/kit wins (hex slow, charge lanes) and skipping the structural gaps Hiro can SEE.
+Stop. The next runs MUST be, in this exact order — one per run is fine, but do not detour:
+1. EXPOSE `window.__AUDIT__.entities=[{type,action,anim:{rigged,frames}}]` for every on-screen actor. TRIVIAL,
+   unblocks the entire animation-coverage loop + lets the auditor grade animation. DO THIS FIRST.
+2. REMOVE the dev/status TEXT overlay from the gameplay view (top-left). Trivial.
+3. CROWD WALL VISIBLE: bg_pit_far is crushed dark by the vignette/grade or off-frame — brighten/reposition so the
+   lit packed stands show behind the action. Hiro has flagged this 3×.
+4. PILLARS to MIDGROUND (behind actors, never occlude) + start the parallax SCROLLING camera (pit wider than screen).
+THEN resume: modularize arena.html into src/ + wire game3d-anim's rig. No more feel-polish until 1-4 are done.
+
+## 🔁 SPLIT REVERTED (2026-06-28 03:30) — back to ONE build worker
+game3d-anim is DISABLED. Reason: (1) it ran but produced nothing — the rig needs an actor/render seam that doesn't
+exist until arena.html is modularized, so splitting BEFORE modularizing was premature; (2) the OneDrive move already
+FIXED truncation, removing the main reason to split. One productive worker beats two thrashing on a monolith.
+game3d-build now owns the WHOLE uplift again. Order stands: the ⛔ FORCED top-4 first (audit telemetry, dev-text,
+crowd-wall visible, pillars→midground + scrolling camera), THEN modularize arena.html into src/ (optional now that
+truncation is fixed — do it when it helps), THEN build the skeletal RIG + animation coverage inline. Re-split ONLY
+if the single build's queue can't keep up once it's caught up on the visible work.
+
+## ✅ NEEDS-HIRO RESOLVED (2026-06-28) — CAMERA CONFLICT DECIDED: DRAGON'S CROWN BRAWLER, the 1v1 gauntlet is DEAD
+The "★★ FINAL CAMERA/COMBAT DIRECTION — SEQUENTIAL 1v1 GAUNTLET DUELS" note (Guilty Gear 1v1, ONE foe at a time,
+upcoming foes idling in the background, FINISHER then CAMERA-WHIRLS to the next opponent, two-fighter HUD) is
+**RETIRED / SUPERSEDED — do NOT build it.** Hiro decided the DRAGON'S CROWN BRAWLER, confirmed multiple times since
+(the "Full Dragon's Crown brawler" pick, "a fighting game that's still an ARPG," and the explicit request for
+sideways PARALLAX SCROLLING). THE ONE TRUE DIRECTION:
+- WAVES of many enemies at once in the pit (not 1v1); the warlock's SUMMONS fight alongside as allies.
+- Camera = Dragon's Crown FOLLOW-CAM that SCROLLS SIDEWAYS across a pit wider than the screen, with PARALLAX layers
+  (far crowd-wall slow, floor mid, pillars midground behind actors). NO camera-whirl. NO "next opponent" staging.
+- HUD = DC style (player HP/MP/LEVEL, enemy HP bars over mobs, combo counter) — NOT a two-fighter versus HUD.
+This unblocks top-4 item #4 (pillars→midground + scrolling camera). Build it. Ignore/delete any remaining 1v1 text.

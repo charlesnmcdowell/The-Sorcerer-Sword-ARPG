@@ -57,6 +57,7 @@ BLACKBG = ("on a PURE SOLID BLACK background (hex 000000), the effect glowing br
 NEEDED = os.path.join(HERE, "audit", "needed_sprites.json")   # written by visual_audit.py
 ACTION_POSE = {
  "idle":"a relaxed combat-ready idle stance, subtle breathing", "walkf":"mid-stride walking FORWARD",
+ "walk":"mid-stride walking, weight on one leg, the other leg swinging",
  "walkb":"stepping BACKWARD, leaning back", "attack":"a melee attack swing", "slash":"a fast slashing strike",
  "heavy":"a heavy overhead power strike", "hex":"casting a magic bolt forward, free hand thrust out",
  "cast":"casting a spell, staff raised", "summon":"a dramatic summoning pose, arms spread, conjuring a magic circle",
@@ -87,11 +88,13 @@ def needs_rows():
     if not os.path.exists(NEEDED): sys.exit(f"No needs file at {NEEDED} (run visual_audit.py first).")
     base = {m[0]: m for m in MANIFEST}
     rows, skipped = [], []
+    ALIAS = {"warlock": "warlock_idle"}   # __AUDIT__.entities reports the hero as 'warlock'; his base row is warlock_idle
     for nd in json.load(open(NEEDED)):
         ent, act = nd.get("entity"), (nd.get("action") or "").lower()
         N = max(3, int(nd.get("frames_needed") or 3))
-        if ent not in base: skipped.append(f"{ent}:{act}"); continue
-        _, _, aspect, bprompt = base[ent]
+        brow = base.get(ent) or base.get(ALIAS.get(ent, ""))
+        if brow is None: skipped.append(f"{ent}:{act}"); continue
+        _, _, aspect, bprompt = brow
         pose = ACTION_POSE.get(act, act.replace("_"," "))
         is_fx = ent.startswith("fireball") or ent in ("breath","spark","burst")
         ref = entity_ref(ent)
@@ -186,7 +189,11 @@ def edit(prompt, ref_path, aspect):
          "image": {"url": f"data:image/png;base64,{b64}", "type": "image_url"}}))
 
 # ---- green-screen key + crop (generalized: keys the dominant flat border color) ----
-def key_and_crop(in_bytes, out_path, global_key=False):
+# no_crop=True (ANIMATION KEYFRAMES): key the green but KEEP THE FULL CANVAS. Per-frame bbox
+# cropping destroys FRAME REGISTRATION — each frame re-centers on its own silhouette, so the
+# played-back cycle jitters/slides. Keyframes stay full-canvas here; ingest_art.py then crops
+# the whole SET with one shared union bbox (registered AND tight). Base stills still crop.
+def key_and_crop(in_bytes, out_path, global_key=False, no_crop=False):
     import numpy as np
     from PIL import Image, ImageFilter
     from scipy import ndimage
@@ -214,6 +221,7 @@ def key_and_crop(in_bytes, out_path, global_key=False):
         a[:,:,1] = np.where(spill, np.maximum(R,B), a[:,:,1])
     alpha = np.array(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(0.7)))
     a[:,:,3] = alpha
+    if no_crop: Image.fromarray(a,"RGBA").save(out_path); return   # keyframes: registration > tightness
     ys,xs = np.where(alpha>40)
     if len(xs)==0: Image.fromarray(a,"RGBA").save(out_path); return
     pad=12; y0,y1=max(0,ys.min()-pad),min(h,ys.max()+pad); x0,x1=max(0,xs.min()-pad),min(w,xs.max()+pad)
@@ -277,9 +285,10 @@ def main():
             print(f"  ERROR {type(e).__name__}: {str(e)[:160]}"); continue
         open(os.path.join(RAW, f"{name}.png"), "wb").write(raw)   # keep the raw
         fx = name.startswith("fireball") or name in ("spark","breath","burst")  # glowing FX -> black-bg luminance key
+        keyframe = name.rsplit("_",1)[-1].isdigit()  # <ent>_<act>_<n> = ANIMATION KEYFRAME -> keep full canvas (registration)
         if mode == "bg":  save_full(raw, out)        # full-bleed backdrop, keep as-is
         elif fx:          key_fx_black(raw, out)     # glowing FX: brightness->alpha, no green
-        else:             key_and_crop(raw, out)     # character/enemy cutout: green-key + crop
+        else:             key_and_crop(raw, out, no_crop=keyframe)  # cutout: green-key (+crop only for base stills)
         # snapshot BASE sprites (not keyframes like x_action_3) into the persistent ref library for future edits
         if mode != "bg" and not name.rsplit("_",1)[-1].isdigit():
             try: shutil.copyfile(out, os.path.join(REFS, f"{name}.png"))

@@ -81,19 +81,25 @@ check('rule2.target-height-map', 'P2',
   'SPRITE_TARGET_H ratio map (warlock_idle baseline 1.0) must exist so foes scale by world height, not PNG dims.');
 
 // === RULE 3 — 3-LAYER PARALLAX BACKDROP =================================
-// far (amphitheater + crowd) BEHIND, floor BELOW actors, fg (pillars/braziers)
-// OVER. All three loaded; depth order far < floor < actors < fg.
+// Hiro FEEDBACK #8 (2026-07-02) RELAID the stage: far (amphitheater + crowd)
+// owns the UPPER band only; the ground strip owns the LOWER band; the fg
+// pillars are BACKGROUND columns — NOTHING may draw over the fighters. The
+// old rule demanded fg at depth 9000 (over everyone); that was exactly the
+// "pillars block the action" complaint, so the assertion now flips.
 check('rule3.three-layers-loaded', 'P1',
   has(/load\.image\(\s*['"]bg_far['"]/) &&
-  has(/load\.image\(\s*['"]bg_floor['"]/) &&
+  (has(/load\.image\(\s*['"]bg_ground['"]/) || has(/load\.image\(\s*['"]bg_floor['"]/)) &&
   has(/load\.image\(\s*['"]bg_fg['"]/),
-  'All three backdrop layers (bg_far/bg_floor/bg_fg) must be preloaded.');
+  'All three backdrop layers (bg_far + bg_ground/bg_floor + bg_fg) must be preloaded.');
 check('rule3.far-behind', 'P1',
-  has(/bg_far['"]\s*\)\.setDepth\(\s*-\d/),
+  has(/bg_far['"]\s*\)\.setOrigin\([^)]*\)\.setDepth\(\s*-\d/) || has(/bg_far['"]\s*\)\.setDepth\(\s*-\d/),
   'bg_far (crowd/amphitheater) must be drawn at a NEGATIVE depth (behind actors).');
-check('rule3.fg-over-actors', 'P1',
-  has(/bg_fg['"]\s*\)\.setDepth\(\s*\d{3,}/),
-  'bg_fg (pillars/braziers) must be drawn OVER the actors (large positive depth).');
+check('rule3.fg-not-over-actors', 'P1',
+  has(/bg_fg['"]\s*\)\.setDepth\(\s*-\d/) && !has(/bg_fg['"]\s*\)\.setDepth\(\s*\d{3,}/),
+  'bg_fg (edge pillars) must be BEHIND the actors (negative depth) — items in front of the action block the view of the fighters (Hiro FEEDBACK #8).');
+check('rule3.banded-backdrop', 'P2',
+  has(/wallY/) && has(/bg_ground/),
+  'Backdrop must be BANDED (far wall upper band anchored at wallY + ground strip lower band) — a full-screen cover-scaled floor hides the crowd wall (the "background looks like a floor" bug).');
 
 // === RULE 4 — DC ATMOSPHERE FX (lower severity) =========================
 // Brazier point-lights are in; bloom/vignette/animated god-rays/embers are
@@ -157,6 +163,18 @@ check('rule8.audit-entities-hook', 'P1',
 check('rule8.audit-entities-fields', 'P1',
   has(/\brigged\b/) && has(/\bframes\b/),
   'each window.__AUDIT__.entities entry must carry anim {rigged, frames} so anim_coverage can verify >=3-frame/rigged motion per entity x action.');
+
+// === RULE 9 — LOCOMOTION READS AS WALKING, NOT GLIDING (FEEDBACK #8) =====
+// The build must carry (a) the anims.json keyframe loader (real multi-frame
+// cycles when art lands) AND (b) the procedural stride layer (stride clock +
+// footstep dust + squash/stretch) so movement has footfalls TODAY, before
+// every keyframe set is generated. Losing either regresses to sliding stills.
+check('rule9.keyframe-loader', 'P2',
+  has(/anims\.json|anims_manifest/) && has(/anims\.create/),
+  'arena.html must load the anims.json keyframe manifest and build anims.create cycles from ingested frames.');
+check('rule9.procedural-stride', 'P2',
+  has(/_stride/) && has(/stepDust/),
+  'arena.html must keep the procedural stride layer (stride clock + stepDust footfalls) so walking never reads as gliding.');
 
 // --- REPORT --------------------------------------------------------------
 console.log('PARITY LINT — game3d/arena.html  (' + lineCount + ' lines)');

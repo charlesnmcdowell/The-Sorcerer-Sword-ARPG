@@ -4,6 +4,53 @@ Lane B of the autonomous playtest agent. Benchmark = **Dragon's Crown**; spec = 
 
 ---
 
+## RUN-LOG 2026-07-02 (L) — HIRO FEEDBACK #8 LANDED: stage relaid, anim system shipped — auditor **PASS (0 P1)** for the first time
+
+**Hiro's feedback (verbatim intent).** (1) pillars sit IN FRONT of the action and block the fighters; (2) the backdrop
+"looks like a floor" — need a better image; (3) real animations for every sprite's actions (walk/attack/summon/…) for the
+warlock AND summons AND enemies; (4) correct sizes, feet on the ground, no clipping; (5) walking must not read as gliding.
+
+**Root causes found (visual audit + code read).**
+- **Backdrop:** all 3 layers were cover-scaled over the FULL screen — the oblique `bg_pit_floor` (depth −99) completely
+  COVERED the crowd-wall painting (`bg_pit_far`, −100). The "background that looks like a floor" WAS the floor layer
+  hiding the (good) amphitheater art. And `bg_fg` rode depth **9000**, drawing its pillars over the fighters.
+- **Anchoring:** hero contact shadow hung at `P.y+86` (86px BELOW the feet/ground line); summon sprites used origin
+  `(0.5,0.9)` (≈10% of every body sank below its anchor).
+- **Gliding:** movement was position-lerp + a free-clock bob; no stride, no footfalls, no lean, 1-frame stills.
+
+**Fixes shipped (arena.html + tools).**
+1. **BANDED stage:** `bg_far` now anchors its BOTTOM at a `wallY` horizon (gy − 0.185H) covering only the upper band;
+   a NEW shallow eye-level ground strip `assets/bg/bg_pit_ground.png` fills wallY→bottom (old oblique floor kept as
+   fallback); a soft gradient blends the seam. Crowd + banners + god-rays finally visible behind the duel.
+2. **Pillars out of the action:** `bg_fg` → depth **−96** (behind every actor) and widened ×1.30 so the columns hug the
+   screen edges. Brazier lights re-pinned; parallax retuned (far 0.05, pillars 0.11, ground fixed = feet don't skate).
+3. **Anim pipeline (art loop closed):** `assets/sprites/anims.json` manifest (written by `ingest_art.py`) →
+   `loadAnimFrames()` queues `<ent>_<act>_1..N` (+ normal maps) and builds real `anims.create` cycles; hero/duel-foe/
+   crowd/summons all play `<ent>_walk` / `<ent>_attack` / form `_idle` sets when present and fall back to stills when not.
+   `__AUDIT__.entities` now published (rule8 P1 cleared) → auditor queues gaps → `gen_sprites --from-needs` generates
+   keyframes **full-canvas** (no per-frame crop) and `ingest_art.py` crops each SET with ONE union bbox = **registered
+   frames, no jitter**. Full roster GENERATED + INGESTED this run: **56 sets ×3 keyposes (≈336 files incl. normals)**
+   — warlock idle/walk/cast/summon/hurt, lich/archdevil/demonlord idle/walk/attack, all 5 summons walk/attack, all 16
+   gauntlet foes walk/attack. Cycles play `yoyo` (1-2-3-2-1, idles at 5fps, actions at 9fps). Loader is TWO-PHASE:
+   the hero + the current wave's foes load & register FIRST (on screen within the first boot beats), the rest of the
+   roster streams in behind; each set registers the moment its own frames land. Verified in-motion via headless
+   probes: warlock + door show distinct leg poses frame-to-frame while walking, summon-channel plays the circle pose,
+   `consoleErrors: []`, all 56 sets registered live (`__AUDIT__.animSetsLive`).
+4. **Procedural locomotion (kills the glide TODAY, before art lands):** a stride clock advances only with ground actually
+   covered → footfall bounce (up-only), lean-into-direction + shoulder rock, footstep DUST puffs on each plant, idle
+   breathing via scaleY (feet planted), hurt recoil tilt; duel foe gets windup-coil / lunge SQUASH-STRETCH / stride bob +
+   dust (`foeMotion()`); crowd rocks on its press phase; summons get feet-origin fix + strike-dart stretch. The warlock
+   also alternates walk↔idle stills on stride beats (a true 2-pose step cycle) until his 3-frame walk set lands.
+5. **Sizing/clipping:** shadow at the feet (`P.y+4` side-on), summons origin `(0.5,1)`, all bob offsets UP-only — nothing
+   crosses the ground line. Lineup pushed back to the wall base (smaller/ghostlier) so mid-pit reads clean.
+
+**Auditor verdict after fix: `PASS` — 0 P1** (canvas 100/100, warlock 34%, layers far/floor/fg true, lighting all true,
+anim_coverage PASS on live entities). Full roster generated + ingested (56 sets ×3 keyposes); re-audit 2026-07-02 17:34 PASS.
+Permanent guards updated: parity_lint **rule3 FLIPPED** (fg must now be BEHIND actors — the old rule demanded the exact
+bug Hiro reported), + new `rule3.banded-backdrop`, `rule9.keyframe-loader`, `rule9.procedural-stride`.
+
+---
+
 ## RUN-LOG 2026-06-28 (K) — auditor FRESH; same lone P1 (anim_coverage); rule8 guard CONFIRMED live; no new findings
 
 **TL;DR.** `latest.json` is **FRESH** (ts 2026-06-27 21:22:07 local ≈ <1 min old; newest shot `shot_20260627_212158.png`)

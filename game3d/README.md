@@ -9,7 +9,7 @@ The 3D models are **base64-embedded** in `assets/embedded3d.js`, so the look-tes
 
 ### Optional: run it served (needed once we add streaming)
 ```
-cd "C:\Users\charl\OneDrive\Documents\The Sorcerer Sword ARPG"
+cd "C:\Users\charl\The Sorcerer Sword ARPG"
 py -m http.server 8000          (or: python -m http.server 8000)
 ```
 Then open **http://localhost:8000/game3d/**. The loader auto-detects: if `embedded3d.js` is present it parses the embedded models; otherwise it fetches the `.glb` files over http. (`localhost` is still 100% your own machine — nothing goes online except the CDN libraries.)
@@ -41,5 +41,5 @@ Weapon-attach bones exist on the rig (`handslot.r` / `handslot.l`) — the katan
 
 ## Notes
 - Libraries load from CDN: `three.js r128` (cdnjs) + `GLTFLoader` (unpkg). Internet required to run.
-- Develop on the `3d-uplift` branch (or a clone outside the OneDrive-synced folder) so the big refactor work can't be hit by the OneDrive file-truncation issue that bites `../game/`.
+- Develop on the `3d-uplift` branch. (The whole game repo moved out of OneDrive on 2026-06-27, so the file-truncation issue that used to bite `../game/` no longer applies — but the safe-publish and pre-commit guards are kept as defense-in-depth.)
 - This scaffold proves the *pipeline*. B1 maps the four champions to KayKit rigs/looks + the katana sheath/draw; B2 wires the real combat sim to drive it.

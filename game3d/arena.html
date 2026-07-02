@@ -65,12 +65,8 @@
 </head>
 <body>
 <div id="hud">
-  <b>ARENA — Milestone 1 shell (parity-first)</b><br>
-  Lit normal-mapped warlock on the angled pit floor. Move + the 4 verbs route
-  through a <b>pit.js-shaped combat state</b> (<code>combat.P/S</code>,
-  <code>doSlash/doHeavy/doParry/doRoll/heavyRelease</code>, <code>frame(now)</code>).
-  Verbs emit placeholder FX only — real abilities/summons port in next.<br>
-  <i>Art: Hiro's anime dark-elf warlock — NEW high-res idle still, normal-mapped + Light2D-lit.</i>
+  <b>THE PIT — side-on gauntlet (pit.js parity)</b><br>
+  <i>Full warlock kit: HEX / SUMMON ladder / WARD / BLINK · evolutions + transformations live.</i>
 </div>
 <div id="verbs">
   <span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>
@@ -565,7 +561,11 @@ function updFoeAI(dt){
   for(const e of enemies){
     if(e.dead) continue;
     if(e.stunT>0) continue;                                  // scythe stun / gas paralysis freezes the foe (updEnemies decays it)
-    const A=foeAIFor(e), dToP=dist(e,P), spd=e.spd||90, reach=e.r+(P.r||16);
+    // HEX SLOW (pit.js:1554 — hexed foes integrate movement at 0.6×): fold the hex factor into the per-foe
+    // `spd` so every chase/kite/approach/feed branch crawls while HEXED (the purple-tinted DoT now also debuffs
+    // mobility, rewarding the hex→kite play). Dash constants (hound lunge 340 / beast charge 430) are committed
+    // and intentionally NOT slowed — a launched pounce/ram still lands.
+    const A=foeAIFor(e), dToP=dist(e,P), spd=(e.spd||90)*(e.hexT>0?0.6:1), reach=e.r+(P.r||16);
     e.cool=(e.cool||0)-dt;
     e.face = SIDEON ? ((P.x>=e.x)?0:Math.PI) : ang(e,P);     // sprite faces the warlock (horizontal in side-on so it reads)
     // STITCHER: mends the most-hurt ally instead of fighting (pit.js healer), weak poke only at point blank
@@ -1400,10 +1400,65 @@ class Arena extends Phaser.Scene{
     this.load.image('fireball_hit', [SPR+'fireball_hit.png', SPR+'fireball_hit_n.png']);
     // --- painted Dragon's-Crown PARALLAX BACKDROP (Hiro FEEDBACK #6): 3 full-bleed 1280x720 layers.
     // far = amphitheater walls + spectators + braziers + god-rays (carries most of the baked lighting);
-    // floor = bloodstained sand ground band; fg = keyed pillars/chains/braziers at the edges, drawn over. ---
+    // floor = bloodstained sand ground band; fg = keyed pillars/chains/braziers at the edges. ---
     this.load.image('bg_far',   BG+'bg_pit_far.png');
-    this.load.image('bg_floor', BG+'bg_pit_floor.png');
+    this.load.image('bg_floor', BG+'bg_pit_floor.png');   // legacy oblique floor — FALLBACK only (see bg_ground)
     this.load.image('bg_fg',    BG+'bg_pit_fg.png');
+    // NEW shallow eye-level ground STRIP (Hiro FEEDBACK #8: "the background image looks like a floor" —
+    // the old oblique bg_floor was cover-scaled over the WHOLE screen, hiding the crowd wall entirely).
+    // This strip only fills the band below the wall base; the far crowd wall owns the upper band.
+    this.load.image('bg_ground', BG+'bg_pit_ground.png');
+    // --- MULTI-FRAME ANIMATION MANIFEST (Hiro FEEDBACK #8: real walk/attack cycles, not gliding stills).
+    // assets/sprites/anims.json maps "<entity>_<action>" -> frame count N, meaning <set>_1.png .. <set>_N.png
+    // (+ their _n normal maps) are ingested. Written by tools/ingest_art.py; {} until keyframes land.
+    // loadAnimFrames() (called from create) queues those frames + builds real anims.create cycles.
+    this.load.json('anims_manifest', SPR+'anims.json');
+  }
+
+  // --- RUNTIME KEYFRAME LOADER (FEEDBACK #8): read anims.json, queue every listed keyframe (diffuse +
+  // auto-Sobel normal so Light2D shades the cycle), and register a Phaser anim per set once loaded.
+  // Degrades to the still-pose + procedural locomotion when a set is missing — build always loadable.
+  loadAnimFrames(){
+    this.animSets = {};                        // '<ent>_<act>' -> {key:'anim_<set>', frames:N}
+    const man = this.cache.json.get('anims_manifest');
+    if(!man || typeof man!=='object') return;
+    const total={};
+    const reg=(setName)=>{                     // register a set the moment ITS frames are in — with 56 sets
+      const frames=[];                         // (~670 files) waiting for the WHOLE queue would leave the cast
+      for(let i=1;i<=total[setName];i++)       // on stills for seconds after boot (caught by the 17:03 audit).
+        if(this.textures.exists(setName+'_'+i)) frames.push({key:setName+'_'+i});
+      if(frames.length<2) return;
+      const akey='anim_'+setName;
+      // YOYO ping-pong (1-2-3-2-1): with 3 keyposes a hard loop snaps 3->1 every cycle; bouncing
+      // through the middle frame reads as continuous motion. Idles breathe slower than actions.
+      if(!this.anims.exists(akey))
+        this.anims.create({key:akey, frames, frameRate:(/_idle$/.test(setName)?5:9), yoyo:true, repeat:-1});
+      this.animSets[setName]={key:akey, frames:frames.length};
+    };
+    // TWO-PHASE PRIORITY (deterministic): phase 1 loads ONLY the hero + the current wave's foes so the
+    // fighters on screen get their cycles in the first beats of boot; phase 2 streams the whole rest of
+    // the roster behind them. Each phase registers its sets on that phase's 'complete'.
+    const hot=new Set(['warlock']); for(const e of enemies){ if(!e.dead && e.spriteKey) hot.add(e.spriteKey); }
+    const isHot=n=>{ for(const k of hot) if(n.indexOf(k+'_')===0) return true; return false; };
+    const phases=[[],[]];
+    for(const setName in man){
+      const n=man[setName]|0; if(n<2) continue;
+      total[setName]=n;
+      phases[isHot(setName)?0:1].push(setName);
+    }
+    const queue=(names)=>{ let any=false;
+      for(const sn of names) for(let i=1;i<=total[sn];i++){ const fk=sn+'_'+i;
+        if(this.textures.exists(fk)) continue;
+        this.load.image(fk, [SPR+fk+'.png', SPR+fk+'_n.png']); any=true; }
+      return any; };
+    const run=(pi)=>{
+      if(pi>=phases.length) return;
+      const names=phases[pi];
+      if(!queue(names)){ names.forEach(reg); run(pi+1); return; }
+      this.load.once('complete', ()=>{ names.forEach(reg); run(pi+1); });
+      this.load.start();
+    };
+    run(0);
   }
   create(){
     scene = this;
@@ -1492,6 +1547,7 @@ class Arena extends Phaser.Scene{
     if(SIDEON) this.buildSideOn();   // flip the stage to the eye-level side-on 1v1 duel shell
     this.applyCameraGrade();         // DC PAINTERLY POST-FX: warm ColorMatrix + Bloom + Vignette (FEEDBACK #6 B-2)
     this.buildAtmosphere();          // DC LIVING PIT: rising embers + raking god-rays + drifting dust (render-only)
+    this.loadAnimFrames();           // FEEDBACK #8: pull in any ingested keyframe cycles (anims.json manifest)
     this.last = performance.now();
   }
 
@@ -1532,20 +1588,42 @@ class Arena extends Phaser.Scene{
   buildSideOn(){
     const W=this.scale.width, H=this.scale.height, gy=H*SIDEON_GROUND_FR;
     this._gy = gy;
-    // --- PAINTED DRAGON'S-CROWN PARALLAX BACKDROP (Hiro FEEDBACK #6) — replaces the old flat fills.
-    // far (amphitheater walls + crowd + braziers + god-rays; carries the baked lighting) -> floor (sand
-    // band) -> ACTORS (y-sorted, depth = world-y) -> fg (keyed pillars/chains, drawn OVER everyone).
-    // far/floor sit at NEGATIVE depth (behind every depth>=0 actor + FX graphic); fg rides depth 9000.
-    // Subtle player-relative parallax is applied each frame in syncSideOn(). ---
-    if(this.textures.exists('bg_far') && this.textures.exists('bg_floor')){
+    // --- PAINTED DRAGON'S-CROWN PARALLAX BACKDROP (Hiro FEEDBACK #6, RELAID per FEEDBACK #8) ---
+    // The old layout cover-scaled ALL 3 layers over the full screen: the oblique bg_floor completely
+    // COVERED the crowd wall (the whole backdrop "looked like a floor") and the fg pillars rode depth
+    // 9000 IN FRONT of the fighters, blocking the action. New DC side-scroller banding:
+    //   * bg_far  (crowd wall)   = UPPER band only — its wall base sits at the horizon line (wallY),
+    //   * ground STRIP           = LOWER band only (wallY -> bottom), the plane the fighters stand on,
+    //   * bg_fg   (edge pillars) = depth -96, BEHIND every actor (background columns, never over the action),
+    // so the crowd is finally visible and nothing occludes the fighters. Parallax in syncSideOn().
+    if(this.textures.exists('bg_far') && (this.textures.exists('bg_ground')||this.textures.exists('bg_floor'))){
       if(this.floorGfx) this.floorGfx.setVisible(false);      // hide the create() procedural angled floor
-      const cover=tex=>{ const s=this.textures.get(tex).getSourceImage();
-        return Math.max(W/((s&&s.width)||W), H/((s&&s.height)||H)); };
+      const dims=tex=>{ const s=this.textures.get(tex).getSourceImage();
+        return {w:(s&&s.width)||W, h:(s&&s.height)||H}; };
       this._bgCx=W/2;
-      this.bgFar  =this.add.image(W/2,H/2,'bg_far'  ).setDepth(-100).setScrollFactor(0).setScale(cover('bg_far'));
-      this.bgFloor=this.add.image(W/2,H/2,'bg_floor').setDepth(-99 ).setScrollFactor(0).setScale(cover('bg_floor'));
-      if(this.textures.exists('bg_fg'))
-        this.bgFg =this.add.image(W/2,H/2,'bg_fg'   ).setDepth(9000).setScrollFactor(0).setScale(cover('bg_fg'));
+      const wallY = gy - H*0.185;                             // horizon: wall base just behind the deepest actor row
+      this._wallY = wallY;
+      // FAR WALL: anchored by its BOTTOM edge on the horizon, covering the full width (x1.08 parallax
+      // margin) — the crowd + banners fill the upper band; any ceiling overflow crops off the top.
+      { const d=dims('bg_far'), s=Math.max(W*1.08/d.w, wallY/d.h);
+        this.bgFar=this.add.image(W/2, wallY, 'bg_far').setOrigin(0.5,1).setDepth(-100).setScrollFactor(0).setScale(s); }
+      // GROUND STRIP: fills ONLY the lower band (wallY -> screen bottom). Uniform width-cover scale,
+      // vertically centered on the band so the detailed mid-region of the painting is what shows.
+      { const gtex=this.textures.exists('bg_ground')?'bg_ground':'bg_floor';
+        const d=dims(gtex), s=Math.max(W*1.02/d.w, (H-wallY)/d.h);
+        this.bgFloor=this.add.image(W/2, wallY+(H-wallY)/2, gtex).setOrigin(0.5,0.5)
+          .setDepth(-99).setScrollFactor(0).setScale(s); }
+      // SEAM BLEND: a soft dark gradient where the wall meets the ground, so the two paintings read
+      // as one scene instead of two stacked images.
+      { const sg=this.add.graphics().setDepth(-98).setScrollFactor(0);
+        sg.fillGradientStyle(0x0a0710,0x0a0710,0x0a0710,0x0a0710, 0.85,0.85,0,0);
+        sg.fillRect(-W*0.1, wallY-6, W*1.2, H*0.055); }
+      // EDGE PILLARS: widened outward (x1.30) so they hug the screen edges, and drawn BEHIND the
+      // actors (depth -96) — they frame the stage but can never block the view of the fighters.
+      if(this.textures.exists('bg_fg')){
+        const d=dims('bg_fg'), s=Math.max(W/d.w, H/d.h);
+        this.bgFg=this.add.image(W/2, H/2, 'bg_fg').setDepth(-96).setScrollFactor(0).setScale(s*1.30, s);
+      }
     } else {
       // FALLBACK (backdrop art missing): the old procedural flat fills + magenta pit ring — keeps the
       // build loadable and vibe-checkable exactly as before.
@@ -1566,7 +1644,7 @@ class Arena extends Phaser.Scene{
     // Only built when bg_fg exists (the braziers are baked there); the fallback stage simply has no torches. ---
     this._brazLights=[];
     if(this.textures.exists('bg_fg')){
-      const brazPos=[[0.085,0.73],[0.185,0.66],[0.885,0.70],[0.805,0.58]];   // [xFrac,yFrac] of the painted braziers
+      const brazPos=[[0.035,0.76],[0.115,0.68],[0.965,0.74],[0.885,0.66]];   // [xFrac,yFrac] of the braziers — pillars now hug the edges (FEEDBACK #8 widen)
       brazPos.forEach(([fxr,fyr],i)=>{
         const L=this.lights.addLight(W*fxr, H*fyr, 300, 0xff7a30, 1.7);
         L._bx=W*fxr; L._by=H*fyr; L._bi=1.7; L._br=300; L._ph=i*1.9;          // base + per-torch flicker phase
@@ -1574,14 +1652,17 @@ class Arena extends Phaser.Scene{
       });
     }
     // --- frozen BACKGROUND lineup of upcoming challengers (small, hazy, behind the duelists) ---
+    // FEEDBACK #8 reposition: now the crowd wall is visible, the lineup stands AT THE WALL BASE —
+    // spread wide along it, smaller and ghostlier, so it reads as challengers waiting at the back
+    // of the pit instead of a dark clump in the middle of the fighting ground.
     this.lineupSprites=[];
     const lineup=['lich','demonlord','archdevil','clawfiend','bonedragon','succubus','archsuccubus','bonearcher'];
     lineup.forEach((key,i)=>{
       if(!this.textures.exists(key)) return;
-      const x=W*0.50 + (i-(lineup.length-1)/2)*W*0.088;
-      const s=this.add.sprite(x, gy-H*0.13, key).setOrigin(0.5,1).setPipeline('Light2D').setDepth(3);
-      const wh=HERO_PX*(SPRITE_TARGET_H[key]||1)*0.42;            // distant => small
-      s.setScale(wh/(s.height||wh)).setAlpha(0.5).setTint(0x5a5a82);
+      const x=W*0.50 + (i-(lineup.length-1)/2)*W*0.112;
+      const s=this.add.sprite(x, gy-H*0.165, key).setOrigin(0.5,1).setPipeline('Light2D').setDepth(3);
+      const wh=HERO_PX*(SPRITE_TARGET_H[key]||1)*0.34;            // distant => small
+      s.setScale(wh/(s.height||wh)).setAlpha(0.34).setTint(0x8a8ab8);
       this.lineupSprites.push(s);
     });
     // --- CURRENT opponent: real side-on sprite anchored RIGHT, already facing LEFT (no flip) ---
@@ -1592,6 +1673,7 @@ class Arena extends Phaser.Scene{
       this.foeSprite=this.add.sprite(fx,gy,foeKey).setOrigin(0.5,1).setPipeline('Light2D').setDepth(gy);
       const fwh=HERO_PX*(SPRITE_TARGET_H[foeKey]||1);
       this.foeSprite.setScale(fwh/(this.foeSprite.height||fwh));
+      this._foeScl=this.foeSprite.scaleX; this._foeKey=foeKey;   // base scale + base texture for the locomotion juice (FEEDBACK #8)
       this.foeShadow.setScale(Math.max(0.2,this.foeSprite.displayWidth/(this.foeShadow.width||1)*0.95));
       this.lights.addLight(fx, gy-160, 300, 0xff6a8a, 1.1);       // rim light on the foe side
     }
@@ -1611,12 +1693,13 @@ class Arena extends Phaser.Scene{
   // Per-frame it also reflects the live foe's hurt-flash + hex tint. No foe AI/approach yet (next run);
   // this makes the static tableau react to the duel the warlock is already winning via HEX/summons. ---
   syncSideOn(now){
-    // PAINTED-BACKDROP PARALLAX (Hiro FEEDBACK #6): nudge the far + fg layers opposite the warlock's
-    // offset from centre so the pit gains depth as he walks — far drifts a little (distant), fg drifts
-    // more (closest to camera). Screen-fixed layers (scrollFactor 0); render-only.
+    // PAINTED-BACKDROP PARALLAX (Hiro FEEDBACK #6, retuned #8): nudge the far + pillar layers opposite
+    // the warlock's offset from centre so the pit gains depth as he walks — far crowd wall drifts least
+    // (most distant), the edge pillars drift more (nearer mid-ground, but still BEHIND the actors).
+    // The ground strip stays fixed: the fighters stand ON it, so sliding it would read as skating.
     if(this.bgFar){ const dx=(P.x-(this._bgCx||this.scale.width/2));
-      this.bgFar.x=(this._bgCx||this.scale.width/2) - dx*0.06;
-      const fgShift=-dx*0.16;
+      this.bgFar.x=(this._bgCx||this.scale.width/2) - dx*0.05;
+      const fgShift=-dx*0.11;
       if(this.bgFg) this.bgFg.x=(this._bgCx||this.scale.width/2) + fgShift;
       // FLICKER + parallax-track the brazier lights so the torchlight jitters and stays pinned to the
       // painted braziers as the fg layer drifts. Two stacked sines (a slow waver + a fast crackle) give a
@@ -1646,9 +1729,12 @@ class Arena extends Phaser.Scene{
       }
       const swapIn=()=>{
         if(!this.foeSprite || !this.textures.exists(key)){ this._foeStepping=false; return; }
+        this.foeSprite.anims && this.foeSprite.anims.stop();
         this.foeSprite.setTexture(key);
         const fwh=HERO_PX*(SPRITE_TARGET_H[key]||1);
         this.foeSprite.setScale(fwh/(this.foeSprite.height||fwh)).clearTint().setAlpha(0);
+        this.foeSprite.setRotation(0);
+        this._foeScl=this.foeSprite.scaleX; this._foeKey=key;    // re-seed the locomotion base for the new body
         this.foeShadow.setScale(Math.max(0.2,this.foeSprite.displayWidth/(this.foeShadow.width||1)*0.95)).setAlpha(0);
         this.foeSprite.x=W*0.86; this.foeShadow.x=W*0.86;          // start off to the right, then walk in
         this.tweens.add({targets:[this.foeSprite], x:homeX, alpha:1, duration:360, ease:'Quad.out',
@@ -1663,6 +1749,7 @@ class Arena extends Phaser.Scene{
     if(f){
       // drive the side-on foe AI (approach -> wind-up -> lunge -> recover); sets f._tele during the telegraph
       this.foeAI(now,f);
+      this.foeMotion(now,f);   // FEEDBACK #8: stride bob + lean + squash/stretch + step dust (kills the glide)
       // live duel reactions (priority): white hurt-flash > yellow wind-up telegraph > magenta hex > natural rim
       if(f.flash>0)        this.foeSprite.setTint(0xffffff);
       else if(f._tele)     this.foeSprite.setTint(0xffd24a);
@@ -1834,6 +1921,14 @@ class Arena extends Phaser.Scene{
       const scl=Math.max(0.45, 0.82 - (row?0.10:0) - 0.02*col);
       const wh=HERO_PX*(SPRITE_TARGET_H[key]||1)*scl;
       spr.x=dx; spr.y=fy; spr.setScale(wh/(spr.height||wh)).setFlipX(false).setDepth(charging?fy+40:fy).setAlpha(0.9);
+      // FEEDBACK #8: shuffle-step rock synced to each foe's press phase (pivot at the feet), and a
+      // committed forward lean while charging — the waiting wing reads as restless bodies, not statues.
+      spr.setRotation(charging ? -0.09 : Math.sin(ph*1.7)*0.028);
+      // keyframe cycles for the wing too (anims.json): attack while charging, walk while pressing
+      const cset = charging ? (this.animSets&&this.animSets[key+'_attack']) : (this.animSets&&this.animSets[key+'_walk']);
+      if(cset){ const cur=spr.anims&&spr.anims.currentAnim;
+        if(!cur||cur.key!==cset.key||!spr.anims.isPlaying) spr.play(cset.key,true); }
+      else if(spr.anims && spr.anims.isPlaying){ spr.anims.stop(); if(this.textures.exists(key)) spr.setTexture(key); }
       if(e.flash>0)       spr.setTint(0xffffff);
       else if(charging)   spr.setTint(0xffd24a);                 // charger telegraphs HOT as it breaks formation
       else if(e._tele)    spr.setTint(0xffd24a);
@@ -2020,6 +2115,49 @@ class Arena extends Phaser.Scene{
     this.flash && this.flash(fire?0xff8040:0xfff0a0, 0.05);
     if(typeof S!=='undefined'&&S) S.shake=Math.max(S.shake||0,3);
   }
+  // --- PROCEDURAL FOE LOCOMOTION (FEEDBACK #8 "walking, not gliding"): render-only motion layered on
+  // the duel foe every frame. A per-foe stride clock advances by the distance the AI ACTUALLY moved the
+  // sprite, driving a footfall bob + shoulder rock + step dust while walking; wind-up coils the body back
+  // and tall, the lunge SQUASH-STRETCHES into the dash, hurt tilts it away. Rotation pivots at the feet
+  // (origin 0.5,1) so every lean reads as body language, and y only ever offsets UP — no floor clipping.
+  // If anims.json has ingested keyframe cycles for this foe (<foe>_walk / <foe>_attack) they play instead
+  // of the still; the procedural layer rides on top either way. Writes NO sim state (f._stride/_lx/_lb
+  // are render-scratch, same class as f._tele). ---
+  foeMotion(now,f){
+    const spr=this.foeSprite, sh=this.foeShadow; if(!spr) return;
+    const gy=this._gy||spr.y, dt=this.dt||0.016;
+    // base scale computed LIVE from the current texture height (world-height contract): keyframe
+    // cycles swap textures with slightly different px dims per frame — a frozen base would jitter.
+    const bkey=this._foeKey||spr.texture.key;
+    const base=(HERO_PX*(SPRITE_TARGET_H[bkey]||1))/(spr.height||1);
+    const mv=Math.abs(spr.x-(f._lx!=null?f._lx:spr.x))/Math.max(dt,1e-4);   // px/s the AI actually moved it
+    f._lx=spr.x;
+    f._stride=(f._stride||0) + dt*Math.min(3.0, mv/72)*Math.PI*2;           // stride rate follows true ground speed
+    let bob=0, rot=0, sx=1, sy=1;
+    const st=f.aiState;
+    if(st==='windup'){ rot=0.085; sx=0.965; sy=1.04; }                       // coil: rear back + rise tall
+    else if(st==='lunge'){ rot=-0.10; sx=1.15; sy=0.92; }                    // stretch INTO the dash
+    else if(mv>8){
+      bob=-Math.abs(Math.sin(f._stride))*5;                                  // footfall bounce (up only)
+      rot=(spr.x>P.x?-1:1)*0.030 + Math.sin(f._stride*2)*0.018;              // lean toward the warlock + step rock
+      const beat=Math.sin(f._stride);
+      if(f._lb!==undefined && ((f._lb>0&&beat<=0)||(f._lb<0&&beat>=0)))
+        this.stepDust(spr.x+(spr.x>P.x?12:-12), gy, spr.displayWidth*0.14);
+      f._lb=beat;
+    } else { sy=1+0.010*Math.sin((now||0)/430); f._lb=undefined; }           // idle breathing (scale, feet planted)
+    if(f.flash>0) rot+=0.10;                                                 // hurt: recoil tilt
+    // KEYFRAME CYCLES (anims.json manifest): real ingested frames override the still when present
+    const bk=this._foeKey||spr.texture.key;
+    const wantSet = st==='lunge' ? (this.animSets&&this.animSets[bk+'_attack'])
+                  : (mv>8       ? (this.animSets&&this.animSets[bk+'_walk'])   : null);
+    if(wantSet){ const cur=spr.anims&&spr.anims.currentAnim;
+      if(!cur||cur.key!==wantSet.key||!spr.anims.isPlaying) spr.play(wantSet.key,true);
+    } else if(spr.anims && spr.anims.isPlaying){ spr.anims.stop(); if(this.textures.exists(bk)) spr.setTexture(bk); }
+    spr.setScale(base*sx, base*sy);
+    spr.setRotation(rot);
+    spr.y=gy+bob;
+    if(sh){ sh.x=spr.x; sh.y=gy+5; }
+  }
   aimAngle(){ return Math.atan2(this.mouse.y-P.y, this.mouse.x-P.x); }
   clampArena(ent){
     const e=ent||P, b=this.bounds;
@@ -2060,6 +2198,16 @@ class Arena extends Phaser.Scene{
     const t=this.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD)
       .setTint(kind==='hex'?0xb070f0:0xf0883d).setScale(0.16).setAlpha(0.7);
     this.tweens.add({targets:t, alpha:0, scale:0.05, duration:160, onComplete:()=>t.destroy()});
+  }
+  // FOOTSTEP DUST (FEEDBACK #8): a tiny grey puff kicked up where a foot plants — the single cheapest
+  // "weight" cue that kills the gliding read. Render-only, self-destructing, throttled by stride beats.
+  stepDust(x,y,s){
+    if(!this.textures.exists('glow')) return;
+    const p=this.add.image(x, y-2, 'glow').setBlendMode(Phaser.BlendModes.ADD)
+      .setTint(0xb0a090).setScale(Math.max(0.05,(s||18)/((this.textures.get('glow').getSourceImage()||{}).width||128)))
+      .setAlpha(0.28).setDepth((y||0)-2);
+    this.tweens.add({targets:p, x:x+rnd(-8,8), y:y-rnd(4,10), alpha:0, scale:p.scale*1.9,
+      duration:rnd(240,380), ease:'Quad.out', onComplete:()=>p.destroy()});
   }
   popup(x,y,txt,col){ // pit.js popup(): floating combat text
     const t=this.add.text(x, y, txt, {fontFamily:'system-ui',fontSize:'13px',color:col||'#fff',
@@ -2188,7 +2336,9 @@ class Arena extends Phaser.Scene{
     if(S.shake>0){ this.cameras.main.shake(120, 0.004*S.shake); S.shake=0; }  // pit.js screen shake
     // reflect state -> sprites
     this.hero.x=P.x; this.hero.y=P.y; this.hero.setFlipX(Math.cos(P.face)<0);
-    this.shadow.x=P.x; this.shadow.y=P.y+86;
+    // GROUND-CONTACT FIX (FEEDBACK #8): origin is at the FEET (0.5,1) and P.y IS the ground line, so the
+    // contact shadow belongs right under the feet — the old +86 hung it well below the floor in side-on.
+    this.shadow.x=P.x; this.shadow.y=SIDEON ? P.y+4 : P.y+86;
     // depth by y (y-sort) + slight scale for distance (the 2.5D ground feel)
     const b=this.bounds, ty=Phaser.Math.Clamp((P.y-b.cyTop)/(b.cyBot-b.cyTop),0,1);
     const sc=Phaser.Math.Linear(0.78,1.0,ty);
@@ -2201,15 +2351,38 @@ class Arena extends Phaser.Scene{
     // FORM SWAP (transformations, side-on): show the actual borrowed-form sprite — arch devil / lich /
     // demon lord — not just a tinted+scaled warlock. Re-asserts each frame so it survives a cast-pose
     // revert and any form change; skipped while the brief CAST pose is showing (castPose owns it then).
+    // --- STRIDE CLOCK (FEEDBACK #8 "walking, not gliding"): a phase that only advances WHILE moving,
+    // tied to walk speed (210 px/s, ~2.2 steps/s), so every footfall cue below (bounce, pose alternation,
+    // lean, dust) stays locked to actual ground covered — stopping mid-step freezes the cycle naturally.
+    this._stride=(this._stride||0); this._heroDir=(P.x>=(this._lastPX!=null?this._lastPX:P.x))?1:-1;
+    if(P.moving) this._stride += dt*2.2*Math.PI*2;
+    this._lastPX=P.x;
     if(!this._castTimer){
       // FORM IDENTITY (transformation-aware) vs POSE (state animation). The base warlock now swaps
       // among idle/walk/hurt by STATE (fix #3); the borrowed forms (lich/archdevil/demonlord) have
       // one body each, so their pose IS their form. Cast pose is owned by castPose (guarded above).
       const baseForm=heroFormTex();
+      // ACTION is form-agnostic (lich/archdevil/demonlord walk + hurt too) so keyframe sets can key
+      // <form>_<act>; only the STILL fallback differs (borrowed forms have one body, warlock has poses).
+      let act = P.flash>0 ? 'hurt' : (P.channel ? 'summon' : (P.moving ? 'walk' : 'idle'));
       let ft=baseForm;
-      if(baseForm==='warlock')
-        ft = P.flash>0 ? 'warlock_hurt' : (P.channel ? 'warlock_summon' : (P.moving ? 'warlock_walk' : 'warlock')); // SUMMON-channel pose (Hiro drop 2026-06-28)
-      if(this.textures.exists(ft) && this.hero.texture.key!==ft){
+      if(baseForm==='warlock'){
+        ft  = P.flash>0 ? 'warlock_hurt' : (P.channel ? 'warlock_summon' : (P.moving ? 'warlock_walk' : 'warlock'));
+        // 2-POSE STEP CYCLE (fallback while true keyframe sets are pending): alternate stride-pose <->
+        // standing-pose on each FOOTFALL beat of the stride clock, so walking reads as stepping even
+        // with only the two stills we have today. A real anims.json walk set overrides this below.
+        if(P.moving && !(this.animSets&&this.animSets['warlock_walk']) && this.textures.exists('warlock_walk'))
+          ft = (Math.sin(this._stride)>=0) ? 'warlock_walk' : 'warlock';
+      }
+      this._heroAct=act;
+      // REAL KEYFRAME CYCLE (anims.json manifest): if an ingested multi-frame set exists for this
+      // form+action, play it (Light2D-lit frames); otherwise fall back to the still/2-pose swap.
+      // Borrowed forms (lich/archdevil/demonlord) key their own sets: <form>_<act> (e.g. lich_idle).
+      const set=this.animSets && this.animSets[(baseForm==='warlock'?'warlock':baseForm)+'_'+act];
+      if(set){
+        const cur=this.hero.anims && this.hero.anims.currentAnim;
+        if(!cur || cur.key!==set.key || !this.hero.anims.isPlaying) this.hero.play(set.key, true);
+      } else if(this.textures.exists(ft) && this.hero.texture.key!==ft){
         this.hero.anims && this.hero.anims.stop();
         this.hero.setTexture(ft);
         if(ft==='warlock' && this.anims.exists('warlock_idle')) this.hero.play('warlock_idle');
@@ -2220,14 +2393,29 @@ class Arena extends Phaser.Scene{
       if(this._lastForm!==undefined && this._lastForm!==baseForm) this.formMorphBurst(baseForm);
       this._lastForm=baseForm;
     }
-    this.hero.setScale(sc*heroWorldH/(this.hero.height||heroWorldH));
-    this.shadow.setScale(Math.max(0.15, this.hero.displayWidth/(this.shadow.width||1)*0.95));
-    // PROCEDURAL JUICE (fix #3): a brisk WALK BOUNCE while moving + a gentle BREATHING bob at idle.
-    // Visual y-offset only — P.y stays pinned to the ground line, and the shadow stays flat on it.
+    const heroSclBase = sc*heroWorldH/(this.hero.height||heroWorldH);
+    this.shadow.setScale(Math.max(0.15, (this.hero.width*heroSclBase)/(this.shadow.width||1)*0.95));
+    // --- PROCEDURAL LOCOMOTION (FEEDBACK #8): everything below is a render-only offset off the stride
+    // clock — P.y stays pinned to the ground line and the shadow stays flat on it, so feet never sink.
     { const tb=(now||0)/1000;
-      const bob = (heroFormTex()==='warlock')
-        ? (P.moving ? -Math.abs(Math.sin(tb*11))*6 : Math.sin(tb*2.2)*2)
-        : Math.sin(tb*1.8)*1.5;
+      let bob=0, lean=0, sqY=1;
+      if(P.moving){
+        bob  = -Math.abs(Math.sin(this._stride))*6;                    // footfall bounce (UP only — never below the floor)
+        lean = this._heroDir*(this.hero.flipX?-1:1)*0.055               // lean INTO the walk direction...
+             + Math.sin(this._stride*2)*0.018;                          // ...plus a subtle shoulder rock per step
+        // FOOTSTEP DUST: kick a puff the instant each foot PLANTS (stride sine crossing zero downward)
+        const beat=Math.sin(this._stride);
+        if(this._lastBeat!==undefined && this._lastBeat>0 && beat<=0) this.stepDust(P.x-this._heroDir*10, P.y, this.hero.displayWidth*0.16);
+        if(this._lastBeat!==undefined && this._lastBeat<0 && beat>=0) this.stepDust(P.x-this._heroDir*10, P.y, this.hero.displayWidth*0.13);
+        this._lastBeat=beat;
+      } else {
+        sqY = 1+0.012*Math.sin(tb*2.3);                                 // idle BREATHING via scale (feet planted, no floor sink)
+        lean = Math.sin(tb*1.1)*0.006;
+        this._lastBeat=undefined;
+      }
+      if(P.flash>0) lean += (this.hero.flipX?1:-1)*0.10;                // HURT: recoil tilt away from the hit
+      this.hero.setScale(heroSclBase, heroSclBase*sqY);
+      this.hero.setRotation(lean);
       this.hero.y = P.y + bob; }
     if(P.flash>0) this.hero.setTint(0xff5a5a);                     // HURT: red flash (foe lunge connected)
     else if(P.demonLord) this.hero.setTint(0x9affc0);              // DEMON LORD: black & green
@@ -2250,6 +2438,29 @@ class Arena extends Phaser.Scene{
     // and which lighting FX are active. PURELY a read-out of already-rendered state; never mutates the sim.
     // Without this the auditor defaults warlock_scale / backdrop_layers / lighting_fx to FAIL (it was blind).
     try{
+      // ENTITY x ACTION ANIM COVERAGE (FEEDBACK #8 / lint rule 8): enumerate every live entity with what
+      // it is DOING and how many real keyframes back that action (anims.json sets; a still = 1; the hero's
+      // 2-pose step fallback = 2). The auditor writes every <3-frame pair into needed_sprites.json, which
+      // gen_sprites --from-needs turns into keyframe sets — this hook is what closes the art loop.
+      const _setF=(s)=> (this.animSets&&this.animSets[s]) ? this.animSets[s].frames : 0;
+      const ents=[];
+      { const act=this._castTimer ? 'cast' : (this._heroAct||'idle'), hf=heroFormTex();
+        let fr=_setF((hf==='warlock'?'warlock':hf)+'_'+act)||1;
+        if(hf==='warlock'&&act==='walk'&&fr<2&&this.textures.exists('warlock_walk')&&this.textures.exists('warlock')) fr=2;
+        ents.push({type:hf, action:act, anim:{rigged:false, frames:fr}}); }
+      const _cf=(typeof currentFoe==='function')?currentFoe():null;
+      if(_cf && this.foeSprite){
+        const bk=this._foeKey||(_cf.spriteKey||foeKeyFor(_cf.name));
+        const act=(_cf.aiState==='lunge'||_cf.aiState==='windup')?'attack':((_cf.aiState==='approach'||_cf.aiState==='recover')?'walk':'idle');
+        ents.push({type:bk, action:act, anim:{rigged:false, frames:_setF(bk+'_'+act)||1}}); }
+      for(const e of enemies){ if(e.dead||e===_cf) continue;
+        const bk=e.spriteKey||foeKeyFor(e.name);
+        const act=(this._chargers&&this._chargers.some(s=>s.foe===e))?'attack':'walk';
+        ents.push({type:bk, action:act, anim:{rigged:false, frames:_setF(bk+'_'+act)||1}}); }
+      for(const d of demons){
+        const bk=d.type==='brute'?'clawfiend':d.type==='dragon'?(d.black?'blackdragon':'bonedragon'):(d.arch?'archsuccubus':'succubus');
+        const act=(d._lungeV>0.1)?'attack':'walk';
+        ents.push({type:bk, action:act, anim:{rigged:false, frames:_setF(bk+'_'+act)||1}}); }
       window.__AUDIT__ = {
         warlockPctH: (this.hero && this.scale.height) ? (this.hero.displayHeight / this.scale.height * 100) : null,
         layers: { far: !!this.bgFar, floor: !!this.bgFloor, fg: !!this.bgFg },
@@ -2258,7 +2469,9 @@ class Arena extends Phaser.Scene{
           bloom:    !!this._graded,
           vignette: !!this._graded,
           embers:   !!this._embers
-        }
+        },
+        entities: ents,
+        animSetsLive: this.animSets ? Object.keys(this.animSets).length : 0
       };
     }catch(e){ /* never break the render loop over an audit read-out */ }
 
@@ -2332,6 +2545,7 @@ class Arena extends Phaser.Scene{
         // shove/breath/fireball/fire-bolt, so the lunge peaks WITH the damage instead of on a free clock.
         // The succubus MEND never sets the pulse, so a healing succubus simply rests in lane.
         const lunge=(d._atkPulse>0)?Math.sin((1-d._atkPulse/0.30)*Math.PI):0; // 0->1->0 strike arc, peak ~0.15s after the hit
+        d._lungeV=lunge;                                                     // stash for the sprite squash-stretch below (FEEDBACK #8)
         const reach=(d.type==='dragon'||d.type==='succubus')?0.55:1.0;        // ranged assists surge partway; the melee claw fiend crosses
         _oxs=d.x; _oys=d.y;
         const restX = P.x - 52 - slot*30;                                   // neutral assist slot at the warlock's LEFT
@@ -2388,17 +2602,33 @@ class Arena extends Phaser.Scene{
       // overlay Hiro's real lit sprite on top of the UI graphics (lazily created; bone->black swap supported)
       if(hasTex){
         let spr=this.demonSprites.get(d);
-        if(!spr){ spr=this.add.sprite(d.x, d.y, texKey).setOrigin(0.5,0.9).setPipeline('Light2D'); spr._k=texKey; this.demonSprites.set(d,spr); }
-        else if(spr._k!==texKey){ spr.setTexture(texKey); spr._k=texKey; }
+        // GROUND-CONTACT FIX (FEEDBACK #8): origin at the FEET (0.5,1) — the old 0.9 hung ~10% of every
+        // summon's body BELOW its anchor, sinking claw fiends/succubi through the floor line.
+        if(!spr){ spr=this.add.sprite(d.x, d.y, texKey).setOrigin(0.5,1).setPipeline('Light2D'); spr._k=texKey; this.demonSprites.set(d,spr); }
+        else if(spr._k!==texKey){ spr.anims&&spr.anims.stop(); spr.setTexture(texKey); spr._k=texKey; }
+        // keyframe cycles for summons (anims.json): attack during the synced strike dart, else walk/hover
+        { const aset = (d._lungeV>0.1) ? (this.animSets&&this.animSets[texKey+'_attack'])
+                                       : (this.animSets&&this.animSets[texKey+'_walk']);
+          if(aset){ const cur=spr.anims&&spr.anims.currentAnim;
+            if(!cur||cur.key!==aset.key||!spr.anims.isPlaying) spr.play(aset.key,true); }
+          else if(spr.anims && spr.anims.isPlaying){ spr.anims.stop(); spr.setTexture(texKey); } }
         // SCALE-FIX: size summons by the SPRITE_TARGET_H world table (dragon TOWERS, succubus human-ish),
         // × perspective for their floor depth, × the binder/herald per-summon swell (d.r vs base r).
         const dKey = d.type==='brute'?'clawfiend':d.type==='dragon'?(d.black?'blackdragon':'bonedragon'):(d.arch?'archsuccubus':'succubus');
         const dty=Phaser.Math.Clamp((d.y-b.cyTop)/(b.cyBot-b.cyTop),0,1), dsc=Phaser.Math.Linear(0.78,1.0,dty);
         const dWorldH=HERO_PX*(SPRITE_TARGET_H[dKey]||1.0)*(d.r/(BASE_R[d.type]||d.r));
-        const sbob = d.type==='dragon' ? Math.sin(now/220)*5 : 0;
-        spr.setScale(dsc*dWorldH/(spr.height||dWorldH));
-        spr.x=d.x; spr.y=d.y-(d.type==='dragon'?20:4)+sbob; spr.setFlipX(Math.cos(d.face)<0);
-        if(SIDEON){ spr.setFlipX(false); spr.setScale(spr.scaleX*0.85, spr.scaleY*0.85); }  // assists face the foe (right), secondary scale
+        // fliers (dragon/succubus) bob on the air; grounded claw fiend gets a stride-ish shuffle bob (up only)
+        const sbob = d.type==='dragon' ? Math.sin(now/220)*5
+                   : d.type==='succubus' ? Math.sin(now/200+(d.slot||0))*3
+                   : -Math.abs(Math.sin(now/160+(d.slot||0)))*3;
+        let dscl=dsc*dWorldH/(spr.height||dWorldH);
+        if(SIDEON) dscl*=0.85;                                   // assists read as the support rank
+        // SQUASH-STRETCH on the synced strike dart (FEEDBACK #8): stretch into the lunge, recover after
+        const lv=(SIDEON && d._lungeV)||0;
+        spr.setScale(dscl*(1+0.16*lv), dscl*(1-0.08*lv));
+        spr.x=d.x; spr.y=d.y+sbob-(d.type==='dragon'?12:0); spr.setFlipX(Math.cos(d.face)<0);
+        if(SIDEON) spr.setFlipX(false);                          // assists face the foe (right)
+        spr.setRotation(lv*-0.06 + (d.type==='dragon'?Math.sin(now/300)*0.02:0));
         spr.setDepth(d.y+0.5); spr.setVisible(true);
         if(d.flash>0) spr.setTintFill(0xffffff); else spr.clearTint();
         _seenD.add(d);
