@@ -1,0 +1,15 @@
+{
+  "_doc": "PHASE 2B.2 pivot manifest + per-part scale for the Warlock cutout rig. pivot = [x,y] NORMALIZED (0-1) in the ingested assets/sprites/<part>.png (Phaser setOrigin); it is the JOINT the part rotates around. worldH = the part's intended TOTAL height as a fraction of the warlock's figure height (reference landmarks: shoulders 0.19, belt 0.40); alphaH = opaque px height; buildWarlockRig applies scale = nominalH*worldH/alphaH. v5 (2026-07-06): the GREEN-LIT batch — robe/torso/head/staff generated from Hiro's approved full-body edit (console-confirmed ref=ref_warlock_greenlit.png), arm_staff_fore from the idle ref. Head now includes its own ornate collar below the neck pivot (drawn after torso_body, so it overlaps the torso's neck sliver = hidden seam); torso belt low in frame (~0.75); robe waist band at the very top of its frame.",
+  "version": 5,
+  "parts": {
+    "warlock_part_head":            { "pivot": [0.50, 0.78], "joint": "neck base (collar below pivot overlaps torso)", "size": [396, 512], "alphaH": 500, "worldH": 0.30 },
+    "warlock_part_torso":           { "pivot": [0.50, 0.75], "joint": "hips/belt (ROOT part)",  "size": [270, 512], "alphaH": 500, "worldH": 0.36 },
+    "warlock_part_robe_lower":      { "pivot": [0.50, 0.05], "joint": "waist/belt (band tucks UNDER the torso belt)", "size": [282, 512], "alphaH": 500, "worldH": 0.60 },
+    "warlock_part_arm_staff_upper": { "pivot": [0.48, 0.16], "joint": "shoulder (staff side)",  "size": [250, 512], "alphaH": 512, "worldH": 0.22 },
+    "warlock_part_arm_staff_fore":  { "pivot": [0.50, 0.05], "joint": "elbow (staff side, arm hangs vertical)", "size": [158, 512], "alphaH": 500, "worldH": 0.24 },
+    "warlock_part_staff":           { "pivot": [0.50, 0.55], "joint": "grip (held by staff hand)", "size": [94, 512], "alphaH": 505, "worldH": 1.05 },
+    "warlock_part_arm_off_upper":   { "pivot": [0.45, 0.15], "joint": "shoulder (off side)",    "size": [253, 512], "alphaH": 506, "worldH": 0.22 },
+    "warlock_part_arm_off_fore":    { "pivot": [0.10, 0.10], "joint": "elbow (off side)",       "size": [510, 512], "alphaH": 512, "worldH": 0.34 },
+    "warlock_part_tome":            { "pivot": [0.45, 0.90], "joint": "rest point (floats over off palm)", "size": [512, 362], "alphaH": 349, "worldH": 0.14 }
+  }
+}

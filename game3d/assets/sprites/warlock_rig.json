@@ -1,0 +1,72 @@
+{
+  "_doc": "PHASE 2B.3 (ANIM_COMBAT_OVERHAUL) — Warlock cutout rig: BIND layout + TIMING TEMPLATES. Bind space: root origin at the FEET, +y DOWN (Phaser), nominal body height 460px (playback scales the root to the HERO_PX world target). Node positions are relative to their PARENT node. Sprites sit at (0,0) of their joint node with origin = the 2B.2 pivot, so the pivot point IS the joint. Tracks: keyframes are [t, value] pairs, t normalized 0-1 over 'dur' seconds; rot in radians, x/y in bind px; interpolation is EASED per track ('ease'), never linear. Draw order = the order nodes appear in 'nodes' within one parent (back to front) — forearms list after upper arms so they draw on top of the joint-overlap flaps. IMPACT FREEZE: the attack's value plateaus between t=0.42 and t=0.54 ARE the freeze (hold, then ease out). ROBE SECONDARY MOTION: robe_lower's 'followTorso' means playback adds evalTorsoRot(t - lag)*amp - evalTorsoRot(t) as LOCAL rotation (it inherits torso's actual rotation via parenting, so this term is the LAG DELTA), on top of its own sway track.",
+  "version": 1,
+  "nominalH": 460,
+  "bind": {
+    "_scale_note": "2B.5 FIX: per-part scale now lives in the PIVOT manifest (worldH/alphaH, applied by buildWarlockRig) — measured against the approved reference's proportions (shoulders 0.19 / belt 0.40 of figure height), not eyeballed per node. Node positions below re-derived from the same landmarks: hips at 0.60 of 460 = -276.",
+    "nodes": [
+      { "name": "torso",              "parent": "root",               "pos": [0, -276] },
+      { "name": "staff_grip",         "parent": "torso",              "pos": [-60, 52] },
+      { "name": "staff",              "parent": "staff_grip",         "pos": [0, 0],    "sprite": "warlock_part_staff" },
+      { "name": "arm_staff_shoulder", "parent": "torso",              "pos": [-12, -96] },
+      { "name": "arm_staff_upper",    "parent": "arm_staff_shoulder", "pos": [0, 0],    "sprite": "warlock_part_arm_staff_upper" },
+      { "name": "arm_staff_elbow",    "parent": "arm_staff_shoulder", "pos": [4, 88] },
+      { "name": "arm_staff_fore",     "parent": "arm_staff_elbow",    "pos": [0, 0],    "sprite": "warlock_part_arm_staff_fore" },
+      { "name": "robe_lower",         "parent": "torso",              "pos": [0, 6],    "sprite": "warlock_part_robe_lower" },
+      { "name": "torso_body",         "parent": "torso",              "pos": [0, 0],    "sprite": "warlock_part_torso" },
+      { "name": "head",               "parent": "torso",              "pos": [6, -104], "sprite": "warlock_part_head" },
+      { "name": "arm_off_shoulder",   "parent": "torso",              "pos": [16, -92] },
+      { "name": "arm_off_upper",      "parent": "arm_off_shoulder",   "pos": [0, 0],    "sprite": "warlock_part_arm_off_upper" },
+      { "name": "arm_off_elbow",      "parent": "arm_off_shoulder",   "pos": [6, 86] },
+      { "name": "arm_off_fore",       "parent": "arm_off_elbow",      "pos": [0, 0],    "sprite": "warlock_part_arm_off_fore" },
+      { "name": "tome_rest",          "parent": "arm_off_elbow",      "pos": [86, 14] },
+      { "name": "tome",               "parent": "tome_rest",          "pos": [0, 0],    "sprite": "warlock_part_tome" }
+    ],
+    "_order_note": "within 'torso': arm_staff subtree (FAR arm) listed first = drawn BEHIND; then robe_lower; the torso body sprite itself renders between robe and head (builder inserts it after robe_lower via torso_sprite_anchor); then head; then the NEAR off-arm + tome in front. Forearms after uppers = joint-overlap flaps hidden."
+  },
+  "actions": {
+    "idle": {
+      "dur": 3.4, "loop": true,
+      "tracks": {
+        "torso":              { "ease": "sineInOut", "rot": [[0,0],[0.5,0.018],[1,0]], "y": [[0,0],[0.5,-3.5],[1,0]] },
+        "head":               { "ease": "sineInOut", "rot": [[0,0.008],[0.55,-0.012],[1,0.008]] },
+        "arm_staff_shoulder": { "ease": "sineInOut", "rot": [[0,0],[0.5,0.025],[1,0]] },
+        "arm_staff_elbow":    { "ease": "sineInOut", "rot": [[0,0],[0.5,-0.02],[1,0]] },
+        "staff":              { "ease": "sineInOut", "rot": [[0,0],[0.5,0.01],[1,0]] },
+        "arm_off_shoulder":   { "ease": "sineInOut", "rot": [[0,0],[0.5,-0.02],[1,0]] },
+        "arm_off_elbow":      { "ease": "sineInOut", "rot": [[0,0],[0.5,0.03],[1,0]] },
+        "tome":               { "ease": "sineInOut", "y": [[0,0],[0.5,-4],[1,0]] },
+        "robe_lower":         { "ease": "sineInOut", "rot": [[0,0.003],[0.5,-0.003],[1,0.003]], "followTorso": { "lag": 0.10, "amp": 1.05 } }
+      }
+    },
+    "walk": {
+      "dur": 0.9, "loop": true,
+      "tracks": {
+        "torso":              { "ease": "sineInOut", "rot": [[0,0.045],[0.25,0.065],[0.5,0.045],[0.75,0.065],[1,0.045]], "y": [[0,-6],[0.25,0],[0.5,-6],[0.75,0],[1,-6]] },
+        "head":               { "ease": "sineInOut", "rot": [[0,-0.025],[0.25,-0.005],[0.5,-0.025],[0.75,-0.005],[1,-0.025]] },
+        "arm_staff_shoulder": { "ease": "sineInOut", "rot": [[0,-0.28],[0.5,0.28],[1,-0.28]] },
+        "arm_staff_elbow":    { "ease": "sineInOut", "rot": [[0,0.14],[0.5,-0.08],[1,0.14]] },
+        "staff":              { "ease": "sineInOut", "rot": [[0,0.05],[0.5,-0.05],[1,0.05]] },
+        "arm_off_shoulder":   { "ease": "sineInOut", "rot": [[0,0.28],[0.5,-0.28],[1,0.28]] },
+        "arm_off_elbow":      { "ease": "sineInOut", "rot": [[0,-0.1],[0.5,0.12],[1,-0.1]] },
+        "tome":               { "ease": "sineInOut", "y": [[0,-2],[0.25,2],[0.5,-2],[0.75,2],[1,-2]] },
+        "robe_lower":         { "ease": "sineInOut", "rot": [[0,-0.022],[0.25,0.022],[0.5,-0.022],[0.75,0.022],[1,-0.022]], "followTorso": { "lag": 0.08, "amp": 1.1 } }
+      }
+    },
+    "attack": {
+      "dur": 0.85, "loop": false,
+      "tracks": {
+        "root":               { "ease": "quadOut",   "x": [[0,0],[0.32,-8],[0.42,26],[0.54,26],[1,0]] },
+        "torso":              { "ease": "quadInOut", "rot": [[0,0],[0.18,0.10],[0.32,0.14],[0.42,-0.12],[0.54,-0.12],[0.72,-0.04],[1,0]] },
+        "head":               { "ease": "quadInOut", "rot": [[0,0],[0.2,0.06],[0.42,-0.08],[0.54,-0.08],[1,0]] },
+        "arm_staff_shoulder": { "ease": "quadInOut", "rot": [[0,0],[0.18,0.35],[0.32,0.52],[0.42,-0.92],[0.54,-0.92],[0.75,-0.3],[1,0]] },
+        "arm_staff_elbow":    { "ease": "quadInOut", "rot": [[0,0],[0.18,0.25],[0.32,0.36],[0.42,-0.5],[0.54,-0.5],[0.78,-0.15],[1,0]] },
+        "staff":              { "ease": "quadInOut", "rot": [[0,0],[0.18,0.3],[0.32,0.46],[0.42,-1.1],[0.54,-1.1],[0.8,-0.3],[1,0]] },
+        "arm_off_shoulder":   { "ease": "quadInOut", "rot": [[0,0],[0.2,-0.15],[0.42,0.25],[0.54,0.25],[1,0]] },
+        "arm_off_elbow":      { "ease": "quadInOut", "rot": [[0,0],[0.2,-0.1],[0.42,0.15],[0.54,0.15],[1,0]] },
+        "tome":               { "ease": "quadInOut", "y": [[0,0],[0.42,4],[0.54,4],[1,0]] },
+        "robe_lower":         { "ease": "quadInOut", "rot": [[0,0],[0.32,0.02],[0.5,-0.025],[1,0]], "followTorso": { "lag": 0.08, "amp": 1.15 } }
+      }
+    }
+  }
+}

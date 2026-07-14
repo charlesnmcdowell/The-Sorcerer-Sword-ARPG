@@ -13,6 +13,12 @@ RUN (Windows, from the game3d/tools folder):
     python gen_sprites.py                # generates everything missing
     python gen_sprites.py warlock_walk lich    # only specific names
     python gen_sprites.py --force demonlord     # regenerate even if it exists
+    python gen_sprites.py --force --anim warlock_walk warlock_idle   # keyframe SETS at the
+        # Phase-2 policy frame counts (walk 8 / attack 6 / idle 2), no auditor queue needed
+    python gen_sprites.py --parts               # 2B.1: the Warlock's one-time cutout-rig parts
+    python gen_sprites.py --force --parts head staff   # regenerate specific parts only
+    python gen_sprites.py --rekey --parts robe_lower tome   # re-run ONLY the green-key step from
+        # art_in/raw/ (no API spend) — for when the keyer, not the art, was the problem
 
 Key is read from xai_key.txt (gitignored) or the XAI_API_KEY env var.
 Re-running is safe: it SKIPS sprites already in art_in/ (unless --force).
@@ -43,7 +49,11 @@ BIBLE  = ("the SAME anime dark-elf sorcerer: long silver-white hair, lavender-gr
 STYLE  = "clean anime cel-shaded dark-fantasy style, crisp lineart, dramatic rim light"
 CHAR   = STYLE + ", full body head to boots, single character, centered"
 CREAT  = STYLE + ", full creature, single subject, centered"
-GREEN  = ("on a FLAT SOLID chroma-green background (hex 00FF00), no scenery, no ground, "
+# 2B.1 lesson: "flat solid chroma-green" alone sometimes came back DIM or desaturated (sage 70/110/75)
+# or with the subject covering a corner — be maximally explicit about saturation + full coverage.
+GREEN  = ("on a perfectly FLAT, UNIFORM, highly SATURATED pure chroma-green background (hex 00FF00, "
+          "like greenscreen studio footage), the green covering EVERY pixel of the background right "
+          "to all four corners and edges, no gradient, no gray, no vignette, no scenery, no ground, "
           "no cast shadow, no text, no extra characters")
 # full-bleed painterly BACKDROPS (no green key) — this is what sells the Dragon's Crown look
 SCENE  = ("lush painterly Vanillaware DRAGON'S CROWN-style dark-fantasy background ART, richly "
@@ -53,7 +63,15 @@ FX     = ("vivid anime spell VFX, bright glowing, dynamic motion, crisp clean re
 BLACKBG = ("on a PURE SOLID BLACK background (hex 000000), the effect glowing brightly against pure black, "
            "no scenery, no green, isolated, no text")
 
-# ---- animation keypose vocabulary (for --from-needs: auto-build >=3-keypose sets from the auditor's queue) ----
+# ---- animation keypose vocabulary (--from-needs / --anim keyframe sets) ------------------------
+# ANIM_COMBAT_OVERHAUL Phase 2: the old one-size-fits-all KEYPOSE (anticipation/contact/follow-
+# through) generated WALK and IDLE frames with ATTACK-pose language on 3-frame yoyo sets — the
+# confirmed root cause of "fidgeting, not striding". Vocabulary is now split by ACTION TYPE and
+# frame counts are real cycle lengths:
+#   * WALK-type -> a true LOOPABLE 8-frame stride (contact/down/passing/up, then mirrored on the
+#     other leg; frame 8 flows back into frame 1 — a forward loop, no yoyo ping-pong).
+#   * IDLE -> 2 subtle breathing/weight-shift poses (a slow yoyo between them IS the design).
+#   * ATTACK-type -> 6 frames along anticipation/wind-up/contact/follow-through/settle.
 NEEDED = os.path.join(HERE, "audit", "needed_sprites.json")   # written by visual_audit.py
 ACTION_POSE = {
  "idle":"a relaxed combat-ready idle stance, subtle breathing", "walkf":"mid-stride walking FORWARD",
@@ -68,8 +86,42 @@ ACTION_POSE = {
  "lunge":"lunging forward to strike", "transform":"mid-transformation, energy erupting", "death":"collapsing, defeated",
  "move":"moving forward toward a target", "seek":"advancing toward a target",
 }
-KEYPOSE = {1:"anticipation / wind-up", 2:"contact / peak of the action", 3:"recovery / follow-through",
-           4:"settle", 5:"extra in-between"}
+WALK_ACTS = {"walk", "walkf", "walkb", "move", "seek"}
+IDLE_ACTS = {"idle"}
+def frames_for(act):
+    """Policy frame count per action type (walk needs a full mirrored stride; idle stays lean)."""
+    return 8 if act in WALK_ACTS else (2 if act in IDLE_ACTS else 6)
+
+WALK_CYCLE = [  # 8-phase loopable stride: two mirrored halves, frame 8 leads back into frame 1
+ "CONTACT: leading foot just planted far forward, trailing leg extended behind, body leaning into the step",
+ "DOWN: weight settling fully onto the planted front leg, body at its LOWEST point, back heel lifting",
+ "PASSING: the trailing leg swinging forward PAST the planted leg, feet closest together, body rising",
+ "UP: body at its TALLEST, the swinging leg reaching out in front, about to land",
+ "CONTACT on the OPPOSITE leg: the other foot now planted far forward, first leg extended behind",
+ "DOWN on the opposite leg: weight settling onto the newly planted leg, body at its lowest",
+ "PASSING on the opposite leg: the first leg swinging forward past the planted leg, body rising",
+ "UP on the opposite leg: body tallest, first foot reaching forward, about to land back on the first pose",
+]
+IDLE_CYCLE = [  # subtle standing beat, NOT a wind-up — breathing + a tiny weight shift only
+ "breath OUT: shoulders and chest settled, weight resting calmly, relaxed but combat-ready",
+ "breath IN: chest and shoulders VERY slightly risen, a tiny shift of weight — almost the same pose",
+]
+ATTACK_ARC = [  # classic strike phrasing, spread proportionally across however many frames the set has
+ "anticipation: starting to coil into the wind-up",
+ "full wind-up: energy gathered at the peak of anticipation, body coiled",
+ "release: exploding forward out of the wind-up toward the target",
+ "CONTACT: the peak/impact instant of the action, maximum extension",
+ "follow-through: momentum carrying the body past the contact",
+ "recovery: settling back toward the ready stance",
+]
+def keypose(act, n, N):
+    """Frame-n-of-N pose phrasing, selected by ACTION TYPE (walks stride, idles breathe, attacks strike)."""
+    if act in WALK_ACTS:
+        return (WALK_CYCLE[min(len(WALK_CYCLE)-1, (n-1)*len(WALK_CYCLE)//N)]
+                + " — one frame of a smooth LOOPING walk cycle, the last frame flowing back into the first")
+    if act in IDLE_ACTS:
+        return IDLE_CYCLE[(n-1) % len(IDLE_CYCLE)]
+    return ATTACK_ARC[min(len(ATTACK_ARC)-1, (n-1)*len(ATTACK_ARC)//N)]
 
 def entity_ref(ent):
     """The image to EDIT FROM so a keyframe stays on-model = the entity's own approved sprite.
@@ -81,36 +133,143 @@ def entity_ref(ent):
               os.path.join(G3D, "assets", "sprites", f"{ent}.png")]
     return next((p for p in cands if os.path.exists(p)), REF)
 
+ALIAS = {"warlock": "warlock_idle"}   # __AUDIT__.entities reports the hero as 'warlock'; his base row is warlock_idle
+
+def kf_rows(ent, act, N, base):
+    """Manifest-style keyframe rows for ONE <entity>_<action> set (shared by --from-needs and --anim).
+    Heroes/transforms stay edit-mode (on-model); enemies/summons gen-mode; effects black-bg.
+    Returns None when the entity has no base manifest row to build from."""
+    brow = base.get(ent) or base.get(ALIAS.get(ent, ""))
+    if brow is None: return None
+    _, _, aspect, bprompt = brow
+    pose = ACTION_POSE.get(act, act.replace("_"," "))
+    is_fx = ent.startswith("fireball") or ent in ("breath","spark","burst")
+    ref = entity_ref(ent)
+    body = CHAR if ent.startswith("warlock") else CREAT
+    rows = []
+    for n in range(1, N+1):
+        kp = keypose(act, n, N)   # Phase 2: pose phrasing by ACTION TYPE (walks stride, idles breathe)
+        name = f"{ent}_{act}_{n}"
+        if is_fx:   # effects are abstract — generate fresh on black, keep the look via wording
+            rows.append((name, "gen", aspect, f"{bprompt}  ANIMATION FRAME {n} of {N}: {pose} ({kp})."))
+        else:       # characters/creatures: EDIT FROM the entity's OWN sprite so it stays identical
+            rows.append((name, "edit", aspect,
+                f"Use the REFERENCE IMAGE as the EXACT character. Keep it IDENTICAL — same face, same colours, "
+                f"same costume and anatomy, same scale, same SIDE-ON framing — change ONLY the pose to: {pose}. "
+                f"Animation keyframe {n} of {N} ({kp}). {body}, {GREEN}.", ref))
+    return rows
+
 def needs_rows():
-    """Turn audit/needed_sprites.json into manifest-style rows: <entity>_<action>_<n>, reusing each entity's
-    base prompt + the action pose + keyframe phrasing. Heroes/transforms stay edit-mode (on-model); enemies/
-    summons gen-mode; effects black-bg. This is the auditor->art loop ('generated next time we run the command')."""
+    """Turn audit/needed_sprites.json into keyframe rows (the auditor->art loop). Frame counts are
+    floored at the Phase-2 policy (walk 8 / attack 6 / idle 2) even if the queue entry asked for less."""
     if not os.path.exists(NEEDED): sys.exit(f"No needs file at {NEEDED} (run visual_audit.py first).")
     base = {m[0]: m for m in MANIFEST}
     rows, skipped = [], []
-    ALIAS = {"warlock": "warlock_idle"}   # __AUDIT__.entities reports the hero as 'warlock'; his base row is warlock_idle
     for nd in json.load(open(NEEDED)):
         ent, act = nd.get("entity"), (nd.get("action") or "").lower()
-        N = max(3, int(nd.get("frames_needed") or 3))
-        brow = base.get(ent) or base.get(ALIAS.get(ent, ""))
-        if brow is None: skipped.append(f"{ent}:{act}"); continue
-        _, _, aspect, bprompt = brow
-        pose = ACTION_POSE.get(act, act.replace("_"," "))
-        is_fx = ent.startswith("fireball") or ent in ("breath","spark","burst")
-        ref = entity_ref(ent)
-        body = CHAR if ent.startswith("warlock") else CREAT
-        for n in range(1, N+1):
-            kp = KEYPOSE.get(n, f"frame {n}")
-            name = f"{ent}_{act}_{n}"
-            if is_fx:   # effects are abstract — generate fresh on black, keep the look via wording
-                rows.append((name, "gen", aspect, f"{bprompt}  ANIMATION FRAME {n} of {N}: {pose} ({kp})."))
-            else:       # characters/creatures: EDIT FROM the entity's OWN sprite so it stays identical
-                rows.append((name, "edit", aspect,
-                    f"Use the REFERENCE IMAGE as the EXACT character. Keep it IDENTICAL — same face, same colours, "
-                    f"same costume and anatomy, same scale, same SIDE-ON framing — change ONLY the pose to: {pose}. "
-                    f"Animation keyframe {n} of {N} ({kp}). {body}, {GREEN}.", ref))
+        N = max(frames_for(act), int(nd.get("frames_needed") or 0))
+        r = kf_rows(ent, act, N, base)
+        if r is None: skipped.append(f"{ent}:{act}")
+        else: rows += r
     if skipped: print(f"  (no base sprite for: {', '.join(sorted(set(skipped)))} — add a base manifest row first)")
     return rows
+
+def anim_rows(specs):
+    """--anim <entity>_<action> ...: build keyframe sets DIRECTLY (no auditor queue) at the policy
+    frame counts — the Phase-2 'visible-first' path, e.g.:
+        python gen_sprites.py --force --anim warlock_walk warlock_idle clawfiend_attack"""
+    base = {m[0]: m for m in MANIFEST}
+    rows, skipped = [], []
+    for spec in specs:
+        if "_" not in spec: skipped.append(spec); continue
+        ent, act = spec.rsplit("_", 1); act = act.lower()
+        r = kf_rows(ent, act, frames_for(act), base)
+        if r is None: skipped.append(spec)
+        else: rows += r
+    if skipped: print(f"  (skipped — bad spec or no base manifest row: {', '.join(skipped)})")
+    return rows
+
+# ---- PHASE 2B.1 (ANIM_COMBAT_OVERHAUL — programmatic cutout rig, Warlock pilot) -----------------
+# The Warlock's FIXED part inventory: each part generated exactly ONCE (edit-mode from the approved
+# SIDE-ON idle so it stays on-model), then animated forever in code — no more per-pose regeneration.
+# GENERATION-TIME LIGHTING DISCIPLINE (plan 2B.1): every part is a separate Grok call, so the light
+# direction is pinned IDENTICALLY in every prompt below. Confirmed against the actual approved
+# assets/sprites/warlock_idle.png: soft key from the UPPER-LEFT, cool TEAL rim along the RIGHT edge
+# (the glowing tome side), faint violet ambient (the staff crystal). Check all parts BY EYE for
+# lighting consistency before building the rig (2B.2+) — regenerating one part now is cheap.
+# Segmentation judgment calls (noted per plan): staff is its OWN part (swings around the grip);
+# hands are MERGED into their forearms (avoids tiny-part seams); the tome is its own part (floats
+# over the off hand, gets its own glow cycle later); robe_lower is ONE skirt piece (robes hide leg
+# motion — per the plan, don't over-segment); boots stay part of robe_lower's hem.
+PART_LIGHT = ("LIGHTING — must match the reference image EXACTLY, do not invent a new light direction: "
+              "soft key light from the UPPER-LEFT, cool TEAL rim-light along the RIGHT edge (as if lit "
+              "by his glowing teal tome), faint violet ambient from above")
+PART_COMMON = ("Use the REFERENCE IMAGE strictly for this character's exact design, colours and materials. "
+               "Generate ONLY the requested BODY PART of this same anime dark-elf sorcerer, fully isolated "
+               "on the background — NOT the full figure, no other body parts, no duplicates. SIDE-ON view "
+               "FACING RIGHT, neutral relaxed pose. Draw the part COMPLETE, extending slightly PAST its "
+               "joint(s) so connected parts can overlap without visible seams. The ENTIRE part must fit "
+               "fully INSIDE the frame with clear margin on all sides — a clean isolated game asset, "
+               "NOT a dramatic cropped close-up. ")
+WARLOCK_PARTS = [
+ ("warlock_part_head",            "3:4", "his HEAD and NECK: full long silver-white hair, lavender-grey skin, pointed ears, glowing violet eyes, calm stern expression"),
+ ("warlock_part_torso",           "3:4", "his UPPER TORSO from neck-base to belt: the layered dark armored shoulder mantle, high collar, black-and-charcoal robe chest with the teal glowing rune sash, and the leather belt with its metal buckle — NO head, NO arms"),
+ ("warlock_part_robe_lower",      "3:4", "his LOWER ROBE SKIRT from the belt down to the tattered hem: black-and-charcoal layered cloth with the two vertical TEAL glowing rune bands, dark boot tips just visible at the hem, the boot TOES POINTING RIGHT (the whole skirt in rightward profile like the reference, NOT mirrored)"),
+ ("warlock_part_arm_staff_upper", "1:1", "his staff-side UPPER ARM only, from shoulder to elbow: black robed sleeve with charcoal trim"),
+ ("warlock_part_arm_staff_fore",  "1:1", "his staff-side FOREARM and HAND only, from elbow to a closed gripping fist (lavender-grey skin), black sleeve cuff at the elbow end — exactly ONE single arm, no second arm, no bare skin above the sleeve"),
+ ("warlock_part_staff",           "3:4", "his tall ornate STAFF only: dark twisted wooden shaft, carved bronze headpiece cradling the large glowing VIOLET crystal at the top"),
+ ("warlock_part_arm_off_upper",   "1:1", "his off-hand UPPER ARM only, from shoulder to elbow: black robed sleeve, wide draped cloth"),
+ ("warlock_part_arm_off_fore",    "1:1", "his off-hand FOREARM and open upturned HAND only, from elbow to fingertips (lavender-grey skin), wide black draped sleeve"),
+ ("warlock_part_tome",            "1:1", "his open SPELLBOOK TOME only: aged parchment pages, dark leather cover with metal clasps, blazing cool TEAL arcane fire rising from the open pages"),
+]
+# 2B.5 RECHECK FIX: Hiro produced a GREEN-LIT full-body edit (the Dragon's-Crown-pro target look).
+# Save it as tools/ref_warlock_greenlit.png and the parts visible in it regenerate FROM IT — parts
+# sliced from ONE coherent figure are what kill the "limbs glued on" cross-generation drift.
+# (Arms/tome keep the side-on idle ref: they're occluded/absent in the green-lit pose.)
+GREENLIT = os.path.join(HERE, "ref_warlock_greenlit.png")
+PART_GREENLIT = {"warlock_part_robe_lower", "warlock_part_torso", "warlock_part_head", "warlock_part_staff"}
+
+def part_ref(name=None):
+    """The on-model anchor per part: Hiro's green-lit full-body edit when present (for the parts it
+    shows), else the approved SIDE-ON idle, else the front-facing REF."""
+    if name in PART_GREENLIT and os.path.exists(GREENLIT): return GREENLIT
+    for p in [os.path.join(G3D, "assets", "sprites", "warlock_idle.png"),
+              os.path.join(REFS, "warlock_idle.png")]:
+        if os.path.exists(p): return p
+    return REF
+
+def part_rows(names=None):
+    """--parts [name ...]: manifest-style rows for the Warlock's one-time part generation (2B.1).
+    Each part resolves its own reference (green-lit figure when available, see part_ref)."""
+    return [(n, "edit", aspect,
+             f"{PART_COMMON}PART TO GENERATE: {desc}, exactly as worn/held by the figure in the reference. "
+             f"{PART_LIGHT}. {STYLE}, {GREEN}.", part_ref(n))
+            for n, aspect, desc in WARLOCK_PARTS if not names or n in names or n.replace("warlock_part_","") in names]
+
+# ---- FULL-SHEET GENERATION (art direction 2026-07-08): ONE Grok call = ONE complete labeled
+# sprite SHEET per character (all its rows: idle/locomotion/attacks/abilities), in the proven
+# green-screen grid format Hiro's warlock sheets used. Sheets save to tools/sheet_<name>.png
+# UNPROCESSED (no key/crop — slice_sheet.py / the grid slicer cuts them into frames).
+SHEET_STYLE = ("professional game SPRITE SHEET layout on a perfectly FLAT, UNIFORM, highly SATURATED "
+               "pure chroma-green background (hex 00FF00) covering every pixel between frames: each "
+               "animation is ONE ROW of frames side by side in a NEAT EVEN GRID with IDENTICAL column "
+               "spacing, a small white text row label above each row, the SAME character in every "
+               "single frame (identical colours, proportions, costume, scale), SIDE-ON profile FACING "
+               "RIGHT in every frame, every frame fully inside its own grid cell with clear green "
+               "separation (no frame touching another), no scenery, no ground shadows, dark-fantasy "
+               "painterly anime, rich ornate detail, dramatic rim light")
+SUMMON_SHEETS = [
+ ("clawfiend",   "Sprite sheet, 3 labeled rows: row 1 'IDLE' = 5 frames breathing and shifting its weight, hunched and ready; row 2 'WALK' = 8 frames of a full loping run cycle moving rightward; row 3 'ATTACK' = 6 frames of a huge raking claw swipe (coil, slash contact, follow-through). The character: a hulking dark-fantasy CLAW FIEND demon, purple-black hide, huge claws, glowing eyes"),
+ ("bonedragon",  "Sprite sheet, 4 labeled rows: row 1 'IDLE' = 5 frames hovering in place with slow wingbeats; row 2 'WALK' = 8 frames of a full flying wingbeat cycle gliding rightward; row 3 'BREATH' = 8 frames rearing its head back then breathing a WIDE DIRECTIONAL CONE of sickly green acid to the right; row 4 'FIREBALL' = 6 frames coughing up and hurling a green fire bolt from its maw. The character: a dark-fantasy BONE DRAGON, skeletal pale-bone body, tattered wings, sickly green acid glow"),
+ ("blackdragon", "Sprite sheet, 4 labeled rows: row 1 'IDLE' = 5 frames hovering with slow wingbeats; row 2 'WALK' = 8 frames of a full flying wingbeat cycle gliding rightward; row 3 'BREATH' = 8 frames rearing back then breathing a WIDE DIRECTIONAL CONE of green fire to the right; row 4 'FIREBALL' = 6 frames hurling a green fireball from its maw. The character: a dark-fantasy BLACK DRAGON, sleek obsidian scales with a sickly-green underglow"),
+ ("succubus",    "Sprite sheet, 4 labeled rows: row 1 'IDLE' = 5 frames hovering with a light wing flutter; row 2 'WALK' = 8 frames of a full flying cycle drifting rightward; row 3 'FIREBALL' = 6 frames conjuring then hurling a small fireball; row 4 'MEND' = 6 frames casting a gentle pink healing beam forward. The character: an anime SUCCUBUS demon, violet-pink skin, black bat wings"),
+ ("archsuccubus","Sprite sheet, 4 labeled rows: row 1 'IDLE' = 5 frames hovering with a light wing flutter; row 2 'WALK' = 8 frames of a full flying cycle drifting rightward; row 3 'FIREBALL' = 6 frames hurling a GREEN sheol fireball; row 4 'MEND' = 6 frames casting a healing beam forward. The character: an anime ARCH-SUCCUBUS, black and toxic-green colour scheme, black bat wings edged in green, wreathed in green sheol-fire"),
+]
+def sheet_gen_rows(names=None):
+    """--sheets [name ...]: one full-sheet generation row per summon (edit-mode from the summon's
+    own approved sprite so it stays on-model)."""
+    return [("sheet_"+n, "sheet", "3:2", f"{desc}. {SHEET_STYLE}.", entity_ref(n))
+            for n, desc in SUMMON_SHEETS if not names or n in names or ("sheet_"+n) in names]
 
 # ---- THE MANIFEST: every sprite I need.  mode 'edit' = stays on-model via REF. --
 # (name, mode, aspect, prompt)  — enemies are a later tier; warlock + his kit first.
@@ -200,12 +359,20 @@ def key_and_crop(in_bytes, out_path, global_key=False, no_crop=False):
     im = Image.open(__import__("io").BytesIO(in_bytes)).convert("RGBA")
     a = np.array(im); h, w = a.shape[:2]; R,Gc,B = (a[:,:,i].astype(int) for i in range(3))
     # is the background green? (our prompt asks for it). else fall back to corner color.
-    corner = a[0:6,0:6,:3].reshape(-1,3).mean(0)
-    greenish = (corner[1] > corner[0]+30) and (corner[1] > corner[2]+30)
+    # 2B.1 KEYING FIX (root-caused on the part batch): (1) sample ALL FOUR corners, not just
+    # top-left — artwork/shadow covering that one corner blinded the keyer entirely (the two
+    # forearm parts keyed 2-3% because their top-left corner was the sleeve, not background);
+    # (2) RELAXED green thresholds — Grok sometimes returns DIM/desaturated green (robe/tome
+    # came back 70/110/75 sage: G-R=40, G=110, exactly ON the old >40/>110 boundary -> 0% keyed).
+    # Content stays safe: teal runes have high B (G-B small), skin/violet/fire have high R.
+    corners = [a[0:6,0:6,:3].reshape(-1,3).mean(0),  a[0:6,-6:,:3].reshape(-1,3).mean(0),
+               a[-6:,0:6,:3].reshape(-1,3).mean(0), a[-6:,-6:,:3].reshape(-1,3).mean(0)]
+    greenish = sum(1 for c in corners if (c[1] > c[0]+25) and (c[1] > c[2]+25)) >= 2
     if greenish:
-        bgmask = ((Gc-R)>40) & ((Gc-B)>40) & (Gc>110)
+        bgmask = ((Gc-R)>25) & ((Gc-B)>25) & (Gc>95)
     else:
-        c = corner; bgmask = (np.abs(a[:,:,:3].astype(int)-c).sum(2) < 40)
+        c = np.median(np.array(corners), axis=0)   # median corner survives one covered corner
+        bgmask = (np.abs(a[:,:,:3].astype(int)-c).sum(2) < 60)
     if global_key and greenish:
         # FX/projectiles (fire, sparks) have NO legitimate green, and thin wisps trap green pockets that
         # aren't border-connected. Key EVERY green pixel, not just the edge-flood region.
@@ -214,13 +381,29 @@ def key_and_crop(in_bytes, out_path, global_key=False, no_crop=False):
         lbl,_ = ndimage.label(bgmask)
         edge = set(lbl[0,:])|set(lbl[-1,:])|set(lbl[:,0])|set(lbl[:,-1]); edge.discard(0)
         bg = np.isin(lbl, list(edge))
+    # EDGE REFINEMENT (2B.1 fix, round 2 — kills the green fringe ring the flat despill missed):
+    # erode the foreground by 1px (eat the contaminated rim), FULL-strength despill in a 3px band
+    # along the new edge, keep the mild global despill for interior spill, then feather the alpha.
+    if not global_key:
+        bg = ndimage.binary_dilation(bg, iterations=1)
     alpha = np.where(bg, 0, 255).astype(np.uint8)
     if greenish:  # despill green fringe (stronger for FX)
-        keep = alpha>0; thr = 12 if global_key else 25
-        spill = keep & ((Gc-np.maximum(R,B))>thr)
+        band = ndimage.binary_dilation(bg, iterations=3) & ~bg
+        spill = band & (Gc > np.maximum(R,B)+6)                     # edge band: clamp ANY green cast
         a[:,:,1] = np.where(spill, np.maximum(R,B), a[:,:,1])
-    alpha = np.array(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(0.7)))
+        thr = 12 if global_key else 20
+        spill2 = (~bg) & ((Gc-np.maximum(R,B))>thr)                 # interior: only strong casts
+        a[:,:,1] = np.where(spill2, np.maximum(R,B), a[:,:,1])
+    alpha = np.array(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(0.8)))
     a[:,:,3] = alpha
+    # 2B.1 KEYING FIX (3): SANITY CHECK — a green-instructed cutout that ends up <10% transparent
+    # means the background was NOT keyed (this is exactly how 4 broken parts slipped through
+    # silently). Loud warning at generation time so the operator regenerates/rekeys immediately.
+    tfrac = float((alpha < 40).mean())
+    if tfrac < 0.10:
+        print(f"  !! LOW-KEY WARNING: only {tfrac*100:.1f}% of {os.path.basename(out_path)} keyed transparent — "
+              f"background likely not chroma-green (corners: {[list(map(int,c)) for c in corners]}). "
+              f"Regenerate with --force, or --rekey after a keyer fix.")
     if no_crop: Image.fromarray(a,"RGBA").save(out_path); return   # keyframes: registration > tightness
     ys,xs = np.where(alpha>40)
     if len(xs)==0: Image.fromarray(a,"RGBA").save(out_path); return
@@ -261,31 +444,58 @@ def main():
                     try: shutil.copyfile(os.path.join(d, f), os.path.join(REFS, f)); cnt += 1
                     except OSError: pass
         print(f"snapshot: seeded {cnt} reference sprite(s) into {REFS}"); return
-    if "--from-needs" in sys.argv:
+    if "--sheets" in sys.argv:
+        todo = sheet_gen_rows(args)
+        if not todo: sys.exit("--sheets: pass summon names (clawfiend/bonedragon/blackdragon/succubus/archsuccubus) or none for all")
+        print(f"--sheets (full-sheet-per-summon, art direction 2026-07-08): {len(todo)} sheet(s) to generate")
+    elif "--parts" in sys.argv:
+        todo = part_rows(args)
+        if not todo: sys.exit("--parts: no matching part names (see WARLOCK_PARTS; bare names like 'head' work too)")
+        print(f"--parts (2B.1 cutout-rig pilot): {len(todo)} Warlock part(s) to generate, ref={os.path.basename(part_ref())}")
+    elif "--anim" in sys.argv:
+        todo = anim_rows(args)
+        if not todo: sys.exit("--anim: pass <entity>_<action> specs, e.g. --anim warlock_walk warlock_idle")
+        print(f"--anim: {len(todo)} keyframe sprite(s) to generate")
+    elif "--from-needs" in sys.argv:
         todo = needs_rows()
         if not todo: sys.exit("needed_sprites.json has nothing generatable yet.")
         print(f"--from-needs: {len(todo)} keyframe sprite(s) to generate")
     else:
         todo = [m for m in MANIFEST if (not args or m[0] in args)]
         if not todo: sys.exit("Nothing matches: " + " ".join(args))
+    rekey = "--rekey" in sys.argv   # 2B.1: re-run ONLY the keying/post-process from raw/ — zero API spend
     for row in todo:
         name, mode, aspect, prompt = row[0], row[1], row[2], row[3]
         ref = row[4] if len(row) > 4 else REF   # per-row reference (keyframes edit-from-the-entity's-own sprite)
-        out = os.path.join(ARTIN, f"{name}.png")
-        if os.path.exists(out) and not force:
-            print(f"skip {name} (exists)"); continue
-        if mode == "edit" and not os.path.exists(ref):
-            print(f"skip {name}: need reference {ref}"); continue
-        print(f"generating {name} ({mode}, {aspect}{', ref='+os.path.basename(ref) if mode=='edit' else ''}) ...", flush=True)
-        try:
-            raw = edit(prompt, ref, aspect) if mode=="edit" else generate(prompt, aspect)
-        except urllib.error.HTTPError as e:
-            print(f"  ERROR {e.code}: {e.read()[:200]}"); time.sleep(2); continue
-        except Exception as e:
-            print(f"  ERROR {type(e).__name__}: {str(e)[:160]}"); continue
-        open(os.path.join(RAW, f"{name}.png"), "wb").write(raw)   # keep the raw
+        # full SHEETS live in tools/ UNPROCESSED (sliced later); everything else flows to art_in/
+        out = os.path.join(HERE, f"{name}.png") if mode == "sheet" else os.path.join(ARTIN, f"{name}.png")
+        if rekey:
+            rp = os.path.join(RAW, f"{name}.png")
+            if not os.path.exists(rp):
+                print(f"skip {name}: --rekey but no raw at {rp}"); continue
+            print(f"re-keying {name} from raw (no API call) ...", flush=True)
+            raw = open(rp, "rb").read()
+        else:
+            if os.path.exists(out) and not force:
+                print(f"skip {name} (exists)"); continue
+            if mode in ("edit","sheet") and not os.path.exists(ref):
+                print(f"skip {name}: need reference {ref}"); continue
+            print(f"generating {name} ({mode}, {aspect}{', ref='+os.path.basename(ref) if mode in ('edit','sheet') else ''}) ...", flush=True)
+            try:
+                # sheets are EDIT-mode too: anchored to the summon's own approved sprite = on-model
+                raw = edit(prompt, ref, aspect) if mode in ("edit","sheet") else generate(prompt, aspect)
+            except urllib.error.HTTPError as e:
+                print(f"  ERROR {e.code}: {e.read()[:200]}"); time.sleep(2); continue
+            except Exception as e:
+                print(f"  ERROR {type(e).__name__}: {str(e)[:160]}"); continue
+            open(os.path.join(RAW, f"{name}.png"), "wb").write(raw)   # keep the raw
         fx = name.startswith("fireball") or name in ("spark","breath","burst")  # glowing FX -> black-bg luminance key
         keyframe = name.rsplit("_",1)[-1].isdigit()  # <ent>_<act>_<n> = ANIMATION KEYFRAME -> keep full canvas (registration)
+        if mode == "sheet":
+            open(out, "wb").write(raw)               # full sheet: save RAW, the slicer keys per-frame
+            print(f"  -> {out} (full sheet — slice, then ingest the frames)")
+            if not rekey: time.sleep(1.5)
+            continue
         if mode == "bg":  save_full(raw, out)        # full-bleed backdrop, keep as-is
         elif fx:          key_fx_black(raw, out)     # glowing FX: brightness->alpha, no green
         else:             key_and_crop(raw, out, no_crop=keyframe)  # cutout: green-key (+crop only for base stills)
@@ -294,7 +504,7 @@ def main():
             try: shutil.copyfile(out, os.path.join(REFS, f"{name}.png"))
             except OSError: pass
         print(f"  -> {out}")
-        time.sleep(1.5)   # gentle on rate limits
+        if not rekey: time.sleep(1.5)   # gentle on rate limits (no API call to be gentle on when re-keying)
     print("\nDone. The game3d-build schedule will ingest art_in/*.png (normal maps + lighting).")
 
 if __name__ == "__main__":

@@ -108,33 +108,42 @@ def score(m):
                      "pass": passed, "detail": detail(m)})
     return rows, p1fails
 
-# ---- ANIMATION COVERAGE: every entity x action it performs must have a >=3-keypose OR rigged clip ----
+# ---- ANIMATION COVERAGE: every entity x action must meet the Phase-2 frame policy OR be rigged ----
+# ANIM_COMBAT_OVERHAUL Phase 2: targets are per ACTION TYPE now, matching gen_sprites.frames_for():
+# walk-type 8 (true loopable stride), idle 2 (breathing beat), attacks/everything else 6. The old
+# flat ">=3 keyposes" target is what queued the 56-set 3-keypose jank this plan replaces.
+_WALKISH = {"walk", "walkf", "walkb", "move", "seek"}
+def frames_target(act):
+    a = (act or "").lower()
+    return 8 if a in _WALKISH else (2 if a == "idle" else 6)
+
 def coverage(m):
     """Reads window.__AUDIT__.entities = [{type, action, anim:{rigged:bool, frames:int}}].
-    A static still (no rig, <3 frames) FAILS and is written to needed_sprites.json so the next
-    gen_sprites run creates it. A rigged clip OR >=3 keyposes PASSES (the rig tweens the rest)."""
+    An entity x action below its policy frame count (and unrigged) FAILS and is written to
+    needed_sprites.json so the next gen_sprites --from-needs run creates the full set."""
     ents = m.get("entities")
     if ents is None:
         return ([{"key":"anim_coverage","severity":"P1","pass":False,
-                  "label":"Every on-screen entity x action has a >=3-frame/rigged animation",
+                  "label":"Every on-screen entity x action has a policy-sized (walk 8 / attack 6 / idle 2) or rigged animation",
                   "detail":"unknown - build must set window.__AUDIT__.entities=[{type,action,anim:{rigged,frames}}]"}], [])
     bad, seen, needs = [], set(), []
     for e in ents:
         t, act = e.get("type","?"), e.get("action","?")
         an = e.get("anim") or {}
         frames = int(an.get("frames") or 0); rigged = bool(an.get("rigged"))
-        ok = rigged or frames >= 3
+        tgt = frames_target(act)
+        ok = rigged or frames >= tgt
         k = (t, act)
         if not ok and k not in seen:
             seen.add(k)
-            bad.append(f"{t}:{act}(frames={frames},rig={rigged})")
-            needs.append({"entity": t, "action": act, "frames_needed": 3, "have_frames": frames,
-                          "rigged": rigged, "reason": "static or <3 keyposes - generate a 3-keypose set or rig it"})
+            bad.append(f"{t}:{act}(frames={frames}/{tgt},rig={rigged})")
+            needs.append({"entity": t, "action": act, "frames_needed": tgt, "have_frames": frames,
+                          "rigged": rigged, "reason": f"below the {tgt}-frame policy for '{act}' - generate a full set or rig it"})
     passed = len(bad) == 0
-    detail = "all on-screen entities animated (rigged or >=3 keyposes)" if passed else \
+    detail = "all on-screen entities animated (rigged or at policy frame counts)" if passed else \
              f"{len(bad)} under-animated: " + "; ".join(bad[:10])
     return ([{"key":"anim_coverage","severity":"P1","pass":passed,
-              "label":"Every on-screen entity x action has a >=3-frame/rigged animation","detail":detail}], needs)
+              "label":"Every on-screen entity x action has a policy-sized (walk 8 / attack 6 / idle 2) or rigged animation","detail":detail}], needs)
 
 def write_needs(needs):
     """Accumulate the union of missing entity x action sprites so gen_sprites can create them next run."""
