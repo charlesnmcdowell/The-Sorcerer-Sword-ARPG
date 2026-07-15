@@ -8,6 +8,8 @@ One running log across the whole project (game, game3d uplift, book, marketing) 
 
 ## PENDING / NEEDS HIRO (standing open items, check before starting new work)
 
+- **xAI/Grok art budget (Hiro, 2026-07-13): $7.15 remaining** (was $9.86; ~$2.71 spent over ~40 generation calls ≈ $0.07/call). Rough runway ≈ 100 more calls. Biggest queued art: BUG-016 arch-warlock + arch-reaper sheets (~2-3 calls), BUG-009 door/master/champ/skel sheets (~4 calls).
+
 - **[CLI] Git push — this repo:** `git status` (2026-07-03) shows no corruption, just normal unstaged/untracked changes (this repo's index looks healthy now — the 2026-06-22 corrupt-index/mass-deletion note in `GAME_BACKLOG.md` appears stale/resolved). Still needs a manual `git add`/`commit`/`push` pass whenever you're ready — automation never auto-pushes.
 - **[CLI] Git push + index repair — live site repo (`Neverendingnarratives`):** separate repo, not connected in this session so I can't verify it directly. Backlog (U2) reported its OneDrive git index throwing `index.lock cannot be unlinked` / `cache entry has null sha1`. Check/repair that one yourself from a normal local session before pushing it.
 - **game3d animation/summon/VFX/traversal overhaul (2026-07-03):** plan written, see `game3d/GAME3D_ANIM_COMBAT_OVERHAUL_PLAN.md`. Hand this to the Fable chat. **Do not run `gen_sprites.py`/art generation until Phase 2 ships** — the stale queue was cleared 2026-07-03 (see below), so `needed_sprites.json` is now empty; it'll only be worth running again once the auditor re-queues it against the fixed code.
@@ -16,6 +18,14 @@ One running log across the whole project (game, game3d uplift, book, marketing) 
 - **Book 2 editorial / audiobook schedules:** `book2-editorial`, `book2-detic`, `book2-voiceprep`, `audiobook` all ran and self-disabled at various points in June, but no output for them was found in this repo (`The Sorcerer Sword ARPG`) — likely living in a different folder. Worth a separate check if you want their status.
 
 ---
+
+## 2026-07-13 — Post-quest Pit runs, de-overlap, immortal-coven fix, kill-cam cinematics, green arch fire, arch-devil idle redo (game3d) [Fable 5]
+
+**game3d.** (1) NOWHERE TO GO fixed: after the quest closes, the Pit reopens as REPEAT RUNS — every re-entry +35% enemy hp/damage, payouts scale (120+90/run gold + potion), objective points back east; Marlow's quest-complete banner announces it. (2) separateActors(): pairwise de-overlap across all living summons+foes each frame (X-biased push; harness-verified). (3) IMMORTAL COVEN root cause: the old pit "herald succubi never time out" gate — removed; only the phylactery dragon is timeless, everything else obeys the 4s clock. (4) CINEMATICS RETURN: killCam on every kill (punch-in + pan to the slain foe + spark burst + settle, layered over hit-stop/slow-mo), camFocus() implemented (real push-in for the lich rise etc.), kill-word variety, and Bellow-style TAUNTS on every slice fight intro. (5) ARCH succubi now throw SHEOL-GREEN fire (greenbolt art keyed by d.arch). (6) Arch-devil sheet regenerated with a LOCKED side-on stance (idle varies only by flame flicker/breathing — no more back-and-forward glancing); resliced/ingested 4/4/4/4. Spend: 1 call (~40 total).
+
+## 2026-07-13 — BUG-017: the REAL size bug — per-frame sprite recreation (game3d) [Fable 5]
+
+**game3d.** "Enemies still tiny" survived the table bump because the table was never the problem: the foe-crowd pool recreated every sprite EVERY FRAME (texture.key vs base-key check can't match mid-anim), each time scaling against the 512px base still → permanent ~0.4×. Proved by building a minimal live Phaser 3.80 harness (chromium headless) that showed the scale math correct in isolation, which left only the pool churn. Fix: pool slots track o._base; sprites persist; scale reads the live frame height. Demon draw got the same live-frame fix + the 0.85 "support rank" shrink removed. Detail: game3d/BUGLOG.md BUG-017.
 
 ## 2026-07-13 — Playtest round 3: sizes, hex rework + contagion, summon recast cycle, tutorial gate, green comet, arch-devil sheet (game3d) [Fable 5]
 

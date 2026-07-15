@@ -304,7 +304,10 @@ function spawnFight(idx){
   // curated SLICE ladder (ADV_FIGHTS, ≤10 enemy types). ?arena=1 restores the legacy 20-fight gauntlet.
   if(window.ADV && ADV.on && ADV.mode!=='pit'){ enemies.length=0; return; }
   const F=fightsList()[idx]; if(!F) return;
-  const i=1+idx*0.30, dmgScale=1+idx*0.16;
+  // REPEAT RUNS (Hiro 2026-07-13 "nowhere else to go"): after the quest closes, the Pit reopens
+  // harder each run — +35% hp/damage per completed run, gold scales to match (advPitCleared).
+  const _rs=(window.ADV && ADV.on && ADV.runs>0) ? (1+0.35*ADV.runs) : 1;
+  const i=(1+idx*0.30)*_rs, dmgScale=(1+idx*0.16)*_rs;
   const W=(scene&&scene.scale)?scene.scale.width:(window.innerWidth||960);
   const H=(scene&&scene.scale)?scene.scale.height:(window.innerHeight||540);
   const gy=H*SIDEON_GROUND_FR;
@@ -380,7 +383,8 @@ function feedSuccubi(x,y,rad,amt){ for(const d of demons){ if(d.type!=='succubus
 // killEnemy — minimal stand-in for pit.js:1280 (mark dead + FX). The real version
 // also runs CONTAGION/infection-rise; those port with the gauntlet roster in M4.
 function killEnemy(e,word,col){ if(e.dead) return; e.dead=true;
-  scene && scene.popup(e.x,e.y-40,word||'SLAIN',col||'#d05a6a'); gainLevel();
+  scene && scene.popup(e.x,e.y-40, word||['SLAIN','DOWN!','UNDONE','BUTCHERED','THE LEDGER TAKES'][(Math.random()*5)|0], col||'#d05a6a'); gainLevel();
+  killCam(e.x,e.y);                                 // Hiro 2026-07-13: the original game's kill-cam returns — punch-in + spark burst + settle
   // KILL BEAT (moved off the retired duel-finisher path): hit-stop + a breath of slow-mo + flash
   S.hitPause=Math.max(S.hitPause,0.10); S.slow=Math.max(S.slow,0.30); flashFx(0.10); S.shake=Math.max(S.shake,8);
   // CONTAGION (Hiro 2026-07-13): a foe that dies HEXED passes the rot to the nearest living foe,
@@ -1020,7 +1024,29 @@ function lichSlash(){ // SCYTHE (pit.js:998)
 function flashFx(a){ scene && scene.flash(0x8a4cff, a); }                         // pit.js flashFx
 function leafBurst(x,y,n,col){ scene && scene.fxPortal(x,y); }                    // burst stand-in (pit.js leafBurst)
 function showBanner(title,sub,ms,col){ scene && scene.banner(title,sub,col); }   // ms ignored (banner self-times)
-function camFocus(x,y,z,t){ /* cinematic camera push-in: no-op in the 2.5D shell (TODO M8) */ }
+// CINEMATIC CAMERA (Hiro 2026-07-13: "bring back the camera angles + fatalities of the first game").
+// camFocus = the long dramatic push-in (lich rise, transformations): zoom toward a world point, hold,
+// self-resetting. killCam = the short FATALITY beat on every kill: quick punch-in + pan toward the
+// slain foe + a radial spark burst, settling back to neutral — layered over killEnemy's hit-stop +
+// slow-mo so kills read like the original pit's kill-cam. Both are render-only and self-resetting.
+function camFocus(x,y,z,t){
+  const cam=scene && scene.cameras && scene.cameras.main; if(!cam) return;
+  cam.zoomTo(Math.min(z||1.3,1.6), 260, 'Quad.easeOut');
+  cam.pan(x, y-60, 300, 'Sine.easeInOut');
+  scene.time.delayedCall(Math.max(600,(t||1.6)*1000), ()=>{ const c=scene.cameras&&scene.cameras.main; if(!c) return;
+    c.zoomTo(1.0, 420, 'Quad.easeInOut'); c.pan(scene.scale.width/2, scene.scale.height/2, 420, 'Sine.easeInOut'); });
+}
+function killCam(x,y){
+  const cam=scene && scene.cameras && scene.cameras.main; if(!cam) return;
+  if(S._kcUntil && S.time<S._kcUntil) return; S._kcUntil=S.time+1.1;   // don't stack whirls on multi-kills
+  cam.zoomTo(1.16, 150, 'Quad.easeOut');
+  cam.pan(x, y-50, 180, 'Sine.easeInOut');
+  for(let k=0;k<14;k++){ const a=(k/14)*Math.PI*2+rnd(-0.2,0.2), dd=rnd(50,140);
+    const p=scene.add.image(x, y-30, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(0xff6a8a).setScale(rnd(0.12,0.2)).setDepth(9000);
+    scene.tweens.add({targets:p, x:x+Math.cos(a)*dd, y:y-30+Math.sin(a)*dd, alpha:0, scale:0.03, duration:rnd(360,560), ease:'Quad.out', onComplete:()=>p.destroy()}); }
+  scene.time.delayedCall(430, ()=>{ const c=scene.cameras&&scene.cameras.main; if(!c) return;
+    c.zoomTo(1.0, 320, 'Quad.easeInOut'); c.pan(scene.scale.width/2, scene.scale.height/2, 320, 'Sine.easeInOut'); });
+}
 function vib(p){ if(navigator.vibrate) navigator.vibrate(p); }
 function archVoice(speaker,line){ try{ if(typeof window!=='undefined'&&window.VoiceMan&&line) window.VoiceMan.say(speaker,line); }catch(e){} }   // pit.js:827
 function archBank(){ return (typeof window!=='undefined'&&window.Quests&&window.Quests.archDevilOutro)||null; }                                  // pit.js:828
@@ -1357,7 +1383,7 @@ function hurtDemon(d,dmg){ d.hp-=dmg; d.flash=.12; scene && scene.popup(d.x+rnd(
 function updDemons(dt){
   for(let i=demons.length-1;i>=0;i--){ const d=demons[i];
     if(!d) continue;                                                  // REENTRANCY GUARD (pit.js:634)
-    if(!(P.lich&&d.type==='dragon') && !(P.evo10==='herald'&&d.type==='succubus')) d.life-=dt;  // phylactery/herald never time out
+    if(!(P.lich&&d.type==='dragon')) d.life-=dt;  // only the PHYLACTERY dragon is timeless — Hiro 2026-07-13: the old herald "succubi never expire" rule caused immortal covens; every summon obeys the 4s clock now
     d.flash=Math.max(0,d.flash-dt);
     if(d._atkPulse>0) d._atkPulse-=dt;                                // SIDEON assist strike-dart timer: set at each real attack, drives the render lunge (peaks WITH the damage)
     if(d.life<=0||d.hp<=0){ scene && scene.fxPortal(d.x,d.y);
@@ -1463,11 +1489,30 @@ function updDemons(dt){
           const _ff=SIDEON?(tgt.x>=d.x?0:Math.PI):d.face;            // fix #5: side-on fire bolt flies STRAIGHT down the lane (cos=±1, sin=0)
           fireballs.push({ x:d.x, y:d.y-10, vx:Math.cos(_ff)*360, vy:Math.sin(_ff)*360,
             r:6, kind:'fire', aoe:45, fire:_herald,                  // base coven = plain fire bolt (no DoT until herald)
+            col:(d.arch?'#9af0c0':undefined), green:!!d.arch,        // Hiro 2026-07-13: ARCH succubi throw SHEOL-GREEN fire (anim_greenbolt)
             dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*1.6*(d.dmgMul||1)) }); } }
     }
     const mv=Math.hypot(d.x-(d._lx??d.x), d.y-(d._ly??d.y));          // walk-phase bookkeeping (pit.js:741)
     d.walkP=(d.walkP||0)+mv*.16; d._mv=mv>0.2; d._lx=d.x; d._ly=d.y;
     scene && scene.clampArena(d);
+  }
+}
+// separateActors — Hiro 2026-07-13 ("no creature should overlap"): one pairwise de-overlap pass over
+// every living summon + foe after all movement. Push is split between the pair, damped on Y (flyers
+// hover at different heights; the lane read matters most in X). Sim-side, so hitboxes match the art.
+function separateActors(){
+  const all=[];
+  for(const d of demons) if(d && d.hp>0) all.push(d);
+  for(const e of enemies) if(e && !e.dead) all.push(e);
+  for(let i=0;i<all.length;i++) for(let j=i+1;j<all.length;j++){
+    const a=all[i], b=all[j];
+    const min=((a.r||12)+(b.r||12))*0.9; if(min<=0) continue;
+    let dx=b.x-a.x, dy=(b.y-a.y)*1.0;
+    const d2=Math.hypot(dx,dy);
+    if(d2>=min) continue;
+    if(d2<0.01){ a.x-=min/2; b.x+=min/2; continue; }
+    const push=(min-d2)/2, nx=dx/d2, ny=dy/d2;
+    a.x-=nx*push; a.y-=ny*push*0.35; b.x+=nx*push; b.y+=ny*push*0.35;
   }
 }
 // updZones — port of pit.js gas branch (:2364). The dragon's gas cloud paralyzes (light stun)
@@ -1606,12 +1651,14 @@ function frame(dt){            // dt in seconds
   }
   // projectile + enemy DoT sim (pit.js updFireballs:744 + hex tick:1538)
   updFireballs(dt); updEnemies(dt); updFoeAI(dt); updFoeShots(dt); updDemons(dt); updSwings(dt); updZones(dt); updTracers(dt);   // status DoTs THEN foe brain (chase+telegraph+strike) + summons + arcs + gas + mend beams + foe shots (pit.js:1580,632,2364)
+  separateActors();   // Hiro 2026-07-13: no creature may occupy another's space — pairwise de-overlap after all movement
   // WAVE ADVANCE (M4): the whole fight cleared -> roll to the next FIGHTS[] wave (pit.js nextFight:1953).
   // Safe here: every upd* loop above has finished iterating enemies[] for this frame, so spawnFight()
   // may replace the array. Runs AFTER the sim, BEFORE movement/render so syncSideOn sees the new foe.
   if(!S.gauntletDone && enemies.length && enemies.every(e=>e.dead)){
     if((S.fight|0) < gauntletN()-1){ S.fight=(S.fight|0)+1; spawnFight(S.fight);
-      scene && scene.banner(fightsList()[S.fight].name, 'fight '+(S.fight+1)+' / '+gauntletN(), '#e7b450'); }
+      const _F=fightsList()[S.fight];
+      scene && scene.banner(_F.name, _F.taunt || ('fight '+(S.fight+1)+' / '+gauntletN()), '#e7b450'); }   // Bellow's taunts return (Hiro 2026-07-13)
     else { S.gauntletDone=true;
       if(window.ADV && ADV.on) advPitCleared();
       else scene && scene.banner('GAUNTLET CLEARED','the Pit has no one left','#3df0c8'); }
@@ -2090,8 +2137,10 @@ class Arena extends Phaser.Scene{
     const foeKey=(enemies[0] && (enemies[0].spriteKey || foeKeyFor(enemies[0].name))) || 'shambler';
     if(this.textures.exists(foeKey)){
       const fx=W*0.72;
-      this.foeShadow=this.add.image(fx,gy+6,'shadow').setAlpha(0.8).setDepth(gy-1);
-      this.foeSprite=this.add.sprite(fx,gy,foeKey).setOrigin(0.5,1).setPipeline('Light2D').setDepth(gy);
+      // BUG-002: duel render path is RETIRED (BRAWLER UNIFICATION) — born hidden AND invisible so no
+      // stale visible:true sprite lingers at the home position when no foe is bound.
+      this.foeShadow=this.add.image(fx,gy+6,'shadow').setAlpha(0).setDepth(gy-1).setVisible(false);
+      this.foeSprite=this.add.sprite(fx,gy,foeKey).setOrigin(0.5,1).setPipeline('Light2D').setDepth(gy).setAlpha(0).setVisible(false);
       const fwh=HERO_PX*(SPRITE_TARGET_H[foeKey]||1);
       this.foeSprite.setScale(fwh/(this.foeSprite.height||fwh));
       this._foeScl=this.foeSprite.scaleX; this._foeKey=foeKey;   // base scale + base texture for the locomotion juice (FEEDBACK #8)
@@ -2138,7 +2187,7 @@ class Arena extends Phaser.Scene{
     // hitbox at the sim position — the player hit where nobody was, and sim attacks landed from
     // nowhere ("invisible attacks"). Every foe now renders AT ITS SIM POSITION, full size, in
     // syncFoeCrowd; updFoeAI is the single AI + damage authority. foeSprite stays hidden.
-    if(this.foeSprite){ this.foeSprite.setAlpha(0); this.foeShadow && this.foeShadow.setAlpha(0); }
+    if(this.foeSprite){ this.foeSprite.setAlpha(0).setVisible(false); if(this.foeShadow){ this.foeShadow.setAlpha(0); this.foeShadow.setVisible(false); } }   // BUG-002: visible:false too, not just alpha 0
     return;
     const f=currentFoe();
     if(f && f.name!==this._foeName){
@@ -2245,11 +2294,16 @@ class Arena extends Phaser.Scene{
       const key=e.spriteKey||foeKeyFor(e.name);
       if(!this.textures.exists(key)) return;
       let o=pool.get(e);
-      if(!o || o.spr.texture.key!==key){
+      // SIZE BUG ROOT CAUSE (Hiro 2026-07-13 "enemies still tiny"): the old recreate check compared
+      // spr.texture.key to the BASE key — but mid-animation the current FRAME's texture key never
+      // equals the base, so the sprite was destroyed + recreated EVERY FRAME at the 512px base still
+      // and scaled against THAT height (~0.4×). Track the intended base key on the pool slot instead;
+      // the sprite persists, the anim owns the texture, and the scale reads the live frame height.
+      if(!o || o._base!==key){
         if(o){ if(o.shadow)o.shadow.destroy(); o.spr.destroy(); }
         const spr=this.add.sprite(0,0,key).setOrigin(0.5,1).setPipeline('Light2D');
         const shadow=this.add.image(0,0,'shadow').setAlpha(0.45);
-        o={spr,shadow}; pool.set(e,o);
+        o={spr,shadow,_base:key}; pool.set(e,o);
       }
       const spr=o.spr, sh=o.shadow;
       // 2-row back formation, clamped on-screen; the deeper row sits higher + smaller (depth read)
@@ -3194,8 +3248,8 @@ class Arena extends Phaser.Scene{
                    : d.type==='dragon' ? Math.sin(now/220)*5
                    : d.type==='succubus' ? Math.sin(now/200+(d.slot||0))*3
                    : -Math.abs(Math.sin(now/160+(d.slot||0)))*3;
-        let dscl=dsc*dWorldH/(spr.height||dWorldH);
-        if(SIDEON) dscl*=0.85;                                   // assists read as the support rank
+        const dfh=(spr.frame && spr.frame.realHeight) || spr.height || dWorldH;   // live frame height (same fix as the foe crowd)
+        let dscl=dsc*dWorldH/dfh;                                // Hiro 2026-07-13: the 0.85 "support rank" shrink is GONE — summons stand at their true world height
         // SQUASH-STRETCH on the synced strike dart (FEEDBACK #8): stretch into the lunge, recover after
         const lv=(!dAnimOn && SIDEON && d._lungeV)||0;
         spr.setScale(dscl*(1+0.16*lv), dscl*(1-0.08*lv));
@@ -3345,7 +3399,7 @@ class Arena extends Phaser.Scene{
 // ===========================================================================
 window.ADV = {
   on: !/[?&]arena=1/.test(location.search) && !SOLO && !RIG_PLAY,
-  mode:'village', camX:0, quest:0, gold:0, potions:1, relics:[],
+  mode:'village', camX:0, quest:0, gold:0, potions:1, relics:[], runs:0,
   objective:'KARRIDGE — find the inn', _audioOK:false, _pendVoice:null, _music:null, _musicKey:null,
   _layers:null, _npcs:[], _hint:null, _chip:null, _voice:null, _wellRead:false, _smithGift:false, _fading:false,
 };
@@ -3354,14 +3408,14 @@ function gauntletN(){ return fightsList().length; }
 function advSpeed(){ return 210 * ((window.ADV && ADV.on && ADV.relics.indexOf('DREN\'S BOOTS')>=0) ? 1.15 : 1); }
 // --- the SLICE ladder: 8 authored fights, 10 enemy types, BEAST OF KARRIDGE closes it ---
 const ADV_FIGHTS = [
- {name:'FIRST BLOOD',      foes:[{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
- {name:'THE HOOKS',        foes:[{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'},{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'}]},
- {name:'THE CHAIN',        foes:[{type:'chain',hp:95,spd:78,r:18,col:'#6f7a6a'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
- {name:'PYRE & POWDER',    foes:[{type:'pyre',hp:85,spd:95,r:15,col:'#a4502c',ranged:true},{type:'gunner',hp:110,spd:115,r:14,col:'#5e5a72',ranged:true}]},
- {name:'GRAVEHANDS',       foes:[{type:'grave',hp:115,spd:80,r:16,col:'#6a5a4a'},{type:'grave',hp:115,spd:80,r:16,col:'#6a5a4a'},{type:'stitch',hp:120,spd:125,r:13,col:'#7a8a6a'}]},
- {name:'THE COURT NECROMANCER', foes:[{type:'necro',hp:130,spd:100,r:15,col:'#4a5444'},{type:'gunner',hp:110,spd:115,r:14,col:'#5e5a72',ranged:true}]},
- {name:'THE BRUTE',        foes:[{type:'brute',hp:170,spd:70,r:21,col:'#6a4a3a'},{type:'stitch',hp:120,spd:125,r:13,col:'#7a8a6a'}]},
- {name:'THE BEAST OF KARRIDGE', foes:[{type:'beast',hp:300,spd:85,r:30,col:'#5a3a2a'}]},
+ {name:'FIRST BLOOD',      taunt:'two dogs, one warlock — Bellow gives you a minute', foes:[{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
+ {name:'THE HOOKS',        taunt:'they collect fingers — keep count of yours',        foes:[{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'},{type:'hook',hp:48,spd:150,r:14,col:'#8a6a4a'}]},
+ {name:'THE CHAIN',        taunt:'the whole ring is his reach',                       foes:[{type:'chain',hp:95,spd:78,r:18,col:'#6f7a6a'},{type:'hound',hp:66,spd:200,r:11,col:'#4a4038'}]},
+ {name:'PYRE & POWDER',    taunt:'fire from the left, lead from the right — pick a poison', foes:[{type:'pyre',hp:85,spd:95,r:15,col:'#a4502c',ranged:true},{type:'gunner',hp:110,spd:115,r:14,col:'#5e5a72',ranged:true}]},
+ {name:'GRAVEHANDS',       taunt:'they dig while you bleed — the stitcher keeps them standing', foes:[{type:'grave',hp:115,spd:80,r:16,col:'#6a5a4a'},{type:'grave',hp:115,spd:80,r:16,col:'#6a5a4a'},{type:'stitch',hp:120,spd:125,r:13,col:'#7a8a6a'}]},
+ {name:'THE COURT NECROMANCER', taunt:'he outranks you in dead friends',                    foes:[{type:'necro',hp:130,spd:100,r:15,col:'#4a5444'},{type:'gunner',hp:110,spd:115,r:14,col:'#5e5a72',ranged:true}]},
+ {name:'THE BRUTE',        taunt:'Bellow doubled the odds — against you',                   foes:[{type:'brute',hp:170,spd:70,r:21,col:'#6a4a3a'},{type:'stitch',hp:120,spd:125,r:13,col:'#7a8a6a'}]},
+ {name:'THE BEAST OF KARRIDGE', taunt:'what ate the last champion — mind the blood',        foes:[{type:'beast',hp:300,spd:85,r:30,col:'#5a3a2a'}]},
 ];
 const ADV_AREAS = {
   village:{ len:2200, music:'city', far:'bg_village_far', mid:'bg_village_mid', near:'bg_village_near' },
@@ -3450,7 +3504,7 @@ function advTutFrame(dt){
 function advPitVisible(vis){ const sc=scene; if(!sc) return;
   ['bgFar','bgFloor','bgFg'].forEach(k=>{ if(sc[k]) sc[k].setVisible(vis); });
   if(sc.lineupSprites) for(const s of sc.lineupSprites) s.setVisible(vis);      // the challengers' row belongs to the Pit
-  if(sc.foeSprite && !vis){ sc.foeSprite.setAlpha(0); sc.foeShadow && sc.foeShadow.setAlpha(0); }
+  if(sc.foeSprite && !vis){ sc.foeSprite.setAlpha(0).setVisible(false); if(sc.foeShadow){ sc.foeShadow.setAlpha(0); sc.foeShadow.setVisible(false); } }   // BUG-002
 }
 function advSetArea(mode, px){
   const sc=scene, A=ADV_AREAS[mode]; ADV.mode=mode; if(!sc||!A) return;
@@ -3485,7 +3539,9 @@ function advGoto(mode, px){
   cam.once('camerafadeoutcomplete',()=>{ advSetArea(mode,px); cam.fadeIn(280,5,3,10); ADV._fading=false; });
 }
 function advEnterPit(){
-  ADV.mode='pit'; ADV.quest=Math.max(ADV.quest,2); ADV.objective='SURVIVE THE PIT';
+  if(ADV.quest>=5) ADV.runs=(ADV.runs|0)+1;                      // post-quest: every re-entry is a harder RUN
+  ADV.mode='pit'; ADV.quest=Math.max(ADV.quest,2);
+  ADV.objective=ADV.runs>0 ? ('THE PIT — RUN '+(ADV.runs+1)) : 'SURVIVE THE PIT';
   const L=ADV._layers; if(L){ L.far.setVisible(false); L.gnd.setVisible(false); L.mid.setVisible(false); L.near.setVisible(false); }
   for(const n of ADV._npcs){ n.s.setVisible(false); n.t.setVisible(false); }
   advPitVisible(true); advMusic('arena');
@@ -3495,6 +3551,14 @@ function advEnterPit(){
   scene && scene.banner(ADV_FIGHTS[0].name,'fight 1 / '+ADV_FIGHTS.length,'#e7b450');
 }
 function advPitCleared(){
+  if(ADV.quest>=5){                                              // REPEAT RUN cleared: pay out, scale next
+    const g=120+90*ADV.runs; ADV.gold+=g; ADV.potions+=1;
+    scene && scene.banner('THE PIT YIELDS AGAIN','run '+(ADV.runs+1)+' cleared — +'+g+' gold · the next will be harder','#3df0c8');
+    ADV.objective='THE PIT REMEMBERS — EAST';
+    scene && scene.time.delayedCall(4200, ()=>{ advGoto('village', -1);
+      scene.banner('KARRIDGE','spend it while it spends','#e7b450'); });
+    return;
+  }
   ADV.quest=3; ADV.gold+=120; ADV.potions+=1;
   if(ADV.relics.indexOf('DREN\'S BOOTS')<0) ADV.relics.push('DREN\'S BOOTS');
   scene && scene.banner('DREN\'S BOOTS','men who run, run IN boots — Dren never ran. +15% stride, +120 gold','#3df0c8');
@@ -3539,8 +3603,8 @@ function advInteract(){
       ADV.quest=1; ADV.objective='FIND DREN — EAST, THE PIT';
     } else if(ADV.quest>=4){
       advSay('d29687a3','MARLOW','"Watch the alleys, champion. Whatever shops for the gifted hasn\'t finished its list."');
-      ADV.quest=5; ADV.objective='KARRIDGE SLEEPS EASIER';
-      scene && scene.banner('QUEST COMPLETE','THE MISSING CHAMPION — gold '+ADV.gold+' · relic: DREN\'S BOOTS','#3df0c8');
+      ADV.quest=5; ADV.objective='THE PIT REMEMBERS — EAST';
+      scene && scene.banner('QUEST COMPLETE','THE MISSING CHAMPION — gold '+ADV.gold+' · the Pit reopens, harder and richer, as often as you dare','#3df0c8');
     } else if(ADV.gold>=25){ ADV.gold-=25; ADV.potions++;
       advSay('0d05c46c','THE WARLOCK','potion bought — "Five silver. Cheaper than the other ways I ask questions."');
     } else { advSay('a0196e98','MARLOW','"Five silver. The Pit paid you a silver a head — don\'t tell me you\'re short."'); }
