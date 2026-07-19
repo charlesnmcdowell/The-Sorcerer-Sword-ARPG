@@ -32,11 +32,22 @@ RAW    = os.path.join(ARTIN, "raw")
 REFS   = os.path.join(HERE, "refs")   # persistent per-entity reference library (so keyframes edit-from-the-real-sprite)
 # approved hero = the consistency anchor for every edit. tools/ref_warlock_idle.png is a STABLE
 # copy the build's intake never moves (art_in/ gets emptied as the build ingests sprites).
+# ENTITY FOLDERS (Hiro 2026-07-15): assets/sprites/ is per-entity now — must match arena.html spritePath().
+SPRITE_ENTITY_DIR = {'warlock':'warlock','succubus':'warlock/summons/succubus','archsuccubus':'warlock/summons/archsuccubus',
+ 'bonedragon':'warlock/summons/dragon','blackdragon':'warlock/summons/dragon','clawfiend':'warlock/summons/claw_demon',
+ 'shambler':'warlock/summons/shambler','bonearcher':'warlock/summons/bone_archer',
+ 'lich':'warlock/forms/lich','archdevil':'warlock/forms/archdevil','demonlord':'warlock/forms/demonlord',
+ 'npc':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
+for _e in ['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']:
+    SPRITE_ENTITY_DIR[_e]='enemies/'+_e
+def sprite_asset(name):
+    """Folder-resolved path of an ingested sprite (flat name in, entity folder out)."""
+    return os.path.join(G3D, "assets", "sprites", SPRITE_ENTITY_DIR.get(name.split('_')[0], ''), name + ".png")
 REF = next((p for p in [
     os.path.join(HERE, "ref_warlock_idle.png"),
     os.path.join(ARTIN, "warlock_idle.png"),
     os.path.join(G3D, "assets", "sprites", "_src", "warlock_idle_v2_keyed.png"),
-    os.path.join(G3D, "assets", "sprites", "warlock_idle.png"),
+    sprite_asset("warlock_idle"),
 ] if os.path.exists(p)), os.path.join(HERE, "ref_warlock_idle.png"))
 API    = "https://api.x.ai/v1"
 MODEL  = "grok-imagine-image-quality"
@@ -130,6 +141,7 @@ def entity_ref(ent):
     if ent == "warlock":
         cands = [REF, os.path.join(REFS, "warlock_idle.png"), os.path.join(ARTIN, "warlock_idle.png")] + cands
     cands += [os.path.join(REFS, f"{ent}_idle.png"), os.path.join(ARTIN, f"{ent}_idle.png"),
+              sprite_asset(ent), sprite_asset(f"{ent}_idle"),
               os.path.join(G3D, "assets", "sprites", f"{ent}.png")]
     return next((p for p in cands if os.path.exists(p)), REF)
 
@@ -233,7 +245,7 @@ def part_ref(name=None):
     """The on-model anchor per part: Hiro's green-lit full-body edit when present (for the parts it
     shows), else the approved SIDE-ON idle, else the front-facing REF."""
     if name in PART_GREENLIT and os.path.exists(GREENLIT): return GREENLIT
-    for p in [os.path.join(G3D, "assets", "sprites", "warlock_idle.png"),
+    for p in [sprite_asset("warlock_idle"),
               os.path.join(REFS, "warlock_idle.png")]:
         if os.path.exists(p): return p
     return REF

@@ -15,3 +15,6 @@
 
 Pipeline runs may recreate `sheet_*` / `_check_*` files at tools root; sweep
 them back into `sheets/` and `checks/` as needed.
+
+## Sprite folder layout (2026-07-15)
+`assets/sprites/` is per-entity now: `warlock/` (+`summons/<succubus|archsuccubus|dragon|claw_demon|shambler|bone_archer>/`, `forms/<lich|archdevil|demonlord>/`), `enemies/<type>/`, `npcs/`, `fx/`. Code + pipeline use FLAT names resolved through `spritePath()` (arena.html) / `ENTITY_DIR` (ingest_art.py) / `SPRITE_ENTITY_DIR` (gen_sprites.py) — keep all three maps in sync when adding an entity. Manifests (anims.json, rig JSONs) stay at the sprites root; `_src/` stays flat (archive).

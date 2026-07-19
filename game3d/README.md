@@ -2,6 +2,12 @@
 
 This is the **3D remake** project, separate from the finished 2D game in `../game/`. It is **local-only** (not deployed) until it's trailer-ready. The 2D game stays live and is the rollback (git tag `v2d-1.0`, branch `3d-uplift`).
 
+## Documentation
+The current playable is **`arena.html`** — "The Pit of Karridge", the Dragon's-Crown-style side-on parallax brawler slice. Its knowledge base lives in `docs/`:
+- **[docs/WIKI.md](docs/WIKI.md)** — player/designer reference: areas, quest, bestiary, warlock kit & numbers, loot/economy, dev flags, voice/music.
+- **[docs/MAINTENANCE.md](docs/MAINTENANCE.md)** — how to build on this baseline: architecture contracts, add-an-enemy/area/NPC/FX/voice HOW-TOs, art pipeline commands, **all known hazards** (read before editing), BUGLOG/schedule workflow.
+- **[docs/CODE_MAP.md](docs/CODE_MAP.md)** — section map of `arena.html` by line range, the tail wrapper pattern, and the retired-but-dormant list.
+
 ## HOW TO RUN IT — just double-click `index.html`
 The 3D models are **base64-embedded** in `assets/embedded3d.js`, so the look-test runs straight from `file://` with no server (same trick the 2D game uses for its art). You only need an internet connection — the Three.js + GLTFLoader libraries load from a CDN.
 

@@ -68,6 +68,21 @@ def normal_from_alpha(rgba):
     nm[..., 3] = (mask * 255).astype(np.uint8)
     return Image.fromarray(nm, "RGBA")
 
+# ENTITY FOLDERS (Hiro 2026-07-15): sprites live in per-entity folders under assets/sprites/.
+# MUST match arena.html's spritePath() mapping exactly. Manifests stay at the sprites root.
+ENTITY_DIR = {'warlock':'warlock','succubus':'warlock/summons/succubus','archsuccubus':'warlock/summons/archsuccubus',
+ 'bonedragon':'warlock/summons/dragon','blackdragon':'warlock/summons/dragon','clawfiend':'warlock/summons/claw_demon',
+ 'shambler':'warlock/summons/shambler','bonearcher':'warlock/summons/bone_archer',
+ 'lich':'warlock/forms/lich','archdevil':'warlock/forms/archdevil','demonlord':'warlock/forms/demonlord',
+ 'npc':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
+for _e in ['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']:
+    ENTITY_DIR[_e]='enemies/'+_e
+def dest_for(name):
+    """Folder-resolved output path base for a flat sprite name (mkdirs as needed)."""
+    d = os.path.join(DEST, ENTITY_DIR.get(name.split('_')[0], ''))
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, name)
+
 def cap(im):
     w, hgt = im.size
     m = max(w, hgt)
@@ -110,8 +125,8 @@ def main():
             if not fn.endswith(".png") or fn.startswith("_"):
                 continue
             name = fn[:-4]
-            if os.path.exists(os.path.join(DEST, fn)):
-                continue  # already ingested
+            if os.path.exists(dest_for(name) + ".png"):
+                continue  # already ingested (entity-folder location)
             names.append(name)
     if not names:
         print("Nothing pending in art_in/ (all ingested).")
@@ -135,8 +150,8 @@ def main():
             print(f"skip {name}: no art_in/{name}.png"); continue
         im = ready.get(name) or Image.open(ip).convert("RGBA")
         im = cap(im)
-        im.save(os.path.join(DEST, name + ".png"))
-        normal_from_alpha(im).save(os.path.join(DEST, name + "_n.png"))
+        im.save(dest_for(name) + ".png")
+        normal_from_alpha(im).save(dest_for(name) + "_n.png")
         # archive the original keyed source (uncapped) for re-processing
         Image.open(ip).convert("RGBA").save(os.path.join(SRC, name + ".png"))
         tH = TARGET_WORLD_H.get(name, "?")
@@ -151,13 +166,15 @@ def rebuild_anims_manifest():
     this manifest is what upgrades an entity from a still/pose-swap to a true multi-frame animation."""
     sets = {}
     frame_re = re.compile(r"^(.+)_(\d+)\.png$")
-    for fn in os.listdir(DEST):
-        if fn.endswith("_n.png") or fn.startswith("_"):
-            continue
-        m = frame_re.match(fn)
-        if not m:
-            continue
-        sets.setdefault(m.group(1), set()).add(int(m.group(2)))
+    for root, dirs, files in os.walk(DEST):                    # ENTITY FOLDERS: scan recursively
+        if "_src" in root: continue
+        for fn in files:
+            if fn.endswith("_n.png") or fn.startswith("_"):
+                continue
+            m = frame_re.match(fn)
+            if not m:
+                continue
+            sets.setdefault(m.group(1), set()).add(int(m.group(2)))
     manifest = {}
     for name, nums in sorted(sets.items()):
         n = 0

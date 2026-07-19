@@ -84,6 +84,8 @@ Hiro noted a lot of systems didn't carry over cleanly from the original top-down
 **Acceptance:** a single flag/param disables enemy spawn + summon casting (Warlock stands alone in the arena, fully controllable/testable); everything needed to re-enable them is intact, not removed; a short written inventory of Pit-carryover gaps Fable actually finds while doing this.
 **Order:** this supersedes Phase 3/4's summon-facing work until Hiro says to resume it. Warlock-only bugs/polish found during this pass are fair game to fix now.
 
+**EXCEPTION 2026-07-07 (Hiro's explicit override):** Stitch reported facing the wrong way sometimes, traced to small per-enemy sprite sheets. Hiro chose to lift the enemy pause specifically for a full enemy sprite-sheet QA/regen pass — this does NOT mean Phase 3/4 summon-AI/VFX work resumes, only that enemy ART/QA is back in scope. Audit before regenerating (see `## NEEDS HIRO` / Fable prompt in `PROJECT_LOG.md` same date) — most enemies share the small-frame-count problem the Warlock had in the original Phase 2, so this could get expensive if not scoped to confirmed defects first.
+
 ---
 
 ## PHASE 3 — SUMMON DISTANCE, DEPTH, AND INDEPENDENT AI
