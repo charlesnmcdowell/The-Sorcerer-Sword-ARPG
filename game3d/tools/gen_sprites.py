@@ -37,7 +37,8 @@ SPRITE_ENTITY_DIR = {'warlock':'warlock','succubus':'warlock/summons/succubus','
  'bonedragon':'warlock/summons/dragon','blackdragon':'warlock/summons/dragon','clawfiend':'warlock/summons/claw_demon',
  'shambler':'warlock/summons/shambler','bonearcher':'warlock/summons/bone_archer',
  'lich':'warlock/forms/lich','archdevil':'warlock/forms/archdevil','demonlord':'warlock/forms/demonlord',
- 'npc':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
+ 'archwarlock':'warlock/forms/archwarlock',
+ 'npc':'npcs','dancer':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
 for _e in ['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']:
     SPRITE_ENTITY_DIR[_e]='enemies/'+_e
 def sprite_asset(name):
@@ -60,10 +61,13 @@ BIBLE  = ("the SAME anime dark-elf sorcerer: long silver-white hair, lavender-gr
 STYLE  = "clean anime cel-shaded dark-fantasy style, crisp lineart, dramatic rim light"
 CHAR   = STYLE + ", full body head to boots, single character, centered"
 CREAT  = STYLE + ", full creature, single subject, centered"
-# 2B.1 lesson: "flat solid chroma-green" alone sometimes came back DIM or desaturated (sage 70/110/75)
+# 2B.1 lesson: "flat solid chroma" alone sometimes came back DIM or desaturated
 # or with the subject covering a corner — be maximally explicit about saturation + full coverage.
-GREEN  = ("on a perfectly FLAT, UNIFORM, highly SATURATED pure chroma-green background (hex 00FF00, "
-          "like greenscreen studio footage), the green covering EVERY pixel of the background right "
+# 2026-07-19 (Hiro): key color switched GREEN -> MAGENTA. The kit's sheol-green fire/acid FX were
+# clashing with a green screen (keyer risks eating the FX); nothing in the palette approaches pure
+# magenta. The slicers auto-detect bg from sheet corners, so old green sheets still re-key fine.
+GREEN  = ("on a perfectly FLAT, UNIFORM, highly SATURATED pure MAGENTA background (hex FF00FF, "
+          "like chroma-key studio footage), the magenta covering EVERY pixel of the background right "
           "to all four corners and edges, no gradient, no gray, no vignette, no scenery, no ground, "
           "no cast shadow, no text, no extra characters")
 # full-bleed painterly BACKDROPS (no green key) — this is what sells the Dragon's Crown look

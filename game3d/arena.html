@@ -66,11 +66,11 @@
 <body>
 <div id="hud">
   <b>THE PIT — side-on gauntlet (pit.js parity)</b><br>
-  <i>Full warlock kit: HEX / SUMMON ladder / WARD / BLINK · evolutions + transformations live.</i>
+  <i>Full warlock kit: HEX / CLAW / WARD / DASH · demon aspects answer his strikes.</i>
 </div>
 <div id="verbs">
   <span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>
-  <span class="k">Q (hold→release)</span> HEAVY(SUMMON) &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>
+  <span class="k">Q</span> CLAW &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>
   <span class="k">Space / R-click</span> ROLL(BLINK) &nbsp; <span class="k">aim</span> = mouse
 </div>
 <!-- GG/BlazBlue two-fighter HUD: warlock (left, drains left) vs current opponent (right, drains right),
@@ -101,7 +101,7 @@
   <div id="stickBase"><div id="stickNub"></div></div>
   <div id="btns">
     <button class="btn hex"    id="bHex">HEX</button>
-    <button class="btn summon" id="bSummon">SUM</button>
+    <button class="btn summon" id="bSummon" style="display:none">SUM</button><!-- SUMMONS RETIRED (Hiro 2026-07-19): hidden, not deleted — road-2 evo picks still work by tapping the card -->
     <button class="btn dodge"  id="bDodge">DASH</button>
     <button class="btn ward"   id="bWard">WARD</button>
   </div>
@@ -120,6 +120,7 @@ function spritePath(name){
     bonedragon:'warlock/summons/dragon/', blackdragon:'warlock/summons/dragon/',
     clawfiend:'warlock/summons/claw_demon/', shambler:'warlock/summons/shambler/', bonearcher:'warlock/summons/bone_archer/',
     lich:'warlock/forms/lich/', archdevil:'warlock/forms/archdevil/', demonlord:'warlock/forms/demonlord/',
+    archwarlock:'warlock/forms/archwarlock/',
     npc:'npcs/', dancer:'npcs/',
     hexbolt:'fx/', firebolt:'fx/', greenbolt:'fx/', blinkwave:'fx/', wardaura:'fx/', fireball:'fx/', lightbolt:'fx/', coldbolt:'fx/', bonearrow:'fx/',
     door:'enemies/door/', hook:'enemies/hook/', chain:'enemies/chain/', pyre:'enemies/pyre/',
@@ -390,7 +391,7 @@ function formHP(){ if(P.devilT>0) return 1.1; if(P.lich) return 0.8; return 0.8;
 // Demon lord (terminal) > arch devil (timed) > lich > base warlock idle. Returns texture keys
 // ('demonlord'/'archdevil'/'lich'/'warlock'), NOT the SPRITE_TARGET_H scale keys (those use
 // 'warlock_idle'). The render loop + castPose use this so the borrowed forms actually SWAP sprite.
-function heroFormTex(){ return P.demonLord?'demonlord':(P.devilT>0?'archdevil':(P.lich?'lich':'warlock')); }
+function heroFormTex(){ return P.demonLord?'demonlord':(P.devilT>0?'archdevil':(P.lich?'lich':(P.archWarlock?'archwarlock':'warlock'))); }   // ARCH WARLOCK body = Hiro's own reference sheet (archwarlock_move.png, 2026-07-19) — demonlord stand-in retired (BUG-016)
 function maxHP(){ return Math.round(45*0.85*formHP())*2; }  // pit.js:73 (warlock 0.85 mult, base 45) x2 — Hiro 2026-07-08: "he's too squishy, double it"
 // applyFire — HEX FIEND succubus burn DoT on ENEMIES only (pit.js:1566). Base coven throws plain
 // fire (no DoT) until the herald evo; kept faithful so it lands 1:1 when evolutions arrive.
@@ -404,8 +405,15 @@ function feedSuccubi(x,y,rad,amt){ for(const d of demons){ if(d.type!=='succubus
     d.flash=.12; scene && scene.popup(d.x,d.y-d.r-14,'+'+amt,'#2ecc71'); } } }
 // killEnemy — minimal stand-in for pit.js:1280 (mark dead + FX). The real version
 // also runs CONTAGION/infection-rise; those port with the gauntlet roster in M4.
-function killEnemy(e,word,col){ if(e.dead) return; e.dead=true;
+function killEnemy(e,word,col){ if(e.dead) return;
+  // DEFERRED DEATH (Hiro 2026-07-16): if a cameo finisher is mid-play, the kill WAITS — the full
+  // hurt sequence finishes first, THEN the death animation plays (updEnemies fires it on expiry).
+  if(e._finishT>0){ e._deferKill=[word,col]; e.hp=Math.min(e.hp,0); return; }
+  e.dead=true;
+  P.kills=(P.kills||0)+1;   // THE KILL LEDGER (Hiro 2026-07-19): was NEVER incremented — dmgBonus()/summon-hp scaling/evo gate all read a counter stuck at 0
   scene && scene.popup(e.x,e.y-40, word||['SLAIN','DOWN!','UNDONE','BUTCHERED','THE LEDGER TAKES'][(Math.random()*5)|0], col||'#d05a6a'); gainLevel();
+  if(!P.evo10 && P.char==='warlock' && (P.kills||0)<EVO_KILLS_NEEDED)   // progress readout so the gate is visible
+    scene && scene.popup(P.x,P.y-58,'THE ROAD OPENS IN '+(EVO_KILLS_NEEDED-P.kills),'#e7b450');
   killCam(e.x,e.y);                                 // spark burst + hit-stop (screen-space; no camera motion in parallax)
   const _bossCut=(e.type==='beast'||e.type==='champ'||e.type==='door');
   if(_bossCut) hyperCutIn(heroFormTex(),'FATALITY','the Pit remembers this one','#ff5a6a',1100);   // boss kills earn the full MvC cut — portrait matches his CURRENT form (Hiro 2026-07-15: lich shows the LICH)
@@ -470,6 +478,7 @@ const EVOLUTIONS = { warlock:{      // pit.js:103 (warlock branch only — the o
      kit:'Deepens the HEX FIEND road: +ATK, and the burning coven rages on.'}
   ]
 }};
+const EVO_KILLS_NEEDED = 5;          // kills of exp required before the lv10 road opens (Hiro 2026-07-19)
 const EVO_FOCUS_BONUS = 6;           // focus-stat points per chosen road (pit.js:264) — lv10 + lv20 stack
 function evoStatBonus(k){            // pit.js:265 — feeds stat() once stat scaling ports (inert today)
   const E=EVOLUTIONS[P.char]||{}; let b=0;
@@ -490,7 +499,13 @@ function maybeOfferEvo(){            // pit.js:159
   if(P.evoPick) return;
   if(P.char!=='warlock') return;
   const E=EVOLUTIONS[P.char]||{};
-  if(!P.evo10 && lvl()>=10){ const br=E[10]; if(!br||!br[0]||!br[1])return;   // lv10: FIRST road (2 options)
+  // KILL GATE (Hiro 2026-07-19, reduced 10→5 same day): the first road opens on KILLS, not level —
+  // P.kills is the exp ledger (dmgBonus feeds off it; it was never incremented before today, which
+  // is why the first 10-kill run never offered the road). Kills are PRIMARY because 5 kills only
+  // reaches lvl 8.5 at +1.5/kill — an lvl>=10 AND-condition would silently re-block a fresh run.
+  // The level snaps up to 10 when the road opens so the lvl-gated kit stays consistent.
+  if(!P.evo10 && (P.kills||0)>=EVO_KILLS_NEEDED){ P.level=Math.max(P.level||1,10);
+    const br=E[10]; if(!br||!br[0]||!br[1])return;   // lv10: FIRST road (2 options)
     P.evoPick=br; P.evoPickT=30; P.evoTier=10;
     scene && scene.banner('EVOLUTION', br[0].name+'  vs  '+br[1].name+' — press 1 or 2','#e7b450'); return; }
   if(P.evo10 && !P.evo20 && lvl()>=20){                                       // lv20: SECOND choice, gated by lv10 road
@@ -509,6 +524,15 @@ function pickEvo(i){                 // pit.js:178 — write the slot for the op
   scene && scene.banner('EVOLVED — '+b.name, b.desc||'','#e7b450');
   scene && scene.popup(P.x,P.y-64,b.name,'#e7b450');
   if(navigator.vibrate) navigator.vibrate([40,30,60]);
+  // PERMANENT FORMS (Hiro 2026-07-16): the lv10 path transforms IMMEDIATELY and FOREVER —
+  // no more waiting for death. BINDER road => permanent LICH now; HERALD road => permanent
+  // ARCH WARLOCK (kit unchanged, hex bites harder via the existing herald bonuses; his own
+  // sheet is pending art — BUG-016 — so the body stays warlock until that lands).
+  if(tier===10){
+    if(b.key==='binder'){ P.lichPerm=true; if(!P.lich) enterLich(); }
+    else if(b.key==='herald'){ P.archWarlock=true;
+      scene && scene.banner('ARCH WARLOCK','the pact holds BOTH ways now — his hex bites deeper','#9af0c0'); }
+  }
 }
 function evoIsAuto(){                // pit.js:191 — AUTO/headless take the default road IMMEDIATELY
   if(typeof window==='undefined') return true;
@@ -544,6 +568,48 @@ function evoTick(dt){                // pit.js:225 — per-frame while a pick is
   if(P.evoPickT<=0) pickEvo(0);
 }
 
+// ==== ABILITY-ASPECT FINISHERS (art-pipeline skill, Hiro's golden references 2026-07-16) ====
+// Summons are CAMEO FRAMES inside hurt sheets now, never entities. When an ability lands on an
+// enemy that has the matching greenlit hurt sheet, the sheet plays ONCE as a dramatic hit-reaction
+// (a hit marker, NOT a kill); the foe is held (stunT) for its duration. Damage calc untouched.
+// k = shared-canvas normalizer (canvasH / subject-alone height) so the VICTIM stays true-size and
+// the cameo demon/dragon towers at its intended scale. Sheets: <enemy>_<kind> in anims.json.
+// Hiro 2026-07-19 round 3: EVERY warlock/arch-warlock finisher on the hound slowed again —
+// EXCEPT the claw-demon hex cameos (hexhit/ahexhit), which stay at 6fps per his call.
+const FINISHERS = { hexhit:{k:1.683,dur:2.2,fps:6},
+                    firehit:{k:1.65,dur:3.6,fps:3.5}, portalhit:{k:1.69,dur:3.6,fps:3.5},   // succubus + dragon: 5→3.5fps (dur stretched to cover 12f playback); portalhit re-sliced from Hiro's ACID ASSAULT ref 2026-07-19 (hound never disappears), K remeasured
+                    clawhit:{k:1.697,dur:3.2,fps:4},
+                    // LICH aspects — Hiro's OWN golden references (2026-07-19: hound_shamblers 16f, hound_bonearcher 12f, hound_blackdragon 16f) sliced verbatim:
+                    scythehit:{k:1.0,dur:3.5,fps:5}, arrowhit:{k:1.163,dur:2.6,fps:5}, fadehit:{k:1.742,dur:3.5,fps:5},   // fadehit re-keyed from the green-bg variant of Hiro's ref (2026-07-19)
+                    // ARCH WARLOCK variants (2026-07-19): ahexhit = Hiro's golden ref hound_archwarlock_hex (TWO claw demons), K raw = 244/191;
+                    // afirehit = arch-succubus SCALED variant (UNREVIEWED), measured K 2.457 × the 0.84 shrink Hiro applied to firehit
+                    ahexhit:{k:1.277,dur:2.2,fps:6}, afirehit:{k:2.06,dur:3.6,fps:3.5} };   // arch succubus slowed with the rest (claw demons exempt)
+// PER-ENEMY K OVERRIDES (2026-07-19, beast era): K = canvasH / subject-alone height is measured per
+// SHEET, so a kind's K differs per enemy. Keyed '<spriteKey|type>_<kind>'; falls back to FINISHERS[kind].k.
+const FINISHER_K = { beast_hexhit:1.45,     // Hiro's golden ref beast_hexhit.png (8f, solo-beast frame 1)
+                     beast_firehit:1.638,   // Grok re-render of Hiro's GPT ref + his original prompt (2026-07-19 tone workflow) — UNREVIEWED
+                     beast_portalhit:1.781,  // Grok v3 (arm-snatch + regrow; beast forced into every frame) — UNREVIEWED
+                     beast_clawhit:1.65,     // Grok v4 ("demonic war-beast"/ichor framing beat 3 moderation rejections; entrails = hard Grok ceiling) — UNREVIEWED
+                     beast_ahexhit:1.625,    // Grok v4 (green-stage re-render for keyability; frame 1 bolt-only dropped, 7f) — UNREVIEWED
+                     beast_afirehit:1.181,   // Grok v2 (arch succubus flamethrow + taunt dance; frame 1 bolt-only dropped, 7f) — UNREVIEWED
+                     beast_scythehit:1.389,  // Grok v2 (spectral scythe + shambler maul + dust; 8f, beast in every frame) — UNREVIEWED
+                     beast_arrowhit:1.438,   // Grok v2 (arrow volley + dagger assault + ash; 8f) — UNREVIEWED
+                     beast_fadehit:1.82 };   // Grok v2 (black dragon shoulder-bite fling + green flame bath; 8f, whole beast forced into frame 4's crash) — UNREVIEWED
+function aspectDamage(e,mult,col){                             // Hiro 2026-07-19: cameo assaults HIT — moderate, scales with level
+  if(!e||e.dead) return;
+  const d=Math.round((rollDice(diceN(),8)+dmgBonus())*mult);
+  e.hp-=d; e.flash=.14;
+  scene && scene.popup(e.x,e.y-34,String(d),col||'#9af0c0');
+  if(e.hp<=0) killEnemy(e);                                    // defers under an active finisher — the sequence still completes
+}
+function foeFinisher(e,kind){
+  const fin=FINISHERS[kind]; if(!fin||!e||e.dead) return false;
+  const key=(e.spriteKey||e.type||'');
+  if(!(scene && scene.animSets && scene.animSets[key+'_'+kind])) return false;   // pipeline gate: greenlit sheet for THIS enemy+ability, or nothing
+  e._finish=kind; e._finishT=fin.dur; e._finishFlip=(P.x>e.x);                   // composition faces its attacker (ref art faces LEFT)
+  e.stunT=Math.max(e.stunT||0,fin.dur); e._tele=false; e.attacking=false;
+  return true;
+}
 // updFireballs — port of pit.js:744 (hex branch). Advances projectiles; on hit a 'hex'
 // bolt applies the rot DoT (10s, 15 dmg, .5s tick). HEX FIEND (herald) STACKS on a hexed foe.
 function updFireballs(dt){
@@ -558,6 +624,7 @@ function updFireballs(dt){
         const bd=gm<1 ? Math.max(2,Math.round(b.dmg*gm)) : b.dmg;  // door guard chips the direct hit
         if(b.kind==='arrow'){                             // bone shaft: direct, modest, no splash (pit.js:761)
           e.hp-=bd; e.flash=.12; scene && scene.popup(e.x,e.y-28,String(bd),'#cfc6b4');
+          if(b.src==='dash') foeFinisher(e,'arrowhit');   // LICH dash aspect: BONE ARCHER cameo finisher (before any deferred kill)
           if(e.hp<=0) killEnemy(e);
         }else if(b.kind==='hex'){
           if(e.hexT>0){                                   // Hiro 2026-07-13: hex STACKS for everyone now
@@ -568,6 +635,8 @@ function updFireballs(dt){
             scene && scene.popup(e.x,e.y-30,'HEXED','#b070f0');
           }
           S.shake=Math.max(S.shake,4);
+          if(!(b.arch && foeFinisher(e,'ahexhit')))       // ARCH WARLOCK hex: TWO claw demons (Hiro golden ref hound_archwarlock_hex 2026-07-19)
+            foeFinisher(e,'hexhit');                      // CLAW DEMON cameo finisher — only on a hex hit, only if this enemy's sheet exists
         }else{                                            // fire / sheol / black-dragon blast (pit.js:773)
           e.hp-=bd; e.flash=.16; scene && scene.popup(e.x,e.y-30,String(bd),b.col||'#f0883d');
           S.shake=Math.max(S.shake,4);
@@ -578,6 +647,8 @@ function updFireballs(dt){
             if(dist(e,o)<aoe){ const sd=Math.round(b.dmg/2); o.hp-=sd; o.flash=.1;
               scene && scene.popup(o.x,o.y-26,String(sd),b.col||'#f0883d');
               if(o.hp<=0) killEnemy(o); } }
+          if(b.src==='dash'){ if(!(b.arch && foeFinisher(e,'afirehit')))   // ARCH WARLOCK dash: ARCH SUCCUBUS variant (scaled off Hiro's succubus golden ref — UNREVIEWED)
+            foeFinisher(e,'firehit'); }                       // SUCCUBUS cameo finisher FIRST — a killing blow then DEFERS death until it completes
           if(e.hp<=0) killEnemy(e);
         }
         break; } }
@@ -591,6 +662,8 @@ function updEnemies(dt){
   for(const e of enemies){ if(e.dead) continue;
     if(e.flash>0) e.flash=Math.max(0,e.flash-dt);
     if(e.stunT>0) e.stunT=Math.max(0,e.stunT-dt);   // PORTAL swap disorient (pit.js:592)
+    if(e._finishT>0){ e._finishT=Math.max(0,e._finishT-dt);   // ability-aspect finisher clock (cameo hurt sheet)
+      if(e._finishT===0 && e._deferKill){ const dk=e._deferKill; e._deferKill=null; killEnemy(e,dk[0],dk[1]); } }   // the deferred death lands AFTER the sequence
     if(e.infectT>0) e.infectT-=dt;                  // BUG-006: the zombie plague waits for its moment (pit.js:1548)
     if(e.brokenT>0){ e.brokenT=Math.max(0,e.brokenT-dt);            // THE WALL guard reforms after the 2s break
       if(e.brokenT===0) scene && scene.popup(e.x,e.y-e.r-14,'GUARD UP','#9aa0a8'); }
@@ -977,10 +1050,11 @@ function doSlash(){ // warlock base => HEX bolt (pit.js:307 -> hexBolt:565)
   // his mid-section. (The top-down fallback view keeps the free angle.)
   if(SIDEON) P.face = (Math.cos(P.face)<0) ? Math.PI : 0;
   fireballs.push({ x:P.x+Math.cos(P.face)*14, y:P.y+Math.sin(P.face)*14-18,   // pit.js:569
-    vx:Math.cos(P.face)*420, vy:SIDEON?0:Math.sin(P.face)*420, r:5, kind:'hex' });
+    vx:Math.cos(P.face)*420, vy:SIDEON?0:Math.sin(P.face)*420, r:5, kind:'hex', arch:P.archWarlock||undefined });   // arch flag -> DOUBLE claw-demon finisher
   scene && scene.fxHexCast(P.face);
 }
 function startChannel(){ // SUMMON channel begins (pit.js:573)
+  if(SUMMONS_OFF) return;   // HARD GUARD (Hiro 2026-07-19): no path may open the summon channel — it was resurrecting the warlock body over the lich
   if(P.channel) return;
   P.channel = { t:0, dur:3 };                 // ladder 3s/4s/6s -> stub 3s
   scene && scene.channelBeat();   // fix #4: gather-inward telegraph the instant the channel begins
@@ -1025,6 +1099,7 @@ function devilStrike(mult,heals){ // CLAW(2.0) / BITE(1.0,heals) carve (pit.js:9
   if(!f) return;                                                // summons gone or no foe — the swing still played
   let diff=ang(P,f)-P.face; while(diff>Math.PI)diff-=2*Math.PI; while(diff<-Math.PI)diff+=2*Math.PI;
   if(dist(P,f)<_dvr+f.r && Math.abs(diff)<1.2){
+    if(mult>1.5) foeFinisher(f,'clawhit');                      // ARCH DEVIL claw aspect: deep gouges that slowly heal shut (cameo hurt sheet)
     const gm=foeGuard(f, mult>1.5, P.face);                     // 0 parry · .25 door chip · 1 clean
     if(gm>0){ const dd=Math.round(dmg*gm);
       f.hp-=dd; f.flash=.14; scene && scene.fxPortal(f.x,f.y);
@@ -1043,13 +1118,14 @@ function lichSlash(){ // SCYTHE (pit.js:998)
   P.hexCD = 2;   // Hiro 2026-07-13: hex CD 2s for all (was 10 / herald 3)                          // same gate the HEX it replaces uses
   P.atkRecover = 0.18*1.3; P.ft.slash++;                        // pit.js: atkRec()*1.3
   const f=currentFoe(); if(f) P.face=ang(P,f); else P.face = scene?scene.aimAngle():P.face;
-  const _scy=Math.max(96, HERO_PX*0.42);                        // 2026-07-15: scythe reach ≥ the separation floor
+  const _scy=Math.max(140, HERO_PX*0.6);                        // Hiro 2026-07-19: reach up ~45% (was max(96,0.42)) — the SLASH that calls the shamblers deserves its arc
   swings.push({ x:P.x, y:P.y, a:P.face, arc:2.2, range:_scy, t:.18, heavy:true, col:'#9af0c0' });
   S.shake=Math.max(S.shake,6); vib(30);
   const dmg=Math.round((rollDice(Math.max(1,Math.ceil(diceN()/2)),8)+Math.floor(dmgBonus()/2))*0.8*(P.evo10==='binder'?2:1)); // DREADBINDER scythe x2 (pit.js:1001)
   if(!f) return;                                                // swing still played, no foe to reap
   let diff=ang(P,f)-P.face; while(diff>Math.PI)diff-=2*Math.PI; while(diff<-Math.PI)diff+=2*Math.PI;
   if(dist(P,f)<_scy+f.r && Math.abs(diff)<1.1){
+    foeFinisher(f,'scythehit');                               // LICH aspect: SHAMBLERS answer the scythe (cameo hurt sheet, if this enemy's exists)
     const gm=foeGuard(f, true, P.face);                          // scythe is always heavy → door guard BREAKS, gm 1; grave parry gm 0
     if(gm>0){
       const pa=ang(P,f); f.x+=Math.cos(pa)*220; f.y+=Math.sin(pa)*220; scene && scene.clampArena(f); // hurled across the sand (pit.js:1011)
@@ -1148,17 +1224,20 @@ function archBank(){ return (typeof window!=='undefined'&&window.Quests&&window.
 // updateLabels — per-form verb RE-LABELING (pit.js:394). No on-screen verb buttons yet, so reflect the
 // active FORM in the HUD verb panel. Honest about the reroute: CLAW/BITE verb bodies port next run.
 function updateLabels(){
+  // Hiro 2026-07-19: the touch button matches the form's ACTUAL light verb — HEX is a lie once he's a lich
+  const bh=document.getElementById('bHex');
+  if(bh) bh.textContent=(P.devilT>0||P.demonLord)?'CLAW':(P.lich?'SLASH':'HEX');
   const v=document.getElementById('verbs'); if(!v) return;
   const form = P.demonLord?'DEMON LORD':(P.devilT>0?'ARCH DEVIL':(P.lich?'LICH':null));
   const baseHTML='<span class="k">WASD/←↑↓→</span> move &nbsp; <span class="k">J / click</span> SLASH(HEX)<br>'
-    +'<span class="k">Q (hold→release)</span> HEAVY(SUMMON) &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>'
+    +'<span class="k">Q</span> CLAW &nbsp; <span class="k">K</span> PARRY(PORTAL)<br>'
     +'<span class="k">Space / R-click</span> ROLL(BLINK) &nbsp; <span class="k">aim</span> = mouse';
   // ARCH DEVIL / DEMON LORD now actually reroute the verbs: J => CLAW, Q => BITE (devilClaw/devilStrike).
   const devil = (P.devilT>0 || P.demonLord);
   const formHTML = form
     ? '<b style="color:'+(P.demonLord?'#2ecc71':'#d03a4a')+'">FORM: '+form+'</b>'
       + (devil ? ' <span style="opacity:.7"><span class="k">J</span> CLAW &nbsp; <span class="k">Q</span> BITE</span>'
-               : (P.lich ? ' <span style="opacity:.7"><span class="k">J</span> SCYTHE &nbsp; <span class="k">Q</span> SUMMON &nbsp; <span class="k">K</span> FADE</span>' : ''))
+               : (P.lich ? ' <span style="opacity:.7"><span class="k">J</span> SLASH &nbsp; <span class="k">K</span> FADE</span>' : ''))   // Hiro 2026-07-19: lich light verb reads SLASH (it IS a scythe slash, not a hex); stale Q SUMMON dropped
       + '<br>'
     : '';
   v.innerHTML = formHTML + baseHTML;
@@ -1240,6 +1319,9 @@ function exitLich(){                                                            
 // answer while he is gone. parryCD goes to 9 (long, matches the original's defensive cadence).
 function fade(){
   P.fadeT=(P.evo10==='binder')?10:5; P.parryCD=9; P.ft.rolls++;   // binder/lich road: 10s else 5s (pit.js:992)
+  // LICH FADE ASPECT (Hiro's golden ref hound_blackdragon, 2026-07-19): the BLACK DRAGON answers
+  // the fade — his roast sequence plays on the nearest foe (vignette-panel frames, art untouched).
+  const _ft=nearestFoe(); if(_ft && foeFinisher(_ft,'fadehit')) aspectDamage(_ft,1.2,'#9af0c0');   // the roast BURNS (Hiro 2026-07-19)
   leafBurst(P.x,P.y,14,'#9af0c0');
   scene && scene.popup(P.x,P.y-52,'FADED','#9af0c0');
   showBanner('FADE','five seconds beyond reach — raise the dead',1100,'#9af0c0');
@@ -1322,7 +1404,7 @@ const BOLT_LIFT = 105;  // raised again per Hiro: bolts ride at the warlock's MI
 // PERF (Hiro 2026-07-15 "running significantly slow"): Date.now() cache-busted ~1100 frame PNGs on
 // EVERY page load. Now busts once per DAY (same-day reloads hit the browser cache); add ?fresh=1
 // after dropping new art mid-day to force a full refetch.
-const BOOT_V = /[?&]fresh=1/.test(location.search) ? Date.now() : new Date().toISOString().slice(0,10);
+const BOOT_V = Date.now();   // Hiro 2026-07-19: was date-granular — sheets overwritten LATER THE SAME DAY served stale from cache (the "old bone dragon" bug). Local disk reads, so full bust every boot costs nothing.
 function rigEase(name,u){
   if(name==='quadOut')   return 1-(1-u)*(1-u);
   if(name==='quadInOut') return u<0.5 ? 2*u*u : 1-2*(1-u)*(1-u);
@@ -1681,7 +1763,10 @@ function doHeavy(){ // warlock => start the summon channel (pit.js:1154)
   if(P.lichRiseT>0){ scene && scene.popup(P.x,P.y-58,'THE PACT HOLDS','#9af0c0'); return; }   // BUG-005 kneel
   if(S.mode!=='fight'||P.dead||P.heavyWind>0||P.rollT>0||P.paralyzeT>0||P.silenceT>0) return;
   if(P.devilT>0){ devilStrike(1.0,true); return; }   // ARCH DEVIL heavy verb => BITE (pit.js:1158), not SUMMON
-  if(SUMMONS_OFF){ scene && scene.popup(P.x,P.y-58,'THE DEMONS ANSWER OTHER CALLS NOW','#8a93a8'); return; }   // Hiro 2026-07-16: direct summon retired — becoming ability ASPECTS
+  if(SUMMONS_OFF){                                   // Hiro 2026-07-16: Q = CLAW ATTACK now (the arch-demon aspect lives in his hands, not a transformation)
+    if(P.lich){ scene && scene.popup(P.x,P.y-58,'THE SCYTHE IS ENOUGH','#8a93a8'); return; }
+    devilClaw(); return;                             // rolls to the foe + massive claw strike, playing the archdevil claw sheet; heavy hits trigger the CLAWHIT gouge finisher
+  }
   if(P.heavyCD>0){ scene && scene.popup(P.x,P.y-58,'SUMMON — '+Math.ceil(P.heavyCD)+'s','#8a93a8'); return; }   // Hiro 2026-07-13: 3s recast cooldown
   startChannel();
 }
@@ -1707,7 +1792,8 @@ function doParry(){ // warlock => PORTAL (pit.js:351 -> portal:581); LICH => FAD
   if(fs.length){ fs.sort((a,b)=>dist(P,b)-dist(P,a)); e=fs[0];   // furthest foe takes his old spot
     scene && scene.fxPortal(e.x,e.y); e.x=px2; e.y=py2; scene && scene.clampArena(e); }
   scene && scene.heroOneShot && scene.heroOneShot('portal');   // ABILITY SHEET: blink pose beat on the swap
-  if(e) e.stunT=Math.max(e.stunT||0,0.6);       // disoriented by the swap (pit.js:592)
+  if(e){ e.stunT=Math.max(e.stunT||0,0.6);      // disoriented by the swap (pit.js:592)
+    if(foeFinisher(e,'portalhit')) aspectDamage(e,1.2,'#7fd05a'); }   // BONE DRAGON acid assault BITES now (Hiro 2026-07-19: moderate damage)
   P.wardT=(P.evo10==='herald')?7:3;             // HEX FIEND/devil road ward 7s else 3s (pit.js:593)
   if(scene){ scene.popup(P.x,P.y-58,'WARDED','#5ad2ff');
     scene.popup(P.x,P.y-44,'PORTAL','#b070f0');
@@ -1826,7 +1912,7 @@ function frame(dt){            // dt in seconds
   // Safe here: every upd* loop above has finished iterating enemies[] for this frame, so spawnFight()
   // may replace the array. Runs AFTER the sim, BEFORE movement/render so syncSideOn sees the new foe.
   if(window.ADV && ADV.on && ADV.combat && enemies.length && enemies.every(e=>e.dead)){   // CHAPTER 1 field encounter cleared
-    ADV.combat=false; enemies.length=0; advEncounterCleared(); }
+    ADV.combat=false; advEncounterCleared(); }   // Hiro 2026-07-16: DON'T wipe enemies[] here — corpses keep their death anim + fade; the next advWave clears the array
   else if((!window.ADV || !ADV.on || ADV.mode==='pit') && !S.gauntletDone && enemies.length && enemies.every(e=>e.dead)){
     if(window.ADV && ADV.on) encComplete('pit-'+((S.fight|0)+1));                                          // registry: this pit encounter is DONE forever
     if((S.fight|0) < gauntletN()-1){ S.fight=(S.fight|0)+1; spawnFight(S.fight);
@@ -1881,7 +1967,7 @@ class Arena extends Phaser.Scene{
     this.load.image('warlock', [SPR+spritePath('warlock_idle_1')+'.png', SPR+spritePath('warlock_idle_1')+'_n.png']);
     this.load.image('warlock_f0', [SPR+spritePath('warlock_idle_1')+'.png', SPR+spritePath('warlock_idle_1')+'_n.png']);
     for(const n of ['clawfiend','bonedragon','blackdragon','succubus','archsuccubus',
-                    'lich','archdevil','demonlord','shambler','bonearcher',
+                    'lich','archdevil','demonlord','archwarlock','shambler','bonearcher',
                     'door','hook','chain','pyre','gunner','grave','stitch','brute',
                     'master','hound','necro','champ','beast','skel'])
       this.load.image(n, [SPR+spritePath(n)+'.png', SPR+spritePath(n)+'_n.png']);
@@ -2576,6 +2662,20 @@ class Arena extends Phaser.Scene{
         return;
       }
       spr.setAlpha(1);
+      // ABILITY-ASPECT FINISHER (2026-07-16): the cameo hurt sheet owns the sprite exclusively —
+      // one-shot at 8fps, composition scaled by its normalizer so the victim stays true-size,
+      // facing frozen toward the attacker, no tint/flip/anim churn until the clock runs out.
+      if(e._finishT>0){
+        const _fset=AS[key+'_'+e._finish];
+        if(_fset){
+          const cur3=spr.anims&&spr.anims.currentAnim;
+          if(!cur3||cur3.key!==_fset.key) spr.play({key:_fset.key, frameRate:(FINISHERS[e._finish]||{}).fps||6, repeat:0});   // per-finisher pacing (Hiro 2026-07-16)
+          spr.setScale(wh*(FINISHER_K[(e.spriteKey||e.type)+'_'+e._finish] || (FINISHERS[e._finish]||{}).k||1)/fh);   // per-sheet K first (beast vs hound differ)
+          spr.setFlipX(!!e._finishFlip); spr.setRotation(0); spr.clearTint();
+          sh.x=dx; sh.y=fy+5; sh.setDepth(fy-1).setAlpha(0.45).setScale(Math.max(0.18, spr.displayWidth/(sh.width||1)*0.5));
+          return;
+        }
+      }
       // full state coverage from the 2026-07-09 sheets: hurt > attack (telegraph/strike) > walk > idle
       const cset = e.flash>0.04              ? (AS[key+'_hurt']||AS[key+'_walk'])
                  : (e._tele||e.attacking||e.lungeT>0||e.castT>0) ? (AS[key+'_attack']||AS[key+'_walk'])
@@ -2884,7 +2984,9 @@ class Arena extends Phaser.Scene{
   }
   heroOneShot(act){
     if(RIG_PLAY && this.warlockRig && heroFormTex()==='warlock') return false;  // rig mode owns poses
-    const st=this.animSets && this.animSets['warlock_'+act];
+    // FORM CONGRUENCE (BUG batch 2026-07-19 #2): the arch warlock plays his OWN ability sheets
+    // (archwarlock_hex/portal/…) when they exist, falling back to the warlock's only if absent.
+    const st=this.animSets && ((P.archWarlock && this.animSets['archwarlock_'+act]) || this.animSets['warlock_'+act]);
     if(!st) return false;
     return this.heroPlayOnce(st.key);
   }
@@ -3191,7 +3293,13 @@ class Arena extends Phaser.Scene{
     // For those frames divide by height×figureFrac — the character's measured share of the
     // canvas relative to the idle baseline (0.703/0.923 = 0.761) — so the BODY stays constant
     // and the eruption is allowed to tower beyond his normal silhouette.
-    const _heroFrac = (this.hero.texture.key||'').indexOf('warlock_summon_')===0 ? 0.761 : 1;
+    const _hk=(this.hero.texture.key||'');
+    const _heroFrac = _hk.indexOf('warlock_summon_')===0 ? 0.761
+                    : _hk.indexOf('warlock_dashcast_')===0 ? 0.898
+                    : _hk.indexOf('lich_dashcast_')===0 ? 0.935
+                    : _hk.indexOf('lich_fadecast_')===0 ? 0.957
+                    : _hk.indexOf('archdevil_dashcast_')===0 ? 0.934
+                    : _hk.indexOf('archwarlock_dashcast_')===0 ? 0.78 : 1;   // cameo canvases (portal + guest) are taller than the caster
     const heroSclBase = sc*heroWorldH/((this.hero.height||heroWorldH)*_heroFrac);
     this.shadow.setScale(Math.max(0.15, (this.hero.width*heroSclBase)/(this.shadow.width||1)*0.95*(1-Math.min(0.45,(P.air||0)/380))));   // shadow shrinks as he leaves the ground
     // --- PROCEDURAL LOCOMOTION (FEEDBACK #8): everything below is a render-only offset off the stride
@@ -3612,7 +3720,7 @@ const TEST_ENCOUNTER = /[?&]test=1/.test(location.search);   // 1-of-each gauntl
 // each kill auto-respawns after a beat. Swap the enemy with ?foe=<type>; ?lab=0 restores normal play.
 // Nothing is deleted — all other content stays intact behind this flag. ====
 const FIGHT_LAB  = !/[?&]lab=0/.test(location.search) && !TEST_ENCOUNTER;
-const TEST_ENEMY = ((location.search.match(/[?&]foe=([a-z]+)/)||[])[1]) || 'hound';   // designated test enemy (Hiro picked HOUND 2026-07-16)
+const TEST_ENEMY = ((location.search.match(/[?&]foe=([a-z]+)/)||[])[1]) || 'beast';   // designated test enemy — BEAST (Hiro 2026-07-19; the HOUND is DONE/greenlit, ?foe=hound revisits it)
 // ==== SUMMONS RETIRED AS A DIRECT ABILITY (Hiro 2026-07-16): summons become ASPECTS of his other
 // actions per the sorcerer-sword-art-pipeline skill (cameo frames in cast + hurt sheets). Q is
 // disabled, not deleted — flip SUMMONS_OFF to re-enable the old channel. ====
@@ -3637,6 +3745,17 @@ function labRestart(){
   if(!FIGHT_LAB) return;
   for(const e of enemies) e.dead=true;
   enemies.length=0; ADV.combat=false; ADV._enc=null;
+  // FULL HERO RESET (Hiro 2026-07-19: "R was leaving him a lich"): R = a FRESH lvl-1 base
+  // warlock — progression, roads, and permanent forms all wiped, same as a first boot.
+  P.level=1; P.kills=0; P.evo10=null; P.evo20=null; P.evoPick=null; P.evoPickT=0; P.evoTier=0;
+  P.lich=false; P.lichPerm=false; P.lichRiseT=0; P.archWarlock=false; P.demonLord=false; P.devilT=0;
+  P.r=16; P.dead=false; P.channel=false; P.heavyWind=0; P.rollT=0; P.paralyzeT=0; P.silenceT=0;
+  P.hp=maxHP();
+  if(scene){ scene._lastForm='warlock';                       // no morph burst on the reset swap
+    if(scene.hero){ scene.hero.anims && scene.hero.anims.stop();
+      if(scene.textures.exists('warlock')) scene.hero.setTexture('warlock'); } }   // driver re-picks warlock_idle next frame
+  scene && scene.popup(P.x,P.y-58,'LAB RESET — LEVEL 1','#3df0c8');
+  if(typeof updateLabels==='function') updateLabels();   // button back to HEX after a lich/arch run
   labSpawn();
 }
 function advTestNext(){
@@ -3775,7 +3894,7 @@ function advInit(sc){
   // BOOT ON THE ROAD (Hiro 2026-07-09): the game opens mid-journey, headed for the Pit — the village
   // waits to the WEST when the player wants it. A hands-off ability TUTORIAL plays here; any input
   // hands over control (advTutEnd via the input hooks).
-  if(ADV._resume && !TEST_ENCOUNTER){                           // returning player: no tutorial, wake up in Karridge (the DEBUG gauntlet outranks resume while enabled)
+  if(ADV._resume && !TEST_ENCOUNTER && !FIGHT_LAB){             // returning player: no tutorial, wake up in Karridge — but the FIGHT LAB / debug gauntlet outrank resume while enabled
     ADV.tut={t:99,fired:{},done:true};
     ADV.objective = ADV.mq>=6?'CHAPTER CLOSED — Varenholm waits' : ADV.mq>0?'THE ROAD WEST — the chapter continues'
                   : ADV.quest>=5?'ASK MARLOW — what shops for the gifted?' : ADV.quest>=3?'TELL MARLOW' : 'THE PIT — EAST';
@@ -4262,6 +4381,27 @@ function advFrame(dt){
     const ox=P.x, oy=P.y, cdBefore=P.rollCD;
     _blink();
     if(P.rollCD===2.2 && cdBefore<=0 && scene){                       // it actually fired
+      // DASH ASPECT (Hiro's golden ref warlock_dash_succubus + form variants 2026-07-16): the dash
+      // conjures a FORM-MATCHED cameo who fires mid-dash — warlock: SUCCUBUS + fireball · lich:
+      // BONE ARCHER + bone arrow · arch devil: ARCH SUCCUBUS + sheol-green fireball. The projectile
+      // travels alone (src:'dash') and triggers the enemy's matching finisher on impact.
+      // Dash cast cameo per form (lich has no cast sheet yet — his HURT-side refs are in, so the
+      // lich dash fires the bone arrow bare; cast cameo waits for a Hiro reference if he wants one).
+      const _castSet = P.lich ? null : P.archWarlock ? 'archwarlock_dashcast' : (P.devilT>0||P.demonLord) ? 'archdevil_dashcast' : 'warlock_dashcast';   // FORM CONGRUENCE: arch warlock has his OWN dash sheet (Hiro golden ref archwarlock_dash 2026-07-19)
+      if(_castSet && scene.animSets && scene.animSets[_castSet]){
+        const _dc=scene.anims.get(scene.animSets[_castSet].key);
+        if(_dc && _dc.frameRate!==7) _dc.frameRate=7;                        // slowed per Hiro 2026-07-16 (heroPlayOnce reads the live rate for its revert timing)
+        scene.heroPlayOnce(scene.animSets[_castSet].key);
+      }
+      scene.time.delayedCall(430, ()=>{ if(P.dead) return;
+        const dir=(Math.cos(P.face)>=0)?1:-1;
+        if(P.lich) fireballs.push({ x:P.x+dir*44, y:P.y-6, vx:dir*470, vy:0, r:6, kind:'arrow', src:'dash',
+          dmg:Math.round((rollDice(diceN(),6)+dmgBonus())*1.2) });           // LICH dash arrow: MODERATE damage (Hiro 2026-07-19, was a pinprick) -> archer EXECUTION on hit
+        else fireballs.push({ x:P.x+dir*44, y:P.y, vx:dir*430, vy:0, r:8, kind:'fire', src:'dash', aoe:50,
+          col:((P.devilT>0||P.demonLord||P.archWarlock)?'#9af0c0':undefined), green:(P.devilT>0||P.demonLord||P.archWarlock),   // arch devil / arch warlock: sheol-green
+          arch:P.archWarlock||undefined,   // ARCH SUCCUBUS finisher (afirehit) instead of the base succubus on hit
+          dmg:Math.round((rollDice(diceN(),8)+dmgBonus())*1.6) });
+      });
       if(scene.anims.exists('anim_blinkwave')){
         const w=scene.add.sprite(ox, oy-40, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(9300).setAlpha(0.95);
         w.play({key:'anim_blinkwave', repeat:0});

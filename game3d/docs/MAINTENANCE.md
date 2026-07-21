@@ -96,6 +96,23 @@ The `game3d-bugfix` scheduled task runs **every 10 minutes** and fixes **one OPE
 
 **Open work right now:** BUG-016 arch-warlock/arch-reaper evolution forms (art + wiring, NEEDS-FABLE) · BUG-009 door/master/champ/skel old-gen 3-frame sheets (legacy-gauntlet-only, low priority) · BUG-002 fixed (cosmetic stale foeSprite). Feet-flagged sheets to eventually redo: stitch, chain, gunner (mild). Evolutions partially wired: lv10/lv20 card picks exist; the herald/binder kit is ported but dormant.
 
+## REFERENCE-SHEET BACKGROUND COLOR (2026-07-19)
+Use **pure MAGENTA (FF00FF)** as the key background on new reference sheets — NOT green. The kit's
+signature FX are sheol-GREEN (succubus fire, dragon acid, hex energy), so a green screen clashes with
+the art and the keyer risks eating or fringing the FX. Nothing in the game's palette approaches pure
+magenta. Dark-stage refs (near-black bgs) also work — the slicer border-floods from the sheet corners
+and auto-detects whatever uniform bg color is there — but magenta gives the cleanest single-pass key.
+Caption text on sheets: any color is fine (it gets stripped), but avoid placing it over the art.
+
+## FORM-VARIANT CONGRUENCE CHECK (2026-07-19, born from BUG-020)
+Whenever the hero gains a NEW FORM (lich, arch devil, demon lord, arch warlock, …) or a form gains a new ability, run this checklist BEFORE calling the work done — this is the recurring bug category ("arch warlock plays warlock animations"):
+1. **Every animation selection branches on the new form's flag.** Grep every `P.lich` / `P.devilT` / `P.demonLord` / `P.archWarlock` branch that picks a set name (`heroOneShot`, dash `_castSet`, idle/walk driver via `heroFormTex()`, hyper cut-ins) — the new flag must appear in each, with an explicit fallback if its sheet is absent.
+2. **Every ability has a form-matched CAST sheet** (`<form>_<act>` in anims.json) **or a deliberate, commented fallback** to the base sheet. Silence is a bug.
+3. **Every cameo/finisher has a form-matched HURT variant** on each test enemy (e.g. `hound_ahexhit` vs `hound_hexhit`), selected by a flag the projectile carries (`arch:`), never by global state at impact time.
+4. **Body sets have ≥4 frames** — under 4, loadAnimFrames yoyos the set and the character visibly strobes back-and-forward (the BUG-020 idle strobe).
+5. **The form's token is in ALL THREE resolver maps** (spritePath / ENTITY_DIR / SPRITE_ENTITY_DIR) before ingesting, or frames land at the sprites root.
+6. Per the art pipeline: form variants may be SCALED off the base form's greenlit reference (named anchor, flagged UNREVIEWED) — but a Hiro golden ref, when it exists, always replaces the scaled sheet.
+
 ## Sprite folder layout (2026-07-15)
 Sprites live in per-entity folders: `warlock/` (with `summons/<name>/` and `forms/<name>/` beneath it), `enemies/<type>/`, `npcs/`, `fx/`. Everything in code still uses FLAT sprite names — three synced resolvers map name→folder: `spritePath()` in arena.html, `ENTITY_DIR` in tools/ingest_art.py, `SPRITE_ENTITY_DIR` in tools/gen_sprites.py. **When adding a new entity, add its token to ALL THREE maps** (default = sprites root). anims.json + rig JSONs stay at the sprites root; `_src/` stays flat. ingest_art.py writes into the entity folder automatically and rebuilds anims.json recursively.
 

@@ -34,7 +34,7 @@ TARGET_WORLD_H = {
     "warlock_summon": 1.0,  # SUMMON-channel pose (Hiro drop 2026-06-28) — same world height as warlock
     # FX sprites (not characters): height is render-time, listed for documentation only
     "fireball": 0.5, "fireball_hit": 0.7,
-    "lich": 1.05, "archdevil": 1.3, "demonlord": 1.4,
+    "lich": 1.05, "archdevil": 1.3, "demonlord": 1.4, "archwarlock": 1.1,
     "clawfiend": 1.2, "bonedragon": 2.0, "blackdragon": 2.0,
     "succubus": 0.8, "archsuccubus": 0.9,
     # new side-on pit challengers (Hiro drop 2026-06-27): humanoid undead foes
@@ -74,7 +74,8 @@ ENTITY_DIR = {'warlock':'warlock','succubus':'warlock/summons/succubus','archsuc
  'bonedragon':'warlock/summons/dragon','blackdragon':'warlock/summons/dragon','clawfiend':'warlock/summons/claw_demon',
  'shambler':'warlock/summons/shambler','bonearcher':'warlock/summons/bone_archer',
  'lich':'warlock/forms/lich','archdevil':'warlock/forms/archdevil','demonlord':'warlock/forms/demonlord',
- 'npc':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
+ 'archwarlock':'warlock/forms/archwarlock',
+ 'npc':'npcs','dancer':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
 for _e in ['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']:
     ENTITY_DIR[_e]='enemies/'+_e
 def dest_for(name):
