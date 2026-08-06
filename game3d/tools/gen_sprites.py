@@ -38,6 +38,7 @@ SPRITE_ENTITY_DIR = {'warlock':'warlock','succubus':'warlock/summons/succubus','
  'shambler':'warlock/summons/shambler','bonearcher':'warlock/summons/bone_archer',
  'lich':'warlock/forms/lich','archdevil':'warlock/forms/archdevil','demonlord':'warlock/forms/demonlord',
  'archwarlock':'warlock/forms/archwarlock',
+ 'newwarlock':'warlock/forms/newwarlock',
  'npc':'npcs','dancer':'npcs','hexbolt':'fx','firebolt':'fx','greenbolt':'fx','blinkwave':'fx','wardaura':'fx','fireball':'fx','lightbolt':'fx','coldbolt':'fx','bonearrow':'fx'}
 for _e in ['door','hook','chain','pyre','gunner','grave','stitch','brute','master','hound','necro','champ','beast','skel']:
     SPRITE_ENTITY_DIR[_e]='enemies/'+_e
@@ -331,6 +332,25 @@ MANIFEST = [
  ("bg_pit_far",  "bg",  "16:9", f"The far stone WALL of a grand underground gladiatorial pit, viewed STRAIGHT-ON like a side-scroller BACKDROP wall behind the arena (NOT a top-down floor, NOT a bowl): tall tiered amphitheater STANDS PACKED with a roaring crowd of silhouetted SPECTATORS, hanging tattered war banners, rows of blazing wall-torches and braziers, a dark vaulted ceiling above with dusty god-ray shafts, heavy haze. A LOW horizon where the wall meets the ground at the very bottom. Wide panoramic backdrop that can scroll sideways. {SCENE}."),
  ("bg_pit_floor","bg",  "16:9", f"The blood-stained sand and cracked-flagstone FLOOR of a gladiatorial pit at a low oblique angle, scattered bones, old dark bloodstains, scorch marks, warm torch-lit, edges fading to shadow, horizontally tileable. {SCENE}."),
  ("bg_pit_fg",   "gen", "16:9", f"Two massive carved-stone gothic PILLARS wrapped in hanging iron chains, one at the FAR-LEFT edge and one at the FAR-RIGHT edge of the frame, a blazing iron brazier at the base of each, lush painterly Dragon's Crown dark-fantasy style with dramatic torch light. The ENTIRE CENTER and all space between the two pillars is FLAT SOLID chroma-green (hex 00FF00). {GREEN}."),
+]
+
+# ---- NEW FEMALE WARLOCK (deck-builder protagonist, queued 2026-07-24) -------------
+# Reference: tools/refs/"new warlock ref.png" (dark elf, brown/tan, black hair w/ red
+# trim, hazel-ice eyes). Generate with:  python gen_sprites.py newwarlock_idle newwarlock_walk ...
+# then re-run  game3d/deckbuilder/build/build_assets.py  — the deck-builder auto-swaps her in.
+NEWWL = ("the SAME anime dark-elf warlock woman: rich brown skin, long black kinky-twist locs "
+         "with red-trimmed strands, hazel-ice eyes, gold jewelry (layered necklace, long earrings, "
+         "waist chains, arm bracers), sheer brown-and-tan layered robes with gold accents, "
+         "confident ruthless expression")
+NEWWL_REF = os.path.join(REFS, "new warlock ref.png")
+MANIFEST += [
+ ("newwarlock_idle",   "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. Re-pose her SIDE-ON, body in profile FACING RIGHT, a relaxed combat-ready stance, one hand raised with dark magic curling around her fingers. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_walk",   "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, mid-stride walking to the right, robes and locs trailing. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_cast",   "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, casting a spell forward to the right: free hand thrust out, crackling violet-and-ember shadow magic. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_bigcast","edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, a dramatic SUMMONING pose: both arms spread wide, head high, a swirling violet summoning circle blazing in the air before her. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_portal", "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, conjuring a tall glowing rune portal beside her with one graceful outstretched arm. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_hurt",   "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, recoiling backward in pain, staggered but furious. {CHAR}, {GREEN}.", NEWWL_REF),
+ ("newwarlock_slide",  "edit", "3:4", f"Keep {NEWWL} EXACTLY the same character. SIDE-ON, profile FACING RIGHT, a low fast dodging slide to the right, trailing shadow. {CHAR}, {GREEN}.", NEWWL_REF),
 ]
 
 # ---- xAI calls (OpenAI SDK's edit() is multipart-only & unsupported; use JSON HTTP) ----

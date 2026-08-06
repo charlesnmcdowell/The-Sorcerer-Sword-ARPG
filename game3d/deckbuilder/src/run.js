@@ -1,0 +1,207 @@
+/* run.js — the persistent run: deck, HP, map, position, ACT. One run = the whole road:
+   the Pit -> the City -> the West Road -> Varenholm. Story/voice per act follows the
+   original pit game (see docs/LORE_BIBLE.md + voice_manifest on Hiro's PC; src/voice.js). */
+window.Spire = window.Spire || {};
+
+/* ---- the three acts of the warlock's road (2026-08-06 story rewrite: the
+   Karridge arm of the Ankuspawn Conspiracy, twenty years after Book 4 —
+   see src/voice.js header and docs/LORE_BIBLE.md) ---- */
+Spire.ACTS = {
+  1: {
+    name: "T H E   S P I R E  —  T H E   P I T",
+    tag: "ACT I — THE PIT OF KARRIDGE",
+    music: "arena",
+    safeNode: "tavern",
+    fightPool: ["skel", "hound", "brute"], elitePool: ["beast"], boss: "master",   // ordered easy -> hard
+    mapBg: "bg_far_1",
+    intro: ["n_bio", "m_champion", "w_act1_intro"],   // the era + her; Marlow: the vanished champion; her read
+    mapVO: "n_gate",                            // the pit gate
+    bossVO: "w_boss1",                          // "Show me the ledger..."
+    clearTitle: "THE  PIT  IS  CLEARED",
+    clearText: "the Hound Master's horn lies silent — but somebody's grey book still holds the champion's number",
+    outro: ["m_warning", "w_act1_out"]          // Marlow: they're asking after YOU; "books have addresses"
+  },
+  2: {
+    name: "T H E   C I T Y  —  T H E   B A C K   A L L E Y S",
+    tag: "ACT II — KARRIDGE, WEST WALL",
+    music: "city",
+    safeNode: "inn",
+    fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave"], boss: "necro",
+    mapBg: "bg_alleys_far_1",
+    intro: [],                                  // act-1 outro already set the scene
+    mapVO: "n_well",                            // plaza of the nameless
+    bossVO: "w_boss2",                          // "Open the crates, necromancer."
+    clearTitle: "THE  ALLEYS  RUN  QUIET",
+    clearText: "the west-wall pipeline is ash — and the Dragon Emperor himself passes through Karridge",
+    outro: ["n_emperor", "w_patience"]          // Ankunyx passes, untouchable; "Patience is also a weapon."
+  },
+  3: {
+    name: "T H E   W E S T   R O A D  —  N E W   M O O N",
+    tag: "ACT III — THE NIGHT SHIPMENT",
+    music: "forest",
+    safeNode: "cage",
+    fightPool: ["wight", "pyre", "chain"], elitePool: ["door"], boss: "champ",   // ordered easy -> hard
+    mapBg: "bg_wroad_far_1",
+    intro: ["w_fold", "w_wagon"],               // "Fold their camp..."; "...rides home free tonight."
+    mapVO: null,
+    bossVO: "w_stand",                          // "I want the man who sold his name..."
+    clearTitle: "THE  ROAD  RUNS  CLEAN",
+    clearText: "the wagon burns, the freed walk home — and a playbill blows against your boot: THE FIREBIRD OF VARENHOLM",
+    outro: []                                   // the epilogue scene carries the Varenholm beats
+  }
+};
+Spire.act = function () { return Spire.ACTS[(Spire.run && Spire.run.act) || 1]; };
+Spire.LAST_ACT = 3;
+
+Spire.newRun = function () {
+  Spire.run = {
+    deck: Spire.STARTING_DECK.slice(),
+    hp: 70, maxHp: 70,
+    act: 1,
+    usedEnemies: [],            // enemy ids already assigned this act -- keeps every fight unique
+    map: null,
+    pos: null,                 // null until the first (bottom) node is cleared
+    cleared: {},               // "r:i" -> true
+    over: false
+  };
+  Spire.run.map = Spire.generateMap();
+  return Spire.run;
+};
+
+/* advance to the next act: fresh map, fresh enemy budget, a night's rest (full heal)
+   and +10 max HP -- Marlow's board and bed / the coach seat between chapters. */
+Spire.nextAct = function () {
+  const run = Spire.run;
+  run.act++;
+  run.maxHp += 10;
+  run.hp = run.maxHp;
+  run.usedEnemies = [];
+  run.cleared = {};
+  run.pos = null;
+  run.map = Spire.generateMap();
+  return run;
+};
+
+/* claim an enemy id from `pool` that hasn't shown up yet this climb (map-wide, not just
+   the path taken -- so two sibling nodes on the same floor never show the same foe either).
+   Falls back to a random re-pick only once every id in the pool is already spoken for,
+   which the map's small fight budget (<=3 per climb) should never actually hit. */
+Spire.claimEnemy = function (pool) {
+  const run = Spire.run;
+  const fresh = pool.filter(id => !run.usedEnemies.includes(id));
+  const pick = fresh.length ? Phaser.Utils.Array.GetRandom(fresh) : Phaser.Utils.Array.GetRandom(pool);
+  run.usedEnemies.push(pick);
+  return pick;
+};
+
+/* TACTICAL MAP (2026-08-05, Hiro's direction): loot is never free, and safety is
+   earned with steel. Two lanes with explicit, hand-wired edges:
+
+     row 4                 [ BOSS ]
+                          /        \
+     row 3        [fight M]        [LOOT 2]          M = the act's mid-tier foe
+                  /       \        /       |
+     row 2   [REST]      [STORY STOP]   [TOUGH FIGHT]   <- the act's ELITE
+                 \          |    \         |
+     row 1        [fight EASY]   [ ??? ] [LOOT 1]
+                          \        |      /
+     row 0                 [ fight EASY ]
+
+   - The FIGHT lane (left) is all easy foes, and it pays in rest + the story stop.
+   - The LOOT lane (right) skips fighting to grab the cache — and walks straight
+     into the elite guarding it. Loot 2 sits right under the boss's shadow.
+   - The ??? gamble threads the middle: it can go either way.
+   - No path reaches the boss with fewer than 2 fights; no path exceeds 3. */
+Spire.generateMap = function () {
+  const ACT = Spire.ACTS[(Spire.run && Spire.run.act) || 1];
+  const jit = () => Phaser.Math.Between(-16, 16);
+  const Y = r => 596 - r * 82;
+  const mk = (r, i, x, type) => ({ r, i, x: x + (r > 0 && r < 4 ? jit() : 0), y: Y(r), type, edges: [] });
+
+  const easyPool = ACT.fightPool.slice(0, 2);
+  const rows = [];
+  /* row 0 — the road finds her first: one easy fight, no choices yet */
+  const n00 = mk(0, 0, 640, "fight"); n00.enemy = Spire.claimEnemy(easyPool);
+  rows.push([n00]);
+  /* row 1 — the fork: fight for safety, gamble the dark, or reach for the cache */
+  const n10 = mk(1, 0, 430, "fight"); n10.enemy = Spire.claimEnemy(easyPool);
+  const n11 = mk(1, 1, 640, "unknown");
+  const n12 = mk(1, 2, 850, "treasure");
+  rows.push([n10, n11, n12]);
+  /* row 2 — consequences: the fighter rests and hears the story; the looter meets the guard */
+  const n20 = mk(2, 0, 400, "rest");
+  const n21 = mk(2, 1, 640, ACT.safeNode);
+  const n22 = mk(2, 2, 880, "elite"); n22.enemy = Spire.claimEnemy(ACT.elitePool);
+  rows.push([n20, n21, n22]);
+  /* row 3 — one more take: a mid-tier fight on the safe side, or loot in the boss's shadow */
+  const n30 = mk(3, 0, 500, "fight"); n30.enemy = Spire.claimEnemy(ACT.fightPool);
+  const n31 = mk(3, 1, 790, "treasure");
+  rows.push([n30, n31]);
+  /* row 4 — the one who waits */
+  const n40 = mk(4, 0, 640, "boss"); n40.enemy = ACT.boss;
+  rows.push([n40]);
+
+  /* hand-wired edges (indices into the NEXT row) */
+  n00.edges = [0, 1, 2];       // the fork is hers
+  n10.edges = [0, 1];          // easy fight -> rest or the story stop
+  n11.edges = [1, 2];          // ??? -> story stop, or thrown to the elite
+  n12.edges = [2];             // loot 1 -> the elite guarding it. No way around.
+  n20.edges = [0];             // rest -> the mid fight
+  n21.edges = [0];             // story stop -> the mid fight (no free lane to the boss-shadow loot)
+  n22.edges = [1];             // elite slain -> the loot she bled for. Hers ALONE.
+  n30.edges = [0];
+  n31.edges = [0];
+  return rows;
+};
+
+/* which nodes can be entered right now */
+Spire.availableNodes = function () {
+  const run = Spire.run;
+  if (!run) return [];
+  if (run.pos === null) return [run.map[0][0]];
+  if (run.pos.r >= run.map.length - 1) return [];
+  const cur = run.map[run.pos.r][run.pos.i];
+  return cur.edges.map(j => run.map[run.pos.r + 1][j]);
+};
+Spire.enterNode = function (node) {         // advance position; caller routes to the right scene
+  Spire.run.pos = { r: node.r, i: node.i };
+};
+Spire.clearNode = function () {
+  const p = Spire.run.pos;
+  if (p) Spire.run.cleared[`${p.r}:${p.i}`] = true;
+};
+Spire.currentNode = function () {
+  const p = Spire.run.pos;
+  return p ? Spire.run.map[p.r][p.i] : null;
+};
+
+/* ---- card reward pools ---- */
+Spire.rewardChoices = function (n, elite) {
+  const pool = [];
+  for (const id in Spire.CARDS) {
+    const c = Spire.CARDS[id];
+    const rarity = c.rarity || "common";
+    if (rarity === "starter" || rarity === "epic") continue;   // epic is tavern-exclusive
+    const w = rarity === "rare" ? (elite ? 4 : 1) : rarity === "uncommon" ? 3 : 4;
+    for (let k = 0; k < w; k++) pool.push(id);
+  }
+  const out = [];
+  while (out.length < n && pool.length) {
+    const pick = Phaser.Utils.Array.GetRandom(pool);
+    if (!out.includes(pick)) out.push(pick);
+  }
+  return out;
+};
+
+/* the tavern's reward: her one guaranteed EPIC pick, backed up with rare alternates so
+   it still reads as a real choice even while the epic pool is small. */
+Spire.epicChoices = function (n) {
+  const epics = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "epic");
+  const out = epics.slice();
+  const rarePool = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "rare");
+  while (out.length < n && rarePool.length) {
+    const pick = Phaser.Utils.Array.GetRandom(rarePool);
+    if (!out.includes(pick)) out.push(pick);
+  }
+  return out.slice(0, n);
+};
