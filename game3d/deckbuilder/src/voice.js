@@ -31,6 +31,7 @@ Spire.VO = {
   w_act1_intro: { who: "VESSIA", text: "\"Then he didn't run, Marlow. He was collected. There are people who trade in the gifted — they watch you, they write what you can do and what a buyer would pay into a ledger, and one new moon, a wagon comes. I know the trade. I was schooled where they balance those books.\"" },
 
   n_gate: { who: "THE PIT GATE", text: "THE PIT OF KARRIDGE — the crowd gives every fighter a name, and remembers none of them." },
+  n_bamboo: { who: "THE BAMBOO ROAD", text: "every blade that ever mattered to Karridge came down this road, under these same green shadows. The grove remembers all of them — and says nothing." },
 
   w_boss1: { who: "VESSIA", text: "\"Your hounds didn't eat the champion, houndkeeper. Somebody watched his fights and wrote him into the ledger — name, gifts, asking price. That book is a shopping list of PEOPLE, and every name still in it is a wagon that hasn't rolled yet. Show it to me, and I leave you the hand you write with.\"" },
 
@@ -55,15 +56,15 @@ Spire.VO = {
 
   /* ==================== ACT III — THE WEST ROAD, NEW MOON ==================== */
 
-  w_fold: { who: "VESSIA", text: "\"There's the waystation. Fold their camp the way they fold people.\"" },
+  w_fold: { who: "VESSIA", text: "\"There's the waystation. They pack people like freight. Tonight we tear it open.\"" },
   w_wagon: { who: "VESSIA", text: "\"Stop the wagon. Whatever is breathing inside it rides home free tonight.\"" },
 
   n_camp: { who: "NARRATOR", text: "Tents that fold fast. Crates with air-holes. A cold fire pit, and a cage with bent bars. This is not a camp. It is a waystation — and the freight is people." },
   q_priced: { who: "THE QUARRY BOY", text: "\"They watched me lift at the quarry fair. WEEKS back. Asked the others what I could do, and wrote it all down in a grey book. Lady... there's a list. And my name had a NUMBER next to it.\"" },
-  w_run: { who: "VESSIA", text: "\"Run home, stone-boy. You're worth more to me as a rumor.\"" },
+  w_run: { who: "VESSIA", text: "\"Run home, stone-boy. And tell everyone what nearly happened to you — a story travels faster than any wagon.\"" },
 
   w_stand: { who: "VESSIA", text: "\"Stand up, champion. I want the man who sold his name to look at a woman who kept hers.\"" },
-  w_price: { who: "VESSIA", text: "\"Knowledge has a price. Here is yours.\"" },   // tavern epic pick (kept clip)
+  w_price: { who: "VESSIA", text: "\"Mm. Now that is worth knowing.\"" },   // tavern epic pick
 
   /* ==================== EPILOGUE — VARENHOLM ==================== */
 
@@ -90,7 +91,7 @@ Spire.VO = {
   /* Act II boss — a LICENSED necromancer on the cult's retainer */
   e_nc_intro: { who: "THE COURT NECROMANCER", text: "\"My license is in perfect order, warlock — and so is your file. You have been appraised. The Matron pays handsomely for your kind.\"" },
   e_nc_raise: { who: "THE COURT NECROMANCER", text: "\"Rise. She is worth more bleeding than breathing.\"" },
-  e_nc_death: { who: "THE COURT NECROMANCER", text: "\"The ledger... does not close... it only... re-letters...\"" },
+  e_nc_death: { who: "THE COURT NECROMANCER", text: "\"The ledger... does not close... someone else... already holds... the pen...\"" },
 
   /* Act III crew (the night shipment) */
   e_ch_intro: { who: "THE CHAIN", text: "\"The cargo fights back? Good. I hate a dull road.\"" },
@@ -109,22 +110,38 @@ Spire.VO = {
      player walks the villain's road; the school's fighters are the heroes
      of somebody else's story, and the writing knows it. */
   k_bio: { who: "NARRATOR", text: "The Ashenveil keeps its best students off the rolls. TSUBAKI, of the Ieyasu school — the Matron's blade, her finest collector, her quietest knife. Karridge burned a pipeline last season, and somebody must write a new one. Victory, she would tell you, is simply her nature." },
-  k_orders: { who: "TSUBAKI", text: "\"Three tasks, then. Rebuild the route. Find the arsonist's trail. And mark every gift in this city worth a page. Consider it written, my Lady.\"" },
-  k_boss1: { who: "TSUBAKI", text: "\"You have been watching the pit for weeks, bowman. So have I. The difference is — nobody hired me to be seen.\"" },
+  k_orders: { who: "TSUBAKI", text: "\"Three tasks, then. Rebuild the route. Find the arsonist's trail. And mark every gift between here and Karridge worth a page. Consider it written, my Lady.\"" },
+  k_duel: { who: "TSUBAKI", text: "\"The Keep is emptied — and my Lady's answer already stands at the broken gates, wearing my own school's colors. Kagehime. The Second Blade. So. I am to be tested twice tonight.\"" },
+  e_k2_meet: { who: "KAGEHIME", text: "\"The Matron sends her regards, senior sister. Sera of Duskfen left so much of you standing — my Lady wonders whether what remains is still worth keeping. Draw.\"" },
+  e_k2_intro: { who: "KAGEHIME", text: "\"No orders bind me tonight, Tsubaki. Only curiosity. You always said victory was your nature — show me its face.\"" },
+  e_k2_death: { who: "KAGEHIME", text: "\"Enough. I will tell her the Blade is still the Blade. Finish the errand, sister… and watch your back. I was only the second they sent.\"" },
+  e_mb_intro: { who: "THE MATRON'S BLADE", text: "\"You burned a pipeline, arsonist, and pipelines have owners. My Lady would like her ledger balanced — your name, your gift, and your ashes will settle the page. Sing for me.\"" },
+  e_mb_death: { who: "THE MATRON'S BLADE", text: "\"Filed, then… under costly. The Matron will read every word of you, arsonist. Pray the next blade she sends is slower.\"" },
+  e_pr_intro: { who: "THE ASHENVEIL PROCTOR", text: "\"Vessia of the lower halls. You left the academy with a question — the faculty has sent me with the answer. Hold still for your assessment.\"" },
+  e_pr_death: { who: "THE ASHENVEIL PROCTOR", text: "\"Marked… incomplete… the Ashenveil… will re-examine…\"" },
+  m_greet: { who: "MARLOW", text: "\"Evening, girl. Bath's hot, stew's thick, beds are clean. Stay the night — the alleys will keep till morning.\"" },
+  b_host: { who: "THE HOST", text: "\"Welcome, welcome! Rune-warmed rooms, self-stirring stew, and beds that hum you to sleep. Stay the night, traveler — Brassveil is kinder by lamplight.\"" },
+  e_hd_intro: { who: "THE HOUND MASTER (the stands)", text: "\"Loose the hound! Gifted blood, boy — the yard eats WELL tonight!\"" },
+  e_bs_intro: { who: "NARRATOR", text: "no collar. No handler. No page in any ledger. Some things in the dark were never anyone's to sell." },
+  e_sk_intro: { who: "PIT SKELETON", text: "\"Not… done… fighting… the crowd… still… owes me…\"" },
+  e_br_intro: { who: "PIT BRUTE", text: "\"Little fighter. Big noise. I make quiet.\"" },
+  e_wg_intro: { who: "FROST WIGHT", text: "\"So warm… the cold takes better care of things… stay… you will keep… beautifully…\"" },
+  n_keepgarrison: { who: "NARRATOR", text: "the Keep knows she is coming. What is left of the Tempest School has sold its last contract cheap: one night, one gate, one chance to stand between the Matron's blade and the Emperor's house." },
+  k_boss1: { who: "TSUBAKI", text: "\"Three days you have shadowed me through the bamboo, bowman. I know who pays you — grieving families, hunting the cult that took their children. Commendable. But the road to Karridge is mine, and you have seen my face.\"" },
   k_out1: { who: "TSUBAKI", text: "\"A mercenary school, hunting us on behalf of grieving families. Honest work. I almost regret what comes next.\"" },
   k_silver: { who: "TSUBAKI", text: "\"Five silver, innkeeper. A bargain. Where I studied, rumors are paid for in teeth.\"" },
   k_file: { who: "TSUBAKI", text: "\"Dance, little Firebird. Burn bright. The Matron pays double for the ones who glow.\"" },
-  k_price: { who: "TSUBAKI", text: "\"The school teaches: take the stroke that is offered.\"" },
+  k_price: { who: "TSUBAKI", text: "\"A fine technique. It joins my collection.\"" },
   k_boss2: { who: "TSUBAKI", text: "\"Step aside, monk. Your school was paid to find the wolves — not to stand in front of one.\"" },
-  k_patience: { who: "TSUBAKI", text: "\"There he is. The assignment beneath every assignment. Not here — not with witnesses. The Lady's design needs him charmed, not warned. Patience: the school's first stroke.\"" },
+  k_patience: { who: "TSUBAKI", text: "\"There he is. The assignment beneath all my assignments. Not here — not with witnesses. The Lady needs him charmed, not warned. So I wait.\"" },
   n_bv: { who: "NARRATOR", text: "BRASSVEIL. Karridge is torchlight; this is the future arriving early — ley-conduits humming under brass streets, rune-signs that rewrite themselves, glass towers wearing the Kingdom's peace like jewelry. The gifted come here to shine. Which is to say: the ledger writes itself." },
   k_fortress: { who: "TSUBAKI", text: "\"Drakespire Keep. The Lady bids me search the dragon's own house while the dragon is away. Wards, walls, and one famous sword between me and his study. Quietly, then — and if it cannot be quiet... quickly.\"" },
   k_boss3: { who: "TSUBAKI", text: "\"Sera of Duskfen. First to follow him, they say — twenty years of legend with a sword to prove it. I have no orders to kill you, champion. Kindly do not make me improvise.\"" },
   n_kcage: { who: "NARRATOR", text: "A Tempest supply cage — and inside it, one of her own: a cult courier, trussed, tagged, and left to be questioned at dawn." },
   k_courier: { who: "THE COURIER", text: "\"They knew the route, lady. They knew the MOON. Somebody sold us to the school — somebody inside.\"" },
-  k_go: { who: "TSUBAKI", text: "\"Run to the Ashenveil, little moth. Tell the Lady the road is hers again — and that I will find the tongue that wagged.\"" },
+  k_go: { who: "TSUBAKI", text: "\"Run to the Ashenveil, little moth. Tell the Lady her road is open again — and that I will find whoever sold us to the school.\"" },
   n_ashen: { who: "NARRATOR", text: "The Ashenveil at dusk: ash fields, the working dead bending in a grey harvest, and an academy whose lower levels are not a metaphor. She walks in unannounced. She is expected anyway." },
-  k_deliver: { who: "TSUBAKI", text: "\"The route breathes. The school is broken. Eleven new pages for the ledger — marked, priced, and patient. And one small vial... from an errand the Lady set me, long ago.\"" },
+  k_deliver: { who: "TSUBAKI", text: "\"The route is running again. The school is broken. Eleven new names for the ledger — marked, priced, and waiting. And one small vial... from an errand the Lady set me, long ago.\"" },
   n_vial: { who: "NARRATOR", text: "The emissary takes the vial the way priests take relics. Somewhere below, a queen who has worn death for centuries will drink a stranger's burning life — and stand a little taller in the morning." },
   k_next: { who: "TSUBAKI", text: "\"And my next assignment. ...A man on the western roads. Green eyes. No escort. My Lady... you honor me.\"" },
   n_kclose: { who: "NARRATOR", text: "She sharpens the katana twice that night, though it does not need it. Somewhere west, an emperor travels alone the way weather travels. The web has a new spider — and the spider is smiling." },
@@ -140,7 +157,7 @@ Spire.VO = {
 
   /* the fortress's last door — SERA. Canon guardrail: she yields; she does not die. */
   e_sr_intro: { who: "SERA", text: "\"Twenty years, and they still send killers through the window instead of a letter through the door. He isn't HERE, blade. But I am — and this old sword remembers every trick your school ever sold.\"" },
-  e_sr_yield: { who: "SERA", text: "\"Enough... enough. Yield. Take your look at his empty study and go. And tell your Lady this, from his FIRST friend: whatever she is fattening herself for... he will be exactly where she least wants him. He always is.\"" }
+  e_sr_yield: { who: "SERA", text: "\"Enough... enough. Yield. Take your look at his empty study and go. And tell your Lady this, from his FIRST friend: whatever she is preparing for... he will be exactly where she least wants him. He always is.\"" }
 };
 
 /* play a story clip: subtitle banner + audio (if unlocked), music duck.
@@ -149,9 +166,10 @@ Spire.say = function (scene, id, opts) {
   opts = opts || {};
   const vo = Spire.VO[id] || { who: "", text: "" };
   return new Promise(resolve => {
-    let settled = false, sub = null;
+    let settled = false, sub = null, offHurry = null;
     const done = () => {
       if (settled) return; settled = true;
+      if (offHurry) offHurry();   // natural end detaches the click-skip listener too
       if (sub && sub.scene) scene.tweens.add({ targets: sub, alpha: 0, duration: 300, onComplete: () => sub.destroy() });
       if (Spire._audio && Spire.musicOn) Spire._audio.volume = 0.4;
       resolve();
@@ -187,10 +205,57 @@ Spire.say = function (scene, id, opts) {
     } else {
       scene.time.delayedCall(fallbackMs, done);
     }
-    /* click skips the line */
-    if (scene.input) scene.input.once("pointerdown", () => {
-      if (Spire._voiceNow) { try { Spire._voiceNow.pause(); } catch (e) {} }
-      done();
-    });
+    /* click skips the line — and SILENCES it (the voice must stop when skipped).
+       done() detaches the listener via offHurry, so a stale handler can never
+       mute a LATER line's audio (2026-08-11 polish pass). */
+    if (scene.input) {
+      const hurry = () => {
+        if (Spire._voiceNow) { try { Spire._voiceNow.pause(); } catch (e) {} }
+        done();
+      };
+      scene.input.once("pointerdown", hurry);
+      offHurry = () => { try { scene.input.off("pointerdown", hurry); } catch (e) {} };
+    }
+  });
+};
+
+/* HOLD-TO-SKIP (2026-08-11, Hiro's rule): a quick click hurries one line, but the
+   whole cutscene only skips after the button is HELD for 5 full seconds. A progress
+   bar fades in near the top while holding; releasing early cancels. */
+Spire.holdToSkip = function (scene, onSkip) {
+  const HOLD_MS = 5000, W = 220;
+  let timer = null, gfx = null, bar = null, started = 0, fired = false;
+  const cancel = () => {
+    if (timer) { timer.remove(); timer = null; }
+    if (gfx) { gfx.destroy(); gfx = null; bar = null; }
+  };
+  const down = () => {
+    if (fired) return;
+    cancel();
+    started = scene.time.now;
+    gfx = scene.add.container(640, 34).setDepth(96).setAlpha(0);
+    const bg = scene.add.rectangle(0, 12, W, 9, 0x120b08, 0.92).setStrokeStyle(1, 0x8a5a33);
+    bar = scene.add.rectangle(-W / 2, 12, 1, 7, 0xe0b34a).setOrigin(0, 0.5);
+    const t = scene.add.text(0, -6, "hold to skip", {
+      fontFamily: "Georgia, serif", fontSize: 12, fontStyle: "italic", color: "#caa26a"
+    }).setOrigin(0.5);
+    gfx.add([bg, bar, t]);
+    timer = scene.time.addEvent({ delay: 50, loop: true, callback: () => {
+      const frac = (scene.time.now - started) / HOLD_MS;
+      if (gfx) gfx.setAlpha(frac > 0.06 ? Math.min(1, (frac - 0.06) * 8) : 0);  // taps never flash it
+      if (bar) bar.width = Math.max(1, Math.min(W, W * frac));
+      if (frac >= 1 && !fired) {
+        fired = true;
+        cancel();
+        if (Spire._voiceNow) { try { Spire._voiceNow.pause(); } catch (e) {} }
+        onSkip();
+      }
+    }});
+  };
+  scene.input.on("pointerdown", down);
+  scene.input.on("pointerup", cancel);
+  scene.events.once("shutdown", () => {
+    cancel();
+    try { scene.input.off("pointerdown", down); scene.input.off("pointerup", cancel); } catch (e) {}
   });
 };

@@ -76,10 +76,12 @@ assigned the cult's oldest errand — the seduction of the Emperor himself, whos
 ember life-force the Matron drinks to strengthen herself (Books 3–4 context; the
 vial in her epilogue is that errand's fruit).
 
-**Her acts (redesigned 2026-08-10):** the pipeline Vessia burned must be rebuilt.
-Act I — the Pit, under new eyes ("Ronin battle theme"): she fights as cover, and
-finds the TEMPEST SCHOOL (an eastern mercenary house hired by families of the
-taken to hunt the cult) already watching; boss: THE LONGBOW. Act II — BRASSVEIL,
+**Her acts (redesigned 2026-08-10; act 1 re-set 2026-08-11):** the pipeline Vessia
+burned must be rebuilt. Act I — THE BAMBOO ROAD TO KARRIDGE ("Ronin battle
+theme"): she travels the old blade-road toward the city under the green shadows,
+and finds the TEMPEST SCHOOL (an eastern mercenary house hired by families of the
+taken to hunt the cult) already shadowing her; boss: THE LONGBOW, who has seen
+her face — so the road must keep the secret. Act II — BRASSVEIL,
 THE LIT CITY ("Pocket Riot"): a cyber/magic-fantasy-punk free port more advanced
 than anything on the warlock's road — brass conduits, bottled lightning, bought
 law; the Tempest School's paymasters bank here; boss: THE IRON PALM, who carries
@@ -114,3 +116,14 @@ Stroke: odd turns; Open the Red: bleeding foe; ICHIGEKI: odd turn + bleeding foe
 bonus action points next turn; Ieyasu Counter arms a RIPOSTE that answers any
 guarded attack). Epic: TSUBAKI BLOOM — consume all Bleed for +4 damage a stack.
 Every card carries its own generated animation.
+
+
+## THE SECOND BLADE (2026-08-11)
+The rejected first-pass samurai art returns as a character: **KAGEHIME**, the
+Ieyasu school's Second Blade. On Tsubaki's road she waits at Drakespire's broken
+gates after Sera yields — the Matron's way of asking whether what Sera left
+standing is still worth feeding. She yields ("I was only the SECOND they sent").
+On Vessia's road the same woman is **THE MATRON'S BLADE**, the hunter who finally
+catches the arsonist in the act-3 dark — beaten, she files Vessia "under costly."
+Same steel, two stories; the cult's web gains a face that both characters have
+now personally met, and neither killed.

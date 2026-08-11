@@ -26,9 +26,12 @@ Spire.ACTS = {
     tag: "ACT II — KARRIDGE, WEST WALL",
     music: "w_city",
     safeNode: "inn",
-    fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave"], boss: "necro",
+    fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave", "proctor"], boss: "necro",
     mapBg: "bg_alleys_far_1",
-    intro: [],                                  // act-1 outro already set the scene
+    /* 2026-08-11 inn rework: Marlow's back-room exposition (the three vanishings,
+       the new moon, the wagons west) now plays HERE as story — the inn itself is
+       just an innkeeper and a bed, per Hiro */
+    intro: ["m_backroom"],
     mapVO: "n_well",                            // plaza of the nameless
     bossVO: "w_boss2",                          // "Open the crates, necromancer."
     clearTitle: "THE  ALLEYS  RUN  QUIET",
@@ -40,7 +43,7 @@ Spire.ACTS = {
     tag: "ACT III — THE NIGHT SHIPMENT",
     music: "w_forest",
     safeNode: "cage",
-    fightPool: ["wight", "pyre", "chain"], elitePool: ["door"], boss: "champ",   // ordered easy -> hard
+    fightPool: ["wight", "pyre", "chain"], elitePool: ["door", "proctor"], boss: "champ",   // ordered easy -> hard
     mapBg: "bg_wroad_far_1",
     intro: ["w_fold", "w_wagon"],               // "Fold their camp..."; "...rides home free tonight."
     mapVO: null,
@@ -58,17 +61,17 @@ Spire.ACTS = {
    own story voice (see src/voice.js). Same guardrails as Vessia's run. */
 Spire.ACTS_K = {
   1: {
-    name: "T H E   S P I R E  —  T H E   P I T",
-    tag: "ACT I — THE PIT, UNDER NEW EYES",
+    name: "T H E   B A M B O O   R O A D",
+    tag: "ACT I — THE BAMBOO ROAD TO KARRIDGE",
     music: "k_pit",
     safeNode: "tavern",
     fightPool: ["skel", "ninja", "brute"], elitePool: ["beast"], boss: "archer",
-    mapBg: "bg_far_1",
+    mapBg: "bg_bam_far_1",
     intro: ["k_bio", "k_orders"],
-    mapVO: "n_gate",
+    mapVO: "n_bamboo",
     bossVO: "k_boss1",
-    clearTitle: "THE  PIT  IS  HERS",
-    clearText: "the Longbow's watch is ended — and the school that sent him now knows the Matron's blade is in Karridge",
+    clearTitle: "THE  ROAD  IS  HERS",
+    clearText: "the Longbow's watch is ended — and the school that sent him now knows the Matron's blade walks the road to Karridge",
     outro: ["k_out1"]
   },
   2: {
@@ -90,9 +93,13 @@ Spire.ACTS_K = {
     tag: "ACT III — STORMING THE EMPEROR'S FORTRESS",
     music: "k_fortress",
     safeNode: "cage",
-    fightPool: ["ninja", "gunner", "chain"], elitePool: ["sorcerer"], boss: "sera",
+    /* garrison retheme (2026-08-11 narrative pass): the Keep's defenders are the
+       Tempest School's last contract + the fortress's own warded dead — the cult's
+       OWN road-crew (chain/pyre) no longer absurdly defends the Keep against
+       the cult's blade */
+    fightPool: ["ninja", "wight", "gunner"], elitePool: ["sorcerer"], boss: "sera",
     mapBg: "bg_fort_far_1",
-    intro: ["k_fortress"],
+    intro: ["n_keepgarrison", "k_fortress"],
     mapVO: null,
     bossVO: "k_boss3",
     clearTitle: "THE  KEEP  STANDS  EMPTY",

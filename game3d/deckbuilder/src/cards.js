@@ -189,6 +189,8 @@ Spire.CARDS = {
     name: "Black Sky", cost: 3, type: "Attack", art: "dr_idle_2", rarity: "starter",
     desc: "Summon the Black Dragon:\ndeal 16 damage, apply\n3 Burn.", flavor: "The sky remembers whom it belongs to.",
     async choreo(s, ctx) {
+      /* 2026-08-11 (Hiro): the dragon deserves the EX treatment */
+      await ctx.exCutIn("dr_fly", "B L A C K   S K Y", 0x9955ff);
       ctx.wl.play("a_wl_bigcast"); await W(s, 500);
       const dr = Spire.spawn(s, "dr_fly", -160, 300, { depth: 13 });
       await T(s, { targets: dr, x: 640, y: 310, duration: 850, ease: "Sine.easeOut" });
@@ -544,6 +546,10 @@ Spire.CARDS = {
     desc: "Deal 4 damage 4\ntimes. Heal HP equal\nto damage dealt.", flavor: "She doesn't stop at enough.",
     async choreo(s, ctx) {
       ctx.wl.play("a_wl_drain");
+      /* her arch-self mirrors the working from the shadows (unused form art) */
+      const aw = Spire.spawn(s, "aw_hex", ctx.wlX - 120, ctx.groundY + 2, { depth: 9, height: 340, tint: 0x442266 });
+      aw.setAlpha(0);
+      T(s, { targets: aw, alpha: 0.4, duration: 280 });
       await W(s, 380);
       let total = 0;
       for (let i = 0; i < 4; i++) {
@@ -557,6 +563,7 @@ Spire.CARDS = {
       }
       const r = ctx.react("hurt");
       if (total > 0) ctx.applyHeal(total);
+      T(s, { targets: aw, alpha: 0, duration: 300, onComplete: () => aw.destroy() });
       await r;
       await ctx.wlIdle();
     }
@@ -565,7 +572,12 @@ Spire.CARDS = {
     name: "Crimson Feast", cost: 2, type: "Attack", art: "wl_bloodrite_4", rarity: "epic",
     desc: "Deal 12 damage. Heal\nthe damage dealt;\nexcess raises max HP.", flavor: "Some meals change what you are.",
     async choreo(s, ctx) {
+      await ctx.exCutIn("dl_idle", "C R I M S O N   F E A S T", 0xdd2244);
       ctx.wl.play("a_wl_bloodrite");
+      /* the demon lord's shadow looms behind her while she feeds (unused form art) */
+      const loom = Spire.spawn(s, "dl_idle", ctx.wlX - 130, ctx.groundY + 4, { depth: 9, height: 420, tint: 0x331122 });
+      loom.setAlpha(0);
+      T(s, { targets: loom, alpha: 0.5, duration: 300 });
       await W(s, 520);
       ctx.flash(0xdd2244, 120);
       await ctx.bolt("fx_hexbolt", ctx.wlX + 90, ctx.groundY - 190, ctx.hdX - 30, ctx.groundY - 95, { dur: 320, tint: 0xff2244 });
@@ -586,6 +598,7 @@ Spire.CARDS = {
         if (excess > 0) { await W(s, 320); ctx.raiseMaxHp(excess); }
       }
       await r;
+      T(s, { targets: loom, alpha: 0, duration: 340, onComplete: () => loom.destroy() });
       await ctx.wlIdle();
     }
   },
@@ -655,6 +668,10 @@ Spire.CARDS = {
       const glyph = Spire.spawn(s, "fx_wardaura", ctx.wlX, ctx.groundY + 8, { depth: 9, height: 340, tint: 0xdd2244 });
       glyph.setAlpha(0);
       T(s, { targets: glyph, alpha: 0.95, duration: 200 });
+      /* the other signature: her lich-self surfaces to countersign (unused form art) */
+      const li = Spire.spawn(s, "li_attack", ctx.wlX + 150, ctx.groundY + 2, { depth: 9, height: 300, tint: 0x66ff99 });
+      li.setAlpha(0);
+      T(s, { targets: li, alpha: 0.45, duration: 260, yoyo: true, hold: 700, onComplete: () => li.destroy() });
       ctx.applySummonPower(6);
       await W(s, 450);
       ctx.drawCards(2);
@@ -670,13 +687,14 @@ Spire.CARDS = {
     name: "Wear the Devil's Skin", cost: 3, type: "Attack", art: "ad_idle_1", rarity: "epic",
     desc: "Become the Arch-Devil:\ndeal 18 damage, apply\n2 Weak, gain 8 Block.", flavor: "For a moment, she remembers what teeth are really for.",
     async choreo(s, ctx) {
+      await ctx.exCutIn("ad_idle", "WEAR  THE  DEVIL'S  SKIN", 0xff2233);
       ctx.wl.play("a_wl_bigcast"); await W(s, 420);
       s.cameras.main.flash(260, 140, 10, 20);
       await T(s, { targets: ctx.wl, alpha: 0.15, duration: 220 });
       const ad = Spire.spawn(s, "ad_walk", ctx.wlX + 40, ctx.groundY, { depth: 13 });
       ctx.dust(ad.x, ctx.groundY, 0x992233);
       await T(s, { targets: ad, x: ctx.hdX - 200, duration: 480, ease: "Sine.easeIn" });
-      const swing = P(ad, "ad_attack");
+      const swing = P(ad, "ad_claw");     // the shelved five-frame claw rake (2026-08-11)
       Spire.sfx.whoosh();
       await W(s, 260);
       ctx.impact(ctx.hdX - 40, ctx.groundY - 110, 0xff2233);
@@ -857,6 +875,7 @@ Spire.CARDS.ichigeki = {
   desc: "ODD TURN + BLEEDING\nFOE ONLY:\nDeal 30 damage.", flavor: "One stroke. One kill. Victory is her nature.",
   cond: C => C.turn % 2 === 1 && (C.enemy.statuses.bleed || 0) > 0,
   async choreo(s, ctx) {
+    await ctx.exCutIn("kd_ichigeki", "I C H I G E K I", 0xff3344);
     ctx.wl.play("a_kd_ichigeki");
     await W(s, 620);                              // the sheathe: absolute stillness
     ctx.flash(0xffffff, 140);
@@ -879,6 +898,7 @@ Spire.CARDS.tsubakibloom = {
   desc: "Deal 8 damage.\nConsume all Bleed:\n+4 damage per stack.", flavor: "The camellia falls whole.",
   async choreo(s, ctx) {
     const stacks = ctx.C.enemy.statuses.bleed || 0;
+    await ctx.exCutIn("kd_bloom", "T S U B A K I   B L O O M", 0xdd3355);
     await KD_DASH(s, ctx, "kd_bloom", 240, async () => {
       /* petal burst */
       for (let i = 0; i < 10; i++) {

@@ -39,6 +39,15 @@ ANIMS = {
   "wl_portal":   (W, "warlock_portal",   [1,2,3,4,5,6,7,8],          12),
   "wl_hurt":     (W, "warlock_hurt",     [1,2,3,4,5,6],              14),
   "wl_slide":    (W, "warlock_slide",    [1,2,3,4],                  12),
+  # THE ASHENVEIL PROCTOR (2026-08-11): the ORIGINAL warlock set — replaced as
+  # player art by the new-warlock override — returns as an academy enforcer
+  # hunting Vessia. Art faces RIGHT (it was player art) -> enemy def flip:true.
+  # Death is composed from the tail hurt frames (he folds, then fades).
+  "owl_idle":   (W, "warlock_idle", [1,2,3,4,5],        8),
+  "owl_walk":   (W, "warlock_walk", [1,2,3,4,5,6,7,8],  12),
+  "owl_attack": (W, "warlock_hex",  [1,2,3,4,5,6,7,8],  12),
+  "owl_hurt":   (W, "warlock_hurt", [1,2,3],            12),
+  "owl_death":  (W, "warlock_hurt", [4,5,6],            6),
   # ---- life-steal package (2026-08-06): generated directly as new-warlock sets ----
   "wl_drain":    (W + "/forms/newwarlock", "newwarlock_drain",     [1,2,3,4,5,6], 10),
   "wl_bloodrite":(W + "/forms/newwarlock", "newwarlock_bloodrite", [1,2,3,4,5,6], 10),
@@ -80,6 +89,25 @@ ANIMS = {
   "ss_attack": ("sprites/enemies/sorcerer", "sorcerer_attack", [1,2,3,4], 10),
   "ss_hurt":   ("sprites/enemies/sorcerer", "sorcerer_hurt",   [1,2,3],   12),
   "ss_death":  ("sprites/enemies/sorcerer", "sorcerer_death",  [1,2,3,4], 8),
+  # THE SECOND BLADE (2026-08-11): the retired cel-shade samurai set, reborn as a
+  # RIVAL enemy boss — Kagehime for Tsubaki's endgame duel, the Matron's hunter
+  # ambushing Vessia. Art faces RIGHT (player-style) -> enemy def uses flip:true.
+  "kd2_idle":    ("sprites/enemies/rival", "rival_idle",    [1,2,3,4],         4),
+  "kd2_walk":    ("sprites/enemies/rival", "rival_walk",    [1,2,3,4,5,6,7,8], 12),
+  "kd2_attack":  ("sprites/enemies/rival", "rival_attack",  [1,2,3,4,5,6,7,8], 12),
+  "kd2_attack2": ("sprites/enemies/rival", "rival_attack2", [1,2,3,4,5,6,7,8], 12),
+  "kd2_guard":   ("sprites/enemies/rival", "rival_guard",   [1,2,3,4,5,6,7,8], 10),
+  "kd2_hurt":    ("sprites/enemies/rival", "rival_hurt",    [1,2,3,4],         12),
+  "kd2_death":   ("sprites/enemies/rival", "rival_death",   [1,2,3,4],         6),
+  # THE FIREBIRD's second wardrobe (2026-08-11, sliced from Hiro's sheets): the
+  # green stage outfit + the belly dance, + white-outfit bob + face emotes
+  "dc2_idle":  ("sprites/npcs/dancer2", "dc2_idle",  [1,2,3,4,5,6,7,8],      8),
+  "dc2_walk":  ("sprites/npcs/dancer2", "dc2_walk",  [1,2,3,4,5,6,7,8],      10),
+  "dc2_dance": ("sprites/npcs/dancer2", "dc2_dance", [1,2,3,4,5,6,7,8,9,10], 9),
+  "dcw_bob":   ("sprites/npcs/dancer2", "dcw_bob",   [1,2,3,4,5,6],          8),
+  "dcx_face":  ("sprites/npcs/dancer2", "dcx_face",  [1,2,3,4,5,6,7],        1),
+  # the hound's arrow reaction (finally bundled -> Marrow Choir's volley)
+  "hd_arrowhit": ("sprites/enemies/hound", "hound_arrowhit", [1,2,3,4,10,11,12], 12),
   # SERA — Drakespire's last door (boss of Tsubaki's act 3; yields, never dies)
   "sr_idle":   ("sprites/enemies/sera", "sera_idle",   [1,2,3],   4),
   "sr_walk":   ("sprites/enemies/sera", "sera_walk",   [1,2,3,4], 10),
@@ -166,6 +194,15 @@ ANIMS = {
   "ad_idle":   ("sprites/warlock/forms/archdevil", "archdevil_idle",   [1,2,3,4],   6),
   "ad_walk":   ("sprites/warlock/forms/archdevil", "archdevil_walk",   [1,2,3,4,5], 10),
   "ad_attack": ("sprites/warlock/forms/archdevil", "archdevil_attack", [1,2,3],     10),
+  # more of the transformation shelf (2026-08-11): the unused form sets become
+  # EX-special cameos on the big warlock cards
+  "ad_claw":   ("sprites/warlock/forms/archdevil", "archdevil_claw",   [1,2,3,4,5], 12),
+  "dl_idle":   ("sprites/warlock/forms/demonlord", "demonlord_idle",   [1,2,3,4],   6),
+  "dl_attack": ("sprites/warlock/forms/demonlord", "demonlord_attack", [1,2,3],     10),
+  "li_idle":   ("sprites/warlock/forms/lich",      "lich_idle",        [1,2,3,4,5], 6),
+  "li_attack": ("sprites/warlock/forms/lich",      "lich_attack",      [1,2,3,4,5], 10),
+  "aw_idle":   ("sprites/warlock/forms/archwarlock","archwarlock_idle",[1,2,3,4,5,6], 6),
+  "aw_hex":    ("sprites/warlock/forms/archwarlock","archwarlock_hex", [1,2,3,4,5,6,7,8], 12),
   # ---- Tavern NPC (the Dancer) -- sliced from tools/dancer_mvc.png's IDLE row ----
   "dc_idle":   ("sprites/npcs/dancer", "dancer_idle", [1,2,3,4,5,6], 6),
 
@@ -249,10 +286,10 @@ BUNDLES = {
   "assets_fx_bg.js":   ["fx_","bg_"],
   "assets_enemies2.js":["sk_","br_","ms_","bs_"],
   "assets_enemies3.js":["hk_","gn_","st_","gv_","nc_"],   # Act 2 — the City roster
-  "assets_enemies4.js":["ch_","py_","dr2_","cp_"],        # Act 3 — the West Road roster
-  "assets_allies2.js": ["ba_","as_","ad_","dc_"],
+  "assets_enemies4.js":["ch_","py_","dr2_","cp_","owl_"], # Act 3 roster + the Ashenveil Proctor
+  "assets_allies2.js": ["ba_","as_","ad_","dc_","dc2_","dcx_","dcw_","dl_","li_","aw_"],
   "assets_samurai.js": ["kd_"],
-  "assets_enemies5.js":["nj_","ar_","mk_","ss_","sr_"],
+  "assets_enemies5.js":["nj_","ar_","mk_","ss_","sr_","kd2_"],
 }
 
 MAXH = 460  # cap sprite frame height (they're displayed <=420px)
@@ -388,6 +425,12 @@ def bg_entries():
         ("bg_bv_mid",   "bg_bv_mid.png",   "jpg"),
         ("bg_fort_far", "bg_fort_far.png", "jpg"),
         ("bg_fort_mid", "bg_fort_mid.png", "jpg"),
+        # Tsubaki level redesign (2026-08-11, OpenAI backend): bamboo road act 1
+        # + the Emperor's throne room (Sera boss arena)
+        ("bg_bam_far",    "bg_bam_far.png",    "jpg"),
+        ("bg_bam_mid",    "bg_bam_mid.png",    "jpg"),
+        ("bg_throne_far", "bg_throne_far.png", "jpg"),
+        ("bg_throne_mid", "bg_throne_mid.png", "jpg"),
         ("bg_alleys_far", "bg_alleys_far.png", "jpg"),
         ("bg_alleys_mid", "bg_alleys_mid.png", "png"),
         ("bg_inn_row",    "bg_village_mid.png", "png"),
@@ -422,7 +465,8 @@ def bg_entries():
 VOICE_IDS = [
     # 2026-08-06 canon story rewrite (post-Book-4 Ankuspawn arc; see src/voice.js)
     # narrator beats
-    "n_bio","n_gate","n_well","n_emperor","n_camp",
+    "n_bio","n_gate","n_bamboo","n_well","n_emperor","n_camp",
+    "k_duel","e_k2_meet","e_k2_intro","e_k2_death","e_mb_intro","e_mb_death",
     "n_coach","n_firebird","n_hum","n_close",
     # NPCs
     "m_champion","m_warning","m_backroom",     # Marlow
@@ -443,6 +487,9 @@ VOICE_IDS = [
     "n_kcage","n_ashen","k_deliver","n_vial","k_next","n_kclose",
     "e_nj_intro","e_ar_intro","e_ar_death","e_mk_intro","e_mk_death",
     "e_ss_intro","e_ss_death","e_sr_intro","e_sr_yield",
+    # 2026-08-11 narrative pass: every enemy speaks + the Keep-garrison beat
+    "e_hd_intro","e_bs_intro","e_sk_intro","e_br_intro","e_wg_intro","n_keepgarrison",
+    "m_greet","b_host","e_pr_intro","e_pr_death",
 ]
 
 def main():
@@ -478,7 +525,8 @@ def main():
     # music: one track per act theme (HTMLAudio data URIs, looped in code)
     tracks = {}
     for key, fname in [("w_pit", "w_pit.mp3"), ("w_city", "w_city.mp3"), ("w_forest", "w_forest.mp3"),
-                       ("k_pit", "k_pit.mp3"), ("k_city", "k_city.mp3"), ("k_fortress", "k_fortress.mp3")]:
+                       ("k_pit", "k_pit.mp3"), ("k_city", "k_city.mp3"), ("k_fortress", "k_fortress.mp3"),
+                       ("tavern", "tavern.mp3")]:
         p = os.path.join(SRC, "music", fname)
         if os.path.exists(p):
             tracks[key] = base64.b64encode(open(p, "rb").read()).decode()

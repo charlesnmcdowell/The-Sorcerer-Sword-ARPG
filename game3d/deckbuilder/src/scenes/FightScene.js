@@ -40,7 +40,15 @@ class FightScene extends Phaser.Scene {
     /* the fight's opening exchange: her line first (boss fights), then the villain's taunt */
     (async () => {
       const voOk = !this.E.voChar || this.E.voChar === Spire.run.character;
-      if (this.E.boss && Spire.act().bossVO) await Spire.say(this, Spire.act().bossVO);
+      /* the act's bossVO belongs to the act's OWN boss — the Kagehime duel and any
+         other drop-in boss brings its own intro line instead (2026-08-11) */
+      if (this.E.boss && Spire.act().bossVO && this.E.id === Spire.act().boss) await Spire.say(this, Spire.act().bossVO);
+      /* BUG FIX (2026-08-11, Hiro: "the ninja said nothing"): this block runs inside
+         create(), when Phaser still reports the scene as NOT active — so the old
+         `this.scene.isActive()` guard silently ate every NON-boss intro (bosses only
+         talked because the awaited bossVO line above outlived scene startup). Wait a
+         beat first; the guard then only rejects genuinely dead scenes. */
+      else await Spire.wait(this, 450);
       if (this.E.vo && this.E.vo.intro && voOk && this.scene.isActive()) await Spire.say(this, this.E.vo.intro);
     })();
     const introColor = this.E.boss ? "#ff6644" : (this.E.elite ? "#ffd97a" : "#d9884a");
@@ -64,6 +72,21 @@ class FightScene extends Phaser.Scene {
   buildArena() {
     const act = Spire.run ? Spire.run.act : 1;
     const kd = Spire.run && Spire.run.character === "samurai";
+    if (kd && act === 1 && this.textures.exists("bg_bam_far_1")) {
+      /* THE BAMBOO ROAD — morning mist on the road to Karridge (her road only) */
+      const far = this.add.image(640, 360, "bg_bam_far_1").setDepth(0);
+      far.setScale(Math.max(1280 / far.width, 720 / far.height) * 1.02);
+      const row = this.add.image(640, 668, "bg_bam_mid_1").setDepth(1).setOrigin(0.5, 1).setAlpha(0.95);
+      row.setScale(1280 / row.width);
+      this.add.rectangle(640, 360, 1280, 720, 0x06110a, this.E.boss ? 0.46 : 0.32).setDepth(2);
+      this.add.particles(0, 0, "dot", {   // drifting bamboo leaves in the morning light
+        x: { min: 0, max: 1280 }, y: { min: -20, max: 40 }, lifespan: 7000,
+        speedX: { min: -28, max: -8 }, speedY: { min: 14, max: 34 },
+        scale: { start: 0.34, end: 0.1 }, quantity: 1, frequency: 420,
+        tint: [0x9fd47a, 0xd8e8a0, 0x6a9a55], alpha: { start: 0.55, end: 0 }, blendMode: "ADD"
+      }).setDepth(3);
+      return;
+    }
     if (kd && act === 2 && this.textures.exists("bg_bv_far_1")) {
       /* BRASSVEIL — the lit city (arcane-punk; her road only) */
       const far = this.add.image(640, 360, "bg_bv_far_1").setDepth(0);
@@ -80,10 +103,12 @@ class FightScene extends Phaser.Scene {
       return;
     }
     if (kd && act === 3 && this.textures.exists("bg_fort_far_1")) {
-      /* DRAKESPIRE KEEP — the Emperor's fortress under storm */
-      const far = this.add.image(640, 360, "bg_fort_far_1").setDepth(0);
+      /* DRAKESPIRE KEEP — fortress grounds; the BOSS fight moves inside to the
+         Emperor's THRONE ROOM, where Sera waits (2026-08-11) */
+      const throne = this.E.id === "sera" && this.textures.exists("bg_throne_far_1");
+      const far = this.add.image(640, 360, throne ? "bg_throne_far_1" : "bg_fort_far_1").setDepth(0);
       far.setScale(Math.max(1280 / far.width, 720 / far.height) * 1.02);
-      const row = this.add.image(640, 655, "bg_fort_mid_1").setDepth(1).setOrigin(0.5, 1).setAlpha(0.95);
+      const row = this.add.image(640, 655, throne ? "bg_throne_mid_1" : "bg_fort_mid_1").setDepth(1).setOrigin(0.5, 1).setAlpha(0.95);
       row.setScale(1280 / row.width);
       this.add.rectangle(640, 360, 1280, 720, 0x060a08, this.E.boss ? 0.52 : 0.4).setDepth(2);
       this.add.particles(0, 0, "dot", {   // green imperial brazier-embers in the rain
@@ -416,7 +441,7 @@ class FightScene extends Phaser.Scene {
     /* ranged foes (the Road Gunner, the Court Necromancer, the Pyre) hold their ground
        and fire a bolt per hit -- true to the original pit game's standoff casters */
     if (this.E.ranged) {
-      const tracer = { gunner: 0xffe9a0, necro: 0x88ff99, pyre: 0xffaa44 }[this.E.id] || 0xffe9a0;
+      const tracer = { gunner: 0xffe9a0, necro: 0x88ff99, pyre: 0xffaa44, proctor: 0xbb88ff }[this.E.id] || 0xffe9a0;
       for (let i = 0; i < ev.dealt.length; i++) {
         const swing = Spire.play(this.hd, pre + "_attack");
         Spire.sfx.bolt();
@@ -438,8 +463,11 @@ class FightScene extends Phaser.Scene {
     }
     this.hd.play("a_" + pre + "_walk");
     await Spire.tween(this, { targets: this.hd, x: this.wlX + 190, duration: 420, ease: "Sine.easeIn" });
+    /* per-move attack animation (2026-08-11): a script move may name its own set
+       via mv.anim (e.g. the Second Blade's Crossveil uses kd2_attack2) */
+    const atkKey = (ev.anim && this.anims.exists("a_" + ev.anim)) ? ev.anim : pre + "_attack";
     for (let i = 0; i < ev.dealt.length; i++) {
-      const swing = Spire.play(this.hd, pre + "_attack");
+      const swing = Spire.play(this.hd, atkKey);
       Spire.sfx.whoosh();
       await Spire.wait(this, 180);
       this.cameras.main.shake(110, 0.006);
@@ -641,7 +669,8 @@ class FightScene extends Phaser.Scene {
     Spire.won = true;
     this.cameras.main.fadeOut(450);
     await Spire.wait(this, 470);
-    if (this.E.boss) this.scene.start("ActClear");
+    if (this.E.id === "kagehime") this.scene.start("Epilogue");   // the duel won -> the Ashenveil
+    else if (this.E.boss) this.scene.start("ActClear");
     else this.scene.start("Reward", { elite: !!this.E.elite });
   }
   async defeat() {
@@ -659,11 +688,53 @@ class FightScene extends Phaser.Scene {
     this.add.text(640, 430, "RISE AGAIN", { fontFamily: "Georgia, serif", fontSize: 20, color: "#e8cfa8" }).setOrigin(0.5).setDepth(62);
   }
 
+  /* MvC-STYLE EX CUT-IN (2026-08-11, Hiro's ask): the big cards announce themselves.
+     Dim the arena, streak speedlines, slam the move's own art across the screen with
+     its name — and sometimes someone in the dark says something about it. */
+  async exCutIn(animKey, label, tint = 0xe0b34a) {
+    const s = this;
+    const junk = [];
+    const dim = s.add.rectangle(640, 360, 1280, 720, 0x000000, 0.68).setDepth(48);
+    junk.push(dim);
+    for (let i = 0; i < 14; i++) {
+      const r = s.add.rectangle(1500, Phaser.Math.Between(30, 690), Phaser.Math.Between(180, 430),
+                                Phaser.Math.Between(2, 4), tint, 0.5).setDepth(49).setBlendMode(Phaser.BlendModes.ADD);
+      junk.push(r);
+      s.tweens.add({ targets: r, x: -260, duration: Phaser.Math.Between(280, 430), delay: i * 20, repeat: 2 });
+    }
+    const big = Spire.spawn(s, animKey, -260, 660, { depth: 50, height: 560 });
+    junk.push(big);
+    const txt = s.add.text(900, 580, label, {
+      fontFamily: "Georgia, serif", fontSize: 42, color: "#ffe9b0", letterSpacing: 5,
+      stroke: "#1a0e08", strokeThickness: 8
+    }).setOrigin(0.5).setDepth(51).setAlpha(0);
+    junk.push(txt);
+    Spire.sfx.whoosh(); Spire.sfx.card();
+    await Spire.tween(s, { targets: big, x: 350, duration: 300, ease: "Expo.easeOut" });
+    s.cameras.main.flash(120, 255, 240, 200);
+    s.tweens.add({ targets: txt, alpha: 1, duration: 150 });
+    if (Math.random() < 0.45) {   // a voice from beyond the arena
+      const kd = Spire.run.character === "samurai";
+      const q = Phaser.Utils.Array.GetRandom(kd
+        ? ["somewhere in the dark, steel students stop breathing…", "“the Ieyasu draw. I thought it was a rumor.”", "even the crows go quiet for this one.", "“do not blink. you will miss the year's best lesson.”"]
+        : ["somewhere, the Firebird whistles low…", "“That grade of ember-work isn't SOLD anywhere.”", "the dark between the braziers leans in to watch.", "“gods. the ledger never had a page for THAT.”"]);
+      const bt = s.add.text(640, 692, q, {
+        fontFamily: "Georgia, serif", fontSize: 14, fontStyle: "italic", color: "#caa26a",
+        stroke: "#120a08", strokeThickness: 4
+      }).setOrigin(0.5).setDepth(51);
+      junk.push(bt);
+    }
+    await Spire.wait(s, 640);
+    await Spire.tween(s, { targets: junk, alpha: 0, duration: 170 });
+    junk.forEach(o => o.destroy());
+  }
+
   /* ================= choreography context ================= */
   ctx() {
     const s = this;
     return {
       C: s.C, wl: s.wl, hd: s.hd, wlX: s.wlX, hdX: s.hdX, groundY: s.groundY, prefix: s.E.prefix,
+      exCutIn: (k, l, t) => s.exCutIn(k, l, t),
       wlIdle: async () => { s.wl.play("a_" + s.PP + "_idle"); },
       applyHit(base) {
         const n = s.C.playerHits(base);

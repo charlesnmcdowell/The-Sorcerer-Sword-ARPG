@@ -537,6 +537,71 @@ when patching frames inside an EXISTING set, edit-chain from that set's own
 anchor frames so the style seam stays hidden. Old gen_*.py scripts are
 historical records of what was generated; write new generators against artgen.
 
+## UNUSED-ART INTEGRATION + LEVEL BACKDROPS (2026-08-11, "organize the game")
+BACKDROPS (OpenAI, $1.50 of the $2 cap, style-approved via sample-first):
+bamboo road (act-1 samurai, replaces her Pit act: run.js ACTS_K, new n_bamboo
+mapVO, k_boss1 re-written+re-voiced for the road), Brassveil v2 (stronger
+magitech-cyberpunk), and the THRONE ROOM — Sera's boss arena only (fortress
+grounds for regular act-3 fights; buildArena gates on E.id==="sera").
+UNUSED ART NOW IN PLAY:
+- Rival samurai (the retired cel-shade set -> sprites/enemies/rival, prefix kd2,
+  faces RIGHT so flip:true): KAGEHIME, THE SECOND BLADE — endgame duel after
+  Sera (ActClear -> "AT THE BROKEN GATES" story -> Fight kagehime -> Epilogue;
+  run._dueled guards; per-move anim support added so Crossveil uses kd2_attack2;
+  act bossVO now only fires for the act's own boss). For the warlock she is THE
+  MATRON'S BLADE — once-per-run act-3 dark-node ambush (run._bladeMet), the cult
+  finally catching the arsonist. 6 new VO lines, new Kagehime ElevenLabs voice.
+  Her death set is composed from hurt+counter frames (a yield, no new art).
+- Dancer sheets SLICED (tools/refs/dancer_move.png + dancer_in_tavern_poses ->
+  sprites/npcs/dancer2): green-outfit belly dance (dc2_dance 10f) some tavern
+  nights, white idle others; dcw_bob girl on the back stage; dcx_face emote
+  portraits chip in beside a rotating Firebird quip. Broken sheet cells (text
+  bleed) dropped: dance 3-4, face 4.
+- Warlock FORM shelf: ad_claw now the Devil's Skin strike; DEMONLORD looms
+  during Crimson Feast; LICH countersigns Dark Covenant; ARCHWARLOCK mirrors
+  Exsanguinate; hound_arrowhit finally bundled -> Marrow Choir's volley reacts.
+- MvC-STYLE EX CUT-INS (FightScene.exCutIn + ctx): dim, speedlines, the move's
+  own animated art slams across screen with its name; 45% chance a bystander
+  remarks. Wired: Ichigeki, Tsubaki Bloom, Devil's Skin, Crimson Feast.
+MUSIC: tavern now plays "Trouble By The Hearth morning inn" (tavern.mp3, on-device
+ffmpeg), restored to act music on exit.
+Tested: both full roads CLEAN (samurai road includes the duel); tavern, kagehime
+routing, matronblade boot, cut-in all probed in-engine with screenshots.
+
+## NARRATIVE-DIRECTOR + POLISH PASS (2026-08-11 evening, pre-release rules doc)
+DIALOGUE CLEANUP (every line re-read against archetype/clarity/purpose):
+- Dead lines removed from the script: the pre-redesign act-3 "k_house" (Tempest
+  House) and the stale StormSage duplicate of k_boss3 (Sera's is canonical).
+- k_orders re-written + re-recorded (she is ON THE ROAD, not yet in the city).
+- Six vtexts that opened cold got opening performance tags and were re-recorded
+  (w_boss1, m_backroom, n_coach, n_firebird, n_kclose, n_close).
+- PLOT FIX: the samurai act-3 pool no longer has the cult's own road-crew
+  (chain/pyre) defending the Emperor's Keep against the cult's blade — garrison
+  is now ninja/wight/gunner, and a new narrator beat (n_keepgarrison) explains
+  the Tempest School's last contract. Duel balance: full heal before Kagehime
+  (bot died 10hp->duel without it; verified healed + routed).
+EVERY ENEMY NOW SPEAKS (13 new recordings, 3 NEW ElevenLabs voice designs:
+PitBones / PitBrute / FrostWight): hound (the Hound Master bellows from the
+stands, warlock-gated), skeleton, brute, wight — and THE BEAST gets a narrator
+line ("never anyone's to sell") since beasts don't talk. All wired via vo.intro.
+SKIP RULES (Hiro's spec): a click hurries ONE line and silences its audio (the
+skip listener now detaches on completion so it can't mute later lines); holding
+the button 5 FULL SECONDS skips the whole cutscene — progress bar fades in near
+the top, releasing early cancels (Spire.holdToSkip; wired into Story + Epilogue).
+Verified headless: click-hurry stays in scene, 2s hold does nothing, 5.4s hold
+lands on Map; all 6 new VO clips bundled; wight boots in samurai act 3.
+FILE CLEANUP: cloud temp zips/screenshots/logs purged; device-side transfer
+temps live in game3d\_to_delete (mount forbids deletion — Hiro empties it).
+## ENEMY-INTRO VO BUG (2026-08-11, Hiro: "the ninja said nothing")
+Root cause: FightScene's opening-VO block runs inside create(), when Phaser still
+reports the scene NOT active — so the `this.scene.isActive()` guard silently ate
+every NON-boss intro line, for every regular enemy, since the guard was added.
+Bosses only ever talked because their awaited bossVO line outlived scene startup.
+Fix: non-boss path waits 450ms before the guard (which then only rejects genuinely
+dead scenes). Verified headless: fresh boot AND consecutive reused-scene fights
+both fire e_nj/e_sk/e_br intros. Lesson for the harness: run_test never asserted
+that Spire.say fired for regular fights — instrument VO calls in future passes.
+
 ## Resume-here notes for another model
 - Everything self-contained under this folder (`/home/claude/spire` in the cloud session;
   delivered copy in `game3d/deckbuilder/` on Hiro's PC).

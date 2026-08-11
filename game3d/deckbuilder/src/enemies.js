@@ -11,6 +11,7 @@ window.Spire = window.Spire || {};
 Spire.ENEMIES = {
   hound: {
     id: "hound", name: "PIT HOUND", prefix: "hd", hp: 48, height: 225, flip: true,
+    vo: { intro: "e_hd_intro" }, voChar: "warlock",   // his master bellows from the stands
     script: [
       { kind: "buff",   label: "Snarl", str: 2 },
       { kind: "attack", label: "Bite",  dmg: 9, hits: 1 },
@@ -20,10 +21,11 @@ Spire.ENEMIES = {
     ],
     reactions: { hexhit: "hd_hexhit", firehit: "hd_firehit", clawhit: "hd_clawhit",
                  portalhit: "hd_portalhit", afirehit: "hd_afirehit", ahexhit: "hd_ahexhit",
-                 fadehit: "hd_fadehit", scythehit: "hd_scythehit" }
+                 fadehit: "hd_fadehit", scythehit: "hd_scythehit", arrowhit: "hd_arrowhit" }
   },
   skel: {
     id: "skel", name: "PIT SKELETON", prefix: "sk", hp: 34, height: 235,
+    vo: { intro: "e_sk_intro" },
     script: [
       { kind: "attack", label: "Rusted Slash", dmg: 7, hits: 1 },
       { kind: "block",  label: "Shield Up",    block: 6 },
@@ -34,6 +36,7 @@ Spire.ENEMIES = {
   },
   brute: {
     id: "brute", name: "PIT BRUTE", prefix: "br", hp: 58, height: 265,
+    vo: { intro: "e_br_intro" },
     script: [
       { kind: "attack", label: "Club Smash", dmg: 11, hits: 1 },
       { kind: "block",  label: "Brace",      block: 8 },
@@ -44,6 +47,7 @@ Spire.ENEMIES = {
   },
   beast: {
     id: "beast", name: "THE BEAST", prefix: "bs", hp: 78, height: 265, elite: true, flip: true,
+    vo: { intro: "e_bs_intro" },   // the narrator speaks for what has no voice
     script: [
       { kind: "attack", label: "Gore",   dmg: 12, hits: 1 },
       { kind: "attack", label: "Frenzy", dmg: 4,  hits: 3 },
@@ -162,6 +166,7 @@ Spire.ENEMIES = {
   },
   wight: {
     id: "wight", name: "FROST WIGHT", prefix: "sk", hp: 64, height: 235, tint: 0x9fd4ff,
+    vo: { intro: "e_wg_intro" },
     /* Cookie's saltcellar tip made flesh: "Rats don't leave FROST on the railings."
        Reuses the skeleton art under an icy tint -- a risen thing off the night road. */
     script: [
@@ -258,6 +263,55 @@ Spire.ENEMIES = {
       { kind: "attack", label: "Arresting Thrust",  dmg: 13, hits: 1 },
       { kind: "buff",   label: "The Cage Predicts", str: 3 },
       { kind: "attack", label: "Breach Ray",        dmg: 6,  hits: 3 }
+    ],
+    reactions: {}
+  },
+
+  proctor: {
+    /* THE ASHENVEIL PROCTOR (2026-08-11): the original warlock art, reborn as the
+       academy's enforcer — the faculty finally answers the question Vessia asked.
+       Ranged caster; his hex bolts use the standoff-caster path. */
+    id: "proctor", name: "THE ASHENVEIL PROCTOR", prefix: "owl", hp: 100, height: 280,
+    elite: true, flip: true, ranged: true,
+    vo: { intro: "e_pr_intro", death: "e_pr_death" }, voChar: "warlock",
+    script: [
+      { kind: "attack", label: "Corrective Bolt",  dmg: 8,  hits: 1 },
+      { kind: "buff",   label: "Cite Precedent",   str: 2 },
+      { kind: "attack", label: "Twin Citation",    dmg: 5,  hits: 2 },
+      { kind: "block",  label: "Faculty Wards",    block: 11 },
+      { kind: "attack", label: "Final Assessment", dmg: 12, hits: 1 }
+    ],
+    reactions: {}
+  },
+
+  /* THE SECOND BLADE (2026-08-11): the retired first-pass samurai art, reborn as
+     an Ieyasu-school rival. Art faces RIGHT (it was drawn as player art) -> flip.
+     Two framings share the sprite set:
+       kagehime   — Tsubaki's endgame duel (the Matron sends her own test)
+       matronblade— the hunter who finally catches up with Vessia (act-3 ambush) */
+  kagehime: {
+    id: "kagehime", name: "KAGEHIME, THE SECOND BLADE", prefix: "kd2", hp: 190, height: 300,
+    boss: true, flip: true,
+    vo: { intro: "e_k2_intro", death: "e_k2_death" }, voChar: "samurai",
+    script: [
+      { kind: "attack", label: "First Cut",       dmg: 9,  hits: 1 },
+      { kind: "block",  label: "Patient Defense", block: 12 },
+      { kind: "attack", label: "Crossveil",       dmg: 6,  hits: 2, anim: "kd2_attack2" },
+      { kind: "buff",   label: "Observant Draw",  str: 3 },
+      { kind: "attack", label: "Odd-Hour Stroke", dmg: 16, hits: 1 }
+    ],
+    reactions: {}
+  },
+  matronblade: {
+    id: "matronblade", name: "THE MATRON'S BLADE", prefix: "kd2", hp: 120, height: 300,
+    elite: true, flip: true,
+    vo: { intro: "e_mb_intro", death: "e_mb_death" }, voChar: "warlock",
+    script: [
+      { kind: "attack", label: "First Cut",       dmg: 8,  hits: 1 },
+      { kind: "block",  label: "Patient Defense", block: 10 },
+      { kind: "attack", label: "Crossveil",       dmg: 5,  hits: 2, anim: "kd2_attack2" },
+      { kind: "buff",   label: "Observant Draw",  str: 2 },
+      { kind: "attack", label: "Ichigeki",        dmg: 14, hits: 1 }
     ],
     reactions: {}
   },

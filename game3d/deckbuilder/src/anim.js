@@ -6,7 +6,7 @@ window.Spire = window.Spire || {};
 /* idles that should breathe back and forth instead of snapping frame4 -> frame1
    (2026-08-08: Tsubaki's idle read as "turning over and over" — yoyo + low fps
    makes a 4-frame breathing loop feel continuous) */
-Spire.YOYO = new Set(["kd_idle", "sr_idle"]);
+Spire.YOYO = new Set(["kd_idle", "sr_idle", "kd2_idle"]);
 Spire.LOOPING = new Set([
   "wl_idle","wl_walk","hd_idle","hd_walk",
   "sk_idle","sk_walk","br_idle","br_walk","ms_idle","ms_walk","bs_idle","bs_walk",
@@ -19,7 +19,11 @@ Spire.LOOPING = new Set([
   /* 2026-08-08 Tsubaki + the Tempest School — without these the new idles/walks
      played ONCE and froze (Hiro: "looks like a still image") */
   "kd_idle","kd_walk",
-  "nj_idle","nj_walk","ar_idle","ar_walk","mk_idle","mk_walk","ss_idle","ss_walk","sr_idle","sr_walk"
+  "nj_idle","nj_walk","ar_idle","ar_walk","mk_idle","mk_walk","ss_idle","ss_walk","sr_idle","sr_walk",
+  /* 2026-08-11 unused-art integration: the rival Second Blade + the Firebird's
+     green wardrobe + the white-outfit bob */
+  "kd2_idle","kd2_walk","dc2_idle","dc2_walk","dc2_dance","dcw_bob","owl_idle","owl_walk",
+  "dl_idle","li_idle","aw_idle"
 ]);
 
 /* Per-anim display target heights (px on the 1280x720 stage). Tuned by screenshot pass.

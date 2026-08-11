@@ -144,7 +144,9 @@ class MapScene extends Phaser.Scene {
     };
     const eliteTips = { beast: "ELITE — The Beast. Greater spoils for greater risk.",
                         grave: "ELITE — Gravehand. It parries, then it punishes.",
-                        door: "ELITE — THE WALL. Patience against patience." };
+                        door: "ELITE — THE WALL. Patience against patience.",
+                        sorcerer: "ELITE — The Storm Sage. The sky fights beside him.",
+                        proctor: "ELITE — an Ashenveil Proctor. The academy grades harshly." };
     const bossTips = { master: "THE HOUND MASTER — clear him to take the floor",
                        necro: "THE COURT NECROMANCER — the buyer's pet, and his court of Risen",
                        champ: "THE CHAMP — the shipment's keeper eats his own thralls" };
@@ -193,7 +195,16 @@ class MapScene extends Phaser.Scene {
     const ACT = Spire.act();
     const roll = Math.random();
     const skipped = (Spire.run.map[1] && Spire.run.map[1][0] && Spire.run.map[1][0].enemy) || Spire.claimEnemy(ACT.fightPool);
-    if (Spire.run.act === 2 && roll < 0.30 && !Spire.run._buyerMet && Spire.run.character !== "samurai") {
+    if (Spire.run.act === 3 && !Spire.run._bladeMet && Spire.run.character !== "samurai") {
+      /* 2026-08-11 (Hiro playtest): was a 30% roll — too easy to never meet her.
+         The hunter always finds the arsonist on the first act-3 dark node now. */
+      /* THE MATRON'S BLADE finds the arsonist (2026-08-11): the cult's hunter has
+         been following the ledger's burned pages — once per run, act 3 dark nodes */
+      Spire.run._bladeMet = true;
+      n.enemy = "matronblade";
+      this.toast("a blade has been following the smoke you left…");
+      this.time.delayedCall(1000, () => go("Fight"));
+    } else if (Spire.run.act === 2 && roll < 0.30 && !Spire.run._buyerMet && Spire.run.character !== "samurai") {
       /* the story finds her: the Veiled Woman and her humming vial */
       Spire.run._buyerMet = true;
       Spire.clearNode();

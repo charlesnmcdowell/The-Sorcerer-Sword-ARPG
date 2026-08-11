@@ -181,6 +181,7 @@ class TavernScene extends Phaser.Scene {
   create() {
     NODE_BG(this, 0.62);
     NODE_TITLE(this, "A  L O N E   T A V E R N", "lamplight, warm ale, and someone who isn't trying to kill her");
+    Spire.playMusic("tavern");   // Trouble By The Hearth (2026-08-11, Hiro's track)
 
     /* a little decor: lantern glow + a barrel, then the two figures */
     const lx = 860, ly = 330;
@@ -191,8 +192,34 @@ class TavernScene extends Phaser.Scene {
     this.add.rectangle(360, 560, 70, 60, 0x4a2f1a).setStrokeStyle(3, 0x2a1a10).setDepth(19);
 
     const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 470, 520, { depth: 20, height: 280 });
-    const dancer = Spire.spawn(this, "dc_idle", 780, 520, { depth: 20, height: 280 });
-    this.tweens.add({ targets: dancer, scaleX: dancer.scaleX * 1.015, scaleY: dancer.scaleY * 0.99, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    /* THE FIREBIRD'S WARDROBE (2026-08-11, sliced from Hiro's sheets): some nights
+       she performs in the green stage outfit — a real belly dance, not a pose —
+       other nights it's the white dress between sets. A second girl bobs on the
+       back stage either way. */
+    const green = this.textures.exists("dc2_dance_1") && Math.random() < 0.6;
+    const dancer = Spire.spawn(this, green ? "dc2_dance" : "dc_idle", 780, 520, { depth: 20, height: 280 });
+    if (!green) this.tweens.add({ targets: dancer, scaleX: dancer.scaleX * 1.015, scaleY: dancer.scaleY * 0.99, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    if (this.textures.exists("dcw_bob_1")) {
+      this.add.rectangle(1075, 560, 150, 14, 0x2a1a10).setStrokeStyle(2, 0x1a0e08).setDepth(18);  // the back stage
+      const bob = Spire.spawn(this, "dcw_bob", 1075, 552, { depth: 19, height: 150 });
+      bob.setAlpha(0.82);
+      this.add.ellipse(1075, 470, 170, 190, 0xffcc88, 0.07).setDepth(18).setBlendMode(Phaser.BlendModes.ADD);
+    }
+    /* her face, up close — the sliced emote portraits chip in beside the flavor line */
+    if (this.textures.exists("dcx_face_1")) {
+      const fi = Phaser.Math.Between(1, 7);
+      const chip = this.add.image(170, 212, "dcx_face_" + fi).setDepth(30);
+      chip.setScale(Math.min(150 / chip.width, 82 / chip.height));
+      this.add.rectangle(170, 212, chip.displayWidth + 8, chip.displayHeight + 8, 0x000000, 0)
+        .setStrokeStyle(2, 0xe0b34a, 0.7).setDepth(31);
+      const quip = Phaser.Utils.Array.GetRandom(green
+        ? ["“new outfit. the crowd's louder tonight.”", "“watch the hips — that's where the magic lives.”", "“stay for the last number. it gets illegal.”"]
+        : ["“white nights are for listening, love.”", "“between sets. buy a girl a cider?”", "“the songs remember what the city forgets.”"]);
+      this.add.text(170, 278, quip, {
+        fontFamily: "Georgia, serif", fontSize: 13, fontStyle: "italic", color: "#e8cfa8",
+        align: "center", wordWrap: { width: 250 }
+      }).setOrigin(0.5, 0).setDepth(30);
+    }
 
     /* full heal, right away -- "your health is refilled" */
     const healed = Spire.run.maxHp - Spire.run.hp;
@@ -246,6 +273,7 @@ class TavernScene extends Phaser.Scene {
     window.tavernSkip = () => { this.done("debug skip"); };
   }
   done(msg) {
+    Spire.playMusic(Spire.act().music);   // the hearth-song stays in the tavern
     this.cameras.main.fadeOut(300);
     this.time.delayedCall(320, () => this.scene.start("Map", { toast: msg }));
   }
@@ -269,9 +297,10 @@ class StoryScene extends Phaser.Scene {
       this.tweens.add({ targets: t, alpha: 1, duration: 500 });
     }
     Spire.spawn(this, Spire.char().prefix + "_idle", 640, 540, { depth: 20, height: 300 });
-    this.add.text(640, 592, "· click to hurry a line ·", { fontFamily: "Georgia, serif", fontSize: 12, fontStyle: "italic", color: "#6a5844" }).setOrigin(0.5).setDepth(30);
+    this.add.text(640, 592, "· click to hurry a line — hold 5s to skip the scene ·", { fontFamily: "Georgia, serif", fontSize: 12, fontStyle: "italic", color: "#6a5844" }).setOrigin(0.5).setDepth(30);
     this._done = false;
     window.storyNext = () => this.finish();     // debug/test hook
+    Spire.holdToSkip(this, () => this.finish());   // hold 5s = skip the whole cutscene
     this.playLines();
     this.cameras.main.fadeIn(400);
   }
@@ -295,6 +324,7 @@ class StoryScene extends Phaser.Scene {
     this.cameras.main.fadeOut(350);
     this.time.delayedCall(370, () => {
       if (this.next === "__nextact") { Spire.nextAct(); this.scene.start("Map", { toast: Spire.act().tag }); }
+      else if (this.next === "__duel") this.scene.start("Fight", { enemy: "kagehime" });
       else this.scene.start(this.next);
     });
   }
@@ -304,17 +334,26 @@ class StoryScene extends Phaser.Scene {
 class InnScene extends Phaser.Scene {
   constructor() { super("Inn"); }
   create() {
-    NODE_BG(this, 0.66, "bg_alleys_far_1");
-    /* the inn row, warm windows lit */
-    const row = this.add.image(640, 652, "bg_inn_row_1").setOrigin(0.5, 1).setDepth(5).setAlpha(0.98);
-    row.setScale(1280 / row.width);
+    /* 2026-08-11 inn rework (Hiro): the inn greets you and offers a BED, full stop.
+       Marlow's rumor exposition moved to the act-2 story intro. Brassveil gets its
+       own inn (the samurai never meets Marlow — different city, different host). */
+    const kd = Spire.run.character === "samurai";
+    NODE_BG(this, 0.66, kd ? "bg_bv_far_1" : "bg_alleys_far_1");
+    if (!kd) {
+      const row = this.add.image(640, 652, "bg_inn_row_1").setOrigin(0.5, 1).setDepth(5).setAlpha(0.98);
+      row.setScale(1280 / row.width);
+    } else if (this.textures.exists("bg_bv_mid_1")) {
+      const row = this.add.image(640, 660, "bg_bv_mid_1").setOrigin(0.5, 1).setDepth(5).setAlpha(0.95);
+      row.setScale(1280 / row.width);
+    }
     this.add.rectangle(640, 360, 1280, 720, 0x0a0705, 0.25).setDepth(6);
-    NODE_TITLE(this, "T H E   L A S T   D O O R   I N N", "board, bed, and the best-paid ears in Karridge");
+    if (kd) NODE_TITLE(this, "T H E   H U M M I N G   H E A R T H", "rune-warmed rooms in the lit city");
+    else NODE_TITLE(this, "T H E   L A S T   D O O R   I N N", "board, bed, and the best-paid ears in Karridge");
     const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 420, 600, { depth: 20, height: 280 });
     this.add.ellipse(880, 420, 300, 200, 0xffcc77, 0.08).setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
 
-    /* Marlow talks (from somewhere behind the bar), the road's word for sale */
-    Spire.say(this, "m_backroom");
+    /* a short welcome — nothing more (the player is here for the bed) */
+    Spire.say(this, kd ? "b_host" : "m_greet");
 
     /* a night's board: full heal */
     const healed = Spire.run.maxHp - Spire.run.hp;
@@ -328,7 +367,8 @@ class InnScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(30);
 
     /* what the road knows: a rare-leaning pick */
-    this.add.text(640, 600, "five silver, and Marlow's ears are hers — pick what the road taught", {
+    this.add.text(640, 600, kd ? "the host hears every traveler — pick what the city taught"
+                               : "five silver, and Marlow's ears are hers — pick what the road taught", {
       fontFamily: "Georgia, serif", fontSize: 14, fontStyle: "italic", color: "#caa26a"
     }).setOrigin(0.5).setDepth(30);
     const choices = Spire.rewardChoices(3, true);
@@ -508,7 +548,17 @@ class ActClearScene extends Phaser.Scene {
     const run = Spire.run;
     this.cameras.main.fadeOut(350);
     this.time.delayedCall(370, () => {
-      if (run.act >= Spire.LAST_ACT) return this.scene.start("Epilogue");
+      if (run.act >= Spire.LAST_ACT) {
+        /* THE ENDGAME DUEL (2026-08-11): the Keep is cleared, but the Matron
+           never sends only one blade. Kagehime waits at the gates — Tsubaki's
+           own school, sent to test what Sera left of her. Then the Ashenveil. */
+        if (run.character === "samurai" && !run._dueled) {
+          run._dueled = true;
+          run.hp = run.maxHp;   // she binds her wounds at the gates — Sera's duel earned that much
+          return this.scene.start("Story", { lines: ["k_duel", "e_k2_meet"], title: "AT  THE  BROKEN  GATES", next: "__duel" });
+        }
+        return this.scene.start("Epilogue");
+      }
       const T = run.character === "samurai" ? Spire.ACTS_K : Spire.ACTS;
       const cur = T[run.act], nxt = T[run.act + 1];
       const lines = (cur.outro || []).concat(nxt.intro || []);
@@ -523,6 +573,8 @@ class EpilogueScene extends Phaser.Scene {
   create() {
     Spire.run.over = true;
     Spire.won = true;
+    this._done = false;
+    Spire.holdToSkip(this, () => this.finish());   // hold 5s = skip the epilogue reading
     this.kd = Spire.run.character === "samurai";
     if (this.kd) {
       /* TSUBAKI'S EPILOGUE — THE ASHENVEIL: the delivery, and the next assignment */
@@ -550,8 +602,8 @@ class EpilogueScene extends Phaser.Scene {
       const beam = this.add.triangle(830 + dx, 320, 0, 0, 60, 320, -60, 320, 0xffe9bb, 0.06).setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
       this.tweens.add({ targets: beam, alpha: 0.5, duration: 1200 + Math.abs(dx), yoyo: true, repeat: -1 });
     }
-    const dancer = Spire.spawn(this, "dc_idle", 830, 596, { depth: 20, height: 290 });
-    this.tweens.add({ targets: dancer, scaleX: dancer.scaleX * 1.02, scaleY: dancer.scaleY * 0.985, duration: 1200, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+    /* 2026-08-11 (Hiro): NO dancer sprite here — the show reads through the empty
+       spotlit stage, the beams, and the crowd; the narrator carries the Firebird. */
     const wl = Spire.spawn(this, "wl_idle", 330, 610, { depth: 20, height: 290 });
     /* two thousand strangers: silhouetted heads between her and the stage */
     for (let i = 0; i < 26; i++) {

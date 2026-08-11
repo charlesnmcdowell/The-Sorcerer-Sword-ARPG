@@ -66,16 +66,20 @@ def generate(prompt, size=SIZE, quality="high"):
     return base64.b64decode(r["data"][0]["b64_json"])
 
 def edit(prompt, ref_path, size=SIZE, quality="high"):
-    """Ref-anchored edit (multipart form). Returns raw PNG bytes."""
+    """Ref-anchored edit (multipart form). ref_path may be one path or a LIST of
+    paths — gpt-image-1 accepts several input images (e.g. [identity_anchor,
+    previous_frame] for animation continuity). Returns raw PNG bytes."""
     boundary = uuid.uuid4().hex
     parts = []
     def field(name, value):
         parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n').encode())
     field("model", MODEL); field("prompt", prompt); field("size", size)
     field("quality", quality); field("n", "1")
-    img = open(ref_path, "rb").read()
-    parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="image[]"; '
-                  f'filename="ref.png"\r\nContent-Type: image/png\r\n\r\n').encode() + img + b"\r\n")
+    refs = ref_path if isinstance(ref_path, (list, tuple)) else [ref_path]
+    for k, rp in enumerate(refs):
+        img = open(rp, "rb").read()
+        parts.append((f'--{boundary}\r\nContent-Disposition: form-data; name="image[]"; '
+                      f'filename="ref{k}.png"\r\nContent-Type: image/png\r\n\r\n').encode() + img + b"\r\n")
     parts.append(f"--{boundary}--\r\n".encode())
     body = b"".join(parts)
     r = _req(API + "/images/edits", body,
@@ -105,6 +109,13 @@ def key_crop(raw, out_path):
     a[:, :, 0] = np.where(pink, np.minimum(R, G + 60), a[:, :, 0])
     a[:, :, 2] = np.where(pink, np.minimum(B, G + 60), a[:, :, 2])
     alpha = np.array(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(0.8)))
+    # scrub any surviving magenta/pink pixels (ground-shadows the model sometimes
+    # draws despite the prompt). Hue-based: magenta-pink lives at hue 270-345,
+    # red cloth sits at 345-20, gold at 35-55 — cleanly separable.
+    hsv = np.array(Image.fromarray(a[:, :, :3], "RGB").convert("HSV")).astype(int)
+    H, S = hsv[:, :, 0] * 360 // 255, hsv[:, :, 1]
+    stray = (H >= 270) & (H <= 345) & (S > 70) & (alpha > 0)
+    alpha = np.where(stray, 0, alpha).astype("uint8")
     a[:, :, 3] = alpha
     ys, xs = np.where(alpha > 40)
     y0, y1 = max(0, ys.min() - 10), min(im.height, ys.max() + 10)
