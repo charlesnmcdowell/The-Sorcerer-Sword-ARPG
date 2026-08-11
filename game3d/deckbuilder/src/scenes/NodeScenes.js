@@ -512,7 +512,8 @@ class ActClearScene extends Phaser.Scene {
     const ACT = Spire.act();
     const lastAct = Spire.run.act >= Spire.LAST_ACT;
     NODE_BG(this, 0.55);
-    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 640, 560, { depth: 20, height: 340 });
+    const showAd = Spire.run.act === 1 && !Spire.run._suppShown;
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", showAd ? 330 : 640, 560, { depth: 20, height: 340 });
     this.add.particles(640, 620, "dot", {
       lifespan: 1600, speedY: { min: -160, max: -60 }, speedX: { min: -60, max: 60 },
       scale: { start: 0.7, end: 0 }, tint: [0xbb88ff, 0xe0b34a, 0xff9944],
@@ -534,6 +535,28 @@ class ActClearScene extends Phaser.Scene {
       this.add.text(640, 316, "the road rests a night — full health, +10 max HP, and the next act's ground ahead", {
         fontFamily: "Georgia, serif", fontSize: 15, color: "#6a5844"
       }).setOrigin(0.5).setDepth(30);
+    }
+    /* 2026-08-11 (Hiro): a small, honest ask after the first act — never blocks the
+       PRESS ON button, shows once per run, links to the site's Fund page. */
+    if (showAd) {
+      Spire.run._suppShown = true;
+      const sy = 384;
+      this.add.rectangle(640, sy + 32, 660, 110, 0x140f0c, 0.92).setStrokeStyle(1.5, 0xe0b34a, 0.55).setDepth(30);
+      this.add.text(640, sy + 2, "enjoying the road so far?", {
+        fontFamily: "Georgia, serif", fontSize: 15, color: "#e0b34a"
+      }).setOrigin(0.5).setDepth(31);
+      this.add.text(640, sy + 26, "this game is free — if it's worth something to you, a small donation or a review", {
+        fontFamily: "Georgia, serif", fontSize: 13, fontStyle: "italic", color: "#caa26a"
+      }).setOrigin(0.5).setDepth(31);
+      this.add.text(640, sy + 44, "keeps the next act coming. either way: thank you for playing.", {
+        fontFamily: "Georgia, serif", fontSize: 13, fontStyle: "italic", color: "#caa26a"
+      }).setOrigin(0.5).setDepth(31);
+      const sb = this.add.text(640, sy + 74, "♥  SUPPORT ON THE FUND PAGE", {
+        fontFamily: "Georgia, serif", fontSize: 13, color: "#ffd97a"
+      }).setOrigin(0.5).setDepth(31).setInteractive({ useHandCursor: true })
+        .on("pointerover", function () { this.setColor("#ffe9b0"); })
+        .on("pointerout",  function () { this.setColor("#ffd97a"); })
+        .on("pointerdown", () => { Spire.sfx.click(); try { window.open("https://neverendingnarratives.com/#fund", "_blank"); } catch (e) {} });
     }
     const nextLabel = lastAct ? "TAKE THE COACH NORTH" : "PRESS ON";
     NODE_BUTTON(this, 640, 660, nextLabel, () => this.advance(), 300);
