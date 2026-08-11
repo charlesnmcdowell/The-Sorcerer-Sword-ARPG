@@ -39,8 +39,9 @@ class FightScene extends Phaser.Scene {
     this.cameras.main.fadeIn(400);
     /* the fight's opening exchange: her line first (boss fights), then the villain's taunt */
     (async () => {
+      const voOk = !this.E.voChar || this.E.voChar === Spire.run.character;
       if (this.E.boss && Spire.act().bossVO) await Spire.say(this, Spire.act().bossVO);
-      if (this.E.vo && this.E.vo.intro && this.scene.isActive()) await Spire.say(this, this.E.vo.intro);
+      if (this.E.vo && this.E.vo.intro && voOk && this.scene.isActive()) await Spire.say(this, this.E.vo.intro);
     })();
     const introColor = this.E.boss ? "#ff6644" : (this.E.elite ? "#ffd97a" : "#d9884a");
     this.banner(this.E.name, introColor).then(async () => {
@@ -62,6 +63,36 @@ class FightScene extends Phaser.Scene {
   /* per-act arena: Act 1 the Pit, Act 2 the back alleys, Act 3 the west road at new moon */
   buildArena() {
     const act = Spire.run ? Spire.run.act : 1;
+    const kd = Spire.run && Spire.run.character === "samurai";
+    if (kd && act === 2 && this.textures.exists("bg_bv_far_1")) {
+      /* BRASSVEIL — the lit city (arcane-punk; her road only) */
+      const far = this.add.image(640, 360, "bg_bv_far_1").setDepth(0);
+      far.setScale(Math.max(1280 / far.width, 720 / far.height) * 1.02);
+      const row = this.add.image(640, 660, "bg_bv_mid_1").setDepth(1).setOrigin(0.5, 1).setAlpha(0.95);
+      row.setScale(1280 / row.width);
+      this.add.rectangle(640, 360, 1280, 720, 0x080a14, this.E.boss ? 0.5 : 0.38).setDepth(2);
+      this.add.particles(0, 0, "dot", {   // ley-light motes, teal + magenta
+        x: { min: 0, max: 1280 }, y: { min: 120, max: 560 }, lifespan: 5600,
+        speedX: { min: -10, max: 10 }, speedY: { min: -10, max: -2 },
+        scale: { start: 0.3, end: 0 }, quantity: 1, frequency: 340,
+        tint: [0x55e8d8, 0xdd66cc, 0x9fd4ff], alpha: { start: 0.6, end: 0 }, blendMode: "ADD"
+      }).setDepth(3);
+      return;
+    }
+    if (kd && act === 3 && this.textures.exists("bg_fort_far_1")) {
+      /* DRAKESPIRE KEEP — the Emperor's fortress under storm */
+      const far = this.add.image(640, 360, "bg_fort_far_1").setDepth(0);
+      far.setScale(Math.max(1280 / far.width, 720 / far.height) * 1.02);
+      const row = this.add.image(640, 655, "bg_fort_mid_1").setDepth(1).setOrigin(0.5, 1).setAlpha(0.95);
+      row.setScale(1280 / row.width);
+      this.add.rectangle(640, 360, 1280, 720, 0x060a08, this.E.boss ? 0.52 : 0.4).setDepth(2);
+      this.add.particles(0, 0, "dot", {   // green imperial brazier-embers in the rain
+        x: { min: 0, max: 1280 }, y: 730, lifespan: 5200, speedY: { min: -34, max: -10 },
+        scale: { start: 0.38, end: 0 }, quantity: 1, frequency: 300,
+        tint: [0x66e88a, 0x9fd4a0], alpha: { start: 0.6, end: 0 }, blendMode: "ADD"
+      }).setDepth(3);
+      return;
+    }
     if (act === 2) {
       const far = this.add.image(640, 360, "bg_alleys_far_1").setDepth(0);
       far.setScale(Math.max(1280 / far.width, 720 / far.height) * 1.02);
@@ -597,7 +628,7 @@ class FightScene extends Phaser.Scene {
     this.intentC.removeAll(true);
     Spire.run.hp = this.C.player.hp;
     Spire.clearNode();
-    if (this.E.vo && this.E.vo.death) Spire.say(this, this.E.vo.death);   // last words
+    if (this.E.vo && this.E.vo.death && (!this.E.voChar || this.E.voChar === Spire.run.character)) Spire.say(this, this.E.vo.death);   // last words
     await this.react(this.E.prefix + "_death", { stay: true, raw: true });
     const soul = this.add.particles(this.hdX, this.groundY - 70, "dot", {
       lifespan: 1300, speedY: { min: -120, max: -40 }, speedX: { min: -30, max: 30 },

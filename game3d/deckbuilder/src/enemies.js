@@ -138,7 +138,7 @@ Spire.ENEMIES = {
      chain / pyre / frost wight / THE WALL / THE CHAMP). ============ */
   chain: {
     id: "chain", name: "THE CHAIN", prefix: "ch", hp: 85, height: 275,
-    vo: { intro: "e_ch_intro" },
+    vo: { intro: "e_ch_intro" }, voChar: "warlock",   // cult-crew line; silent in her run
     script: [
       { kind: "attack", label: "Ring Sweep",  dmg: 14, hits: 1 },
       { kind: "block",  label: "Wrap Chains", block: 11 },
@@ -150,7 +150,7 @@ Spire.ENEMIES = {
   },
   pyre: {
     id: "pyre", name: "THE PYRE", prefix: "py", hp: 72, height: 250,
-    vo: { intro: "e_py_intro" },
+    vo: { intro: "e_py_intro" }, voChar: "warlock",
     script: [
       { kind: "special", label: "Cinder Toss", id: "cinder", dmg: 7, burn: 3 },
       { kind: "block",   label: "Mage Shield", block: 10 },
@@ -189,7 +189,7 @@ Spire.ENEMIES = {
      facing LEFT (audited); no flips. ============ */
   ninja: {
     id: "ninja", name: "TEMPEST SHINOBI", prefix: "nj", hp: 40, height: 225,
-    vo: { intro: "e_nj_intro" },
+    vo: { intro: "e_nj_intro" }, voChar: "samurai",
     script: [
       { kind: "attack", label: "Twin Fangs",  dmg: 5, hits: 2 },
       { kind: "block",  label: "Vanish",      block: 9 },
@@ -200,7 +200,7 @@ Spire.ENEMIES = {
   },
   archer: {
     id: "archer", name: "THE LONGBOW", prefix: "ar", hp: 100, height: 250, boss: true,
-    vo: { intro: "e_ar_intro", death: "e_ar_death" },
+    vo: { intro: "e_ar_intro", death: "e_ar_death" }, voChar: "samurai",
     script: [
       { kind: "attack", label: "Measured Shot", dmg: 12, hits: 1 },
       { kind: "block",  label: "Give Ground",   block: 9 },
@@ -213,7 +213,7 @@ Spire.ENEMIES = {
   },
   monk: {
     id: "monk", name: "THE IRON PALM", prefix: "mk", hp: 135, height: 255, boss: true,
-    vo: { intro: "e_mk_intro", death: "e_mk_death" },
+    vo: { intro: "e_mk_intro", death: "e_mk_death" }, voChar: "samurai",
     script: [
       { kind: "block",  label: "Rooted Stance", block: 14 },
       { kind: "attack", label: "Iron Palm",     dmg: 13, hits: 1 },
@@ -224,8 +224,10 @@ Spire.ENEMIES = {
     reactions: {}
   },
   sorcerer: {
-    id: "sorcerer", name: "THE STORM SAGE", prefix: "ss", hp: 165, height: 260, boss: true,
-    vo: { intro: "e_ss_intro", death: "e_ss_death" },
+    id: "sorcerer", name: "THE STORM SAGE", prefix: "ss", hp: 135, height: 260, elite: true,
+    /* 2026-08-08 redesign: the school's last master now holds DRAKESPIRE's ley-ward
+       as a hired warden — the elite guarding the fortress's loot lane. */
+    vo: { intro: "e_ss_intro", death: "e_ss_death" }, voChar: "samurai",
     script: [
       { kind: "attack", label: "Forked Bolt",   dmg: 7,  hits: 2 },
       { kind: "block",  label: "Static Veil",   block: 12 },
@@ -234,6 +236,29 @@ Spire.ENEMIES = {
       { kind: "attack", label: "Forked Bolt",   dmg: 7,  hits: 2 }
     ],
     ranged: true,
+    reactions: {}
+  },
+
+  /* ====== DRAKESPIRE KEEP's last door (2026-08-08): SERA — the Emperor's first
+     companion, champion of tournaments, twenty years past Book 1. CANON GUARDRAIL:
+     she does not die — her "death" set is a yield (down on one knee, alive), and
+     her final line says so. ====== */
+  sera: {
+    id: "sera", name: "SERA", prefix: "sr", hp: 170, height: 250, boss: true,
+    vo: { intro: "e_sr_intro", death: "e_sr_yield" }, voChar: "samurai",
+    /* MOVE SET FROM THE BOOKS (2026-08-08 canon pass — Books 1-3 combat sweep):
+       Rapier of Arrest + force-blade off-hand. "Twin Fang" is her named dual-wield
+       scissors (B1 ch14); "Sera's Cage" is the defensive stance she INVENTED
+       (B1 ch03, still hers in B2 ch16-17, "the Cage predicts angles"); the
+       Arresting Thrust is the Rapier of Arrest's clean-hit freeze (B2 ch15);
+       the Breach Shard fires devastating rays, three per fight (B2 ch15-16). */
+    script: [
+      { kind: "attack", label: "Twin Fang",         dmg: 7,  hits: 2 },
+      { kind: "block",  label: "Sera's Cage",       block: 13 },
+      { kind: "attack", label: "Arresting Thrust",  dmg: 13, hits: 1 },
+      { kind: "buff",   label: "The Cage Predicts", str: 3 },
+      { kind: "attack", label: "Breach Ray",        dmg: 6,  hits: 3 }
+    ],
     reactions: {}
   },
 

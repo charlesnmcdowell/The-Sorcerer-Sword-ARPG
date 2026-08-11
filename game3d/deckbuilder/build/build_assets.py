@@ -44,7 +44,7 @@ ANIMS = {
   "wl_bloodrite":(W + "/forms/newwarlock", "newwarlock_bloodrite", [1,2,3,4,5,6], 10),
   # ---- TSUBAKI (2026-08-08): the second playable — base sets + one set per card,
   # generated from Hiro's samurai.png reference (faces RIGHT like the warlock) ----
-  "kd_idle":     ("sprites/samurai", "kd_idle",     [1,2,3,4],     8),
+  "kd_idle":     ("sprites/samurai", "kd_idle",     [1,2,3,4],     4),   # slow breathe + yoyo
   "kd_walk":     ("sprites/samurai", "kd_walk",     [1,2,3,4,5,6], 12),
   "kd_hurt":     ("sprites/samurai", "kd_hurt",     [1,2,3],       12),
   "kd_slash":    ("sprites/samurai", "kd_slash",    [1,2,3,4],     10),
@@ -80,6 +80,12 @@ ANIMS = {
   "ss_attack": ("sprites/enemies/sorcerer", "sorcerer_attack", [1,2,3,4], 10),
   "ss_hurt":   ("sprites/enemies/sorcerer", "sorcerer_hurt",   [1,2,3],   12),
   "ss_death":  ("sprites/enemies/sorcerer", "sorcerer_death",  [1,2,3,4], 8),
+  # SERA — Drakespire's last door (boss of Tsubaki's act 3; yields, never dies)
+  "sr_idle":   ("sprites/enemies/sera", "sera_idle",   [1,2,3],   4),
+  "sr_walk":   ("sprites/enemies/sera", "sera_walk",   [1,2,3,4], 10),
+  "sr_attack": ("sprites/enemies/sera", "sera_attack", [1,2,3,4], 12),
+  "sr_hurt":   ("sprites/enemies/sera", "sera_hurt",   [1,2,3],   12),
+  "sr_death":  ("sprites/enemies/sera", "sera_death",  [1,2,3,4], 7),
   # ---- Hound ----
   "hd_idle":     (H, "hound_idle",      [1,2,3],        6),
   "hd_walk":     (H, "hound_walk",      [1,2,3,4],      10),
@@ -246,7 +252,7 @@ BUNDLES = {
   "assets_enemies4.js":["ch_","py_","dr2_","cp_"],        # Act 3 — the West Road roster
   "assets_allies2.js": ["ba_","as_","ad_","dc_"],
   "assets_samurai.js": ["kd_"],
-  "assets_enemies5.js":["nj_","ar_","mk_","ss_"],
+  "assets_enemies5.js":["nj_","ar_","mk_","ss_","sr_"],
 }
 
 MAXH = 460  # cap sprite frame height (they're displayed <=420px)
@@ -377,6 +383,11 @@ def bg_entries():
         ("bg_floor", "bg_pit_floor.png", "jpg"),
         ("bg_fg",    "bg_pit_fg.png",    "png"),
         # Act 2 — the City (Karridge back alleys) + the Last Door Inn backdrop
+        # Tsubaki's road (2026-08-08): BRASSVEIL (arcane-punk city) + DRAKESPIRE KEEP
+        ("bg_bv_far",   "bg_bv_far.png",   "jpg"),
+        ("bg_bv_mid",   "bg_bv_mid.png",   "jpg"),
+        ("bg_fort_far", "bg_fort_far.png", "jpg"),
+        ("bg_fort_mid", "bg_fort_mid.png", "jpg"),
         ("bg_alleys_far", "bg_alleys_far.png", "jpg"),
         ("bg_alleys_mid", "bg_alleys_mid.png", "png"),
         ("bg_inn_row",    "bg_village_mid.png", "png"),
@@ -428,10 +439,10 @@ VOICE_IDS = [
     "e_st_intro","e_st_mend",
     # Tsubaki's road (2026-08-08)
     "k_bio","k_orders","k_boss1","k_out1","k_silver","k_file","k_price",
-    "k_boss2","k_patience","k_house","k_boss3","k_courier","k_go",
+    "k_boss2","k_patience","k_fortress","k_boss3","k_courier","k_go","n_bv",
     "n_kcage","n_ashen","k_deliver","n_vial","k_next","n_kclose",
     "e_nj_intro","e_ar_intro","e_ar_death","e_mk_intro","e_mk_death",
-    "e_ss_intro","e_ss_death",
+    "e_ss_intro","e_ss_death","e_sr_intro","e_sr_yield",
 ]
 
 def main():
@@ -466,7 +477,8 @@ def main():
 
     # music: one track per act theme (HTMLAudio data URIs, looped in code)
     tracks = {}
-    for key, fname in [("arena", "arena.mp3"), ("city", "city.mp3"), ("forest", "forest.mp3")]:
+    for key, fname in [("w_pit", "w_pit.mp3"), ("w_city", "w_city.mp3"), ("w_forest", "w_forest.mp3"),
+                       ("k_pit", "k_pit.mp3"), ("k_city", "k_city.mp3"), ("k_fortress", "k_fortress.mp3")]:
         p = os.path.join(SRC, "music", fname)
         if os.path.exists(p):
             tracks[key] = base64.b64encode(open(p, "rb").read()).decode()
@@ -475,8 +487,8 @@ def main():
         for key, b64 in tracks.items():
             parts.append(f'SPIRE_MUSIC["{key}"]="data:audio/mpeg;base64,{b64}";')
         # back-compat alias (old code looked for SPIRE_AUDIO = the arena track)
-        if "arena" in tracks:
-            parts.append('window.SPIRE_AUDIO=SPIRE_MUSIC["arena"];')
+        if "w_pit" in tracks:
+            parts.append('window.SPIRE_AUDIO=SPIRE_MUSIC["w_pit"];')
         path = os.path.join(OUT, "assets_audio.js")
         with open(path, "w") as f: f.write("\n".join(parts))
         print(f"WROTE assets_audio.js: {os.path.getsize(path)/1e6:.1f} MB ({', '.join(tracks)})")

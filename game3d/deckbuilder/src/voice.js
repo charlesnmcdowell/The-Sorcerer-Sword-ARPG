@@ -117,8 +117,9 @@ Spire.VO = {
   k_price: { who: "TSUBAKI", text: "\"The school teaches: take the stroke that is offered.\"" },
   k_boss2: { who: "TSUBAKI", text: "\"Step aside, monk. Your school was paid to find the wolves — not to stand in front of one.\"" },
   k_patience: { who: "TSUBAKI", text: "\"There he is. The assignment beneath every assignment. Not here — not with witnesses. The Lady's design needs him charmed, not warned. Patience: the school's first stroke.\"" },
-  k_house: { who: "TSUBAKI", text: "\"The Tempest House. Burn the contracts. Break the banners. Politely. A school with no students hunts no one.\"" },
-  k_boss3: { who: "TSUBAKI", text: "\"Old man. Your storm has taken my couriers, my wagons, and my season. I am here to collect the weather.\"" },
+  n_bv: { who: "NARRATOR", text: "BRASSVEIL. Karridge is torchlight; this is the future arriving early — ley-conduits humming under brass streets, rune-signs that rewrite themselves, glass towers wearing the Kingdom's peace like jewelry. The gifted come here to shine. Which is to say: the ledger writes itself." },
+  k_fortress: { who: "TSUBAKI", text: "\"Drakespire Keep. The Lady bids me search the dragon's own house while the dragon is away. Wards, walls, and one famous sword between me and his study. Quietly, then — and if it cannot be quiet... quickly.\"" },
+  k_boss3: { who: "TSUBAKI", text: "\"Sera of Duskfen. First to follow him, they say — twenty years of legend with a sword to prove it. I have no orders to kill you, champion. Kindly do not make me improvise.\"" },
   n_kcage: { who: "NARRATOR", text: "A Tempest supply cage — and inside it, one of her own: a cult courier, trussed, tagged, and left to be questioned at dawn." },
   k_courier: { who: "THE COURIER", text: "\"They knew the route, lady. They knew the MOON. Somebody sold us to the school — somebody inside.\"" },
   k_go: { who: "TSUBAKI", text: "\"Run to the Ashenveil, little moth. Tell the Lady the road is hers again — and that I will find the tongue that wagged.\"" },
@@ -135,7 +136,11 @@ Spire.VO = {
   e_mk_intro: { who: "THE IRON PALM", text: "\"The mountain does not move for weather, and I do not move for killers. The children you sold — I carry their names, cultist. You will hear every one.\"" },
   e_mk_death: { who: "THE IRON PALM", text: "\"Even stone... wears... someone... remember their names...\"" },
   e_ss_intro: { who: "THE STORM SAGE", text: "\"I have taught three generations to stand between the helpless and things like you. Come then, cult-blade. The sky owes you a debt.\"" },
-  e_ss_death: { who: "THE STORM SAGE", text: "\"Students... scatter... the storm does not end... it only... changes hands...\"" }
+  e_ss_death: { who: "THE STORM SAGE", text: "\"Students... scatter... the storm does not end... it only... changes hands...\"" },
+
+  /* the fortress's last door — SERA. Canon guardrail: she yields; she does not die. */
+  e_sr_intro: { who: "SERA", text: "\"Twenty years, and they still send killers through the window instead of a letter through the door. He isn't HERE, blade. But I am — and this old sword remembers every trick your school ever sold.\"" },
+  e_sr_yield: { who: "SERA", text: "\"Enough... enough. Yield. Take your look at his empty study and go. And tell your Lady this, from his FIRST friend: whatever she is fattening herself for... he will be exactly where she least wants him. He always is.\"" }
 };
 
 /* play a story clip: subtitle banner + audio (if unlocked), music duck.

@@ -56,6 +56,7 @@ BRIEFS = {
   "IronPalm":    "Mountain warrior-monk, male, 50s, deep serene bass with granite stillness, unhurried monastic cadence, compassion and finality in the same breath.",
   "StormSage":   "Ancient storm sorcerer, male, 70s, crackling weathered voice with rolling authority, a teacher's warmth gone hard, thunder in the low notes.",
   "Shinobi":     "Shadow scout, male, 30s, hushed flat whisper that carries, terse and toneless, every word a report.",
+  "Sera":        "Veteran swordswoman and living legend, mid-forties, dry road-worn alto, quick wit filed down to economy, warmth buried under twenty years of campaigns, the voice of someone who has already won every argument that matters.",
 }
 
 def load_saved():
@@ -311,7 +312,25 @@ LINES = [
   { "id": "e_ss_death", "slot": "StormSage", "who": "THE STORM SAGE",
     "text": "Students... scatter... the storm does not end... it only... changes hands...",
     "vtext": "[guttering] Students... scatter... [breath] the storm does not end... it only... changes hands..." },
+
+  # ---- 2026-08-08 redesign: Brassveil + Drakespire Keep + Sera ----
+  { "id": "n_bv", "slot": NARR, "who": "NARRATOR",
+    "text": "BRASSVEIL. Karridge is torchlight; this is the future arriving early - ley-conduits humming under brass streets, rune-signs that rewrite themselves, glass towers wearing the Kingdom's peace like jewelry. The gifted come here to shine. Which is to say: the ledger writes itself.",
+    "vtext": "[wondering] BRASSVEIL. Karridge is torchlight... this is the future, arriving early. Ley-conduits humming under brass streets. Rune-signs that rewrite themselves. Glass towers wearing the Kingdom's peace like jewelry. [short pause] The gifted come here to SHINE. [dry, darker] Which is to say... the ledger writes itself." },
+  { "id": "k_fortress", "slot": "Tsubaki", "who": "TSUBAKI",
+    "text": "Drakespire Keep. The Lady bids me search the dragon's own house while the dragon is away. Wards, walls, and one famous sword between me and his study. Quietly, then - and if it cannot be quiet... quickly.",
+    "vtext": "[hushed awe, then composed] Drakespire Keep. [short pause] The Lady bids me search the dragon's own house... while the dragon is away. Wards. Walls. And one famous sword between me and his study. [breath] Quietly, then. [faint smile] And if it cannot be quiet... QUICKLY." },
+  { "id": "k_boss3", "slot": "Tsubaki", "who": "TSUBAKI",
+    "text": "Sera of Duskfen. First to follow him, they say - twenty years of legend with a sword to prove it. I have no orders to kill you, champion. Kindly do not make me improvise.",
+    "vtext": "[respectful, measured] Sera of Duskfen. First to follow him, they say. Twenty years of legend... with a sword to prove it. [short pause] [courteous steel] I have no orders to kill you, champion. [quieter] Kindly... do not make me improvise." },
+  { "id": "e_sr_intro", "slot": "Sera", "who": "SERA",
+    "text": "Twenty years, and they still send killers through the window instead of a letter through the door. He isn't HERE, blade. But I am. I held a city alone for fifteen days, once. You? You I can hold all night.",
+    "vtext": "[dry, unhurried] Twenty years... and they STILL send killers through the window instead of a letter through the door. [short pause] He isn't HERE, blade. [drawing steel] But I am. [flat, factual] I held a city alone for fifteen days, once. [almost amused] You? You I can hold... all NIGHT." },
+  { "id": "e_sr_yield", "slot": "Sera", "who": "SERA",
+    "text": "Enough... enough. Yield. Take your look at his empty study and go. And tell your Lady this, from his FIRST friend: whatever she is fattening herself for... he will be exactly where she least wants him. He always is.",
+    "vtext": "[winded, grudging] Enough... enough. Yield. [breath] Take your look at his empty study... and go. [harder] And tell your Lady this, from his FIRST friend. Whatever she is fattening herself for... [quiet certainty] he will be exactly where she least wants him. [almost a laugh] He always is." },
 ]
+
 
 
 def main():

@@ -76,17 +76,36 @@ assigned the cult's oldest errand — the seduction of the Emperor himself, whos
 ember life-force the Matron drinks to strengthen herself (Books 3–4 context; the
 vial in her epilogue is that errand's fruit).
 
-**Her acts:** the pipeline Vessia burned must be rebuilt. Act I — the Pit, under
-new eyes: she fights as cover, and finds the TEMPEST SCHOOL (an eastern mercenary
-house hired by families of the taken to hunt the cult) already watching; boss: THE
-LONGBOW. Act II — the west wall route, re-opened over the school's objection;
-boss: THE IRON PALM, who carries the names of the sold. Act III — the Tempest
-House on the west road, burned politely; boss: THE STORM SAGE. Her cage stop frees
-a cult courier who whispers of a mole; her tavern stop watches the Firebird and
-files her. Epilogue — THE ASHENVEIL: the delivery, the vial, and the next
+**Her acts (redesigned 2026-08-10):** the pipeline Vessia burned must be rebuilt.
+Act I — the Pit, under new eyes ("Ronin battle theme"): she fights as cover, and
+finds the TEMPEST SCHOOL (an eastern mercenary house hired by families of the
+taken to hunt the cult) already watching; boss: THE LONGBOW. Act II — BRASSVEIL,
+THE LIT CITY ("Pocket Riot"): a cyber/magic-fantasy-punk free port more advanced
+than anything on the warlock's road — brass conduits, bottled lightning, bought
+law; the Tempest School's paymasters bank here; boss: THE IRON PALM, who carries
+the names of the sold. Act III — DRAKESPIRE KEEP ("Dragon's Daughter"): she storms
+the Dragon Emperor's own fortress hunting Kenji for the Matron's errand — and
+finds him gone. The Keep was never holding him; it was holding a rear guard. At
+the top waits one of his known allies: **SERA** (canon boss, below). Her cage stop
+frees a cult courier who whispers of a mole; her tavern stop watches the Firebird
+and files her. Epilogue — THE ASHENVEIL: the delivery, the vial, and the next
 assignment: a man on the western roads, green eyes, no escort. The web has a new
-spider. Guardrails hold: the school survives her (broken, not erased), the
-conspiracy stays secret, and the Emperor never knows.
+spider. Guardrails hold: Sera survives (she yields, unbeaten in spirit), the
+conspiracy stays secret, and the Emperor never knows — indeed the act ends on the
+point that he was never here at all.
+
+**SERA — canon boss (Books 1–3 source pass, 2026-08-10):** Kenji's oldest ally
+fights exactly as the books wrote her. Mid-forties, short dark hair, olive skin,
+dark scout's leathers with the faded academy-blue sash — no heavy armor, no
+shield. Her kit: the RAPIER OF ARREST (a clean hit freezes; in-game: Arresting
+Thrust), a short violet-white FORCE BLADE off-hand, and a BREACH SHARD good for
+three lightning rays a fight (in-game: Breach Ray, 6×3). Named moves from the
+books: TWIN FANG (the dual-wield scissor, Book 1 ch14 — her opener, 7×2) and
+SERA'S CAGE (the defensive frame she invented, Book 1 ch03 — block 13, and "The
+Cage Predicts" buff). Her intro cites the fifteen days she held a city alone
+(Book 3). She never dies on this road: her death animation is a yield to one
+knee, and her last line sends the Matron a warning — *"he will be exactly where
+she least wants him."*
 
 **Her deck (three schools, per Hiro):** BLEED (First Cut, Artery Cut — wounds tick
 through block), CONDITIONAL FATAL STROKES (Sneak Opening: 1st turn only; Odd-Hour

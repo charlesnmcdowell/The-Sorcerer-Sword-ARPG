@@ -3,6 +3,10 @@
    K_1..K_n and a Phaser anim "a_K". Looping sets are whitelisted below. */
 window.Spire = window.Spire || {};
 
+/* idles that should breathe back and forth instead of snapping frame4 -> frame1
+   (2026-08-08: Tsubaki's idle read as "turning over and over" — yoyo + low fps
+   makes a 4-frame breathing loop feel continuous) */
+Spire.YOYO = new Set(["kd_idle", "sr_idle"]);
 Spire.LOOPING = new Set([
   "wl_idle","wl_walk","hd_idle","hd_walk",
   "sk_idle","sk_walk","br_idle","br_walk","ms_idle","ms_walk","bs_idle","bs_walk",
@@ -15,7 +19,7 @@ Spire.LOOPING = new Set([
   /* 2026-08-08 Tsubaki + the Tempest School — without these the new idles/walks
      played ONCE and froze (Hiro: "looks like a still image") */
   "kd_idle","kd_walk",
-  "nj_idle","nj_walk","ar_idle","ar_walk","mk_idle","mk_walk","ss_idle","ss_walk"
+  "nj_idle","nj_walk","ar_idle","ar_walk","mk_idle","mk_walk","ss_idle","ss_walk","sr_idle","sr_walk"
 ]);
 
 /* Per-anim display target heights (px on the 1280x720 stage). Tuned by screenshot pass.
@@ -61,7 +65,8 @@ Spire.loadAll = function (scene, onProgress, onDone) {
         key: "a_" + key,
         frames: a.frames.map((_, i) => ({ key: `${key}_${i + 1}` })),
         frameRate: a.fps,
-        repeat: Spire.LOOPING.has(key) ? -1 : 0
+        repeat: Spire.LOOPING.has(key) ? -1 : 0,
+        yoyo: Spire.YOYO.has(key)
       });
     }
     if (onDone) onDone();

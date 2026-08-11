@@ -490,6 +490,53 @@ Story-scene figures (Story/Inn/Cage/ActClear/Buyer) were still hardcoded wl_idle
 Verified in-engine: pixel-diff proves title + fight idles animate; four card
 strikes visibly distinct; ninja death plays; smoke + mechanics probes clean.
 
+## MUSIC + TSUBAKI ROAD REDESIGN + SERA CANON (2026-08-10)
+Music now 100% Hiro's own tracks (Kenji/music), six per-char keys converted
+wav->mp3 128k ON-DEVICE (device VM has ffmpeg): warlock w_pit "Hunter's Breath",
+w_city "The Shop That Watches Back", w_forest "Counting Shadows"; samurai k_pit
+"Ronin battle theme", k_city "Pocket Riot", k_fortress "Dragon's Daughter".
+Tsubaki's road restructured (run.js ACTS_K): act2 = BRASSVEIL, THE LIT CITY
+(cyber/magic-fantasy-punk; new bg_bv_far/mid art; intro VO n_bv), act3 =
+DRAKESPIRE KEEP (storming Kenji's fortress; he is NOT there — clearText lands
+that beat; new bg_fort_far/mid art; intro VO k_fortress; pool ninja/gunner/chain,
+elite sorcerer, boss SERA).
+SERA CANON PASS (agent sweep of Books 1-3): she is a RAPIER duelist, not a
+longsword knight. Rebuilt her def (enemies.js): Twin Fang 7x2 / Sera's Cage
+block 13 / Arresting Thrust 13 / The Cage Predicts +3 str / Breach Ray 6x3;
+death = YIELD (alive, canon guardrail). All 18 frames regenerated to canon look
+(short dark hair, olive skin, scout leathers, blue sash, rapier + violet force
+blade), facing LEFT, tight-cropped. e_sr_intro re-recorded with the
+held-a-city-fifteen-days callback; e_sr_yield sends Nyx her warning.
+TSUBAKI IDLE FIX (Hiro: "turning over and over, glitchy"): old idle was four
+unrelated poses at 8fps. New: ONE anchor pose (3/4 to viewer, head toward the
+enemy) + three breathing-only EDITS of that frame; Spire.YOYO set (anim.js)
+gives kd_idle/sr_idle yoyo:true at 4fps. Verified in-engine via 500ms samples.
+xAI budget: ~$4.4 -> spent ~22 images this pass; generators capped at 3 retries.
+Full samurai road test CLEAN with the new act structure (boss hop -> sera).
+
+## TAVERN HANG FIX (2026-08-11, Hiro's report)
+Black screen entering the tavern as Tsubaki: epicChoices' top-up loop
+(`while (out.length < n && rarePool.length)`) never terminated once every
+unique rare was already picked — the samurai has exactly 1 epic + 1 rare, so
+the third slot looped forever. rewardChoices had the same latent pattern.
+Fix (run.js): rewardChoices removes all copies of a pick from the pool;
+epicChoices takes from a shuffled rare list then tops up from uncommons —
+both loops now provably terminate. Verified headless for BOTH characters:
+scene creates, 3 choices offered, pick returns to map. (/tmp/tavern_check.js)
+
+## ART BACKEND SWITCH: GROK -> OPENAI (2026-08-11, per Hiro)
+xAI Grok is RETIRED for art (key nearly spent). New backend: OpenAI gpt-image-1,
+key at game3d/tools/openai_key.txt (xai_key.txt is dead — do not use).
+New shared module build/artgen.py: generate(prompt) / edit(prompt, ref_path)
+(multipart /v1/images/edits, ref-anchored for on-model consistency) /
+key_crop(raw, out) — the identical magenta-key + tight-crop pipeline. Portrait
+size 1024x1536 replaces the old 9:16 aspect flag. Both endpoints verified live;
+an edit anchored on the samurai ref keyed + cropped cleanly (843x1536 RGBA).
+NOTE: gpt-image-1 shades flatter/more graphic than Grok's painterly finish —
+when patching frames inside an EXISTING set, edit-chain from that set's own
+anchor frames so the style seam stays hidden. Old gen_*.py scripts are
+historical records of what was generated; write new generators against artgen.
+
 ## Resume-here notes for another model
 - Everything self-contained under this folder (`/home/claude/spire` in the cloud session;
   delivered copy in `game3d/deckbuilder/` on Hiro's PC).

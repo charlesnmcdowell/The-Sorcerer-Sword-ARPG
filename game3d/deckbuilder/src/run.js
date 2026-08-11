@@ -10,7 +10,7 @@ Spire.ACTS = {
   1: {
     name: "T H E   S P I R E  —  T H E   P I T",
     tag: "ACT I — THE PIT OF KARRIDGE",
-    music: "arena",
+    music: "w_pit",
     safeNode: "tavern",
     fightPool: ["skel", "hound", "brute"], elitePool: ["beast"], boss: "master",   // ordered easy -> hard
     mapBg: "bg_far_1",
@@ -24,7 +24,7 @@ Spire.ACTS = {
   2: {
     name: "T H E   C I T Y  —  T H E   B A C K   A L L E Y S",
     tag: "ACT II — KARRIDGE, WEST WALL",
-    music: "city",
+    music: "w_city",
     safeNode: "inn",
     fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave"], boss: "necro",
     mapBg: "bg_alleys_far_1",
@@ -38,7 +38,7 @@ Spire.ACTS = {
   3: {
     name: "T H E   W E S T   R O A D  —  N E W   M O O N",
     tag: "ACT III — THE NIGHT SHIPMENT",
-    music: "forest",
+    music: "w_forest",
     safeNode: "cage",
     fightPool: ["wight", "pyre", "chain"], elitePool: ["door"], boss: "champ",   // ordered easy -> hard
     mapBg: "bg_wroad_far_1",
@@ -60,7 +60,7 @@ Spire.ACTS_K = {
   1: {
     name: "T H E   S P I R E  —  T H E   P I T",
     tag: "ACT I — THE PIT, UNDER NEW EYES",
-    music: "arena",
+    music: "k_pit",
     safeNode: "tavern",
     fightPool: ["skel", "ninja", "brute"], elitePool: ["beast"], boss: "archer",
     mapBg: "bg_far_1",
@@ -72,31 +72,31 @@ Spire.ACTS_K = {
     outro: ["k_out1"]
   },
   2: {
-    name: "T H E   C I T Y  —  T H E   W E S T   W A L L",
-    tag: "ACT II — REBUILDING THE ROUTE",
-    music: "city",
+    name: "B R A S S V E I L  —  T H E   L I T   C I T Y",
+    tag: "ACT II — BRASSVEIL, WHERE THE LEY-LIGHTS HUM",
+    music: "k_city",
     safeNode: "inn",
     fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave"], boss: "monk",
-    mapBg: "bg_alleys_far_1",
-    intro: [],
-    mapVO: "n_well",
+    mapBg: "bg_bv_far_1",
+    intro: ["n_bv"],
+    mapVO: null,
     bossVO: "k_boss2",
-    clearTitle: "THE  ROUTE  BREATHES  AGAIN",
-    clearText: "the Iron Palm kneels broken in the plaza — and the Dragon Emperor himself passes through Karridge",
+    clearTitle: "BRASSVEIL  IS  MAPPED",
+    clearText: "the Iron Palm kneels broken under the rune-signs — and word comes that the Emperor is NOT at his fortress",
     outro: ["n_emperor", "k_patience"]
   },
   3: {
-    name: "T H E   W E S T   R O A D  —  T H E   T E M P E S T   H O U S E",
-    tag: "ACT III — THE SCHOOL'S ROADHOUSE",
-    music: "forest",
+    name: "D R A K E S P I R E   K E E P",
+    tag: "ACT III — STORMING THE EMPEROR'S FORTRESS",
+    music: "k_fortress",
     safeNode: "cage",
-    fightPool: ["wight", "pyre", "chain"], elitePool: ["door"], boss: "sorcerer",
-    mapBg: "bg_wroad_far_1",
-    intro: ["k_house"],
+    fightPool: ["ninja", "gunner", "chain"], elitePool: ["sorcerer"], boss: "sera",
+    mapBg: "bg_fort_far_1",
+    intro: ["k_fortress"],
     mapVO: null,
     bossVO: "k_boss3",
-    clearTitle: "THE  STORM  IS  SPENT",
-    clearText: "the Tempest House burns politely, one room at a time — and the west road belongs to the Matron again",
+    clearTitle: "THE  KEEP  STANDS  EMPTY",
+    clearText: "she has beaten his fortress, his wards, and his first companion — and the Dragon Emperor was never here at all",
     outro: []
   }
 };
@@ -256,7 +256,8 @@ Spire.rewardChoices = function (n, elite) {
   const out = [];
   while (out.length < n && pool.length) {
     const pick = Phaser.Utils.Array.GetRandom(pool);
-    if (!out.includes(pick)) out.push(pick);
+    out.push(pick);
+    for (let i = pool.length - 1; i >= 0; i--) if (pool[i] === pick) pool.splice(i, 1);
   }
   return out;
 };
@@ -268,9 +269,12 @@ Spire.epicChoices = function (n) {
   const mine = id => (Spire.CARDS[id].char || "warlock") === me;
   const epics = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "epic" && mine(id));
   const out = epics.slice();
-  const rarePool = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "rare" && mine(id));
-  while (out.length < n && rarePool.length) {
-    const pick = Phaser.Utils.Array.GetRandom(rarePool);
+  const rarePool = Phaser.Utils.Array.Shuffle(
+    Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "rare" && mine(id) && !out.includes(id)));
+  const unPool = Phaser.Utils.Array.Shuffle(
+    Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "uncommon" && mine(id)));
+  for (const pick of rarePool.concat(unPool)) {   // top up with rares, then uncommons — never loops
+    if (out.length >= n) break;
     if (!out.includes(pick)) out.push(pick);
   }
   return out.slice(0, n);
