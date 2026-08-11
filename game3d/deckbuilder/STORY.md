@@ -65,3 +65,33 @@ oak-barrel innkeeper) · The Veiled Woman (new: grief-worn gentlewoman) · The
 Quarry Boy (new: scared young laborer) · The Firebird (new: bright halfling
 showwoman) · Hound Master / Necromancer / Champ / Stitcher / Roadscum / Kargoth
 as the Wall (existing designs). 46 clips total; 31 newly written and recorded.
+
+
+# THE SECOND ROAD — TSUBAKI, THE MATRON'S BLADE (2026-08-08)
+
+The other playthrough walks the villain's side of the same conspiracy. **TSUBAKI**
+of the Ieyasu school (from Hiro's samurai reference sheet — "Victory is my nature")
+is Lady Nyx's best student: a collector of the gifted, and the operative long ago
+assigned the cult's oldest errand — the seduction of the Emperor himself, whose
+ember life-force the Matron drinks to strengthen herself (Books 3–4 context; the
+vial in her epilogue is that errand's fruit).
+
+**Her acts:** the pipeline Vessia burned must be rebuilt. Act I — the Pit, under
+new eyes: she fights as cover, and finds the TEMPEST SCHOOL (an eastern mercenary
+house hired by families of the taken to hunt the cult) already watching; boss: THE
+LONGBOW. Act II — the west wall route, re-opened over the school's objection;
+boss: THE IRON PALM, who carries the names of the sold. Act III — the Tempest
+House on the west road, burned politely; boss: THE STORM SAGE. Her cage stop frees
+a cult courier who whispers of a mole; her tavern stop watches the Firebird and
+files her. Epilogue — THE ASHENVEIL: the delivery, the vial, and the next
+assignment: a man on the western roads, green eyes, no escort. The web has a new
+spider. Guardrails hold: the school survives her (broken, not erased), the
+conspiracy stays secret, and the Emperor never knows.
+
+**Her deck (three schools, per Hiro):** BLEED (First Cut, Artery Cut — wounds tick
+through block), CONDITIONAL FATAL STROKES (Sneak Opening: 1st turn only; Odd-Hour
+Stroke: odd turns; Open the Red: bleeding foe; ICHIGEKI: odd turn + bleeding foe,
+30 damage), and PARRY/COUNTER (Patient Defense and Perfect Parry bank FOCUS —
+bonus action points next turn; Ieyasu Counter arms a RIPOSTE that answers any
+guarded attack). Epic: TSUBAKI BLOOM — consume all Bleed for +4 damage a stack.
+Every card carries its own generated animation.

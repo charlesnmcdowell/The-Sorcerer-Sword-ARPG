@@ -50,12 +50,78 @@ Spire.ACTS = {
     outro: []                                   // the epilogue scene carries the Varenholm beats
   }
 };
-Spire.act = function () { return Spire.ACTS[(Spire.run && Spire.run.act) || 1]; };
+/* ============ TSUBAKI'S ROAD (2026-08-08, the second playthrough) ============
+   The other side of the same conspiracy: Tsubaki of the Ieyasu school — the
+   Matron's best student, sent to Karridge after the pipeline burned. Her acts
+   reuse the run engine with her own pools, her own bosses (the TEMPEST SCHOOL:
+   a mercenary house hired by families of the taken to hunt the cult), and her
+   own story voice (see src/voice.js). Same guardrails as Vessia's run. */
+Spire.ACTS_K = {
+  1: {
+    name: "T H E   S P I R E  —  T H E   P I T",
+    tag: "ACT I — THE PIT, UNDER NEW EYES",
+    music: "arena",
+    safeNode: "tavern",
+    fightPool: ["skel", "ninja", "brute"], elitePool: ["beast"], boss: "archer",
+    mapBg: "bg_far_1",
+    intro: ["k_bio", "k_orders"],
+    mapVO: "n_gate",
+    bossVO: "k_boss1",
+    clearTitle: "THE  PIT  IS  HERS",
+    clearText: "the Longbow's watch is ended — and the school that sent him now knows the Matron's blade is in Karridge",
+    outro: ["k_out1"]
+  },
+  2: {
+    name: "T H E   C I T Y  —  T H E   W E S T   W A L L",
+    tag: "ACT II — REBUILDING THE ROUTE",
+    music: "city",
+    safeNode: "inn",
+    fightPool: ["hook", "gunner", "stitch"], elitePool: ["grave"], boss: "monk",
+    mapBg: "bg_alleys_far_1",
+    intro: [],
+    mapVO: "n_well",
+    bossVO: "k_boss2",
+    clearTitle: "THE  ROUTE  BREATHES  AGAIN",
+    clearText: "the Iron Palm kneels broken in the plaza — and the Dragon Emperor himself passes through Karridge",
+    outro: ["n_emperor", "k_patience"]
+  },
+  3: {
+    name: "T H E   W E S T   R O A D  —  T H E   T E M P E S T   H O U S E",
+    tag: "ACT III — THE SCHOOL'S ROADHOUSE",
+    music: "forest",
+    safeNode: "cage",
+    fightPool: ["wight", "pyre", "chain"], elitePool: ["door"], boss: "sorcerer",
+    mapBg: "bg_wroad_far_1",
+    intro: ["k_house"],
+    mapVO: null,
+    bossVO: "k_boss3",
+    clearTitle: "THE  STORM  IS  SPENT",
+    clearText: "the Tempest House burns politely, one room at a time — and the west road belongs to the Matron again",
+    outro: []
+  }
+};
+
+/* ---- playable characters ---- */
+Spire.CHARS = {
+  warlock: { id: "warlock", name: "VESSIA",  prefix: "wl", acts: null /* Spire.ACTS */,
+             deckKey: "STARTING_DECK", epiScene: "Epilogue" },
+  samurai: { id: "samurai", name: "TSUBAKI", prefix: "kd", acts: null /* Spire.ACTS_K */,
+             deckKey: "STARTING_DECK_K", epiScene: "EpilogueK" }
+};
+Spire.char = function () {
+  return Spire.CHARS[(Spire.run && Spire.run.character) || "warlock"];
+};
+Spire.act = function () {
+  const table = (Spire.run && Spire.run.character === "samurai") ? Spire.ACTS_K : Spire.ACTS;
+  return table[(Spire.run && Spire.run.act) || 1];
+};
 Spire.LAST_ACT = 3;
 
-Spire.newRun = function () {
+Spire.newRun = function (character) {
+  character = character || "warlock";
   Spire.run = {
-    deck: Spire.STARTING_DECK.slice(),
+    character,
+    deck: (character === "samurai" ? Spire.STARTING_DECK_K : Spire.STARTING_DECK).slice(),
     hp: 70, maxHp: 70,
     act: 1,
     usedEnemies: [],            // enemy ids already assigned this act -- keeps every fight unique
@@ -113,7 +179,7 @@ Spire.claimEnemy = function (pool) {
    - The ??? gamble threads the middle: it can go either way.
    - No path reaches the boss with fewer than 2 fights; no path exceeds 3. */
 Spire.generateMap = function () {
-  const ACT = Spire.ACTS[(Spire.run && Spire.run.act) || 1];
+  const ACT = Spire.act();          // character-aware (Vessia's ACTS or Tsubaki's ACTS_K)
   const jit = () => Phaser.Math.Between(-16, 16);
   const Y = r => 596 - r * 82;
   const mk = (r, i, x, type) => ({ r, i, x: x + (r > 0 && r < 4 ? jit() : 0), y: Y(r), type, edges: [] });
@@ -177,9 +243,11 @@ Spire.currentNode = function () {
 
 /* ---- card reward pools ---- */
 Spire.rewardChoices = function (n, elite) {
+  const me = (Spire.run && Spire.run.character) || "warlock";
   const pool = [];
   for (const id in Spire.CARDS) {
     const c = Spire.CARDS[id];
+    if ((c.char || "warlock") !== me) continue;                // each character owns her pool
     const rarity = c.rarity || "common";
     if (rarity === "starter" || rarity === "epic") continue;   // epic is tavern-exclusive
     const w = rarity === "rare" ? (elite ? 4 : 1) : rarity === "uncommon" ? 3 : 4;
@@ -196,9 +264,11 @@ Spire.rewardChoices = function (n, elite) {
 /* the tavern's reward: her one guaranteed EPIC pick, backed up with rare alternates so
    it still reads as a real choice even while the epic pool is small. */
 Spire.epicChoices = function (n) {
-  const epics = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "epic");
+  const me = (Spire.run && Spire.run.character) || "warlock";
+  const mine = id => (Spire.CARDS[id].char || "warlock") === me;
+  const epics = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "epic" && mine(id));
   const out = epics.slice();
-  const rarePool = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "rare");
+  const rarePool = Object.keys(Spire.CARDS).filter(id => Spire.CARDS[id].rarity === "rare" && mine(id));
   while (out.length < n && rarePool.length) {
     const pick = Phaser.Utils.Array.GetRandom(rarePool);
     if (!out.includes(pick)) out.push(pick);

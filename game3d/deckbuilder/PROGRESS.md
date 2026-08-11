@@ -446,6 +446,50 @@ and the writing hand would start a new one); e_cp_intro makes the Champ's betray
 concrete ("my gifts, my price - and I LIKED the number"); w_epilogue lands on her
 own page. STORY.md now carries a LEDGER paragraph. Bundle rebuilt, smoke clean.
 
+## TSUBAKI — THE SECOND PLAYABLE CHARACTER (2026-08-08, Hiro's samurai ref)
+Full second playthrough from tools/refs/samurai.png (the greenlit reference):
+- ART: 62 Tsubaki frames (idle/walk/hurt + ONE SET PER CARD x12) edit-generated
+  from the ref; 71 Tempest School frames (ninja/archer/monk/sorcerer x full sets)
+  via the established enemy pipeline. Generator: build/gen_samurai_art.py.
+  Per-frame facing audit passed (one fix: kd_openred_4 mirrored). UNREVIEWED
+  until Hiro greenlights in-game.
+- ENGINE: bleed (enemy DoT, pierces block), focus (+energy next turn), riposte
+  (answers guarded attacks once), card play-conditions (cond(C) gates: 1st turn /
+  odd turns / bleeding foe). Character system: Spire.CHARS, newRun(charId),
+  per-char decks + card pools + ACTS tables (ACTS_K), dynamic player sprite
+  prefix everywhere, Title character select. Buyer node is warlock-only; tavern/
+  inn/cage have per-char VO; Epilogue branches (Varenholm vs the Ashenveil).
+  BUG FIXED: card id injection ran before the samurai defs (null in draw pile ->
+  renderHand crash); generateMap read Spire.ACTS directly (her run got Vessia's
+  pools) -> now Spire.act().
+- CARDS: 12 (firstcut/crossveil/patientdef/observe/ieyasucounter starters;
+  sneakopening/arterycut commons; oddhour/openred/perfectparry uncommons;
+  ichigeki rare; tsubakibloom epic). STARTING_DECK_K.
+- STORY+VOICE: her cult-side road (see STORY.md); 26 new lines, 5 new ElevenLabs
+  designs (Tsubaki/Longbow/IronPalm/StormSage/Shinobi). 72 clips bundled.
+- ENEMIES: ninja (act1 regular), archer/monk/sorcerer (her act bosses), Tempest
+  School lore. New bundles assets_samurai.js + assets_enemies5.js (in HTML).
+- TESTS: mechanics probe (bleed ticks, focus pays, riposte, all four conditions
+  gate correctly), full samurai road CLEAN to her epilogue, warlock road re-run
+  CLEAN (regression), smoke clean. Harness: PART=3 CHAR=samurai.
+
+## TSUBAKI POLISH PASS (2026-08-08, Hiro's playtest report)
+Three root causes behind "still images / same attack / tiny shinobi":
+1. Spire.LOOPING (anim.js) never learned the new sets -> kd/nj/ar/mk/ss idles and
+   walks played ONCE and froze everywhere (title select, fights). Added all ten.
+2. The new source frames were bundled FULL-CANVAS (the generator keys but never
+   crops); load_anim's centroid registration expects individually-cropped frames
+   like every older set -> figures rendered small inside big invisible canvases
+   (the shinobi worst). All 133 sources tight-cropped to silhouette; rebundled.
+3. KD_DASH played each card's unique anim at DASH-START; it finished (froze) by
+   arrival, so every attack visually read as the same dash. Now: dash on kd_walk,
+   play the signature anim AT the enemy with a wind-up beat and a follow-through
+   hold; card-set frame rates slowed (10ish fps, ichigeki 7) so 4 frames read.
+Story-scene figures (Story/Inn/Cage/ActClear/Buyer) were still hardcoded wl_idle
+-> now Spire.char().prefix (the samurai intro no longer shows the warlock).
+Verified in-engine: pixel-diff proves title + fight idles animate; four card
+strikes visibly distinct; ninja death plays; smoke + mechanics probes clean.
+
 ## Resume-here notes for another model
 - Everything self-contained under this folder (`/home/claude/spire` in the cloud session;
   delivered copy in `game3d/deckbuilder/` on Hiro's PC).

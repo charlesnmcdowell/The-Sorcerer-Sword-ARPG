@@ -11,7 +11,11 @@ Spire.LOOPING = new Set([
   "ad_idle","ad_walk","dc_idle",
   "hk_idle","hk_walk","gn_idle","gn_walk","st_idle","st_walk","gv_idle","gv_walk",
   "nc_idle","nc_walk","ch_idle","ch_walk","py_idle","py_walk","dr2_idle","dr2_walk",
-  "cp_idle","cp_walk"
+  "cp_idle","cp_walk",
+  /* 2026-08-08 Tsubaki + the Tempest School — without these the new idles/walks
+     played ONCE and froze (Hiro: "looks like a still image") */
+  "kd_idle","kd_walk",
+  "nj_idle","nj_walk","ar_idle","ar_walk","mk_idle","mk_walk","ss_idle","ss_walk"
 ]);
 
 /* Per-anim display target heights (px on the 1280x720 stage). Tuned by screenshot pass.

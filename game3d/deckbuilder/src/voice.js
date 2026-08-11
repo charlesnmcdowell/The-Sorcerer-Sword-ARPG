@@ -100,7 +100,42 @@ Spire.VO = {
   /* Act III boss — THE CHAMP: the Pit's vanished champion. Nobody took him. */
   e_cp_intro: { who: "THE CHAMP", text: "\"You came all this way for the vanished champion? Save your pity, little warlock. Nobody took me. They showed me my page in the ledger — my gifts, my price — and I LIKED the number. So I signed. They pay me in thralls to guard this road. You? You I'd have done for free.\"" },
   e_cp_devour: { who: "THE CHAMP", text: "\"MORE! Bring me MORE!\"" },
-  e_cp_death: { who: "THE CHAMP", text: "\"Tell Bellow... tell the crowd... they were never going to remember me anyway...\"" }
+  e_cp_death: { who: "THE CHAMP", text: "\"Tell Bellow... tell the crowd... they were never going to remember me anyway...\"" },
+
+  /* ==================== TSUBAKI'S ROAD (2026-08-08) ====================
+     The other playthrough: the Matron's best student, sent to Karridge after
+     the pipeline burned. Her enemies are the TEMPEST SCHOOL — an eastern
+     mercenary house hired by families of the taken to hunt the cult. The
+     player walks the villain's road; the school's fighters are the heroes
+     of somebody else's story, and the writing knows it. */
+  k_bio: { who: "NARRATOR", text: "The Ashenveil keeps its best students off the rolls. TSUBAKI, of the Ieyasu school — the Matron's blade, her finest collector, her quietest knife. Karridge burned a pipeline last season, and somebody must write a new one. Victory, she would tell you, is simply her nature." },
+  k_orders: { who: "TSUBAKI", text: "\"Three tasks, then. Rebuild the route. Find the arsonist's trail. And mark every gift in this city worth a page. Consider it written, my Lady.\"" },
+  k_boss1: { who: "TSUBAKI", text: "\"You have been watching the pit for weeks, bowman. So have I. The difference is — nobody hired me to be seen.\"" },
+  k_out1: { who: "TSUBAKI", text: "\"A mercenary school, hunting us on behalf of grieving families. Honest work. I almost regret what comes next.\"" },
+  k_silver: { who: "TSUBAKI", text: "\"Five silver, innkeeper. A bargain. Where I studied, rumors are paid for in teeth.\"" },
+  k_file: { who: "TSUBAKI", text: "\"Dance, little Firebird. Burn bright. The Matron pays double for the ones who glow.\"" },
+  k_price: { who: "TSUBAKI", text: "\"The school teaches: take the stroke that is offered.\"" },
+  k_boss2: { who: "TSUBAKI", text: "\"Step aside, monk. Your school was paid to find the wolves — not to stand in front of one.\"" },
+  k_patience: { who: "TSUBAKI", text: "\"There he is. The assignment beneath every assignment. Not here — not with witnesses. The Lady's design needs him charmed, not warned. Patience: the school's first stroke.\"" },
+  k_house: { who: "TSUBAKI", text: "\"The Tempest House. Burn the contracts. Break the banners. Politely. A school with no students hunts no one.\"" },
+  k_boss3: { who: "TSUBAKI", text: "\"Old man. Your storm has taken my couriers, my wagons, and my season. I am here to collect the weather.\"" },
+  n_kcage: { who: "NARRATOR", text: "A Tempest supply cage — and inside it, one of her own: a cult courier, trussed, tagged, and left to be questioned at dawn." },
+  k_courier: { who: "THE COURIER", text: "\"They knew the route, lady. They knew the MOON. Somebody sold us to the school — somebody inside.\"" },
+  k_go: { who: "TSUBAKI", text: "\"Run to the Ashenveil, little moth. Tell the Lady the road is hers again — and that I will find the tongue that wagged.\"" },
+  n_ashen: { who: "NARRATOR", text: "The Ashenveil at dusk: ash fields, the working dead bending in a grey harvest, and an academy whose lower levels are not a metaphor. She walks in unannounced. She is expected anyway." },
+  k_deliver: { who: "TSUBAKI", text: "\"The route breathes. The school is broken. Eleven new pages for the ledger — marked, priced, and patient. And one small vial... from an errand the Lady set me, long ago.\"" },
+  n_vial: { who: "NARRATOR", text: "The emissary takes the vial the way priests take relics. Somewhere below, a queen who has worn death for centuries will drink a stranger's burning life — and stand a little taller in the morning." },
+  k_next: { who: "TSUBAKI", text: "\"And my next assignment. ...A man on the western roads. Green eyes. No escort. My Lady... you honor me.\"" },
+  n_kclose: { who: "NARRATOR", text: "She sharpens the katana twice that night, though it does not need it. Somewhere west, an emperor travels alone the way weather travels. The web has a new spider — and the spider is smiling." },
+
+  /* ---- the Tempest School speaks ---- */
+  e_nj_intro: { who: "TEMPEST SHINOBI", text: "\"The school sees you, cult-blade.\"" },
+  e_ar_intro: { who: "THE LONGBOW", text: "\"The Tempest School knows what you are, cultist. Grieving families paid us to find the taken. I believe I'll start with the taker.\"" },
+  e_ar_death: { who: "THE LONGBOW", text: "\"Report it... the blade... she is already... inside the walls...\"" },
+  e_mk_intro: { who: "THE IRON PALM", text: "\"The mountain does not move for weather, and I do not move for killers. The children you sold — I carry their names, cultist. You will hear every one.\"" },
+  e_mk_death: { who: "THE IRON PALM", text: "\"Even stone... wears... someone... remember their names...\"" },
+  e_ss_intro: { who: "THE STORM SAGE", text: "\"I have taught three generations to stand between the helpless and things like you. Come then, cult-blade. The sky owes you a debt.\"" },
+  e_ss_death: { who: "THE STORM SAGE", text: "\"Students... scatter... the storm does not end... it only... changes hands...\"" }
 };
 
 /* play a story clip: subtitle banner + audio (if unlocked), music duck.

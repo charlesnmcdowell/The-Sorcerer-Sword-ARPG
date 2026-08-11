@@ -75,7 +75,7 @@ class RestScene extends Phaser.Scene {
   create() {
     NODE_BG(this, 0.7);
     NODE_TITLE(this, "E M B E R   R E S T", "a quiet ledge above the roar of the pit");
-    const wl = Spire.spawn(this, "wl_idle", 520, 520, { depth: 20, height: 280 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 520, 520, { depth: 20, height: 280 });
     /* campfire: pure engine — logs + flame particles + glow */
     const fx = 720, fy = 512;
     this.add.ellipse(fx, fy + 4, 130, 34, 0x2a1a10).setDepth(19);
@@ -190,7 +190,7 @@ class TavernScene extends Phaser.Scene {
     this.tweens.add({ targets: this.children.list[this.children.list.length - 2], alpha: 0.55, duration: 700, yoyo: true, repeat: -1 });
     this.add.rectangle(360, 560, 70, 60, 0x4a2f1a).setStrokeStyle(3, 0x2a1a10).setDepth(19);
 
-    const wl = Spire.spawn(this, "wl_idle", 470, 520, { depth: 20, height: 280 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 470, 520, { depth: 20, height: 280 });
     const dancer = Spire.spawn(this, "dc_idle", 780, 520, { depth: 20, height: 280 });
     this.tweens.add({ targets: dancer, scaleX: dancer.scaleX * 1.015, scaleY: dancer.scaleY * 0.99, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
 
@@ -211,7 +211,11 @@ class TavernScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(30);
 
     /* epic card offer */
-    this.add.text(640, 610, "the Firebird plays Karridge tonight. she knows people — one of them owes her a favor.", {
+    const kd = Spire.run.character === "samurai";
+    if (kd) Spire.say(this, "k_file");     // she watches the dancer the way a scout watches
+    this.add.text(640, 610, kd
+      ? "the Firebird plays Karridge tonight. Tsubaki watches, and remembers everything."
+      : "the Firebird plays Karridge tonight. she knows people — one of them owes her a favor.", {
       fontFamily: "Georgia, serif", fontSize: 14, fontStyle: "italic", color: "#caa26a"
     }).setOrigin(0.5).setDepth(30);
     let choices = Spire.epicChoices(3);
@@ -227,7 +231,7 @@ class TavernScene extends Phaser.Scene {
         .on("pointerout", () => this.tweens.add({ targets: card, scale: 0.82, duration: 110 }))
         .on("pointerdown", () => {
           Spire.sfx.card();
-          Spire.say(this, "w_price");   // "Knowledge has a price. Here is yours."
+          Spire.say(this, Spire.run.character === "samurai" ? "k_price" : "w_price");
           Spire.run.deck.push(id);
           this.tweens.add({ targets: card, y: -260, alpha: 0.4, duration: 320, ease: "Cubic.easeIn" });
           this.time.delayedCall(1100, () => this.done(`${Spire.CARDS[id].name} joins her deck`));
@@ -264,7 +268,7 @@ class StoryScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(30).setAlpha(0);
       this.tweens.add({ targets: t, alpha: 1, duration: 500 });
     }
-    Spire.spawn(this, "wl_idle", 640, 540, { depth: 20, height: 300 });
+    Spire.spawn(this, Spire.char().prefix + "_idle", 640, 540, { depth: 20, height: 300 });
     this.add.text(640, 592, "· click to hurry a line ·", { fontFamily: "Georgia, serif", fontSize: 12, fontStyle: "italic", color: "#6a5844" }).setOrigin(0.5).setDepth(30);
     this._done = false;
     window.storyNext = () => this.finish();     // debug/test hook
@@ -306,7 +310,7 @@ class InnScene extends Phaser.Scene {
     row.setScale(1280 / row.width);
     this.add.rectangle(640, 360, 1280, 720, 0x0a0705, 0.25).setDepth(6);
     NODE_TITLE(this, "T H E   L A S T   D O O R   I N N", "board, bed, and the best-paid ears in Karridge");
-    const wl = Spire.spawn(this, "wl_idle", 420, 600, { depth: 20, height: 280 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 420, 600, { depth: 20, height: 280 });
     this.add.ellipse(880, 420, 300, 200, 0xffcc77, 0.08).setDepth(7).setBlendMode(Phaser.BlendModes.ADD);
 
     /* Marlow talks (from somewhere behind the bar), the road's word for sale */
@@ -339,7 +343,7 @@ class InnScene extends Phaser.Scene {
         .on("pointerout", () => this.tweens.add({ targets: card, scale: 0.82, duration: 110 }))
         .on("pointerdown", () => {
           Spire.sfx.card();
-          Spire.say(this, "w_fivesilver");   // "Five silver. Cheaper than the other ways I ask questions."
+          Spire.say(this, Spire.run.character === "samurai" ? "k_silver" : "w_fivesilver");
           Spire.run.deck.push(id);
           this.tweens.add({ targets: card, y: -260, alpha: 0.4, duration: 320, ease: "Cubic.easeIn" });
           this.time.delayedCall(1200, () => this.done(`${Spire.CARDS[id].name} joins her deck`));
@@ -368,7 +372,7 @@ class CageScene extends Phaser.Scene {
     props.setScale(1280 / props.width);
     this.add.rectangle(640, 360, 1280, 720, 0x040810, 0.3).setDepth(6);
     NODE_TITLE(this, "T H E   W A Y S T A T I O N", "tents that fold fast — crates with air-holes");
-    const wl = Spire.spawn(this, "wl_idle", 430, 600, { depth: 20, height: 280 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 430, 600, { depth: 20, height: 280 });
     /* the cage, engine-drawn: bars + a shape inside */
     const cg = this.add.container(830, 560).setDepth(19);
     cg.add(this.add.rectangle(0, 0, 190, 150, 0x0c0806, 0.6).setStrokeStyle(3, 0x555a60));
@@ -383,15 +387,16 @@ class CageScene extends Phaser.Scene {
     window.cageOpen = () => this.open();
   }
   async playStory() {
-    await Spire.say(this, "n_camp");                         // the waystation, read cold
-    if (!this._opened) await Spire.say(this, "q_priced");    // the quarry boy prices himself
+    const kd2 = Spire.run.character === "samurai";
+    await Spire.say(this, kd2 ? "n_kcage" : "n_camp");
+    if (!this._opened) await Spire.say(this, kd2 ? "k_courier" : "q_priced");
   }
   async open() {
     if (this._opened) return;
     this._opened = true;
     Spire.sfx.shield();
     this.cameras.main.shake(140, 0.004);
-    await Spire.say(this, "w_run");                           // "Run. You're worth more to me as a rumor."
+    await Spire.say(this, Spire.run.character === "samurai" ? "k_go" : "w_run");                           // "Run. You're worth more to me as a rumor."
     Spire.run.maxHp += 12; Spire.run.hp = Math.min(Spire.run.maxHp, Spire.run.hp + 12);
     if (Spire._voiceNow) { try { Spire._voiceNow.pause(); } catch (e) {} }
     if (Spire._audio && Spire.musicOn) Spire._audio.volume = 0.4;
@@ -409,7 +414,7 @@ class BuyerScene extends Phaser.Scene {
     row.setScale(1280 / row.width);
     this.add.rectangle(640, 360, 1280, 720, 0x0a0810, 0.35).setDepth(6);
     NODE_TITLE(this, "T H E   B U Y E R", "a back-alley meeting gone wrong the moment you aren't who she expected");
-    const wl = Spire.spawn(this, "wl_idle", 430, 600, { depth: 20, height: 280 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 430, 600, { depth: 20, height: 280 });
     /* the veiled woman: a hooded silhouette by lanternlight, and the vial's hum */
     const vx = 860, vy = 600;
     const fig = this.add.container(vx, vy).setDepth(19);
@@ -467,7 +472,7 @@ class ActClearScene extends Phaser.Scene {
     const ACT = Spire.act();
     const lastAct = Spire.run.act >= Spire.LAST_ACT;
     NODE_BG(this, 0.55);
-    const wl = Spire.spawn(this, "wl_idle", 640, 560, { depth: 20, height: 340 });
+    const wl = Spire.spawn(this, Spire.char().prefix + "_idle", 640, 560, { depth: 20, height: 340 });
     this.add.particles(640, 620, "dot", {
       lifespan: 1600, speedY: { min: -160, max: -60 }, speedX: { min: -60, max: 60 },
       scale: { start: 0.7, end: 0 }, tint: [0xbb88ff, 0xe0b34a, 0xff9944],
@@ -504,7 +509,8 @@ class ActClearScene extends Phaser.Scene {
     this.cameras.main.fadeOut(350);
     this.time.delayedCall(370, () => {
       if (run.act >= Spire.LAST_ACT) return this.scene.start("Epilogue");
-      const cur = Spire.ACTS[run.act], nxt = Spire.ACTS[run.act + 1];
+      const T = run.character === "samurai" ? Spire.ACTS_K : Spire.ACTS;
+      const cur = T[run.act], nxt = T[run.act + 1];
       const lines = (cur.outro || []).concat(nxt.intro || []);
       this.scene.start("Story", { lines, title: nxt.tag, next: "__nextact" });
     });
@@ -517,6 +523,23 @@ class EpilogueScene extends Phaser.Scene {
   create() {
     Spire.run.over = true;
     Spire.won = true;
+    this.kd = Spire.run.character === "samurai";
+    if (this.kd) {
+      /* TSUBAKI'S EPILOGUE — THE ASHENVEIL: the delivery, and the next assignment */
+      NODE_BG(this, 0.62, "bg_wroad_far_1");
+      this.add.rectangle(640, 360, 1280, 720, 0x0a0614, 0.5).setDepth(5);
+      NODE_TITLE(this, "T H E   A S H E N V E I L", "ash fields, the working dead, and an academy with lower levels");
+      /* the emissary: a robed silhouette in the smoke (never the Matron herself) */
+      const em = Spire.spawn(this, "nc_idle", 880, 606, { depth: 20, height: 265, tint: 0x120a18 });
+      em.setAlpha(0.92);
+      this.add.ellipse(880, 430, 300, 380, 0x6a4a9a, 0.08).setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
+      const kdF = Spire.spawn(this, "kd_idle", 360, 610, { depth: 20, height: 290 });
+      this._done = false;
+      window.storyNext = () => this.finish();
+      this.playLinesK();
+      this.cameras.main.fadeIn(600);
+      return;
+    }
     NODE_BG(this, 0.5, "bg_city_far_1");
     this.add.rectangle(640, 360, 1280, 720, 0x0a0812, 0.35).setDepth(5);
     NODE_TITLE(this, "V A R E N H O L M", "spires, banners, streetlamps with glass in them");
@@ -539,6 +562,23 @@ class EpilogueScene extends Phaser.Scene {
     window.storyNext = () => this.finish();
     this.playLines();
     this.cameras.main.fadeIn(600);
+  }
+  async playLinesK() {
+    for (const id of ["n_ashen", "k_deliver", "n_vial", "k_next", "n_kclose"]) {
+      if (this._done) return;
+      await Spire.say(this, id);
+      if (this._done) return;
+      await Spire.wait(this, 400);
+    }
+    if (this._done) return;
+    this.add.text(640, 96, "— THE WEB HAS A NEW SPIDER —", {
+      fontFamily: "Georgia, serif", fontSize: 20, color: "#ffd97a", letterSpacing: 4
+    }).setOrigin(0.5).setDepth(30);
+    const cardsWonK = Spire.run.deck.length - Spire.STARTING_DECK_K.length;
+    this.add.text(640, 130, `her road, walked — cards claimed: ${Math.max(0, cardsWonK)} · final deck: ${Spire.run.deck.length} · HP ${Spire.run.hp}/${Spire.run.maxHp}`, {
+      fontFamily: "Georgia, serif", fontSize: 14, color: "#9a8264"
+    }).setOrigin(0.5).setDepth(30);
+    NODE_BUTTON(this, 640, 660, "WALK IT AGAIN", () => this.finish(), 260);
   }
   async playLines() {
     for (const id of ["n_coach", "n_firebird", "n_hum", "c_flower", "n_close", "w_epilogue"]) {

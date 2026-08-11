@@ -706,6 +706,204 @@ Spire.STARTING_DECK = [
   "succubus", "clawdemon", "dragon", "shamblers"
 ];
 
+/* =====================================================================
+   TSUBAKI — the Ieyasu school (2026-08-08). Three strategies, per Hiro:
+   BLEED (open veins tick every enemy turn, through block), CONDITIONAL
+   FATAL STROKES (playable only on the 1st turn / odd turns / against a
+   bleeding foe — the cost of "one stroke, one kill" is choosing its
+   moment), and PARRY/COUNTER (Focus banks bonus action points for the
+   next turn; Riposte answers a guarded attack). Every card carries its
+   own animation set (kd_*), generated from Hiro's samurai reference.
+   ===================================================================== */
+const KD_DASH = async (s, ctx, anim, strikeAt, strike, dashX) => {
+  /* shared chassis: dash in on the WALK set, then perform the card's OWN anim at
+     the enemy (2026-08-08 fix: the unique anim used to fire at dash-start and sat
+     frozen on its last frame by the time she arrived — every card read as "the
+     same attack". Now the signature animation IS the strike.) */
+  const x0 = ctx.wl.x;
+  ctx.wl.play("a_kd_walk");
+  for (let i = 0; i < 3; i++) ctx.afterimage(ctx.wl, 60 * i);
+  await T(s, { targets: ctx.wl, x: ctx.hdX - (dashX || 180), duration: 220, ease: "Cubic.easeIn" });
+  ctx.wl.play("a_" + anim);                     // the card's signature, front and center
+  await W(s, Math.max(strikeAt, 260));          // let the wind-up frames read
+  const r = await strike();
+  await W(s, 240);                              // hold the follow-through frame
+  for (let i = 0; i < 3; i++) ctx.afterimage(ctx.wl, 55 * i);
+  await T(s, { targets: ctx.wl, x: x0, duration: 240, ease: "Cubic.easeOut" });
+  await r;
+  await ctx.wlIdle();
+};
+
+Spire.CARDS.firstcut = {
+  name: "First Cut", cost: 1, type: "Attack", art: "kd_slash_3", rarity: "starter", char: "samurai",
+  desc: "Deal 6 damage.\nApply 2 Bleed.", flavor: "Every duel is decided at the first exchange.",
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_slash", 180, async () => {
+      ctx.impact(ctx.hdX - 40, ctx.groundY - 100, 0xdddddd);
+      ctx.applyHit(6); ctx.blood(ctx.hdX - 30, ctx.groundY - 95); ctx.shake(4);
+      const r = ctx.react("hurt");
+      ctx.applyBleed(2);
+      return r;
+    });
+  }
+};
+Spire.CARDS.crossveil = {
+  name: "Crossveil Slash", cost: 1, type: "Attack", art: "kd_cross_3", rarity: "starter", char: "samurai",
+  desc: "Deal 4 damage\ntwice.", flavor: "Two arcs. One breath.",
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_cross", 160, async () => {
+      ctx.impact(ctx.hdX - 45, ctx.groundY - 110, 0xdddddd);
+      ctx.applyHit(4); ctx.shake(3);
+      await W(s, 200);
+      ctx.impact(ctx.hdX - 35, ctx.groundY - 90, 0xdddddd);
+      ctx.applyHit(4); ctx.shake(3);
+      return ctx.react("hurt");
+    });
+  }
+};
+Spire.CARDS.patientdef = {
+  name: "Patient Defense", cost: 1, type: "Skill", art: "kd_guard_2", rarity: "starter", char: "samurai",
+  desc: "Gain 7 Block.\nGain 1 Focus.", flavor: "Let the enemy make the first move.",
+  async choreo(s, ctx) {
+    ctx.wl.play("a_kd_guard"); await W(s, 520);
+    ctx.applyBlock(7); ctx.applyFocus(1);
+    await W(s, 380); await ctx.wlIdle();
+  }
+};
+Spire.CARDS.observe = {
+  name: "Observant Draw", cost: 0, type: "Skill", art: "kd_observe_3", rarity: "starter", char: "samurai",
+  desc: "Draw 1 card.\nGain 1 Focus.", flavor: "Analyze the movement. Counters come faster.",
+  async choreo(s, ctx) {
+    ctx.wl.play("a_kd_observe"); await W(s, 560);
+    ctx.drawCards(1); ctx.applyFocus(1);
+    await W(s, 300); await ctx.wlIdle();
+  }
+};
+Spire.CARDS.ieyasucounter = {
+  name: "Ieyasu Counter", cost: 2, type: "Skill", art: "kd_counter_3", rarity: "starter", char: "samurai",
+  desc: "Gain 9 Block.\nRiposte 8: struck\nguard answers back.", flavor: "After a perfect block, a deadly stroke.",
+  async choreo(s, ctx) {
+    ctx.wl.play("a_kd_counter"); await W(s, 540);
+    ctx.applyBlock(9); ctx.applyRiposte(8);
+    await W(s, 380); await ctx.wlIdle();
+  }
+};
+Spire.CARDS.sneakopening = {
+  name: "Sneak Opening", cost: 1, type: "Attack", art: "kd_sneak_3", rarity: "common", char: "samurai",
+  desc: "1st TURN ONLY:\nDeal 14 damage.\nApply 3 Bleed.", flavor: "Before the crowd finds its voice.",
+  cond: C => C.turn === 1,
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_sneak", 150, async () => {
+      ctx.flash(0x222233, 90);
+      ctx.impact(ctx.hdX - 40, ctx.groundY - 100, 0x99aadd);
+      ctx.applyHit(14); ctx.blood(ctx.hdX - 25, ctx.groundY - 95); ctx.shake(7);
+      const r = ctx.react("hurt");
+      ctx.applyBleed(3);
+      return r;
+    }, 160);
+  }
+};
+Spire.CARDS.arterycut = {
+  name: "Artery Cut", cost: 1, type: "Attack", art: "kd_artery_2", rarity: "common", char: "samurai",
+  desc: "Deal 5 damage.\nApply 3 Bleed.", flavor: "Precision is mercy's opposite.",
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_artery", 170, async () => {
+      ctx.impact(ctx.hdX - 40, ctx.groundY - 105, 0xdd3344);
+      ctx.applyHit(5); ctx.blood(ctx.hdX - 30, ctx.groundY - 100); ctx.shake(3);
+      const r = ctx.react("hurt");
+      ctx.applyBleed(3);
+      return r;
+    });
+  }
+};
+Spire.CARDS.oddhour = {
+  name: "Odd-Hour Stroke", cost: 2, type: "Attack", art: "kd_oddhour_2", rarity: "uncommon", char: "samurai",
+  desc: "ODD TURNS ONLY:\nDeal 16 damage.", flavor: "The hour strikes. So does she.",
+  cond: C => C.turn % 2 === 1,
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_oddhour", 220, async () => {
+      ctx.flash(0xffffff, 90);
+      ctx.impact(ctx.hdX - 35, ctx.groundY - 110, 0xffffff);
+      ctx.applyHit(16); ctx.blood(ctx.hdX - 25, ctx.groundY - 95); ctx.shake(8);
+      return ctx.react("hurt");
+    });
+  }
+};
+Spire.CARDS.openred = {
+  name: "Open the Red", cost: 2, type: "Attack", art: "kd_openred_2", rarity: "uncommon", char: "samurai",
+  desc: "BLEEDING FOE ONLY:\nDeal 12 damage.\nBleed +2.", flavor: "A wound is a door. She doesn't knock.",
+  cond: C => (C.enemy.statuses.bleed || 0) > 0,
+  async choreo(s, ctx) {
+    await KD_DASH(s, ctx, "kd_openred", 200, async () => {
+      ctx.impact(ctx.hdX - 40, ctx.groundY - 100, 0xdd2233);
+      ctx.applyHit(12); ctx.blood(ctx.hdX - 30, ctx.groundY - 95); ctx.blood(ctx.hdX - 15, ctx.groundY - 105); ctx.shake(7);
+      const r = ctx.react("hurt");
+      ctx.applyBleed(2);
+      return r;
+    });
+  }
+};
+Spire.CARDS.perfectparry = {
+  name: "Perfect Parry", cost: 1, type: "Skill", art: "kd_parry_3", rarity: "uncommon", char: "samurai",
+  desc: "Gain 11 Block.\nGain 2 Focus.", flavor: "Perfect blocks build Focus. Focus buys tomorrows.",
+  async choreo(s, ctx) {
+    ctx.wl.play("a_kd_parry"); await W(s, 540);
+    ctx.applyBlock(11); ctx.applyFocus(2);
+    await W(s, 400); await ctx.wlIdle();
+  }
+};
+Spire.CARDS.ichigeki = {
+  name: "Ichigeki", cost: 3, type: "Attack", art: "kd_ichigeki_3", rarity: "rare", char: "samurai",
+  desc: "ODD TURN + BLEEDING\nFOE ONLY:\nDeal 30 damage.", flavor: "One stroke. One kill. Victory is her nature.",
+  cond: C => C.turn % 2 === 1 && (C.enemy.statuses.bleed || 0) > 0,
+  async choreo(s, ctx) {
+    ctx.wl.play("a_kd_ichigeki");
+    await W(s, 620);                              // the sheathe: absolute stillness
+    ctx.flash(0xffffff, 140);
+    const x0 = ctx.wl.x;
+    for (let i = 0; i < 5; i++) ctx.afterimage(ctx.wl, 30 * i);
+    await T(s, { targets: ctx.wl, x: ctx.hdX + 60, duration: 130, ease: "Expo.easeIn" });  // THROUGH him
+    ctx.impact(ctx.hdX - 20, ctx.groundY - 105, 0xffffff);
+    ctx.applyHit(30); ctx.blood(ctx.hdX - 20, ctx.groundY - 95); ctx.blood(ctx.hdX + 5, ctx.groundY - 110);
+    ctx.shake(10);
+    const r = ctx.react("hurt");
+    await W(s, 520);                              // back turned, sliding the katana home
+    for (let i = 0; i < 3; i++) ctx.afterimage(ctx.wl, 60 * i);
+    await T(s, { targets: ctx.wl, x: x0, duration: 260, ease: "Cubic.easeOut" });
+    await r;
+    await ctx.wlIdle();
+  }
+};
+Spire.CARDS.tsubakibloom = {
+  name: "Tsubaki Bloom", cost: 2, type: "Attack", art: "kd_bloom_3", rarity: "epic", char: "samurai",
+  desc: "Deal 8 damage.\nConsume all Bleed:\n+4 damage per stack.", flavor: "The camellia falls whole.",
+  async choreo(s, ctx) {
+    const stacks = ctx.C.enemy.statuses.bleed || 0;
+    await KD_DASH(s, ctx, "kd_bloom", 240, async () => {
+      /* petal burst */
+      for (let i = 0; i < 10; i++) {
+        const p = s.add.circle(ctx.hdX - 30 + Phaser.Math.Between(-40, 40), ctx.groundY - 100 + Phaser.Math.Between(-60, 40),
+                               Phaser.Math.Between(3, 5), 0xbb2244).setDepth(16).setAlpha(0.95);
+        T(s, { targets: p, y: p.y + Phaser.Math.Between(40, 110), x: p.x + Phaser.Math.Between(-30, 30),
+               alpha: 0, duration: 700 + i * 40, ease: "Sine.easeIn", onComplete: () => p.destroy() });
+      }
+      ctx.impact(ctx.hdX - 35, ctx.groundY - 100, 0xdd3355);
+      if (stacks > 0) ctx.C.enemy.statuses.bleed = 0;
+      ctx.applyHit(8 + stacks * 4); ctx.blood(ctx.hdX - 25, ctx.groundY - 95); ctx.shake(8);
+      if (stacks > 0) s.floatText(ctx.hdX, ctx.groundY - 270, `${stacks} bleed consumed`, "#ff5577", 20);
+      return ctx.react("hurt");
+    });
+  }
+};
+
+Spire.STARTING_DECK_K = [
+  "firstcut", "firstcut", "crossveil", "crossveil",
+  "patientdef", "patientdef", "observe", "ieyasucounter",
+  "sneakopening", "arterycut"
+];
+Object.keys(Spire.CARDS).forEach(k => { Spire.CARDS[k].id = k; });   // re-run for the samurai set
+                                                                      // (the first pass at line ~699 ran before these defs)
+
 /* ---------- shared card widget (fight hand, reward picks, purge grid) ---------- */
 Spire.cardTheme = t => t === "Attack" ? { ribbon: 0x8a2f22, edge: 0xe0b34a } : { ribbon: 0x6a512e, edge: 0xe0b34a };
 Spire.makeCard = function (scene, id) {

@@ -123,10 +123,12 @@ const url = q => "file://" + path.resolve(__dirname, "..", "SorcererSpire.html")
   /* ---------- PART 3: the full road — three acts to the epilogue ---------- */
   await page.goto(url("?canvas=1"));
   await page.waitForFunction(() => window.game && window.game.scene.isActive("Title"), null, { timeout: 90000 });
-  await page.evaluate(() => {
-    Spire.newRun();
-    window.game.scene.getScene("Title").scene.start("Story", { lines: Spire.ACTS[1].intro, title: Spire.ACTS[1].tag, next: "Map" });
-  });
+  const CHAR = process.env.CHAR || "warlock";     // CHAR=samurai walks Tsubaki's road
+  await page.evaluate((ch) => {
+    Spire.newRun(ch);
+    const T = ch === "samurai" ? Spire.ACTS_K : Spire.ACTS;
+    window.game.scene.getScene("Title").scene.start("Story", { lines: T[1].intro, title: T[1].tag, next: "Map" });
+  }, CHAR);
   const SCENES = ["Map", "Fight", "Reward", "Rest", "Treasure", "Tavern", "Inn", "Cage", "Buyer", "Story", "ActClear", "Epilogue"];
   let hops = 0, cleared = false, died = false, lastAct = 1;
   while (hops < 140 && !cleared && !died) {

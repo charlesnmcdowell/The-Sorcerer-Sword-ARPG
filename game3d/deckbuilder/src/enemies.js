@@ -184,6 +184,59 @@ Spire.ENEMIES = {
     ],
     reactions: {}
   },
+  /* ============ THE TEMPEST SCHOOL (2026-08-08, Tsubaki's run) — an eastern
+     mercenary house hired by families of the taken to hunt the cult. Generated
+     facing LEFT (audited); no flips. ============ */
+  ninja: {
+    id: "ninja", name: "TEMPEST SHINOBI", prefix: "nj", hp: 40, height: 225,
+    vo: { intro: "e_nj_intro" },
+    script: [
+      { kind: "attack", label: "Twin Fangs",  dmg: 5, hits: 2 },
+      { kind: "block",  label: "Vanish",      block: 9 },
+      { kind: "attack", label: "Crosscut",    dmg: 8, hits: 1 },
+      { kind: "attack", label: "Twin Fangs",  dmg: 5, hits: 2 }
+    ],
+    reactions: {}
+  },
+  archer: {
+    id: "archer", name: "THE LONGBOW", prefix: "ar", hp: 100, height: 250, boss: true,
+    vo: { intro: "e_ar_intro", death: "e_ar_death" },
+    script: [
+      { kind: "attack", label: "Measured Shot", dmg: 12, hits: 1 },
+      { kind: "block",  label: "Give Ground",   block: 9 },
+      { kind: "attack", label: "Storm Volley",  dmg: 5,  hits: 3 },
+      { kind: "buff",   label: "Read the Wind", str: 2 },
+      { kind: "attack", label: "Measured Shot", dmg: 12, hits: 1 }
+    ],
+    ranged: true,
+    reactions: {}
+  },
+  monk: {
+    id: "monk", name: "THE IRON PALM", prefix: "mk", hp: 135, height: 255, boss: true,
+    vo: { intro: "e_mk_intro", death: "e_mk_death" },
+    script: [
+      { kind: "block",  label: "Rooted Stance", block: 14 },
+      { kind: "attack", label: "Iron Palm",     dmg: 13, hits: 1 },
+      { kind: "attack", label: "Hundred Hands", dmg: 5,  hits: 3 },
+      { kind: "buff",   label: "Breath of Stone", str: 3 },
+      { kind: "attack", label: "Iron Palm",     dmg: 13, hits: 1 }
+    ],
+    reactions: {}
+  },
+  sorcerer: {
+    id: "sorcerer", name: "THE STORM SAGE", prefix: "ss", hp: 165, height: 260, boss: true,
+    vo: { intro: "e_ss_intro", death: "e_ss_death" },
+    script: [
+      { kind: "attack", label: "Forked Bolt",   dmg: 7,  hits: 2 },
+      { kind: "block",  label: "Static Veil",   block: 12 },
+      { kind: "attack", label: "Heaven's Spear", dmg: 16, hits: 1 },
+      { kind: "buff",   label: "Gathering Storm", str: 3 },
+      { kind: "attack", label: "Forked Bolt",   dmg: 7,  hits: 2 }
+    ],
+    ranged: true,
+    reactions: {}
+  },
+
   champ: {
     id: "champ", name: "THE CHAMP", prefix: "cp", hp: 160, height: 260, boss: true, flip: true,
     vo: { intro: "e_cp_intro", special: "e_cp_devour", death: "e_cp_death" },

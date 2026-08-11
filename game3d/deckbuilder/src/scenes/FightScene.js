@@ -23,7 +23,8 @@ class FightScene extends Phaser.Scene {
     for (const [x, w] of [[this.wlX, 300], [this.hdX, 360]]) {
       this.add.ellipse(x, this.groundY + 4, w, 64, 0xff9944, 0.13).setDepth(8).setBlendMode(Phaser.BlendModes.ADD);
     }
-    this.wl = Spire.spawn(this, "wl_idle", this.wlX, this.groundY, { depth: 10, height: 320 });
+    this.PP = Spire.char().prefix;    // player sprite prefix: wl (Vessia) or kd (Tsubaki)
+    this.wl = Spire.spawn(this, this.PP + "_idle", this.wlX, this.groundY, { depth: 10, height: this.PP === "kd" ? 300 : 320 });
     /* BUG FIX (2026-07-30, corrected): the HOUND and BEAST sprite sets were generated facing
        RIGHT, so unflipped they stood with their backs to her. E.flip marks right-facing art
        (see the facing table in enemies.js); flipX here is the "face left, toward Vessia"
@@ -122,7 +123,7 @@ class FightScene extends Phaser.Scene {
       c.w = w; c.x = x;
       return c;
     };
-    this.wlHud = mk(this.wlX, this.groundY + 34, 190, "VESSIA");
+    this.wlHud = mk(this.wlX, this.groundY + 34, 190, Spire.char().name);
     this.hdHud = mk(this.hdX, this.groundY + 34, 190, this.E.name);
 
     this.intentC = this.add.container(this.hdX, this.groundY - 275).setDepth(30);
@@ -167,6 +168,9 @@ class FightScene extends Phaser.Scene {
     if (unit.statuses.weak) parts.push(`Weak ${unit.statuses.weak}`);
     if (unit.statuses.str) parts.push(`Str +${unit.statuses.str}`);
     if (unit.statuses.thirst) parts.push(`Thirst ${unit.statuses.thirst}`);
+    if (unit.statuses.bleed) parts.push(`Bleed ${unit.statuses.bleed}`);
+    if (unit.statuses.focus) parts.push(`Focus +${unit.statuses.focus}`);
+    if (unit.statuses.riposte) parts.push(`Riposte ${unit.statuses.riposte}`);
     if (unit.statuses.summonpower) parts.push(`Summons +${unit.statuses.summonpower}`);
     return parts.join(" · ");
   }
@@ -292,7 +296,7 @@ class FightScene extends Phaser.Scene {
     this.tweens.add({ targets: card, alpha: 0, scale: 0.7, duration: 220, delay: 90, onComplete: () => card.destroy() });
     try { await def.choreo(this, this.ctx()); }
     catch (e) { console.error("[choreo]", card.cardId, e); }
-    this.wl.play("a_wl_idle");
+    this.wl.play("a_" + this.PP + "_idle");
     if (this.C.player.hp <= 0) { await this.defeat(); return; }
     if (this.C.enemy.hp <= 0) { await this.victory(); return; }
     if (this.hd.anims.currentAnim && !this.hd.anims.isPlaying) this.hd.play("a_" + this.E.prefix + "_idle");
@@ -308,7 +312,7 @@ class FightScene extends Phaser.Scene {
     this.C.endPlayerTurn();
     await this.renderHand(false);
     await this.banner(this.E.name + "'S TURN", "#d9563a");
-    const { burnDmg } = this.C.startEnemyTurn();
+    const { burnDmg, bleedDmg } = this.C.startEnemyTurn();
     this.refreshHud();
     if (burnDmg > 0) {
       Spire.sfx.burn();
@@ -317,8 +321,24 @@ class FightScene extends Phaser.Scene {
       await this.react("firehit"); this.refreshHud();
       if (this.C.enemy.hp <= 0) { await this.victory(); return; }
     }
+    if (bleedDmg > 0) {            // her opened veins tick, through any guard
+      Spire.sfx.hit(false);
+      this.blood(this.hd.x - 10, this.groundY - 95);
+      this.floatText(this.hdX, this.groundY - 240, `-${bleedDmg} bleed`, "#ff4466", 22);
+      await this.react("hurt"); this.refreshHud();
+      if (this.C.enemy.hp <= 0) { await this.victory(); return; }
+    }
     const ev = this.C.resolveEnemyMove();
     if (ev.kind === "attack") await this.enemyAttack(ev);
+    if (ev.riposte !== undefined) {          // the counter stance answered (samurai)
+      Spire.sfx.hit(ev.riposte >= 8);
+      this.hitFlash(this.hd);
+      this.blood(this.hd.x - 15, this.groundY - 100);
+      this.floatText(this.hdX, this.groundY - 250, `-${ev.riposte} riposte`, "#ffd97a", 24);
+      this.refreshHud();
+      await this.react("hurt");
+      if (this.C.enemy.hp <= 0) { await this.victory(); return; }
+    }
     else if (ev.kind === "block") await this.enemyGuard(ev);
     else if (ev.kind === "special") await this.enemySpecial(ev);
     else await this.enemySnarl(ev);
@@ -331,18 +351,31 @@ class FightScene extends Phaser.Scene {
       this.floatText(this.orb.x + 52, this.orb.y - 30, `+${st.carried} carried`, "#b46ae0", 18);
       this.tweens.add({ targets: this.orb, scale: 1.2, duration: 150, yoyo: true });
     }
+    if (st.focusGain > 0) {        // the parry school pays its debts (samurai)
+      Spire.sfx.energy();
+      this.floatText(this.orb.x + 52, this.orb.y - 54, `+${st.focusGain} focus`, "#ffd97a", 18);
+      this.tweens.add({ targets: this.orb, scale: 1.25, duration: 160, yoyo: true });
+    }
     if (st.burnDmg > 0) {          // the Pyre's cinders ticking on her
       Spire.sfx.burn();
       this.burnPuff(this.wlX + 10, this.groundY - 130);
       this.floatText(this.wlX, this.groundY - 250, `-${st.burnDmg} burn`, "#ff9944", 22);
-      this.wl.play("a_wl_hurt");
+      this.wl.play("a_" + this.PP + "_hurt");
       await Spire.wait(this, 450);
-      this.wl.play("a_wl_idle");
+      this.wl.play("a_" + this.PP + "_idle");
       if (this.C.player.hp <= 0) { await this.defeat(); return; }
     }
     await this.renderHand(true);
     await this.banner("YOUR TURN", "#e0b34a");
     this.busy = false;
+  }
+  blood(x, y) {
+    const p = this.add.particles(x, y, "dot", {
+      lifespan: 420, speed: { min: 70, max: 210 }, gravityY: 500,
+      scale: { start: 0.55, end: 0 }, tint: [0xaa1111, 0x771111], quantity: 10, emitting: false
+    }).setDepth(14);
+    p.explode(10);
+    this.time.delayedCall(520, () => p.destroy());
   }
   /* which flipX makes this.hd visually face `dir` ("left" toward her, or "right" toward home),
      accounting for enemies whose base art already faces right (E.flip). See create()'s note. */
@@ -362,14 +395,14 @@ class FightScene extends Phaser.Scene {
         await Spire.tween(this, { targets: b, x: this.wlX + 40, y: this.groundY - 140, duration: 240, ease: "Sine.easeIn" });
         b.destroy();
         this.cameras.main.shake(110, 0.006);
-        this.wl.play("a_wl_hurt");
+        this.wl.play("a_" + this.PP + "_hurt");
         if (ev.dealt[i] > 0) { Spire.sfx.hit(ev.dealt[i] >= 10); this.hitFlash(this.wl); this.floatText(this.wlX, this.groundY - 250, `-${ev.dealt[i]}`, "#ff6655", 26); }
         else { Spire.sfx.blocked(); this.shatter(this.wlX + 40, this.groundY - 140); this.floatText(this.wlX, this.groundY - 250, "blocked", "#7ab6e8", 20); }
         this.refreshHud();
         await swing;
       }
       this.hd.play("a_" + pre + "_idle");
-      this.wl.play("a_wl_idle");
+      this.wl.play("a_" + this.PP + "_idle");
       return;
     }
     this.hd.play("a_" + pre + "_walk");
@@ -379,7 +412,7 @@ class FightScene extends Phaser.Scene {
       Spire.sfx.whoosh();
       await Spire.wait(this, 180);
       this.cameras.main.shake(110, 0.006);
-      this.wl.play("a_wl_hurt");
+      this.wl.play("a_" + this.PP + "_hurt");
       if (ev.dealt[i] > 0) { Spire.sfx.hit(ev.dealt[i] >= 10); this.hitFlash(this.wl); this.floatText(this.wlX, this.groundY - 250, `-${ev.dealt[i]}`, "#ff6655", 26); }
       else { Spire.sfx.blocked(); this.shatter(this.wlX + 40, this.groundY - 140); this.floatText(this.wlX, this.groundY - 250, "blocked", "#7ab6e8", 20); }
       this.refreshHud();
@@ -388,7 +421,7 @@ class FightScene extends Phaser.Scene {
     this.hd.play("a_" + pre + "_walk"); this.hd.setFlipX(this.flipXFor("right"));
     await Spire.tween(this, { targets: this.hd, x: homeX, duration: 420, ease: "Sine.easeOut" });
     this.hd.setFlipX(this.flipXFor("left")); this.hd.play("a_" + pre + "_idle");
-    this.wl.play("a_wl_idle");
+    this.wl.play("a_" + this.PP + "_idle");
   }
   async enemyGuard(ev) {
     Spire.sfx.shield();
@@ -437,7 +470,7 @@ class FightScene extends Phaser.Scene {
       if (this.C.player.hp === 0) this.C.over = true;
       if (lost > 0) { Spire.sfx.hit(false); this.hitFlash(this.wl); } else Spire.sfx.blocked();
       this.cameras.main.shake(110, 0.006);
-      this.wl.play("a_wl_hurt");
+      this.wl.play("a_" + this.PP + "_hurt");
       this.floatText(this.wlX, this.groundY - 250, lost > 0 ? `-${lost}` : "blocked", lost > 0 ? "#ff6655" : "#7ab6e8", lost > 0 ? 26 : 20);
       this.refreshHud();
       await bite;
@@ -446,7 +479,7 @@ class FightScene extends Phaser.Scene {
     dog.play("a_hd_walk");
     await Spire.tween(this, { targets: dog, x: -180, duration: 520, ease: "Sine.easeIn" });
     dog.destroy();
-    this.wl.play("a_wl_idle");
+    this.wl.play("a_" + this.PP + "_idle");
   }
   /* the Stitcher sews itself back together */
   async enemyMend(ev) {
@@ -490,7 +523,7 @@ class FightScene extends Phaser.Scene {
       if (this.C.player.hp === 0) this.C.over = true;
       if (lost > 0) { Spire.sfx.hit(false); this.hitFlash(this.wl); } else Spire.sfx.blocked();
       this.cameras.main.shake(100, 0.005);
-      this.wl.play("a_wl_hurt");
+      this.wl.play("a_" + this.PP + "_hurt");
       this.floatText(this.wlX, this.groundY - 250, lost > 0 ? `-${lost}` : "blocked", lost > 0 ? "#ff6655" : "#7ab6e8", lost > 0 ? 26 : 20);
       this.refreshHud();
       await claw;
@@ -501,7 +534,7 @@ class FightScene extends Phaser.Scene {
     await Spire.play(risen, "sk_death");
     this.tweens.add({ targets: risen, alpha: 0, duration: 320, onComplete: () => risen.destroy() });
     this.hd.play("a_" + this.E.prefix + "_idle");
-    this.wl.play("a_wl_idle");
+    this.wl.play("a_" + this.PP + "_idle");
   }
   /* the Pyre lobs a cinder: damage now, Burn ticking on HER turns after */
   async enemyCinder(ev) {
@@ -518,13 +551,13 @@ class FightScene extends Phaser.Scene {
     this.C.addStatus(this.C.player, "burn", ev.burn);
     Spire.sfx.burn();
     this.cameras.main.shake(110, 0.006);
-    this.wl.play("a_wl_hurt");
+    this.wl.play("a_" + this.PP + "_hurt");
     this.floatText(this.wlX, this.groundY - 250, lost > 0 ? `-${lost}` : "blocked", lost > 0 ? "#ff6655" : "#7ab6e8", lost > 0 ? 26 : 20);
     this.floatText(this.wlX, this.groundY - 215, `+${ev.burn} burn`, "#ff9944", 20);
     this.refreshHud();
     await cast;
     this.hd.play("a_" + this.E.prefix + "_idle");
-    this.wl.play("a_wl_idle");
+    this.wl.play("a_" + this.PP + "_idle");
   }
   /* the Champ's table manners: a thrall shambles in, and he eats it */
   async enemyDevour(ev) {
@@ -586,7 +619,7 @@ class FightScene extends Phaser.Scene {
     this.isDefeat = true;
     Spire.run.over = true;
     this.intentC.removeAll(true);
-    this.wl.play("a_wl_hurt");
+    this.wl.play("a_" + this.PP + "_hurt");
     this.add.rectangle(640, 360, 1280, 720, 0x0a0505, 0.62).setDepth(60);
     this.add.text(640, 300, "SHE FALLS", { fontFamily: "Georgia, serif", fontSize: 54, color: "#b03a2e" }).setOrigin(0.5).setDepth(61);
     this.add.text(640, 352, "…the Pit keeps her cards. The climb begins anew.", { fontFamily: "Georgia, serif", fontSize: 18, fontStyle: "italic", color: "#caa26a" }).setOrigin(0.5).setDepth(61);
@@ -600,7 +633,7 @@ class FightScene extends Phaser.Scene {
     const s = this;
     return {
       C: s.C, wl: s.wl, hd: s.hd, wlX: s.wlX, hdX: s.hdX, groundY: s.groundY, prefix: s.E.prefix,
-      wlIdle: async () => { s.wl.play("a_wl_idle"); },
+      wlIdle: async () => { s.wl.play("a_" + s.PP + "_idle"); },
       applyHit(base) {
         const n = s.C.playerHits(base);
         const lost = s.C.hurt(s.C.enemy, n);
@@ -656,6 +689,25 @@ class FightScene extends Phaser.Scene {
         s.floatText(s.wlX, s.groundY - 250, got > 0 ? `+${got}` : "full", "#7ce87c", 22);
         s.refreshHud();
         return got;                                    // cards read this for overheal payoffs
+      },
+      applyBleed(n) {
+        Spire.sfx.debuff();
+        s.C.addStatus(s.C.enemy, "bleed", n);
+        s.blood(s.hdX - 20, s.groundY - 95);
+        s.floatText(s.hdX, s.groundY - 215, `+${n} bleed`, "#ff4466", 20);
+        s.refreshHud();
+      },
+      applyFocus(n) {
+        Spire.sfx.buff();
+        s.C.addStatus(s.C.player, "focus", n);
+        s.floatText(s.wlX, s.groundY - 215, `+${n} focus`, "#ffd97a", 20);
+        s.refreshHud();
+      },
+      applyRiposte(n) {
+        Spire.sfx.buff();
+        s.C.player.statuses.riposte = Math.max(s.C.player.statuses.riposte || 0, n);
+        s.floatText(s.wlX, s.groundY - 240, `riposte ${n}`, "#ffd97a", 20);
+        s.refreshHud();
       },
       applyThirst(n) {
         Spire.sfx.buff();

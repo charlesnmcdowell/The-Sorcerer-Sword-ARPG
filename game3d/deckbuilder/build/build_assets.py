@@ -42,6 +42,44 @@ ANIMS = {
   # ---- life-steal package (2026-08-06): generated directly as new-warlock sets ----
   "wl_drain":    (W + "/forms/newwarlock", "newwarlock_drain",     [1,2,3,4,5,6], 10),
   "wl_bloodrite":(W + "/forms/newwarlock", "newwarlock_bloodrite", [1,2,3,4,5,6], 10),
+  # ---- TSUBAKI (2026-08-08): the second playable — base sets + one set per card,
+  # generated from Hiro's samurai.png reference (faces RIGHT like the warlock) ----
+  "kd_idle":     ("sprites/samurai", "kd_idle",     [1,2,3,4],     8),
+  "kd_walk":     ("sprites/samurai", "kd_walk",     [1,2,3,4,5,6], 12),
+  "kd_hurt":     ("sprites/samurai", "kd_hurt",     [1,2,3],       12),
+  "kd_slash":    ("sprites/samurai", "kd_slash",    [1,2,3,4],     10),
+  "kd_cross":    ("sprites/samurai", "kd_cross",    [1,2,3,4],     10),
+  "kd_guard":    ("sprites/samurai", "kd_guard",    [1,2,3,4],     10),
+  "kd_observe":  ("sprites/samurai", "kd_observe",  [1,2,3,4],     8),
+  "kd_counter":  ("sprites/samurai", "kd_counter",  [1,2,3,4],     14),
+  "kd_sneak":    ("sprites/samurai", "kd_sneak",    [1,2,3,4],     10),
+  "kd_oddhour":  ("sprites/samurai", "kd_oddhour",  [1,2,3,4],     9),
+  "kd_artery":   ("sprites/samurai", "kd_artery",   [1,2,3,4],     14),
+  "kd_openred":  ("sprites/samurai", "kd_openred",  [1,2,3,4],     9),
+  "kd_ichigeki": ("sprites/samurai", "kd_ichigeki", [1,2,3,4],     7),
+  "kd_parry":    ("sprites/samurai", "kd_parry",    [1,2,3,4],     10),
+  "kd_bloom":    ("sprites/samurai", "kd_bloom",    [1,2,3,4],     9),
+  # ---- the TEMPEST SCHOOL (Tsubaki's run; generated facing LEFT) ----
+  "nj_idle":   ("sprites/enemies/ninja", "ninja_idle",     [1,2,3],   6),
+  "nj_walk":   ("sprites/enemies/ninja", "ninja_walk",     [1,2,3,4], 12),
+  "nj_attack": ("sprites/enemies/ninja", "ninja_attack",   [1,2,3,4], 14),
+  "nj_hurt":   ("sprites/enemies/ninja", "ninja_hurt",     [1,2,3],   12),
+  "nj_death":  ("sprites/enemies/ninja", "ninja_death",    [1,2,3,4], 8),
+  "ar_idle":   ("sprites/enemies/archer", "archer_idle",   [1,2,3],   6),
+  "ar_walk":   ("sprites/enemies/archer", "archer_walk",   [1,2,3,4], 10),
+  "ar_attack": ("sprites/enemies/archer", "archer_attack", [1,2,3,4], 10),
+  "ar_hurt":   ("sprites/enemies/archer", "archer_hurt",   [1,2,3],   12),
+  "ar_death":  ("sprites/enemies/archer", "archer_death",  [1,2,3,4], 8),
+  "mk_idle":   ("sprites/enemies/monk", "monk_idle",       [1,2,3],   6),
+  "mk_walk":   ("sprites/enemies/monk", "monk_walk",       [1,2,3,4], 10),
+  "mk_attack": ("sprites/enemies/monk", "monk_attack",     [1,2,3,4], 12),
+  "mk_hurt":   ("sprites/enemies/monk", "monk_hurt",       [1,2,3],   12),
+  "mk_death":  ("sprites/enemies/monk", "monk_death",      [1,2,3,4], 8),
+  "ss_idle":   ("sprites/enemies/sorcerer", "sorcerer_idle",   [1,2,3],   6),
+  "ss_walk":   ("sprites/enemies/sorcerer", "sorcerer_walk",   [1,2,3,4], 10),
+  "ss_attack": ("sprites/enemies/sorcerer", "sorcerer_attack", [1,2,3,4], 10),
+  "ss_hurt":   ("sprites/enemies/sorcerer", "sorcerer_hurt",   [1,2,3],   12),
+  "ss_death":  ("sprites/enemies/sorcerer", "sorcerer_death",  [1,2,3,4], 8),
   # ---- Hound ----
   "hd_idle":     (H, "hound_idle",      [1,2,3],        6),
   "hd_walk":     (H, "hound_walk",      [1,2,3,4],      10),
@@ -207,6 +245,8 @@ BUNDLES = {
   "assets_enemies3.js":["hk_","gn_","st_","gv_","nc_"],   # Act 2 — the City roster
   "assets_enemies4.js":["ch_","py_","dr2_","cp_"],        # Act 3 — the West Road roster
   "assets_allies2.js": ["ba_","as_","ad_","dc_"],
+  "assets_samurai.js": ["kd_"],
+  "assets_enemies5.js":["nj_","ar_","mk_","ss_"],
 }
 
 MAXH = 460  # cap sprite frame height (they're displayed <=420px)
@@ -258,6 +298,8 @@ MIRROR_FRAMES = {
     # ever judged idle frame 1s). Full per-frame idle sweep of all 14 enemies:
     ("br_idle", 2),                     # brute mid-loop frame faces RIGHT
     ("ch_idle", 1), ("ch_idle", 2),     # chain's first two idle frames face RIGHT
+    # 2026-08-08 Tsubaki audit: one recovery frame generated facing LEFT
+    ("kd_openred", 4),
 }
 
 def _cleanup(im, ops):
@@ -384,6 +426,12 @@ VOICE_IDS = [
     "e_cp_intro","e_cp_devour","e_cp_death",
     "e_hk_intro","e_gn_intro","e_gv_intro","e_ch_intro","e_py_intro","e_dr_intro",
     "e_st_intro","e_st_mend",
+    # Tsubaki's road (2026-08-08)
+    "k_bio","k_orders","k_boss1","k_out1","k_silver","k_file","k_price",
+    "k_boss2","k_patience","k_house","k_boss3","k_courier","k_go",
+    "n_kcage","n_ashen","k_deliver","n_vial","k_next","n_kclose",
+    "e_nj_intro","e_ar_intro","e_ar_death","e_mk_intro","e_mk_death",
+    "e_ss_intro","e_ss_death",
 ]
 
 def main():

@@ -100,7 +100,7 @@ class MapScene extends Phaser.Scene {
     rows.forEach(row => row.forEach(n => this.drawNode(n, avail)));
     /* her marker walks the road with her */
     const at = run.pos ? rows[run.pos.r][run.pos.i] : rows[0][0];
-    Spire.spawn(this, "wl_idle", at.x - 56, at.y + 34, { depth: 22, height: 90 });
+    Spire.spawn(this, Spire.char().prefix + "_idle", at.x - 56, at.y + 34, { depth: 22, height: 90 });
   }
 
   drawNode(n, avail) {
@@ -193,7 +193,7 @@ class MapScene extends Phaser.Scene {
     const ACT = Spire.act();
     const roll = Math.random();
     const skipped = (Spire.run.map[1] && Spire.run.map[1][0] && Spire.run.map[1][0].enemy) || Spire.claimEnemy(ACT.fightPool);
-    if (Spire.run.act === 2 && roll < 0.30 && !Spire.run._buyerMet) {
+    if (Spire.run.act === 2 && roll < 0.30 && !Spire.run._buyerMet && Spire.run.character !== "samurai") {
       /* the story finds her: the Veiled Woman and her humming vial */
       Spire.run._buyerMet = true;
       Spire.clearNode();
