@@ -490,6 +490,7 @@ VOICE_IDS = [
     # 2026-08-11 narrative pass: every enemy speaks + the Keep-garrison beat
     "e_hd_intro","e_bs_intro","e_sk_intro","e_br_intro","e_wg_intro","n_keepgarrison",
     "m_greet","b_host","e_pr_intro","e_pr_death",
+    "w_duel","e_ow_meet","e_ow_intro","e_ow_death",
 ]
 
 def main():

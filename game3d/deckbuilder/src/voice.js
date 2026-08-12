@@ -117,6 +117,10 @@ Spire.VO = {
   e_k2_death: { who: "KAGEHIME", text: "\"Enough. I will tell her the Blade is still the Blade. Finish the errand, sister… and watch your back. I was only the second they sent.\"" },
   e_mb_intro: { who: "THE MATRON'S BLADE", text: "\"You burned a pipeline, arsonist, and pipelines have owners. My Lady would like her ledger balanced — your name, your gift, and your ashes will settle the page. Sing for me.\"" },
   e_mb_death: { who: "THE MATRON'S BLADE", text: "\"Filed, then… under costly. The Matron will read every word of you, arsonist. Pray the next blade she sends is slower.\"" },
+  w_duel: { who: "VESSIA", text: "\"The road is ash behind me — and still somebody is standing in it. Ashenveil robes. Faculty seal. So the academy finally sends its answer. Good. I still have questions.\"" },
+  e_ow_meet: { who: "THE ARCH-PROCTOR", text: "\"Vessia of the lower halls. You burned a season's work and three of the Matron's crews. The faculty has voted — and I am the verdict. Class is in session.\"" },
+  e_ow_intro: { who: "THE ARCH-PROCTOR", text: "\"Your file says 'expelled'. The Ashenveil does not accept 'expelled' as an ending — every student comes home, as an asset or as ash. Show me which you are.\"" },
+  e_ow_death: { who: "THE ARCH-PROCTOR", text: "\"Assessment… complete… marked… 'beyond us'… run far, Vessia… the next examiner… will not be a man…\"" },
   e_pr_intro: { who: "THE ASHENVEIL PROCTOR", text: "\"Vessia of the lower halls. You left the academy with a question — the faculty has sent me with the answer. Hold still for your assessment.\"" },
   e_pr_death: { who: "THE ASHENVEIL PROCTOR", text: "\"Marked… incomplete… the Ashenveil… will re-examine…\"" },
   m_greet: { who: "MARLOW", text: "\"Evening, girl. Bath's hot, stew's thick, beds are clean. Stay the night — the alleys will keep till morning.\"" },
@@ -134,7 +138,7 @@ Spire.VO = {
   k_price: { who: "TSUBAKI", text: "\"A fine technique. It joins my collection.\"" },
   k_boss2: { who: "TSUBAKI", text: "\"Step aside, monk. Your school was paid to find the wolves — not to stand in front of one.\"" },
   k_patience: { who: "TSUBAKI", text: "\"There he is. The assignment beneath all my assignments. Not here — not with witnesses. The Lady needs him charmed, not warned. So I wait.\"" },
-  n_bv: { who: "NARRATOR", text: "BRASSVEIL. Karridge is torchlight; this is the future arriving early — ley-conduits humming under brass streets, rune-signs that rewrite themselves, glass towers wearing the Kingdom's peace like jewelry. The gifted come here to shine. Which is to say: the ledger writes itself." },
+  n_bv: { who: "NARRATOR", text: "BRASSVEIL. Karridge is torchlight; this city is the future arriving early — ley-lights, living rune-signs, towers of brass and glass. Gifted people travel here from all over the Kingdom to show off what they can do, in public, every night. For a cult that hunts the gifted… there is no easier hunting ground in the world." },
   k_fortress: { who: "TSUBAKI", text: "\"Drakespire Keep. The Lady bids me search the dragon's own house while the dragon is away. Wards, walls, and one famous sword between me and his study. Quietly, then — and if it cannot be quiet... quickly.\"" },
   k_boss3: { who: "TSUBAKI", text: "\"Sera of Duskfen. First to follow him, they say — twenty years of legend with a sword to prove it. I have no orders to kill you, champion. Kindly do not make me improvise.\"" },
   n_kcage: { who: "NARRATOR", text: "A Tempest supply cage — and inside it, one of her own: a cult courier, trussed, tagged, and left to be questioned at dawn." },
@@ -192,6 +196,9 @@ Spire.say = function (scene, id, opts) {
     const uri = window.SPIRE_VOICE && SPIRE_VOICE[id];
     if (uri) {
       try {
+        /* one voice at a time (2026-08-11, Hiro: cinematics were talking over each
+           other) — a new line always silences whatever was still speaking */
+        if (Spire._voiceNow) { try { Spire._voiceNow.pause(); } catch (e) {} }
         const a = new Audio(uri);
         Spire._voiceNow = a;
         if (Spire._audio && Spire.musicOn) Spire._audio.volume = 0.1;   // duck music under the line

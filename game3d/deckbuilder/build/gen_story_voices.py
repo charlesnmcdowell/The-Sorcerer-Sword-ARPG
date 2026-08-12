@@ -312,8 +312,8 @@ LINES = [
 
   # ---- 2026-08-08 redesign: Brassveil + Drakespire Keep + Sera ----
   { "id": "n_bv", "slot": NARR, "who": "NARRATOR",
-    "text": "BRASSVEIL. Karridge is torchlight; this is the future arriving early - ley-conduits humming under brass streets, rune-signs that rewrite themselves, glass towers wearing the Kingdom's peace like jewelry. The gifted come here to shine. Which is to say: the ledger writes itself.",
-    "vtext": "[wondering] BRASSVEIL. Karridge is torchlight... this is the future, arriving early. Ley-conduits humming under brass streets. Rune-signs that rewrite themselves. Glass towers wearing the Kingdom's peace like jewelry. [short pause] The gifted come here to SHINE. [dry, darker] Which is to say... the ledger writes itself." },
+    "text": "BRASSVEIL. Karridge is torchlight; this city is the future arriving early - ley-lights, living rune-signs, towers of brass and glass. Gifted people travel here from all over the Kingdom to show off what they can do, in public, every night. For a cult that hunts the gifted... there is no easier hunting ground in the world.",
+    "vtext": "[wondering] BRASSVEIL. Karridge is torchlight... this city is the future, arriving early. Ley-lights. Living rune-signs. Towers of brass and glass. [short pause] Gifted people travel here from ALL over the Kingdom - to show off what they can do. In public. Every night. [dry, darker] For a cult that hunts the gifted... there is no easier hunting ground in the world." },
   { "id": "k_fortress", "slot": "Tsubaki", "who": "TSUBAKI",
     "text": "Drakespire Keep. The Lady bids me search the dragon's own house while the dragon is away. Wards, walls, and one famous sword between me and his study. Quietly, then - and if it cannot be quiet... quickly.",
     "vtext": "[hushed awe, then composed] Drakespire Keep. [short pause] The Lady bids me search the dragon's own house... while the dragon is away. Wards. Walls. And one famous sword between me and his study. [breath] Quietly, then. [faint smile] And if it cannot be quiet... QUICKLY." },
@@ -342,6 +342,20 @@ LINES = [
   { "id": "e_mb_death", "slot": "Kagehime", "who": "THE MATRON'S BLADE",
     "text": "Filed, then... under costly. The Matron will read every word of you, arsonist. Pray the next blade she sends is slower.",
     "vtext": "[beaten, precise to the end] Filed, then... under COSTLY. [breath] The Matron will read every word of you, arsonist. [fading warning] Pray the next blade she sends... is slower." },
+
+  # ---- 2026-08-11 endgame duel: THE ARCH-PROCTOR (Vessia's answer to Kagehime) ----
+  { "id": "w_duel", "slot": "Vessia", "who": "VESSIA",
+    "text": "The road is ash behind me - and still somebody is standing in it. Ashenveil robes. Faculty seal. So the academy finally sends its answer. Good. I still have questions.",
+    "vtext": "[level, reading the dark] The road is ash behind me... and still somebody is standing in it. [short pause] Ashenveil robes. Faculty seal. [cold recognition] So the academy finally sends its answer. [silken] Good. I still have questions." },
+  { "id": "e_ow_meet", "slot": "Proctor", "who": "THE ARCH-PROCTOR",
+    "text": "Vessia of the lower halls. You burned a season's work and three of the Matron's crews. The faculty has voted - and I am the verdict. Class is in session.",
+    "vtext": "[glacial, unhurried] Vessia of the lower halls. You burned a season's work... and THREE of the Matron's crews. [short pause] The faculty has voted. And I... am the verdict. [cold bell] Class is in session." },
+  { "id": "e_ow_intro", "slot": "Proctor", "who": "THE ARCH-PROCTOR",
+    "text": "Your file says 'expelled'. The Ashenveil does not accept 'expelled' as an ending - every student comes home, as an asset or as ash. Show me which you are.",
+    "vtext": "[precise, condescending] Your file says... 'expelled'. [short pause] The Ashenveil does not accept 'expelled' as an ENDING. Every student comes home - as an asset... or as ash. [flat] Show me which you are." },
+  { "id": "e_ow_death", "slot": "Proctor", "who": "THE ARCH-PROCTOR",
+    "text": "Assessment... complete... marked... 'beyond us'... run far, Vessia... the next examiner... will not be a man...",
+    "vtext": "[failing, clinical to the end] Assessment... complete... [breath] marked... 'beyond us'... [fading warning] run far, Vessia... the next examiner... will not be a man..." },
 
   # ---- 2026-08-11 coverage pass: THE ASHENVEIL PROCTOR (old warlock art, elite) ----
   { "id": "e_pr_intro", "slot": "Proctor", "who": "THE ASHENVEIL PROCTOR",
