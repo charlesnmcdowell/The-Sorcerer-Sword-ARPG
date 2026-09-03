@@ -39,6 +39,13 @@ function pauseEl(el) {
   try { el.pause(); } catch (e) {}
 }
 
+function killEl(el) {
+  pauseEl(el);
+  if (!el) return;
+  try { el.removeAttribute('src'); el.src = ''; el.load(); } catch (e) {}
+  live.delete(el);
+}
+
 function playEl(el) {
   if (!el) return;
   const gen = bumpGen(el);
@@ -73,7 +80,19 @@ function pauseOthers(keep) {
   if (Music.el && Music.el !== keep && Music.el !== Music.voiceEl) pauseEl(Music.el);
 }
 
-function haltAll() {
+function haltAll(hard) {
+  if (hard) {
+    for (const el of live) killEl(el);
+    killEl(Music.el);
+    killEl(Music.homeEl);
+    killEl(Music.voiceEl);
+    live.clear();
+    Music.el = null;
+    Music.homeEl = null;
+    Music.voiceEl = null;
+    Music.track = null;
+    return;
+  }
   for (const el of live) pauseEl(el);
   pauseEl(Music.el);
   pauseEl(Music.homeEl);
@@ -98,28 +117,32 @@ const Music = {
     };
     document.addEventListener('pointerdown', unlock);
     document.addEventListener('keydown', unlock);
-    window.addEventListener('pagehide', () => Music.halt());
-    window.addEventListener('beforeunload', () => Music.halt());
+    if (typeof window === 'undefined') return;
+    // Soft halt when the tab is hidden so one track can resume. Hard halt
+    // on real close — otherwise looped HTML5 Audio keeps playing with no UI.
+    window.addEventListener('pagehide', (ev) => Music.halt(!ev.persisted));
+    window.addEventListener('beforeunload', () => Music.halt(true));
+    window.addEventListener('freeze', () => Music.halt(true));
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) Music.halt();
+      if (document.hidden) Music.halt(false);
       else { Music.hidden = false; Music.resumeCurrent(); }
     });
   },
 
-  halt() {
+  halt(hard) {
     Music.hidden = true;
-    haltAll();
+    haltAll(!!hard);
   },
 
   resumeCurrent() {
     if (Music.hidden || Music.muted) return;
-    if (Music.HOME.includes(Music.context) && Music.homeEl) {
+    if (Music.HOME.includes(Music.context) && Music.homeEl && Music.homeEl.src) {
       pauseOthers(Music.homeEl);
       Music.el = Music.homeEl;
       playEl(Music.homeEl);
       return;
     }
-    if (Music.el) {
+    if (Music.el && Music.el.src) {
       pauseOthers(Music.el);
       playEl(Music.el);
     }
@@ -203,7 +226,7 @@ const Music = {
     if (!name) return;
     const isHome = Music.HOME.includes(context);
     let el;
-    if (isHome && Music.homeEl && Music.homeEl.__name === name) {
+    if (isHome && Music.homeEl && Music.homeEl.__name === name && Music.homeEl.src) {
       el = Music.homeEl;                                   // resume where it left off
     } else {
       if (isHome && Music.homeEl) pauseEl(Music.homeEl);
@@ -242,16 +265,26 @@ const Music = {
   toggleMute() {
     Music.muted = !Music.muted;
     try { localStorage.setItem('adv:muted', Music.muted ? '1' : '0'); } catch (e) {}
-    if (Music.muted) haltAll();
+    if (Music.muted) haltAll(false);
     else Music.resumeCurrent();
     return Music.muted;
   },
 
   // ---- voice channel --------------------------------------------------------
-  speakFile(personalityId, band, idx) {
+  speakFile(personalityId, band, idx, tag) {
     if (!personalityId) return;
     Music.stopVoice();
-    const el = watch(new Audio('audio/vo/' + personalityId + '/' + band + '_' + idx + '.mp3'));
+    const plain = 'audio/vo/' + personalityId + '/' + band + '_' + idx + '.mp3';
+    const src = tag ? 'audio/vo/' + tag + '/' + personalityId + '/' + band + '_' + idx + '.mp3' : plain;
+    const el = watch(new Audio(src));
+    if (tag) {
+      el.addEventListener('error', () => {
+        if (Music.voiceEl !== el) return;
+        const fb = watch(new Audio(plain));
+        Music.voiceEl = fb;
+        playEl(fb);
+      }, { once: true });
+    }
     Music.voiceEl = el;
     playEl(el);
   },
