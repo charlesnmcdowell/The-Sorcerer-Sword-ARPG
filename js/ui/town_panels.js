@@ -1,0 +1,460 @@
+// Town content panels (§20): quest board + departure, store, trainer,
+// journal, codex, factions.
+(function () {
+'use strict';
+const T = () => ADV.T;
+const C = () => ADV.DATA.CONST;
+
+const Panels = ADV.Panels = ADV.Panels || {};
+
+const header = (scene, r, title, sub) => ADV.UI.header(scene, r, title, sub);
+const keepBtn = (scene, b) => ADV.UI.keepBtn(scene, b);
+
+// ============================================================== QUEST BOARD
+Panels.questBoard = function (scene, r) {
+  const game = scene.g();
+  const p = scene.player();
+  const stage = ADV.Game.careerStage(game);
+  const roster = ADV.Game.partyRoster(game);
+  const party = ADV.Party.of(game.world, p);
+  let y = r.y + 84;
+  if (stage === 'hireling' && party) {
+    // A hireling goes where the leader goes (request 1)
+    const leader = ADV.Party.leader(game.world, party);
+    header(scene, r, 'Quest Board', `${leader ? leader.name : 'The leader'} picks the contract. You get paid ${p.wage || C().GOLD.hirelingWage}g a quest to be there when it starts.`);
+    const pick = ADV.Game.leaderPick(game);
+    if (!pick) scene.keep(T().text(scene, r.x + 24, y, 'No party contract is posted today. The leader waits.', { size: 14, italic: true, color: T().css.inkFaint }));
+    else {
+      keepBtn(scene, T().button(scene, r.x + 24, y, r.w - 220, 48, 'Ready for the quest', () => Panels.departure(scene, pick),
+        { size: 15, display: true, sub: 'the leader has a contract in mind — you will see it at the door', subColor: T().css.inkDim }));
+    }
+    y += 70;
+  } else {
+    header(scene, r, 'Quest Board', party
+      ? 'Party contracts only — a party does not take solo work. The contract must cover payroll.'
+      : 'Solo contracts pay 40% for lighter work. Party contracts need bodies and pay full. The contract is the difficulty.');
+    const tutOk = (q) => !ADV.Tutor || ADV.Tutor.questAllowed(game, q);
+    scene.tutorFirstQuestBtn = null;
+    // two columns: solo work on the left, party work on the right
+    const colW = Math.floor((r.w - 56) / 2);
+    const left = { x: r.x, w: colW + 24 }, right = { x: r.x + colW + 32, w: colW + 24 };
+    let yl = y, yr = y;
+    if (!party) {
+      scene.keep(T().text(scene, left.x + 24, yl, 'SOLO CONTRACTS', { size: 13, color: T().css.inkDim })); yl += 24;
+      const solo = game.board.filter(q => q.track === 'solo');
+      for (const q of solo) { const b = questRow(scene, left, q, yl, tutOk(q)); if (!scene.tutorFirstQuestBtn && tutOk(q) && q.tier === 1) scene.tutorFirstQuestBtn = b.btn; yl = b.y; }
+    } else {
+      scene.keep(T().text(scene, left.x + 24, yl, 'SOLO CONTRACTS', { size: 13, color: T().css.inkDim })); yl += 24;
+      scene.keep(T().text(scene, left.x + 24, yl, 'A party does not take solo work.', { size: 12, italic: true, color: T().css.inkFaint, wrap: colW })); yl += 30;
+    }
+    scene.keep(T().text(scene, right.x + 24, yr, `PARTY CONTRACTS${roster.length < 2 ? ' (you need a party)' : ''}`, { size: 13, color: T().css.inkDim })); yr += 24;
+    for (const q of game.board.filter(x => x.track === 'party')) {
+      const covers = ADV.Game.contractCoversPayroll(game, q);
+      yr = questRow(scene, right, q, yr, roster.length >= 2 && covers && tutOk(q), covers ? null : 'cannot cover payroll').y;
+    }
+    y = Math.max(yl, yr);
+  }
+
+  y += 14;
+  if (ADV.Tutor && ADV.Tutor.active(game)) return;
+  const kids = ADV.Game.youngDependents(p);
+  const stayLabel = kids > 0 ? `Stay home with the ${kids > 1 ? 'children' : 'child'}` : 'Stay home';
+  keepBtn(scene, T().button(scene, r.x + 24, y, 260, 38, stayLabel, () => {
+    ADV.Game.stayHome(game);
+    scene.promptOnce('firstStayHome');
+    scene.scene.restart();
+  }, { size: 14 }));
+  scene.keep(T().text(scene, r.x + 300, y + 10, 'The world moves whether you do or not.', { size: 12, italic: true, color: T().css.inkFaint }));
+};
+
+function questRow(scene, r, q, y, enabled, note) {
+  const tierLabel = q.isBoss ? 'BOSS' : 'Tier ' + q.tier;
+  const fColor = note ? T().css.blood : { law: T().css.blue, criminal: T().css.purple, neutral: T().css.green }[q.factionAlignment];
+  const label = `${q.name}`;
+  let sub = `${tierLabel} · ${q.encounters.length} enc · ${q.payout}g · ${q.factionAlignment}${note ? ' · ' + note : ''}`;
+  // Faction-war and god-line contracts carry consequences the tier line cannot
+  // show — what closes, what opens, what the purse does next time (add-on §6, §7).
+  let extra = null;
+  if (ADV.Campaign2UI) { try { extra = ADV.Campaign2UI.questNote(scene.g(), q); } catch (e) { extra = null; } }
+  const btn = keepBtn(scene, T().button(scene, r.x + 24, y, r.w - 48, 42, label, () => {
+    if (!enabled) return;
+    Panels.departure(scene, q);
+  }, { size: 13, disabled: !enabled, sub, subColor: fColor, display: true }));
+  if (extra) {
+    scene.keep(T().text(scene, r.x + 30, y + 44, extra,
+      { size: 11, italic: true, wrap: r.w - 60, color: q.godLine ? T().css.purple : T().css.inkDim }));
+    return { y: y + 48 + Math.ceil(extra.length / Math.max(30, (r.w - 60) / 6)) * 14 + 4, btn };
+  }
+  return { y: y + 48, btn };
+}
+
+// Departure confirmation (§8): the carry-vs-vault decision at the moment of risk.
+Panels.departure = function (scene, q) {
+  const game = scene.g();
+  const p = scene.player();
+  const W = T().W, H = T().H;
+  const info = ADV.Game.departureInfo(game, q);
+  const objs = [];
+  const keep = o => { objs.push(o); return o; };
+  keep(scene.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75).setDepth(200).setInteractive());
+  keep(T().panel(scene, W / 2 - 300, 110, 600, 520)).setDepth(201);
+  const D = 202;
+  const tx = (x, y2, s, o) => { const t = T().text(scene, x, y2, s, o); t.setDepth(D); return keep(t); };
+  tx(W / 2, 130, 'Departure: ' + q.name, { size: 22, display: true, ox: 0.5, color: T().css.gold });
+  tx(W / 2, 164, 'Anything you carry is lost if you die. Leave what you can\'t replace.', { size: 13, ox: 0.5, italic: true, color: T().css.inkDim });
+  scene.promptOnce('firstDeparture');
+
+  let vaultAmt = 0;
+  const gold = p.inventory.gold;
+  const goldLine = tx(W / 2 - 240, 210, '', { size: 15 });
+  const render = () => goldLine.setText(`Carrying ${gold - vaultAmt}g · vaulting ${vaultAmt}g`);
+  render();
+  const mk = (dx, label, fn) =>
+    ADV.UI.modalBtn(keep, D, T().button(scene, W / 2 - 240 + dx, 240, 108, 32, label, fn, { size: 12 }));
+  mk(0, 'Vault none', () => { vaultAmt = 0; render(); });
+  mk(120, 'Vault half', () => { vaultAmt = Math.floor(gold / 2); render(); });
+  mk(240, 'Vault all', () => { vaultAmt = gold; render(); });
+
+  let yy = 300;
+  if (info.dependents > 0) {
+    tx(W / 2 - 240, yy, `Childcare tuition: ${info.tuition}g (${info.dependents} ${info.dependents > 1 ? 'children' : 'child'})`, { size: 14, color: info.tuition > gold ? T().css.blood : T().css.blue });
+    yy += 26;
+  }
+  if (info.payroll > 0) {
+    tx(W / 2 - 240, yy, `Payroll owed on return, win or lose: ${info.payroll}g`, { size: 14, color: T().css.gold });
+    yy += 26;
+  }
+  const going = info.roster.concat(ADV.Campaign ? ADV.Campaign.alliesFor(game, q).filter(c => !info.roster.includes(c)) : []);
+  tx(W / 2 - 240, yy, 'Going: ' + going.map(c => c.name + (c.campaign ? ' (' + (c.title || 'campaign') + ')' : '')).join(', '), { size: 13, color: T().css.inkDim, wrap: 480 });
+  yy += 40;
+  const v = info.vault;
+  if (v && v.sharedWithId) {
+    const along = info.roster.some(c => c.id === (v.holderId === p.id ? v.sharedWithId : v.holderId));
+    tx(W / 2 - 240, yy, along ? 'Your partner rides with you — the vault will remember it.' : 'Questing without your partner. The vault drifts toward locking.', { size: 12, italic: true, color: along ? T().css.green : T().css.inkFaint, wrap: 480 });
+    yy += 26;
+  }
+  const insured = v && v.insuranceActive;
+  tx(W / 2 - 240, yy, insured ? 'Insurance is active.' : 'No insurance on this life.', { size: 12, color: insured ? T().css.green : T().css.inkFaint });
+  if (p.meal) { yy += 22; tx(W / 2 - 240, yy, `Fed: ${p.meal.name} — the bonus lasts this quest.`, { size: 12, color: T().css.green }); }
+
+  const go = T().button(scene, W / 2 - 250, 560, 240, 46, 'Set out', () => {
+    const res = ADV.Game.startQuest(game, q, { vaultGold: vaultAmt });
+    if (!res.ok) { ADV.Notices.toast(scene, res.error); return; }
+    objs.forEach(o => { try { o.destroy(); } catch (e) {} });
+    scene.scene.start('Quest');
+  }, { display: true, bold: true, size: 17 });
+  const stay = T().button(scene, W / 2 + 10, 560, 240, 46, 'Think better of it', () => {
+    objs.forEach(o => { try { o.destroy(); } catch (e) {} });
+  }, { size: 15 });
+  for (const b of [go, stay]) ADV.UI.modalBtn(keep, D, b);
+};
+
+// ============================================================== STORE
+Panels.store = function (scene, r) {
+  scene.storeTab = scene.storeTab || 'food';
+  header(scene, r, 'Store', scene.storeTab === 'food'
+    ? 'Food is cheap and honest: eat before a contract and the bonus rides along for that one quest. One meal at a time.'
+    : 'Gear sets floor matching skills at level 10. One set at a time — sell the one you wear for its full price. Insurance pays the survivor if either of you dies.');
+  let tx = r.x + 24;
+  for (const t of [['food', 'Food'], ['gear', 'Gear']]) {
+    const active = scene.storeTab === t[0];
+    keepBtn(scene, T().button(scene, tx, r.y + 96, 150, 30, t[1], () => { scene.storeTab = t[0]; scene.openPanel('store'); }, { size: 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
+    tx += 158;
+  }
+  if (scene.storeTab === 'food') Panels.storeFood(scene, r); else Panels.storeGear(scene, r);
+};
+
+Panels.storeFood = function (scene, r) {
+  const game = scene.g();
+  const p = scene.player();
+  let y = r.y + 140;
+  if (p.meal) { scene.keep(T().text(scene, r.x + 24, y, `You have eaten: ${p.meal.name}. Buying another replaces it.`, { size: 13, color: T().css.green })); y += 26; }
+  const cw = Math.floor((r.w - 56) / 2);
+  let col = 0, colY = [y, y];
+  for (const f of ADV.DATA.FOODS) {
+    const bonus = Object.entries(f.bonus).map(([k, v]) => '+' + v + ' ' + k.toUpperCase()).join(' ');
+    const x = r.x + 24 + col * (cw + 8);
+    const b = T().button(scene, x, colY[col], cw, 46, `${f.name} — ${f.cost}g`, () => {
+      const res = ADV.Character.eat(p, f.id);
+      if (!res.ok) { ADV.Notices.toast(scene, res.error === 'not enough gold' ? 'You cannot afford it.' : res.error); return; }
+      ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store');
+    }, { size: 14, sub: `${bonus} for one quest · ${f.blurb}`, subColor: p.meal && p.meal.id === f.id ? T().css.green : T().css.inkDim, disabled: p.inventory.gold < f.cost, display: true });
+    keepBtn(scene, b);
+    colY[col] += 54;
+    col = colY.indexOf(Math.min(...colY));
+  }
+};
+
+Panels.storeGear = function (scene, r) {
+  const game = scene.g();
+  const p = scene.player();
+  const world = game.world;
+  let y = r.y + 140;
+  const spouse = p.partnerId ? ADV.World.byId(world, p.partnerId) : null;
+  for (const [id, set] of Object.entries(ADV.DATA.GEAR_SETS)) {
+    if (set.campaign) continue;   // faction sets are issued by their halls, never sold
+    // show which of the player's skills the set would actually raise (§20)
+    const affected = p.perks.concat(p.actives).filter(e => {
+      const sk = ADV.DATA.SKILLS[e.skillId];
+      return sk && sk.archetype && set.archetypes.includes(sk.archetype) && e.level < C().GEAR_SET_FLOOR_LEVEL;
+    }).map(e => ADV.DATA.SKILLS[e.skillId].name);
+    const owned = p.equippedSet === id;
+    const sub = owned ? 'worn now' : p.equippedSet ? 'sell your current set first — one set at a time' : affected.length ? 'would raise: ' + affected.join(', ') : 'raises nothing you carry — 800g wasted';
+    const b = T().button(scene, r.x + 24, y, r.w - 320, 46, `${set.name} — ${set.cost}g`, () => {
+      if (owned || p.equippedSet) return;
+      if (p.inventory.gold < set.cost) { ADV.Notices.toast(scene, 'You cannot afford it.'); return; }
+      p.inventory.gold -= set.cost;
+      p.equippedSet = id;
+      ADV.Save.saveGame(game);
+      scene.promptOnce('firstAffordableSet');
+      scene.refreshAll(); scene.openPanel('store');
+    }, { size: 15, sub, subColor: affected.length && !owned && !p.equippedSet ? T().css.green : T().css.inkFaint, disabled: owned || !!p.equippedSet, display: true });
+    keepBtn(scene, b);
+    // the spouse shops with their own purse (request 10)
+    if (spouse && spouse.alive && !spouse.equippedSet) {
+      keepBtn(scene, T().button(scene, r.x + r.w - 280, y, 250, 46, `${spouse.name.split(' ')[0]} buys it (${spouse.inventory.gold}g)`, () => {
+        if (spouse.inventory.gold < set.cost) { ADV.Notices.toast(scene, `${spouse.name} cannot afford it.`); return; }
+        spouse.inventory.gold -= set.cost; spouse.equippedSet = id;
+        ADV.World.feed(world, `${spouse.name} bought a ${set.name}.`, [spouse.id]);
+        ADV.Save.saveGame(game); scene.openPanel('store');
+      }, { size: 12, disabled: spouse.inventory.gold < set.cost, color: T().css.purple }));
+    }
+    y += 52;
+  }
+  if (p.equippedSet) {
+    const cur = ADV.DATA.GEAR_SETS[p.equippedSet];
+    keepBtn(scene, T().button(scene, r.x + 24, y, r.w - 320, 40, `Sell the ${cur.name} — ${C().GOLD.gearSet}g back`, () => {
+      ADV.Notices.confirm(scene, 'Sell ' + cur.name + '?', `You get ${C().GOLD.gearSet}g and lose the level-${cur.floor || C().GEAR_SET_FLOOR_LEVEL} floor it gave your skills.`, 'Sell it', () => {
+        p.equippedSet = null; p.inventory.gold += C().GOLD.gearSet;
+        ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store');
+      });
+    }, { size: 14, color: T().css.gold }));
+    y += 48;
+  }
+  if (spouse && spouse.alive && spouse.equippedSet) { scene.keep(T().text(scene, r.x + 24, y, `${spouse.name} wears the ${ADV.DATA.GEAR_SETS[spouse.equippedSet].name}.`, { size: 12, italic: true, color: T().css.inkDim })); y += 24; }
+  y += 6;
+  const v = ADV.Vault.of(game.world, p);
+  const insured = v && v.insuranceActive;
+  const bi = T().button(scene, r.x + 24, y, r.w - 320, 44,
+    insured ? 'Insurance active' : `Insurance premium — ${C().GOLD.insurancePremium}g`, () => {
+      if (insured) return;
+      if (ADV.Vault.payPremium(game.world, p)) { ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store'); }
+      else ADV.Notices.toast(scene, 'You cannot afford the premium.');
+    }, { size: 15, disabled: insured, sub: `pays ${C().GOLD.insurancePayout}g to the survivor if you or your spouse dies`, display: true });
+  keepBtn(scene, bi);
+  y += 56;
+  Panels.assassinsDesk(scene, r, y);
+};
+
+// The Maw takes contracts on anyone (request): 100g per point of the
+// target's reputation level. Resolved on the world clock like any NPC hit.
+Panels.assassinsDesk = function (scene, r, y) {
+  const game = scene.g();
+  const world = game.world;
+  const p = scene.player();
+  scene.keep(T().text(scene, r.x + 24, y, "THE MAW'S DESK", { size: 13, color: T().css.purple })); y += 18;
+  scene.keep(T().text(scene, r.x + 24, y, 'A name and a purse. 100g per reputation level of the target. They collect on the next quest.', { size: 12, color: T().css.inkDim, wrap: r.w - 48 })); y += 26;
+  const targets = world.characters.filter(c => c.alive && !c.isPlayer && !c.isMonster && !c.registryId && !c.campaign && world.metIds.includes(c.id) && c.id !== p.partnerId)
+    .sort((a, b) => ADV.Rel.score(world, p.id, a.id) - ADV.Rel.score(world, p.id, b.id)).slice(0, 4);
+  const pending = world.mawContracts || [];
+  for (const c of targets) {
+    const fee = ADV.Game.assassinFee(c);
+    const has = pending.some(k => k.targetId === c.id);
+    keepBtn(scene, T().button(scene, r.x + 24, y, 300, 34, `${c.name} — ${fee}g`, () => {
+      if (has) return;
+      if (p.inventory.gold < fee) { ADV.Notices.toast(scene, 'The Maw does not extend credit.'); return; }
+      ADV.Notices.confirm(scene, 'Send the Maw after ' + c.name + '?', `${fee}g, paid now. They attempt it on the world clock; if it fails, ${c.name} will know who paid.`, 'Pay them', () => {
+        ADV.Game.hireAssassins(game, c.id);
+        ADV.Notices.toast(scene, 'A knife has been bought.');
+        scene.refreshAll(); scene.openPanel('store');
+      }, T().css.blood);
+    }, { size: 12, disabled: has, sub: has ? 'contract out' : `rep ${c.reputation} · ${ADV.Rel.tierBetween(world, c.id, p.id)}`, subColor: T().css.inkFaint }));
+    y += 40;
+  }
+  if (!targets.length) scene.keep(T().text(scene, r.x + 24, y, 'You know nobody worth the price yet.', { size: 12, italic: true, color: T().css.inkFaint }));
+};
+
+Panels.trainer = function (scene, r) {
+  const game = scene.g();
+  const p = scene.player();
+  header(scene, r, 'Trainer', `First ${C().FREE_STARTING_SKILLS} are free. Witnessed skills are free. The rest cost ${C().GOLD.skillUnwitnessed}g. Click a known active to buy tutoring: ${C().GOLD.tutorIntermediate}g to Intermediate, ${C().GOLD.tutorAdvanced}g to Advanced.`);
+  // tabs (campaign §13): the core pool, then one tab per faction whose skills
+  // this character can see — witnessed, faction perks, or unlocked outright
+  const tabs = [{ id: 'core', label: 'Core' }];
+  for (const fid of ['maw', 'antler', 'varenholm']) {
+    const f = ADV.DATA.FACTIONS[fid];
+    const any = ADV.DATA.TRAINER_POOL.some(id => { const sk = ADV.DATA.SKILLS[id]; return sk.faction === fid && (ADV.SkillSys.knows(p, id) || ADV.SkillSys.purchasable(p, id, game.meta)); });
+    if (any || game.meta.campaignSkillsUnlocked) tabs.push({ id: fid, label: f.name });
+  }
+  scene.trainerTab = tabs.some(t => t.id === scene.trainerTab) ? scene.trainerTab : 'core';
+  let tx = r.x + 24;
+  for (const t of tabs) {
+    const active = scene.trainerTab === t.id;
+    keepBtn(scene, T().button(scene, tx, r.y + 78, 150, 30, t.label, () => { scene.trainerTab = t.id; scene.openPanel('trainer'); },
+      { size: 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
+    tx += 158;
+  }
+  let y = r.y + 122;
+  const cw3 = Math.floor((r.w - 64) / 3);
+  const cols = [r.x + 24, r.x + 32 + cw3, r.x + 40 + cw3 * 2];
+  let col = 0, colY = [y, y, y];
+  const pool = ADV.DATA.TRAINER_POOL.filter(id => { const sk = ADV.DATA.SKILLS[id]; return scene.trainerTab === 'core' ? !sk.faction : sk.faction === scene.trainerTab; });
+  for (const id of pool) {
+    const sk = ADV.DATA.SKILLS[id];
+    const known = ADV.SkillSys.knows(p, id);
+    const cost = ADV.SkillSys.trainerCost(p, id);
+    const state = ADV.SkillSys.journalState(p, id);
+    const locked = !known && !ADV.SkillSys.purchasable(p, id, game.meta);
+    let label = sk.name + (sk.kind === 'perk' ? ' ◆' : '');
+    let sub, subColor = T().css.inkFaint;
+    if (known) { sub = 'known'; subColor = T().css.green; }
+    else if (locked) { sub = sk.kind === 'perk' ? 'join the faction' : 'witness it in their campaign'; subColor = T().css.inkFaint; }
+    else if (sk.forbidden) { sub = sk.warning; subColor = T().css.blood; }
+    else if (cost === 0) { sub = state === 'Witnessed' || state === 'Eligible' ? 'witnessed — free' : 'free'; subColor = T().css.gold; }
+    else sub = cost + 'g';
+    const x = cols[col];
+    const b = T().button(scene, x, colY[col], cw3 - 6, 40, label, () => {
+      if (known) { Panels.forgetDialog(scene, id); return; }
+      if (locked) { ADV.Notices.toast(scene, sub); return; }
+      Panels.learnDialog(scene, id, cost);
+    }, { size: 12, sub, subColor, fill: known ? 0x232a20 : undefined, disabled: locked });
+    ADV.Tooltip.attach(scene, b.zone, () => ADV.SkillInfo.describe(p, id));
+    keepBtn(scene, b);
+    colY[col] += 46;
+    col = colY.indexOf(Math.min(...colY));
+  }
+};
+
+Panels.learnDialog = function (scene, id, cost) {
+  const game = scene.g();
+  const p = scene.player();
+  const sk = ADV.DATA.SKILLS[id];
+  const kind = sk.kind === 'perk' ? 'perk' : 'active';
+  const atCap = ADV.SkillSys.atCapacity(p, kind);
+  const je = p.journal[id];
+  const lines = [sk.desc];
+  if (je && je.sawTier && je.sawTier !== 'basic') {
+    lines.push(`You saw it become ${sk.tiers[je.sawTier].name}. This is what it grows into.`);
+  }
+  if (sk.forbidden) lines.push(sk.warning);
+  ADV.Notices.confirm(scene, sk.name, lines.join('\n\n') + (cost ? `\n\nCost: ${cost}g` : '\n\nFree.'),
+    atCap ? 'Choose what to forget' : 'Learn it', () => {
+      if (cost > p.inventory.gold) { ADV.Notices.toast(scene, 'Not enough gold.'); return; }
+      if (atCap) { Panels.forgetToLearn(scene, id, cost, kind); return; }
+      const res = ADV.SkillSys.learn(p, id, {});
+      if (res.ok) { if (cost) p.inventory.gold -= cost; ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('trainer'); }
+      else ADV.Notices.toast(scene, res.error);
+    }, sk.forbidden ? T().css.blood : null);
+};
+
+Panels.forgetToLearn = function (scene, newId, cost, kind) {
+  const game = scene.g();
+  const p = scene.player();
+  const list = (kind === 'perk' ? p.perks : p.actives).filter(e => !ADV.DATA.SKILLS[e.skillId].noSlot);
+  ADV.Notices.pickOne(scene, 'Let something go', 'A dropped skill returns to your journal, and keeps its level forever.',
+    list.map(e => ({ label: `${ADV.DATA.SKILLS[e.skillId].name} · L${e.level}`, value: e.skillId })),
+    (skillId) => {
+      ADV.SkillSys.forget(p, skillId);
+      const res = ADV.SkillSys.learn(p, newId, {});
+      if (res.ok && cost) p.inventory.gold -= cost;
+      ADV.Save.saveGame(game);
+      scene.refreshAll(); scene.openPanel('trainer');
+    });
+};
+
+Panels.forgetDialog = function (scene, id) {
+  const game = scene.g();
+  const p = scene.player();
+  const sk = ADV.DATA.SKILLS[id];
+  const entry = p.perks.concat(p.actives).find(e => e.skillId === id);
+  const offers = ADV.SkillSys.tutorOffers(p, id);
+  const opts = offers.map(o => ({ label: `Tutoring to ${sk.tiers[o.tier].name} (L${o.level}) — ${o.cost}g`, value: 'tutor:' + o.tier }));
+  opts.push({ label: 'Forget it (keeps its level in the journal)', value: 'forget' });
+  opts.push({ label: 'Leave it', value: null });
+  ADV.Notices.pickOne(scene, sk.name + ' · L' + (entry ? entry.level : 1), offers.length ? 'The trainer can lift it a whole tier for gold, or you can set it down.' : 'Forget this skill? It returns to Eligible in your journal and keeps its level.', opts, (v) => {
+    if (!v) return;
+    if (v === 'forget') { ADV.SkillSys.forget(p, id); }
+    else {
+      const r = ADV.SkillSys.tutor(p, id, v.split(':')[1]);
+      if (!r.ok) { ADV.Notices.toast(scene, r.error === 'not enough gold' ? 'Not enough gold.' : r.error); return; }
+      ADV.Notices.toast(scene, `${sk.name} is L${r.level} now.`);
+    }
+    ADV.Save.saveGame(game);
+    scene.refreshAll(); scene.openPanel('trainer');
+  });
+};
+
+// ============================================================== JOURNAL
+Panels.journal = function (scene, r) {
+  const p = scene.player();
+  header(scene, r, 'Skill Journal', 'Every sighting is permanent, across every life. The journal is the real save file.');
+  let y = r.y + 88;
+  const states = { Mastered: T().css.purple, Learned: T().css.green, Eligible: T().css.gold, Witnessed: T().css.blue };
+  const all = ADV.DATA.TRAINER_POOL;
+  const cols = [r.x + 24, r.x + Math.floor(r.w / 2) + 8];
+  let colY = [y, y], col = 0;
+  let shown = 0;
+  for (const id of all) {
+    const st = ADV.SkillSys.journalState(p, id);
+    if (!st) continue;
+    shown++;
+    const sk = ADV.DATA.SKILLS[id];
+    const je = p.journal[id] || {};
+    const lvl = (p.skillLevels[id] || {}).level || (ADV.SkillSys.entryFor(p, id) || {}).level || 0;
+    let line = `${sk.name}`;
+    if (je.sawTier && je.sawTier !== 'basic') line = `${sk.tiers[je.sawTier].name} → ${sk.name} (root)`;
+    scene.keep(T().text(scene, cols[col], colY[col], line, { size: 14 }));
+    scene.keep(T().text(scene, cols[col], colY[col] + 17, `${st}${lvl ? ' · L' + lvl : ''}`, { size: 11, color: states[st] }));
+    scene.keep(ADV.Tooltip.attachZone(scene, cols[col], colY[col], Math.floor(r.w / 2) - 40, 36, () => ADV.SkillInfo.describe(p, id)));
+    colY[col] += 42;
+    col = colY[0] <= colY[1] ? 0 : 1;
+  }
+  if (!shown) scene.keep(T().text(scene, r.x + 24, y, 'Nothing witnessed yet. Fight things, and watch what they do.', { size: 14, italic: true, color: T().css.inkFaint }));
+};
+
+// ============================================================== CODEX
+Panels.codex = function (scene, r) {
+  const game = scene.g();
+  header(scene, r, 'Codex', 'Everything the world has taught you so far.');
+  let y = r.y + 84;
+  for (const c of ADV.DATA.PREGAME_CARDS) {
+    scene.keep(T().text(scene, r.x + 24, y, '· ' + c, { size: 13, wrap: r.w - 60 }));
+    y += 24;
+  }
+  y += 8;
+  const unlocked = game.meta.codexUnlocked || [];
+  if (unlocked.length) {
+    scene.keep(T().text(scene, r.x + 24, y, 'LEARNED THE HARD WAY', { size: 12, color: T().css.inkDim })); y += 22;
+    for (const id of unlocked) {
+      scene.keep(T().text(scene, r.x + 24, y, '· ' + ADV.DATA.PROMPTS[id], { size: 13, wrap: r.w - 60, color: T().css.gold }));
+      y += 24;
+      if (y > r.y + r.h - 80) break;
+    }
+  }
+  const b = T().button(scene, r.x + 24, r.y + r.h - 56, 220, 36, 'Erase all save data', () => {
+    ADV.Notices.confirm(scene, 'Erase everything?', 'The journal, every life, every skill level. This is the true death.', 'Erase it', () => {
+      ADV.Save.reset();
+      scene.scene.start('Title');
+    }, T().css.blood);
+  }, { size: 13, color: T().css.blood });
+  keepBtn(scene, b);
+};
+
+// ============================================================== FACTIONS
+Panels.factions = function (scene, r) {
+  const p = scene.player();
+  header(scene, r, 'Faction Status', 'The quests you accept decide who trusts you. Standing opens roads that skills cannot.');
+  let y = r.y + 100;
+  const rows = [['Law', 'law', T().c.blue], ['Criminal', 'criminal', T().c.purple], ['Neutral', 'neutral', T().c.green]];
+  for (const [label, key, color] of rows) {
+    const v = p.factionStanding[key];
+    scene.keep(T().text(scene, r.x + 24, y, label, { size: 16, display: true }));
+    scene.keep(T().bar(scene, r.x + 150, y + 2, 360, 16, (v + 100) / 200, color));
+    scene.keep(T().text(scene, r.x + 524, y, String(v), { size: 14, color: T().css.inkDim }));
+    if (v >= 30) scene.keep(T().text(scene, r.x + 24, y + 22, key === 'law' ? 'Guards and sentinels stand aside for you.' : key === 'criminal' ? 'Bandits and cultists let you pass.' : 'You are welcome at most fires.', { size: 12, italic: true, color: T().css.inkFaint }));
+    y += 62;
+  }
+  scene.keep(T().text(scene, r.x + 24, y + 10, 'Committing to one side locks you out of the other\'s company — and the skills you would have seen them use.', { size: 13, italic: true, color: T().css.inkDim, wrap: r.w - 60 }));
+};
+
+})();
