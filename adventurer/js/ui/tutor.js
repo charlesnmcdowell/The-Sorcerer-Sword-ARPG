@@ -17,7 +17,6 @@ const TOUR = [
   ['apply',    'Apply for Party', 'Hire on with an existing party for a wage. The leader picks the contracts and keeps the take. You go where they go.'],
   ['create',   'Create Party',    'With 100g you can lead your own: hire people, set wages, take the whole payout — and owe payroll win or lose.'],
   ['roster',   'Guild Roster',    'Everyone in town: what they run, who they ride with, what they think of you.'],
-  ['graveyard','Graveyard',       'The dead keep a record: their skills, who they left, and a few words for the stone.'],
   ['rel',      'Relationships',   'Regard moves with shared quests, money and how you treat people. Friendly opens romance; Hatred opens knives.'],
   ['vault',    'Vault',           'Gold you carry is lost when you die. Gold in the vault is not. Married couples share one.'],
   ['faction',  'Faction Status',  'Law, criminal, neutral — the contracts you take decide who trusts you, and who comes recruiting.'],
@@ -51,8 +50,6 @@ Tutor.wage = () => TUTORIAL_WAGE;
 // Next button advances.
 Tutor.callout = function (scene, rect, title, body, opts) {
   opts = opts || {};
-  Tutor.clear(scene);
-  if (ADV.Notices && ADV.Notices.block) { ADV.Notices.block(scene); scene.__tutorMsgBlock = true; }
   const W = T().W, H = T().H, D = 980;
   const objs = [];
   const k = o => { objs.push(o); return o; };
@@ -62,46 +59,52 @@ Tutor.callout = function (scene, rect, title, body, opts) {
     ring.lineStyle(3, T().c.gold, 1); ring.strokeRoundedRect(rect.x - 6, rect.y - 6, rect.w + 12, rect.h + 12, 7);
     scene.tweens.add({ targets: ring, alpha: 0.35, duration: 500, yoyo: true, repeat: -1 });
   }
-  // caption: to the right of the rect when there is room, else below
-  const pw = 420, ph = 150;
-  let px = rect ? rect.x + rect.w + 24 : W / 2 - pw / 2, py = rect ? rect.y - 10 : H / 2 - ph / 2;
-  if (px + pw > W - 16) px = Math.max(16, rect.x - pw - 24);
-  if (rect && px < rect.x + rect.w && px + pw > rect.x) { px = Math.min(W - pw - 16, Math.max(16, rect.x)); py = rect.y + rect.h + 20; }
-  if (py + ph > H - 16) py = H - ph - 16;
+  // Compact card. Prefer below/above the highlight; fall back to the empty
+  // bottom-right so we never sit on the character sheet or a modal.
+  const pw = 300;
+  const bodyWrap = pw - 28;
+  const probe = T().text(scene, 0, 0, body, { size: 12, wrap: bodyWrap });
+  const ph = Math.min(160, 36 + probe.height + (opts.pass ? 22 : 44));
+  try { probe.destroy(); } catch (e) {}
+  const pad = 14;
+  const fits = (x, y) => x >= pad && y >= pad && x + pw <= W - pad && y + ph <= H - pad;
+  const hits = (x, y) => rect && x < rect.x + rect.w && x + pw > rect.x && y < rect.y + rect.h && y + ph > rect.y;
+  const candidates = [];
+  if (rect) {
+    candidates.push({ x: Math.min(W - pw - pad, Math.max(pad, rect.x)), y: rect.y + rect.h + 10 });
+    candidates.push({ x: Math.min(W - pw - pad, Math.max(pad, rect.x)), y: rect.y - ph - 10 });
+    candidates.push({ x: rect.x + rect.w + 12, y: rect.y });
+  } else {
+    candidates.push({ x: W / 2 - pw / 2, y: H / 2 - ph / 2 });
+  }
+  candidates.push({ x: W - pw - pad, y: H - ph - pad });
+  let px = W - pw - pad, py = H - ph - pad;
+  for (const c of candidates) {
+    if (fits(c.x, c.y) && !hits(c.x, c.y)) { px = c.x; py = c.y; break; }
+  }
   const panel = k(scene.add.graphics().setDepth(D));
   panel.fillStyle(0x14110d, 0.97); panel.fillRoundedRect(px, py, pw, ph, 8);
   panel.lineStyle(2, T().c.gold, 0.9); panel.strokeRoundedRect(px, py, pw, ph, 8);
-  k(T().text(scene, px + 16, py + 12, title, { size: 17, display: true, color: T().css.gold }).setDepth(D + 1));
-  k(T().text(scene, px + 16, py + 40, body, { size: 13, wrap: pw - 32, color: T().css.ink }).setDepth(D + 1));
-  const close = () => Tutor.clear(scene);
+  k(T().text(scene, px + 12, py + 8, title, { size: 14, display: true, color: T().css.gold }).setDepth(D + 1));
+  k(T().text(scene, px + 12, py + 28, body, { size: 12, wrap: bodyWrap, color: T().css.ink }).setDepth(D + 1));
+  const close = () => objs.forEach(o => { try { o.destroy(); } catch (e) {} });
   if (!opts.pass) {
-    const b = T().button(scene, px + pw - 126, py + ph - 44, 110, 32, opts.label || 'Next', () => { close(); if (opts.onNext) opts.onNext(); }, { size: 13, bold: true, color: T().css.gold });
+    const b = T().button(scene, px + pw - 118, py + ph - 38, 102, 28, opts.label || 'Next', () => { close(); if (opts.onNext) opts.onNext(); }, { size: 12, bold: true, color: T().css.gold });
     b.g.setDepth(D + 1); b.txt.setDepth(D + 2); b.zone.setDepth(D + 3); objs.push(b.g, b.txt, b.zone);
   } else {
-    k(T().text(scene, px + 16, py + ph - 28, opts.hint || '↑ click it to continue', { size: 12, italic: true, color: T().css.inkDim }).setDepth(D + 1));
+    k(T().text(scene, px + 12, py + ph - 20, opts.hint || '↑ click it to continue', { size: 11, italic: true, color: T().css.inkDim }).setDepth(D + 1));
   }
   scene.tutorObjs = (scene.tutorObjs || []).concat(objs);
   return { close };
 };
-Tutor.clear = function (scene) {
-  for (const o of (scene.tutorObjs || [])) { try { o.destroy(); } catch (e) {} }
-  scene.tutorObjs = [];
-  if (scene.__tutorMsgBlock) {
-    scene.__tutorMsgBlock = false;
-    if (ADV.Notices && ADV.Notices.unblock) ADV.Notices.unblock(scene);
-  }
-};
+Tutor.clear = function (scene) { for (const o of (scene.tutorObjs || [])) { try { o.destroy(); } catch (e) {} } scene.tutorObjs = []; };
 
 // ---------------------------------------------------------------- town hooks
 // Called by the Town scene once the arrival notices are done.
 Tutor.town = function (scene, game) {
   const s = Tutor.state(game);
   if (s.step === 'done') return false;
-  const btnRect = (id) => {
-    const b = scene.menuButtons[id];
-    if (!b) return null;
-    return ADV.UI.worldRect(b.zone) || { x: b.zone.x, y: b.zone.y, w: b.zone.width, h: b.zone.height };
-  };
+  const btnRect = (id) => { const b = scene.menuButtons[id]; return b ? { x: b.zone.x, y: b.zone.y, w: b.zone.width, h: b.zone.height } : null; };
   if (s.step === 'tour') {
     const next = () => {
       const item = TOUR[s.tourIdx];
@@ -151,12 +154,10 @@ Tutor.panel = function (scene, game, id, r) {
   Tutor.clear(scene);
   if (s.step === 'firstQuest' && id === 'board') {
     const b = scene.tutorFirstQuestBtn;
-    if (b && scene.boardScroll) scene.boardScroll.show(b.zone);
-    const rect = b ? ADV.UI.worldRect(b.zone) : null;
-    Tutor.callout(scene, rect, 'Take this one', 'A Tier 1 solo contract: one or two enemies at a time, nothing that outruns you. Vault nothing — you have nothing yet — and set out.', { pass: true });
+    Tutor.callout(scene, b ? { x: b.zone.x, y: b.zone.y, w: b.zone.width, h: b.zone.height } : null, 'Take this one', 'Tier 1 solo: one or two enemies. Vault nothing and set out.', { pass: true });
   }
   if (s.step === 'partyQuest' && id === 'board') {
-    Tutor.callout(scene, { x: r.x + 24, y: r.y + 84, w: r.w - 220, h: 48 }, 'Queue up', 'As a hireling you never pick the contract — you say you are ready and the leader chooses. You are paid your wage whatever it is; the leader keeps the take and eats the payroll.', { pass: true, hint: '↑ click Ready for the quest' });
+    Tutor.callout(scene, { x: r.x + 24, y: r.y + 84, w: r.w - 220, h: 48 }, 'Queue up', 'Click Ready. The leader picks the contract; you take your wage either way.', { pass: true, hint: '↑ Ready for the quest' });
   }
   if (s.step === 'trainer' && id === 'trainer') {
     Tutor.callout(scene, { x: r.x + 24, y: r.y + 122, w: r.w - 48, h: 200 }, 'Skills for sale', 'Gold-priced skills you have never seen; free ones you witnessed in battle. Click a skill you already own to buy tutoring — 300g to Intermediate, 600g to Advanced. Nothing to buy yet? Come back richer.', { onNext: () => { s.step = 'vault'; ADV.Save.saveGame(game); scene.buildMenu(); Tutor.town(scene, game); }, label: 'Understood' });
@@ -186,14 +187,7 @@ Tutor.onHired = function (game) { const s = Tutor.state(game); if (s.step === 'p
 Tutor.onQuestDone = function (game, failed) {
   const s = Tutor.state(game);
   if (s.step === 'firstQuest' && !failed) s.step = 'trainer';
-  else if (s.step === 'partyQuest') {
-    if (!failed) { s.step = 'done'; s.finished = true; }
-    else {
-      // the company broke: send them back to Apply so the hour can finish
-      s.step = 'party';
-      s.declined = true;
-    }
-  }
+  else if (s.step === 'partyQuest' && !failed) { s.step = 'done'; s.finished = true; }
   ADV.Save.saveGame(game);
 };
 Tutor.finalWords = function (scene, game) {

@@ -231,7 +231,8 @@ Panels.roster = function (scene, r) {
   const left = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 56, w: half - 20, h: r.h - 68 });
   const right = ADV.UI.scrollArea(scene, { x: r.x + half, y: r.y + 80, w: r.w - half - 16, h: r.h - 92 });
   let y = r.y + 60;
-  const adults = ADV.World.adults(world).filter(c => !c.isPlayer);
+  const adults = ADV.World.adults(world).filter(c => !c.isPlayer)
+    .sort((a, b) => (!!b.hiroNpc) - (!!a.hiroNpc));
   for (const c of adults) {
     const tier = ADV.Rel.tierBetween(world, c.id, p.id);
     const status = !c.alive ? 'dead' : c.isUndead ? 'undead' : c.isConscript ? 'conscripted' :
@@ -468,10 +469,11 @@ Panels.personDialog = function (scene, c) {
 // ============================================================== NOTICES (modals)
 const Notices = ADV.Notices = {};
 
-// One message on screen at a time. Toasts queue behind dialogue, choice
-// panels, and each other so nothing draws over a line you are still reading.
-Notices.TOAST_HOLD_MS = 11000;
-Notices.TOAST_FADE_MS = 700;
+// One compact toast at a time, docked in a corner so it never covers a
+// modal or the character sheet. Click it to dismiss.
+Notices.TOAST_HOLD_MS = 2800;
+Notices.TOAST_FADE_MS = 350;
+Notices.TOAST_MAX_W = 300;
 
 function msgState(scene) {
   if (!scene.__msg) scene.__msg = { blocked: 0, showing: null, queue: [] };
@@ -522,23 +524,56 @@ Notices.toast = function (scene, text) {
   Notices._paintToast(scene, text);
 };
 
+function toastAnchor(scene) {
+  const W = T().W, H = T().H;
+  const key = scene.sys && scene.sys.settings && scene.sys.settings.key;
+  // Combat/quest and open dialogue use the top-right so we stay off the
+  // bottom verb bar. Town uses the empty bottom-right beside the board.
+  if (key === 'Combat' || key === 'Quest' || (scene.__msg && scene.__msg.blocked)) {
+    return { x: W - 18, y: 18, ox: 1, oy: 0 };
+  }
+  return { x: W - 18, y: H - 18, ox: 1, oy: 1 };
+}
+
+function toastBoxSize(scene, text, maxW) {
+  const probe = T().text(scene, 0, 0, text, { size: 13, wrap: maxW });
+  let tw = 0;
+  const lines = (probe.getWrappedText && probe.getWrappedText()) || [text];
+  const ctx = probe.context;
+  if (ctx && ctx.measureText) {
+    for (const line of lines) tw = Math.max(tw, ctx.measureText(line).width);
+  } else tw = Math.min(maxW, probe.width);
+  const th = probe.height;
+  try { probe.destroy(); } catch (e) {}
+  return { w: Math.ceil(Math.min(maxW, Math.max(80, tw))), h: Math.ceil(th) };
+}
+
 Notices._paintToast = function (scene, text) {
   const st = msgState(scene);
-  const W = T().W, H = T().H;
-  const y = Math.round(H * 0.28);
-  const t = T().text(scene, W / 2, y, text, { size: 20, ox: 0.5, oy: 0.5, display: true, color: T().css.gold, wrap: W - 320, align: 'center' }).setDepth(950);
-  const bg = scene.add.rectangle(W / 2, y, t.width + 56, t.height + 28, 0x14110d, 0.96).setDepth(949).setStrokeStyle(2, T().c.gold, 0.9);
+  const a = toastAnchor(scene);
+  const box = toastBoxSize(scene, text, Notices.TOAST_MAX_W);
+  const padX = 14, padY = 10;
+  const bw = box.w + padX * 2, bh = box.h + padY * 2;
+  const cx = a.ox === 1 ? a.x - bw / 2 : a.x + bw / 2;
+  const cy = a.oy === 1 ? a.y - bh / 2 : a.y + bh / 2;
+  const t = T().text(scene, cx, cy, text, { size: 13, ox: 0.5, oy: 0.5, color: T().css.gold, wrap: box.w, align: 'center' }).setDepth(241);
+  const bg = scene.add.rectangle(cx, cy, bw, bh, 0x14110d, 0.94).setDepth(240).setStrokeStyle(1.5, T().c.gold, 0.75);
+  bg.setInteractive({ useHandCursor: true });
   const entry = { text, t, bg, tween: null };
   st.showing = entry;
   st.lastText = text;
+  const finish = () => {
+    if (st.showing !== entry) return;
+    st.showing = null;
+    try { if (entry.tween) entry.tween.stop(); } catch (e) {}
+    try { t.destroy(); } catch (e) {}
+    try { bg.destroy(); } catch (e) {}
+    Notices.flush(scene);
+  };
+  bg.on('pointerdown', finish);
   entry.tween = scene.tweens.add({
     targets: [t, bg], alpha: 0, delay: Notices.TOAST_HOLD_MS, duration: Notices.TOAST_FADE_MS,
-    onComplete: () => {
-      if (st.showing === entry) st.showing = null;
-      try { t.destroy(); } catch (e) {}
-      try { bg.destroy(); } catch (e) {}
-      Notices.flush(scene);
-    },
+    onComplete: finish,
   });
 };
 
@@ -789,6 +824,10 @@ Notices.leaderDeath = function (scene, n, next) {
   Notices.pickOne(scene, 'The company is broken',
     who + ' died on the road. The party is disbanded. Find another company, or found your own — a leader does not get back up between battles.',
     [{ label: 'Understood', value: 'ok' }], () => {
+      // The survivors used to speak into an empty hub. They bury him instead:
+      // same lines, same relationship-picked bands, but staged at the grave and
+      // ending with the company walking off in different directions.
+      if (ADV.Cutscenes && ADV.Cutscenes.funeral) { ADV.Cutscenes.funeral(scene, rec, next); return; }
       const ids = (rec.memberIds || []).slice();
       const speakNext = () => {
         const id = ids.shift();

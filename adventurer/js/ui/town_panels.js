@@ -76,7 +76,9 @@ function questRow(scene, r, q, y, enabled, note, scroll) {
   const tierLabel = q.isBoss ? 'BOSS' : 'Tier ' + q.tier;
   const fColor = note ? T().css.blood : { law: T().css.blue, criminal: T().css.purple, neutral: T().css.green }[q.factionAlignment];
   const label = `${q.name}`;
-  const sub = `${tierLabel} · ${q.encounters.length} enc · ${q.payout}g · ${q.factionAlignment}${note ? ' · ' + note : ''}`;
+  let extra = null;
+  if (ADV.Campaign2UI) { try { extra = ADV.Campaign2UI.questNote(scene.g(), q); } catch (e) { extra = null; } }
+  const sub = `${tierLabel} · ${q.encounters.length} enc · ${q.payout}g · ${q.factionAlignment}${note ? ' · ' + note : ''}${extra ? ' · ' + extra : ''}`;
   const mk = scroll ? (b) => scroll.addBtn(b) : (b) => keepBtn(scene, b);
   const btn = mk(T().button(scene, r.x + 24, y, r.w - 48, 42, label, () => {
     if (!enabled) return;
@@ -93,6 +95,8 @@ Panels.departure = function (scene, q) {
   const info = ADV.Game.departureInfo(game, q);
   const objs = [];
   const keep = o => { objs.push(o); return o; };
+  if (ADV.Tutor) ADV.Tutor.clear(scene);
+  if (ADV.Notices && ADV.Notices.block) ADV.Notices.block(scene);
   keep(scene.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75).setDepth(200).setInteractive());
   keep(T().panel(scene, W / 2 - 300, 110, 600, 520)).setDepth(201);
   const D = 202;
@@ -134,15 +138,20 @@ Panels.departure = function (scene, q) {
   tx(W / 2 - 240, yy, insured ? 'Insurance is active.' : 'No insurance on this life.', { size: 12, color: insured ? T().css.green : T().css.inkFaint });
   if (p.meal) { yy += 22; tx(W / 2 - 240, yy, `Fed: ${p.meal.name} — the bonus lasts this quest.`, { size: 12, color: T().css.green }); }
 
+  const finish = () => {
+    objs.forEach(o => { try { o.destroy(); } catch (e) {} });
+    if (ADV.Notices && ADV.Notices.unblock) ADV.Notices.unblock(scene);
+  };
   const go = T().button(scene, W / 2 - 250, 560, 240, 46, 'Set out', () => {
     const res = ADV.Game.startQuest(game, q, { vaultGold: vaultAmt });
     if (!res.ok) { ADV.Notices.toast(scene, res.error); return; }
-    objs.forEach(o => { try { o.destroy(); } catch (e) {} });
+    finish();
     if (scene.playEmbark) scene.playEmbark(q, () => scene.scene.start('Quest'));
     else scene.scene.start('Quest');
   }, { display: true, bold: true, size: 17 });
   const stay = T().button(scene, W / 2 + 10, 560, 240, 46, 'Think better of it', () => {
-    objs.forEach(o => { try { o.destroy(); } catch (e) {} });
+    finish();
+    if (ADV.Tutor && ADV.Tutor.active(game)) ADV.Tutor.town(scene, game);
   }, { size: 15 });
   for (const b of [go, stay]) ADV.UI.modalBtn(keep, D, b);
 };
