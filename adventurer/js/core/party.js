@@ -63,7 +63,38 @@ Party.hirelingWageFor = function (ch) {
   return C().GOLD.hirelingWage + (looks ? (ADV.SkillSys.manifest(ch, looks).data.wageEdge || 10) : 0);
 };
 
+Party.clampWage = function (n) {
+  return Math.max(C().GOLD.wageAcceptMin, Math.min(C().GOLD.wageAcceptMax, n | 0));
+};
+
+// After hire: one raise ask per stay. Reputation, not the slider, decides it.
+Party.raiseChance = function (ch, cur, ask) {
+  const rep = ch.reputation || 0;
+  let p0 = 0.22 + Math.max(-20, Math.min(20, rep)) * 0.028;
+  if ((ask - cur) > (C().GOLD.wageRaiseStep || 10)) p0 -= 0.08;
+  if (ask >= 80) p0 -= 0.08;
+  return Math.max(0.08, Math.min(0.9, p0));
+};
+
+Party.requestRaise = function (world, rng, ch) {
+  const p = Party.of(world, ch);
+  if (!p || p.leaderId === ch.id) return { ok: false, error: 'you do not serve' };
+  const cur = p.wages[ch.id] || ch.wage || C().GOLD.hirelingWage;
+  const max = C().GOLD.wageAcceptMax;
+  if (cur >= max) return { ok: false, error: 'already at the cap' };
+  if (ch.raiseAskedAt != null && ch.raiseAskedAt >= (world.questClock | 0)) return { ok: false, error: 'already asked this stay' };
+  const ask = Math.min(max, cur + (C().GOLD.wageRaiseStep || 10));
+  ch.raiseAskedAt = world.questClock | 0;
+  if (!rng.chance(Party.raiseChance(ch, cur, ask))) {
+    return { ok: true, accepted: false, wage: cur, ask, from: cur };
+  }
+  p.wages[ch.id] = ask;
+  ch.wage = ask;
+  return { ok: true, accepted: true, wage: ask, from: cur };
+};
+
 Party.offerWage = function (world, rng, p, candidate, wage) {
+  wage = Party.clampWage(wage);
   if (Party.roster(world, p).length >= C().PARTY_MAX) return { ok: false, why: 'party full' };
   const blocker = Party.hatredConflict(world, p, candidate.id);
   if (blocker) {

@@ -293,18 +293,21 @@ Panels.trainer = function (scene, r) {
   // tabs (campaign §13): the core pool, then one tab per faction whose skills
   // this character can see — witnessed, faction perks, or unlocked outright
   const tabs = [{ id: 'core', label: 'Core' }];
-  for (const fid of ['maw', 'antler', 'varenholm']) {
+  for (const fid of ['maw', 'antler', 'varenholm', 'bell', 'green', 'tally', 'navy']) {
     const f = ADV.DATA.FACTIONS[fid];
+    if (!f) continue;
     const any = ADV.DATA.TRAINER_POOL.some(id => { const sk = ADV.DATA.SKILLS[id]; return sk.faction === fid && (ADV.SkillSys.knows(p, id) || ADV.SkillSys.purchasable(p, id, game.meta)); });
-    if (any || game.meta.campaignSkillsUnlocked) tabs.push({ id: fid, label: f.name });
+    const unlocked = f.campaign2 ? game.meta.campaign2SkillsUnlocked : game.meta.campaignSkillsUnlocked;
+    if (any || unlocked) tabs.push({ id: fid, label: f.short ? f.short.replace(/^the /i, '') : f.name });
   }
   scene.trainerTab = tabs.some(t => t.id === scene.trainerTab) ? scene.trainerTab : 'core';
   let tx = r.x + 24;
+  const tabW = tabs.length > 5 ? 112 : 150;
   for (const t of tabs) {
     const active = scene.trainerTab === t.id;
-    keepBtn(scene, T().button(scene, tx, r.y + 78, 150, 30, t.label, () => { scene.trainerTab = t.id; scene.openPanel('trainer'); },
-      { size: 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
-    tx += 158;
+    keepBtn(scene, T().button(scene, tx, r.y + 78, tabW, 30, t.label, () => { scene.trainerTab = t.id; scene.openPanel('trainer'); },
+      { size: tabs.length > 5 ? 11 : 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
+    tx += tabW + 8;
   }
   const gridTop = r.y + 118;
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: gridTop, w: r.w - 16, h: r.y + r.h - gridTop - 8 });

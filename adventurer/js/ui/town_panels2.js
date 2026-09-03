@@ -15,19 +15,17 @@ Panels.applyParty = function (scene, r) {
   const world = game.world;
   const p = scene.player();
   const tut = ADV.Tutor && ADV.Tutor.step(game) === 'party';
-  header(scene, r, 'Apply for Party', 'Reputation and what you fill on a sheet decide it. A party missing a healer wants healing more than fame.');
+  header(scene, r, 'Apply for Party', 'Name your wage before they hire you — 30g to start, 100g at most. Once you ride with them, raises wait on reputation.');
   const myParty = ADV.Party.of(world, p);
   const isLeader = !!(myParty && myParty.leaderId === p.id);
-  const canAsk = !isLeader && !tut;
+  const canAsk = !myParty && !tut;
   let listTop = r.y + 88;
   if (canAsk) {
-    scene.askWage = scene.askWage || ADV.Party.hirelingWageFor(p);
+    scene.askWage = ADV.Party.clampWage(scene.askWage || ADV.Party.hirelingWageFor(p));
     scene.keep(T().text(scene, r.x + 24, r.y + 108, `Your asking wage: ${scene.askWage}g a quest`, { size: 14, color: T().css.gold }));
-    ADV.UI.keepBtn(scene, T().button(scene, r.x + 320, r.y + 100, 40, 32, '−', () => { scene.askWage = Math.max(C().GOLD.wageAcceptMin, scene.askWage - 5); scene.openPanel('apply'); }, { size: 14 }));
-    ADV.UI.keepBtn(scene, T().button(scene, r.x + 366, r.y + 100, 40, 32, '+', () => { scene.askWage = Math.min(C().GOLD.wageAcceptMax, scene.askWage + 5); scene.openPanel('apply'); }, { size: 14 }));
-    scene.keep(T().text(scene, r.x + 24, r.y + 140, myParty
-      ? 'Leave this company to join another at this rate.'
-      : 'Higher asks are refused more often, and never above what a leader can pay.', { size: 12, italic: true, color: T().css.inkFaint, wrap: r.w - 48 }));
+    ADV.UI.keepBtn(scene, T().button(scene, r.x + 320, r.y + 100, 40, 32, '−', () => { scene.askWage = ADV.Party.clampWage(scene.askWage - 5); scene.openPanel('apply'); }, { size: 14 }));
+    ADV.UI.keepBtn(scene, T().button(scene, r.x + 366, r.y + 100, 40, 32, '+', () => { scene.askWage = ADV.Party.clampWage(scene.askWage + 5); scene.openPanel('apply'); }, { size: 14 }));
+    scene.keep(T().text(scene, r.x + 24, r.y + 140, 'Negotiate before you sign. After that, raises depend on reputation.', { size: 12, italic: true, color: T().css.inkFaint, wrap: r.w - 48 }));
     listTop = r.y + 168;
   }
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.y + r.h - listTop - 8 });
@@ -37,6 +35,23 @@ Panels.applyParty = function (scene, r) {
     scroll.add(T().text(scene, r.x + 24, y, isLeader ? 'You lead your own party.' : `You ride with ${leader ? leader.name : 'a party'} for ${p.wage || C().GOLD.hirelingWage}g a quest.`, { size: 15 }));
     y += 30;
     if (!isLeader) {
+      const cur = p.wage || C().GOLD.hirelingWage;
+      const next = Math.min(C().GOLD.wageAcceptMax, cur + (C().GOLD.wageRaiseStep || 10));
+      const asked = p.raiseAskedAt != null && p.raiseAskedAt >= (world.questClock | 0);
+      const atCap = cur >= C().GOLD.wageAcceptMax;
+      if (!atCap) {
+        scroll.addBtn(T().button(scene, r.x + 24, y, 260, 38, asked ? 'Raise asked this stay' : `Ask for a raise (${next}g)`, () => {
+          if (asked) { ADV.Notices.toast(scene, 'You already asked this stay. Ride a quest first.'); return; }
+          const res = ADV.Party.requestRaise(world, game.rng, p);
+          if (!res.ok) { ADV.Notices.toast(scene, res.error); return; }
+          ADV.Notices.toast(scene, res.accepted
+            ? `${leader ? leader.name : 'They'} agreed. ${res.wage}g a quest now.`
+            : `${leader ? leader.name : 'They'} refused. Reputation talks.`);
+          ADV.Save.saveGame(game);
+          scene.refreshAll(); scene.openPanel('apply');
+        }, { size: 14, disabled: asked }));
+        y += 46;
+      }
       scroll.addBtn(T().button(scene, r.x + 24, y, 200, 38, 'Quit the party', () => {
         ADV.Party.removeMember(world, myParty, p.id);
         ADV.Save.saveGame(game);
@@ -59,7 +74,7 @@ Panels.applyParty = function (scene, r) {
     const ask = tut ? ADV.Tutor.wage() : (scene.askWage || ADV.Party.hirelingWageFor(p));
     // a high ask costs odds; an ask past the purse is refused outright
     let finalOdds = odds.odds;
-    if (!tut && finalOdds > 0) finalOdds = ask > cap ? 0 : Math.max(0.05, finalOdds * (1 - Math.max(0, ask - C().GOLD.hirelingWage) / 60));
+    if (!tut && finalOdds > 0) finalOdds = ask > cap ? 0 : Math.max(0.05, finalOdds * (1 - Math.max(0, ask - C().GOLD.hirelingWage) / (C().GOLD.wageAcceptMax - C().GOLD.hirelingWage)));
     const archs = new Set();
     for (const m of [leader].concat(members)) for (const e of m.actives) {
       const sk = ADV.DATA.SKILLS[e.skillId];
@@ -82,6 +97,7 @@ Panels.applyParty = function (scene, r) {
           if (accepted) {
             const cur = ADV.Party.of(world, p);
             if (cur && cur.leaderId !== p.id) ADV.Party.removeMember(world, cur, p.id);
+            wage = ADV.Party.clampWage(wage);
             party.memberIds.push(p.id); party.wages[p.id] = wage;
             p.partyId = party.id; p.leaderId = leader.id; p.wage = wage;
             ADV.World.met(world, leader.id);
@@ -120,7 +136,7 @@ Panels.createParty = function (scene, r) {
   let party = ADV.Party.of(world, p);
   const isLeader = party && party.leaderId === p.id;
   header(scene, r, isLeader ? 'Your Party' : 'Create Party',
-    'Wages are fixed offers — they take it or they don\'t. NPCs accept between 25 and 60. Payroll is owed win or lose.');
+    'Negotiate the wage before they sign — 30g to start, 100g at most. Raises come later. Payroll is owed win or lose.');
   const listTop = r.y + 92;
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.y + r.h - listTop - 8 });
   let y = listTop;
@@ -202,7 +218,7 @@ Panels.wageDialog = function (scene, party, cand) {
     const render = () => amount.setText(wage + 'g / quest');
     render();
     for (const [dx, lbl, d] of [[-180, '−5', -5], [-100, '−1', -1], [60, '+1', 1], [140, '+5', 5]]) {
-      ADV.UI.modalBtn(keep, D, T().button(scene, W / 2 + dx, 296, 56, 30, lbl, () => { wage = Math.max(5, Math.min(99, wage + d)); render(); }, { size: 13 }));
+      ADV.UI.modalBtn(keep, D, T().button(scene, W / 2 + dx, 296, 56, 30, lbl, () => { wage = ADV.Party.clampWage(wage + d); render(); }, { size: 13 }));
     }
     const go = T().button(scene, W / 2 - 190, 360, 180, 40, 'Make the offer', () => {
       close();
@@ -253,7 +269,7 @@ Panels.roster = function (scene, r) {
     const sub = `rank ${c.rank} · ${trend} · ${status}${family} · ${skills}`;
     left.addBtn(T().button(scene, r.x + 16, y, half - 24, 42, label, () => {
       ADV.World.met(world, c.id);
-      scene.speak(c, null, {}, () => scene.openPanel('roster'));
+      Panels.personDialog(scene, c);
     }, { size: 13, sub, subColor: T().relColor(tier), color: c.status === 'hero' ? T().css.gold : c.status === 'villain' ? T().css.blood : T().css.ink }));
     y += 48;
   }
@@ -314,7 +330,7 @@ Panels.vault = function (scene, r) {
   const game = scene.g();
   const world = game.world;
   const p = scene.player();
-  header(scene, r, 'Vault', 'What you carry is lost when you die. What is here is not — it passes to your heirs. Couples share one, and either can refuse the other a withdrawal.');
+  header(scene, r, 'Vault', 'What you carry is lost when you die. What is here is not — it passes to your heirs. Couples share one. You may draw your share once per stay; after a quest you can ask again.');
   const listTop = r.y + 92;
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.y + r.h - listTop - 8 });
   let y = listTop;
@@ -335,14 +351,16 @@ Panels.vault = function (scene, r) {
   if (shared && other) {
     const cap = ADV.Vault.withdrawalCap ? ADV.Vault.withdrawalCap(world, v, p) : null;
     if (cap) { scroll.add(T().text(scene, r.x + 24, y, `${other.name} is ${cap.state}: you may draw up to ${Math.round(cap.pct * 100)}% of the vault at once.`, { size: 12, color: T().css.inkDim })); y += 22; }
-    scroll.addBtn(T().button(scene, r.x + 24, y, 240, 34, 'Request a withdrawal', () => {
+    const waited = ADV.Vault.withdrawnThisStay(world, v, p);
+    scroll.addBtn(T().button(scene, r.x + 24, y, 240, 34, waited ? 'Already drew this stay' : 'Request a withdrawal', () => {
+      if (waited) { ADV.Notices.toast(scene, 'You already took your share this stay. Come back after the next quest.'); return; }
       const amt = Math.min(v.gold, Math.max(20, Math.floor(v.gold / 3)));
       if (amt <= 0) { ADV.Notices.toast(scene, 'The vault is empty.'); return; }
       scene.promptOnce('firstWithdrawal');
       const res = ADV.Vault.requestWithdrawal(world, game.rng, p, amt);
-      ADV.Notices.toast(scene, res.approved ? `Approved. ${res.amount}g withdrawn.` : res.queued ? 'Queued for their return.' : `Refused. ${other.name} said no.`);
+      ADV.Notices.toast(scene, res.approved ? `Approved. ${res.amount}g withdrawn.` : res.waited ? 'You already took your share this stay. Come back after the next quest.' : res.queued ? 'Queued for their return.' : `Refused. ${other.name} said no.`);
       ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('vault');
-    }, { size: 13 }));
+    }, { size: 13, disabled: waited }));
     y += 42;
   } else if (v.holderId === p.id && v.gold > 0) {
     scroll.addBtn(T().button(scene, r.x + 24, y, 240, 34, `Take gold out (up to 200g)`, () => {
@@ -365,13 +383,18 @@ Panels.relationships = function (scene, r) {
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.y + r.h - listTop - 8 });
   let y = listTop;
   // relationship list: everyone met, ordered by |score|
-  const rows = world.characters.filter(c => c.alive && !c.isPlayer && !c.isMonster && !c.registryId)
+  const rows = world.characters.filter(c => c.alive && !c.isPlayer && !c.isMonster && (!c.registryId || c.hiroNpc || ADV.Rel.isPartner(p, c)))
     .map(c => ({ c, out: ADV.Rel.score(world, p.id, c.id), inn: ADV.Rel.score(world, c.id, p.id) }))
-    .sort((a, b) => Math.abs(b.inn) + Math.abs(b.out) - Math.abs(a.inn) - Math.abs(a.out));
+    .sort((a, b) => {
+      const ap = ADV.Rel.isPartner(p, a.c) ? 1 : 0;
+      const bp = ADV.Rel.isPartner(p, b.c) ? 1 : 0;
+      if (bp !== ap) return bp - ap;
+      return Math.abs(b.inn) + Math.abs(b.out) - Math.abs(a.inn) - Math.abs(a.out);
+    });
   for (const row of rows) {
     const c = row.c;
     const tier = ADV.Rel.tierBetween(world, c.id, p.id);
-    const isPartner = p.partnerId === c.id;
+    const isPartner = ADV.Rel.isPartner(p, c);
     const shared = ADV.Courtship.shared(world, p.id, c.id);
     const rank = c.sex === 'm' ? ADV.Courtship.wealthRank(world, c) : 0;
     const gender = c.sex === 'f' ? 'woman' : 'man';
@@ -446,7 +469,8 @@ Panels.personDialog = function (scene, c) {
           'Leave them', () => {
             const lines = ADV.Rel.jilt(world, p, c);
             lines.forEach(l => ADV.World.feed(world, l.text, l.actorIds));
-            scene.speak(c, 'hatred', {}, () => { ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('rel'); });
+            ADV.Save.saveGame(game);
+            scene.speak(c, 'hatred', {}, () => { scene.refreshAll(); scene.openPanel('rel'); });
           }, T().css.blood);
       } else if (val === 'hate') {
         ADV.Rel.move(world, p.id, c.id, -100, 'murder', { set: true, decays: false });
@@ -715,7 +739,7 @@ Notices.raise = function (scene, n, next) {
   scene.speak(m, null, {}, () => {
     Notices.pickOne(scene, `${m.name} wants ${rz.ask}g a quest`, `Up from ${party.wages[m.id] || 0}g. Refuse and ${m.sex === 'f' ? 'she' : 'he'} walks.`,
       [{ label: `Pay ${rz.ask}g`, value: 'pay' }, { label: 'Let them go', value: 'no' }], (v) => {
-        if (v === 'pay') { party.wages[m.id] = rz.ask; m.wage = rz.ask; ADV.Notices.toast(scene, 'Agreed.'); }
+        if (v === 'pay') { const pay = ADV.Party.clampWage(rz.ask); party.wages[m.id] = pay; m.wage = pay; ADV.Notices.toast(scene, 'Agreed.'); }
         else { ADV.Party.removeMember(world, party, m.id); ADV.Rel.move(world, m.id, p.id, -10, 'quest'); ADV.World.feed(world, `${m.name} quit your party over pay.`, [m.id]); }
         ADV.Save.saveGame(game); scene.refreshAll(); next();
       });
@@ -819,25 +843,21 @@ Notices.leaderDeath = function (scene, n, next) {
   const rec = world.pendingLeaderDeath;
   world.pendingLeaderDeath = null;
   if (!rec) return next();
-  const who = rec.leaderName || 'The lead';
   scene.promptOnce('firstLeaderFall');
-  Notices.pickOne(scene, 'The company is broken',
-    who + ' died on the road. The party is disbanded. Find another company, or found your own — a leader does not get back up between battles.',
-    [{ label: 'Understood', value: 'ok' }], () => {
-      // The survivors used to speak into an empty hub. They bury him instead:
-      // same lines, same relationship-picked bands, but staged at the grave and
-      // ending with the company walking off in different directions.
-      if (ADV.Cutscenes && ADV.Cutscenes.funeral) { ADV.Cutscenes.funeral(scene, rec, next); return; }
-      const ids = (rec.memberIds || []).slice();
-      const speakNext = () => {
-        const id = ids.shift();
-        if (!id) return next();
-        const c = ADV.World.byId(world, id);
-        if (!c || !c.alive) return speakNext();
-        scene.speak(c, ADV.DialogueBox.bandFor(game, c), {}, speakNext);
-      };
-      speakNext();
-    });
+  const after = () => {
+    ADV.Notices.toast(scene, (rec.leaderName || 'The lead') + ' is buried. The party is gone.');
+    next();
+  };
+  if (ADV.Cutscenes && ADV.Cutscenes.funeral) { ADV.Cutscenes.funeral(scene, rec, after); return; }
+  const words = (rec.words || []).slice();
+  const speakNext = () => {
+    const w = words.shift();
+    if (!w) return after();
+    const c = ADV.World.byId(world, w.id);
+    if (!c || !c.alive) return speakNext();
+    scene.speak(c, w.band || 'general', { target: rec.leaderName, them: rec.leaderName, score: w.score }, speakNext);
+  };
+  speakNext();
 };
 
 Notices.withdrawal = function (scene, n, next) {

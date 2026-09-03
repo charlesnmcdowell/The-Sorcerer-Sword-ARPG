@@ -45,7 +45,7 @@ ADV.DATA.PROMPTS = {
   familyMarriage:      'Marriage always brings children, and it is the mother who names each child at birth.',
   familyNepotism:      "A child carries their father's strength as a growing title, and if you die with an heir you continue the game as them — skills and all.",
   firstPregnancy:      'Every relationship gives you a child — there is no avoiding it.',
-  firstWithdrawal:     'Quest together and your partner will approve withdrawals; drift apart and they won\'t.',
+  firstWithdrawal:     'You may draw your share once per stay. Quest together and they grant more; drift apart and they grant less.',
   firstJilting:        "Check what he can afford before you leave him — he'll come for you at your weakest.",
   firstJilted:         'You can hate them for this, or you can let it go — only you get that choice.',
   firstReconciliation: "Taking them back means they leave someone, and that someone won't forget.",

@@ -158,7 +158,7 @@ class QuestScene extends Phaser.Scene {
     if (ADV.Tutor) ADV.Tutor.onQuestDone(game, failed || q.playerDead);
     const W = T().W;
     T().panel(this, W / 2 - 280, 180, 560, 320);
-    T().text(this, W / 2, 210, failed ? (q.fled ? 'You fled.' : 'The contract failed.') : (q.quest.campaign && !q.quest.factionRepeatable ? `${q.quest.name} — done` : 'Contract complete'), { size: 26, display: true, ox: 0.5, color: failed ? T().css.blood : T().css.gold });
+    T().text(this, W / 2, 210, failed ? (q.leaderDied ? 'The lead fell.' : q.fled ? 'You fled.' : 'The contract failed.') : (q.quest.campaign && !q.quest.factionRepeatable ? `${q.quest.name} — done` : 'Contract complete'), { size: 26, display: true, ox: 0.5, color: failed ? T().css.blood : T().css.gold });
     let y = 260;
     const line = (s, c) => { T().text(this, W / 2, y, s, { size: 15, ox: 0.5, color: c || T().css.ink }); y += 26; };
     if (!failed) {
@@ -177,7 +177,8 @@ class QuestScene extends Phaser.Scene {
         }
       }
     } else {
-      line('Reputation suffers. Payroll was owed anyway.', T().css.inkDim);
+      if (q.leaderDied) line('The company is broken. They will bury the lead in town.', T().css.inkDim);
+      else line('Reputation suffers. Payroll was owed anyway.', T().css.inkDim);
       if (out.fired) line('You have been let go from the party.', T().css.blood);
     }
     const fl = ADV.Game.prompt(game, 'firstFactionShift');

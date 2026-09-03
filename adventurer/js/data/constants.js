@@ -50,8 +50,8 @@ ADV.DATA.CONST = {
     sharedQuestFail: 3,
     rescueSuccess: 30,
     rescueRefused: -25,
-    wageGenerous: 3,        // wage above 35g/quest
-    wageStingy: -3,         // wage below 25g/quest
+    wageGenerous: 3,        // wage 60g+
+    wageStingy: -3,         // wage below the 30g floor
     withdrawalApproved: 2,
     withdrawalRefused: -10,
     theftDiscovered: -20,
@@ -101,9 +101,10 @@ ADV.DATA.CONST = {
   GOLD: {
     skillUnwitnessed: 150,
     tuitionPerChildPerQuest: 20,
-    hirelingWage: 30,          // wage paid TO the player as a hireling
-    typicalWage: 40,           // leader offer default
-    wageAcceptMin: 25, wageAcceptMax: 60,
+    hirelingWage: 30,          // starting wage; negotiated before hire
+    typicalWage: 30,           // leader offer default
+    wageAcceptMin: 30, wageAcceptMax: 100,
+    wageRaiseStep: 10,         // a raise asks this much more, once per stay
     gearSet: 800,
     tutorIntermediate: 300,    // trainer lifts an active to Intermediate
     tutorAdvanced: 600,        // ... or to Advanced

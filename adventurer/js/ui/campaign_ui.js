@@ -257,12 +257,12 @@ CampaignUI.endCard = function (scene, game, done) {
   const objs = [];
   const k = o => { objs.push(o); return o; };
   k(scene.add.rectangle(W / 2, H / 2, W, H, 0x0c0a08, 0.97).setDepth(960).setInteractive());
-  k(T().text(scene, W / 2, 90, copy.title, { size: 34, display: true, ox: 0.5, color: T().css.gold }).setDepth(961));
-  k(T().text(scene, W / 2, 160, copy.unlock, { size: 14, ox: 0.5, wrap: 780, align: 'center', color: T().css.ink }).setDepth(961));
-  k(T().text(scene, W / 2, 270, copy.body, { size: 14, ox: 0.5, wrap: 780, align: 'center', color: T().css.ink }).setDepth(961));
-  k(T().text(scene, W / 2, 360, copy.foot, { size: 13, ox: 0.5, wrap: 780, align: 'center', italic: true, color: T().css.inkDim }).setDepth(961));
-  k(T().text(scene, W / 2, 440, copy.more, { size: 13, ox: 0.5, wrap: 780, align: 'center', color: T().css.blue }).setDepth(961));
-  k(T().text(scene, W / 2, 520, 'The world keeps going. Your title, your gear, and the hall are still there — and so is everyone you fought beside.', { size: 13, ox: 0.5, wrap: 780, align: 'center', italic: true, color: T().css.inkDim }).setDepth(961));
+  k(T().text(scene, W / 2, 86, copy.title, { size: 34, display: true, ox: 0.5, color: T().css.gold }).setDepth(961));
+  k(T().text(scene, W / 2, 148, copy.unlock, { size: 14, ox: 0.5, wrap: 780, align: 'center', color: T().css.ink }).setDepth(961));
+  k(T().text(scene, W / 2, 292, copy.body, { size: 14, ox: 0.5, wrap: 780, align: 'center', color: T().css.ink }).setDepth(961));
+  k(T().text(scene, W / 2, 378, copy.foot, { size: 13, ox: 0.5, wrap: 780, align: 'center', italic: true, color: T().css.inkDim }).setDepth(961));
+  k(T().text(scene, W / 2, 454, copy.more, { size: 13, ox: 0.5, wrap: 780, align: 'center', color: T().css.blue }).setDepth(961));
+  k(T().text(scene, W / 2, 528, 'The world keeps going. Your title, your gear, and the hall are still there — and so is everyone you fought beside.', { size: 13, ox: 0.5, wrap: 780, align: 'center', italic: true, color: T().css.inkDim }).setDepth(961));
   const mk = (x, label, fn, color) => { const b = T().button(scene, x, H - 100, 220, 42, label, fn, { size: 14, bold: true, color }); b.g.setDepth(962); b.txt.setDepth(963); b.zone.setDepth(964); objs.push(b.g, b.txt, b.zone); };
   mk(W / 2 - 340, 'neverendingnarratives.com', () => { try { window.open(copy.url, '_blank'); } catch (e) {} }, T().css.gold);
   mk(W / 2 - 110, 'Support the next one', () => { try { window.open(copy.url, '_blank'); } catch (e) {} }, T().css.gold);

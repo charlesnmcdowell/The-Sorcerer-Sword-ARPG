@@ -407,6 +407,55 @@ Game.startCombat = function (game, ambush) {
   return st;
 };
 
+// Band a mourner would use over the dead lead — snapshotted before finalize
+// strips the edges.
+Game.funeralBand = function (world, from, to) {
+  if (!from || !to) return 'general';
+  const tier = ADV.Rel.tierBetween(world, from.id, to.id);
+  return tier === 'romantic' ? 'romantic' : tier === 'hatred' ? 'hatred' :
+    tier === 'friendly' ? 'friendly' : 'general';
+};
+
+// Lead fell or ran: the contract is void. Death also breaks the company.
+// Survivors (and their standing with the lead) are recorded for the funeral.
+Game.resolveLeaderFall = function (game, st) {
+  const q = game.quest;
+  const world = game.world;
+  const p = Game.player(game);
+  const party = ADV.Party.of(world, p);
+  const leader = party ? ADV.Party.leader(world, party) : null;
+  q.failed = true;
+  q.over = true;
+  if (st && st.leaderFled) {
+    q.fled = true;
+    q.leaderFled = true;
+    if (leader) ADV.World.feed(world, (leader.name || 'The lead') + ' fled the field. The contract is void.', [leader.id]);
+    return;
+  }
+  q.leaderDied = true;
+  if (!leader || leader.isPlayer) {
+    if (leader && leader.isPlayer) q.playerDead = true;
+    return;
+  }
+  const mourners = ADV.Party.roster(world, party)
+    .filter(c => c && c !== leader && !c.isMonster && !c.isQuestThrall);
+  world.pendingLeaderDeath = {
+    leaderName: leader.name,
+    leaderId: leader.id,
+    memberIds: mourners.map(c => c.id),
+    words: mourners.filter(c => !c.isPlayer).map(c => ({
+      id: c.id,
+      band: Game.funeralBand(world, c, leader),
+      score: ADV.Rel.score(world, c.id, leader.id),
+    })),
+  };
+  if (p.combatHp != null && p.combatHp <= 0) p.combatHp = 1;
+  p.hasFled = false;
+  if (party) ADV.Party.disband(world, party);
+  if (leader.alive) ADV.Death.finalize(world, leader, null, 'killed');
+  ADV.World.feed(world, leader.name + ' died on the road. The company is broken.', [leader.id]);
+};
+
 // Charm's bribe (request 6): price and odds for buying off a hostile named
 // enemy mid-battle. null = this target cannot be bought.
 Game.bribeOffer = function (game, targetCh) {
@@ -509,8 +558,9 @@ Game.finishCombat = function (game) {
       p.combatHp = Math.max(1, p.combatHp);
     }
   } else {
-    // player side lost or fled
-    if (p.hasFled) { q.failed = true; q.fled = true; q.over = true; }
+    // player side lost, fled, or the party lead fell
+    if (st.leaderFled || st.leaderFell) Game.resolveLeaderFall(game, st);
+    else if (p.hasFled) { q.failed = true; q.fled = true; q.over = true; }
     else if (st.units.find(u => u.ch === p && u.downed)) {
       q.playerDead = true; q.over = true;
     } else { q.failed = true; q.over = true; }
@@ -675,8 +725,8 @@ function applyQuestFailure(game, q, out) {
 
 // A wage's social read (§15): generous buys goodwill, stingy costs it.
 function applyWageOpinion(world, workerId, payerId, wage) {
-  if (wage > 35) Rel().move(world, workerId, payerId, C().REL_MOVE.wageGenerous, 'quest');
-  else if (wage < 25) Rel().move(world, workerId, payerId, C().REL_MOVE.wageStingy, 'quest');
+  if (wage >= 60) Rel().move(world, workerId, payerId, C().REL_MOVE.wageGenerous, 'quest');
+  else if (wage < C().GOLD.wageAcceptMin) Rel().move(world, workerId, payerId, C().REL_MOVE.wageStingy, 'quest');
 }
 
 function agePlayerChildren(game) {

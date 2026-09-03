@@ -14,6 +14,10 @@ const T = () => ADV.T;
 const Cut = {};
 const DEPTH = 420;
 
+// One at a time. playEmbark guards itself with __embarking; without the same
+// guard a funeral queued behind a won contract draws over the ride home.
+function busy(scene) { return !!(scene.__cutscene || scene.__embarking); }
+
 function shortName(c) { return (c && c.name ? c.name : 'Someone').split(' ')[0]; }
 
 // Shared stage: dims the hub, lays a caption bar, returns the handles a scene
@@ -30,6 +34,7 @@ function stage(scene, opts) {
       scene.tweens.add({ targets: o, alpha: 0, duration: 200 });
     }
   });
+  scene.__cutscene = true;
   if (scene.hideChrome) scene.hideChrome();
 
   // A funeral wants the light pulled down; the ride home does not.
@@ -56,6 +61,7 @@ function closeOut(scene, st, done) {
     targets: veil, alpha: 1, duration: 320,
     onComplete: () => {
       st.actors.forEach(o => { try { o.destroy(); } catch (e) {} });
+      scene.__cutscene = false;
       if (scene.showChrome) scene.showChrome();
       if (done) done();
     },
@@ -107,6 +113,7 @@ Cut.rideHome = function (scene, done) {
   const p = ADV.Game.player(game);
   const roster = livingRoster(game);
   const party = roster.length > 1;
+  if (busy(scene)) { if (done) done(); return; }
   const home = (ADV.Housing && ADV.Housing.of) ? ADV.Housing.of(p) : null;
   const where = home && home.title ? home.title.toLowerCase().replace(/^the /, 'the ') : 'home';
 
@@ -121,19 +128,20 @@ Cut.rideHome = function (scene, done) {
   // home they enter from the right and settle at the door.
   roster.forEach((c, i) => {
     const isLead = c.id === p.id;
-    const x0 = 980 + (i - mid) * 118;
+    // Far off they read as a clump on the road; at the door they spread out.
+    const x0 = 1040 + (i - mid) * 54;
     const y0 = 538 + (i % 2) * 12;
     const cont = card(scene, st, c, x0, y0, { lead: isLead, z: isLead ? n : i });
     scene.tweens.add({ targets: cont, alpha: 1, duration: 300, delay: 120 + i * 80 });
     scene.tweens.add({
       targets: cont,
-      x: 430 + (i - mid) * 54,
+      x: 470 + (i - mid) * 122,
       y: 548 + (i % 2) * 14,
       duration: 1900, delay: 360 + i * 70, ease: 'Cubic.easeInOut',
     });
   });
 
-  scene.time.delayedCall(1450, () => st.say(party
+  scene.time.delayedCall(1380, () => st.say(party
     ? `They come back to ${where}.`
     : `${shortName(p)} comes back to ${where}.`));
 
@@ -143,8 +151,8 @@ Cut.rideHome = function (scene, done) {
     finished = true; st.done = true;
     closeOut(scene, st, done);
   };
-  armSkip(scene, st, finish);
-  scene.time.delayedCall(2600, finish);
+  armSkip(scene, st, finish, 450);
+  scene.time.delayedCall(2480, finish);
 };
 
 // ============================================================== THE FUNERAL
@@ -155,15 +163,22 @@ Cut.rideHome = function (scene, done) {
 Cut.funeral = function (scene, rec, done) {
   const game = scene.g ? scene.g() : scene.game_;
   if (!game || !rec) { if (done) done(); return; }
+  if (busy(scene)) { if (done) done(); return; }
   const world = game.world;
+  const player = ADV.Game.player(game);
   const leaderName = rec.leaderName || 'The lead';
+  const wordsById = {};
+  for (const w of rec.words || []) wordsById[w.id] = w;
 
   const mourners = (rec.memberIds || [])
     .map(id => ADV.World.byId(world, id))
     .filter(c => c && c.alive);
+  if (player && player.alive && !mourners.some(c => c.id === player.id)) mourners.unshift(player);
 
   const st = stage(scene, {
-    caption: `They put ${leaderName} in the ground.`,
+    caption: mourners.length > 1
+      ? `They walk ${leaderName} to the ground.`
+      : `${shortName(player)} walks ${leaderName} to the ground.`,
     captionColor: T().css.inkDim,
     gloom: 0.45,
   });
@@ -179,14 +194,24 @@ Cut.funeral = function (scene, rec, done) {
   g.fillStyle(0xd4a94e, 0.16); g.fillCircle(W / 2 + 96, 540, 46);
   g.fillStyle(0xd4a94e, 0.85); g.fillCircle(W / 2 + 96, 540, 7);
 
-  // Mourners in a rough arc facing the stone, desaturated — nobody is at their best.
+  // Same march grammar as embark: they enter from the left and settle at the stone.
   const n = Math.max(1, mourners.length);
   const mid = (n - 1) / 2;
+  const dest = mourners.map((_, i) => ({
+    x: W / 2 + (i - mid) * 118,
+    y: 392 + Math.abs(i - mid) * 9,
+  }));
   const conts = mourners.map((c, i) => {
-    const x0 = W / 2 + (i - mid) * 132;
-    const y0 = 392 + Math.abs(i - mid) * 9;
-    const cont = card(scene, st, c, x0, y0, { z: i, tint: 0x9aa0aa });
-    scene.tweens.add({ targets: cont, alpha: 1, duration: 420, delay: 200 + i * 130 });
+    const x0 = 220 + (i - mid) * 54;
+    const y0 = 548 + (i % 2) * 14;
+    const cont = card(scene, st, c, x0, y0, { z: i, tint: 0x9aa0aa, lead: c.isPlayer });
+    scene.tweens.add({ targets: cont, alpha: 1, duration: 280, delay: 140 + i * 90 });
+    scene.tweens.add({
+      targets: cont,
+      x: dest[i].x,
+      y: dest[i].y,
+      duration: 1750, delay: 400 + i * 80, ease: 'Cubic.easeInOut',
+    });
     return cont;
   });
 
@@ -196,10 +221,10 @@ Cut.funeral = function (scene, rec, done) {
     st.say('The company does not re-form.');
     // Each mourner leaves by a different road: the party breaking up, shown.
     conts.forEach((cont, i) => {
-      const dir = (i - mid) === 0 ? (i % 2 ? 1 : -1) : Math.sign(i - mid);
+      const dir = (i - mid) === 0 ? (i % 2 ? 1 : -1) : Math.sign(i - mid) || (i % 2 ? 1 : -1);
       scene.tweens.add({
         targets: cont,
-        x: cont.x + dir * (300 + Math.abs(i - mid) * 90),
+        x: cont.x + dir * (320 + Math.abs(i - mid) * 80),
         alpha: 0,
         duration: 1500, delay: 260 + i * 170, ease: 'Cubic.easeIn',
       });
@@ -207,33 +232,44 @@ Cut.funeral = function (scene, rec, done) {
     scene.time.delayedCall(2100, () => closeOut(scene, st, done));
   };
 
-  // Speeches, one at a time, in the dialogue box. Skipping jumps to the parting.
-  // DialogueBox.show hands back a {close} handle; hold it so a skip can shut an
-  // open box instead of leaving it stranded over the parting shot.
+  // Speeches use the band earned with the dead lead, not the player.
+  // DialogueBox.show hands back a {close} handle so a skip can shut an open box.
+  const speakers = mourners
+    .map((c, i) => ({ c, i, word: wordsById[c.id] }))
+    .filter(x => x.word && !x.c.isPlayer);
   let idx = 0, openBox = null;
   const speakNext = () => {
     if (st.done) return;
-    const c = mourners[idx++];
-    if (!c) { finishAll(); return; }
-    const cont = conts[idx - 1];
+    const turn = speakers[idx++];
+    if (!turn) { finishAll(); return; }
+    const { c, i, word } = turn;
+    const cont = conts[i];
     if (cont) {
       try { cont.__img.clearTint(); } catch (e) {}
       scene.tweens.add({ targets: cont, y: cont.y - 10, duration: 260, yoyo: true });
     }
-    const band = ADV.DialogueBox.bandFor(game, c);
     st.say(`${c.name} says a word over ${leaderName}.`);
-    openBox = ADV.DialogueBox.show(scene, game, c, band, ADV.DialogueBox.ctxFor(game, c, {}), () => {
+    const ctx = ADV.DialogueBox.ctxFor(game, c, {
+      target: leaderName,
+      them: leaderName,
+      score: word.score,
+    });
+    openBox = ADV.DialogueBox.show(scene, game, c, word.band || 'general', ctx, () => {
       openBox = null;
       if (cont) { try { cont.__img.setTint(0x9aa0aa); } catch (e) {} }
       speakNext();
     });
+    if (!openBox) speakNext();
   };
 
   armSkip(scene, st, () => {
     if (openBox && openBox.close) { try { openBox.close(); } catch (e) {} openBox = null; }
     finishAll();
   }, 700);
-  scene.time.delayedCall(900, speakNext);
+  scene.time.delayedCall(2280, () => {
+    st.say(`They put ${leaderName} in the ground.`);
+    speakNext();
+  });
 };
 
 ADV.Cutscenes = Cut;

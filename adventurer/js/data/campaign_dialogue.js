@@ -725,7 +725,7 @@ ADV.DATA.CAMPAIGN_COPY = {
     title: 'Thanks for playing.',
     body: 'This game was made by one person. If you enjoyed it and want to help fund the next one, you can support the project directly — every contribution goes into making the next game bigger than this one.',
     foot: 'Supporters also get the password for a hidden character. He has purple dreadlocks, three turns a round, and multiplies all gold by ten. He is not balanced and that is the point.',
-    unlock: '72 skills are now available at the trainer. Everything you witnessed on these five quests, and everything belonging to the two factions you never joined. All of it, permanently, for every character you play from here. You saw a fraction of it. Go and buy the rest.',
+    unlock: '72 skills from these three houses are now at the trainer — everything you witnessed on these five quests, and everything belonging to the two you never joined. Permanently, for every character from here. Four more houses still keep sixty-four skills behind their own halls. Finish one of those and those unlock the same way. You have seen a fraction of it. Go and buy the rest.',
     more: 'More at neverendingnarratives.com — other games, and the Sorcerer-Sword audiobooks and novels: the same world this campaign\'s institutions came from, several centuries later.',
     url: 'https://neverendingnarratives.com',
   },

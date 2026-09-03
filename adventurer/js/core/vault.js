@@ -10,7 +10,8 @@ Vault.resetIds = function (n) { NEXT = n || 1; };
 Vault.create = function (world, holderId) {
   const v = { id: 'v' + (NEXT++), holderId, gold: 0, items: [],
     sharedWithId: null, insuranceActive: false,
-    pendingWithdrawals: [], sharedQuestStreak: 0, questsSinceShared: 0 };
+    pendingWithdrawals: [], sharedQuestStreak: 0, questsSinceShared: 0,
+    lastWithdrawAt: {} };
   world.vaults.push(v);
   return v;
 };
@@ -53,15 +54,26 @@ Vault.onCommit = function (world, woman, man) {
 };
 
 // On breakup: he loses access permanently; she keeps everything (§7).
+// A remaining spouse still shares — Rel.jilt has already unlinked this pair.
 Vault.onBreakup = function (world, a, b) {
   const woman = a.sex === 'f' ? a : b;
   const man = a.sex === 'f' ? b : a;
+  const still = (ch) => (ADV.Rel ? ADV.Rel.partnerIds(ch) : []).map(id => ADV.World.byId(world, id)).filter(c => c && c.alive);
   const v = Vault.of(world, woman);
+  const nextMan = still(woman).find(c => c.sex === 'm');
   if (v && v.holderId === woman.id) {
-    v.sharedWithId = null;
+    v.sharedWithId = nextMan ? nextMan.id : null;
     v.pendingWithdrawals = [];
+    v.lastWithdrawAt = {};
   }
   if (man.vaultId && v && man.vaultId === v.id) man.vaultId = null;
+  if (nextMan) nextMan.vaultId = v ? v.id : nextMan.vaultId;
+  const nextWife = still(man).find(c => c.sex === 'f');
+  if (nextWife) {
+    const hers = Vault.ensureOwn(world, nextWife);
+    hers.sharedWithId = man.id;
+    if (!man.vaultId) man.vaultId = hers.id;
+  }
 };
 
 // Deposits are always free (§7).
@@ -98,17 +110,31 @@ Vault.approvalChance = function (world, v, requester, amount) {
   return Vault.withdrawalCap(world, v, requester).pct;
 };
 
+// One draw per stay in a shared vault. The next quest (clock tick) unlocks another.
+Vault.withdrawnThisStay = function (world, v, requester) {
+  if (!v || !requester) return false;
+  const stamp = (v.lastWithdrawAt || {})[requester.id];
+  return stamp != null && stamp >= (world.questClock | 0);
+};
+
 // Request by an NPC or the player. Gold only — items can never be withdrawn
-// by a spouse (§7). Always resolves immediately: you get up to the cap.
+// by a spouse (§7). Shared vaults resolve up to the cap, once per stay.
 Vault.requestWithdrawal = function (world, rng, requester, amount) {
   const v = Vault.of(world, requester);
   if (!v) return { ok: false, error: 'no vault' };
   amount = Math.min(amount, v.gold);
   if (amount <= 0) return { ok: false, error: 'empty' };
   const cap = Vault.withdrawalCap(world, v, requester);
+  if (cap.partner && Vault.withdrawnThisStay(world, v, requester)) {
+    return { ok: true, approved: false, waited: true, amount: 0, cap: cap.pct, state: cap.state };
+  }
   const allowed = Math.min(amount, Math.floor(v.gold * cap.pct));
   if (allowed <= 0) return { ok: true, approved: false, amount: 0, cap: cap.pct, state: cap.state };
   v.gold -= allowed; requester.inventory.gold += allowed;
+  if (cap.partner) {
+    v.lastWithdrawAt = v.lastWithdrawAt || {};
+    v.lastWithdrawAt[requester.id] = world.questClock | 0;
+  }
   return { ok: true, approved: true, amount: allowed, trimmed: allowed < amount, cap: cap.pct, state: cap.state };
 };
 

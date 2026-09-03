@@ -299,7 +299,7 @@ class TownScene extends Phaser.Scene {
   // Hide the hub panels so house art and the speaker are the only things on screen.
   // Conversations and the embark beat hide them. Notices do not. The tutorial keeps them.
   hideChrome() {
-    if (!this.__embarking && ADV.Tutor && ADV.Tutor.active(this.game_)) return;
+    if (!this.__embarking && !this.__cutscene && ADV.Tutor && ADV.Tutor.active(this.game_)) return;
     this._chromeHidden = (this._chromeHidden || 0) + 1;
     if (this._chromeHidden === 1) this.applyChromeHidden(true);
     this.armChromeFailsafe();
@@ -307,7 +307,7 @@ class TownScene extends Phaser.Scene {
 
   showChrome() {
     this._chromeHidden = Math.max(0, (this._chromeHidden || 0) - 1);
-    if (this._chromeHidden > 0 || this.__embarking) return;
+    if (this._chromeHidden > 0 || this.__embarking || this.__cutscene) return;
     this.fadeChromeIn();
   }
 

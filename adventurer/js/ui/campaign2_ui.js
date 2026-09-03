@@ -192,7 +192,7 @@ Panels.campaign2 = function (scene, r) {
   if (v.completed) {
     scene.keep(T().text(scene, r.x + 24, y, `Complete. ${D().GEAR_SETS[f.gearSet].name} issued — it floors ${D().GEAR_SETS[f.gearSet].archetypes.join('/')} skills at 15.`,
       { size: 12, color: T().css.green, wrap: r.w - 220 })); y += 24;
-    scene.keep(T().text(scene, r.x + 24, y, 'Every one of the sixty-four is on the trainer\'s board now — including the houses that will not have you.',
+    scene.keep(T().text(scene, r.x + 24, y, 'All sixty-four from these four houses are on the trainer\'s board now — including the houses that will not have you. The Maw, the Antler, and Varenholm are a separate seventy-two.',
       { size: 12, color: T().css.gold, wrap: r.w - 220 })); y += 26;
     if (v.canReissue) {
       keepBtn(scene, T().button(scene, r.x + 24, y, 300, 34, 'Quartermaster: re-issue the set',
@@ -264,7 +264,7 @@ UI2.endCard = function (scene, game, fid, done) {
       keep(T().text(scene, W / 2, 240, f.name, { size: 24, display: true, ox: 0.5, color: T().css.gold }).setDepth(Dp));
       keep(T().text(scene, W / 2, 282, f.blurb,
         { size: 14, ox: 0.5, wrap: 620, align: 'center', italic: true, color: T().css.ink }).setDepth(Dp));
-      keep(T().text(scene, W / 2, 352, 'Every skill of all four houses is now on the trainer\'s board. The gear and the title stay yours alone.',
+      keep(T().text(scene, W / 2, 352, 'All sixty-four skills from these four houses are on the trainer\'s board, including the ones that will not have you. The three older houses keep their own seventy-two behind a separate hall. The gear and the title stay yours alone.',
         { size: 12, ox: 0.5, wrap: 560, align: 'center', color: T().css.inkDim }).setDepth(Dp));
       ADV.UI.modalBtn(keep, Dp, T().button(scene, W / 2 - 90, 400, 180, 40, 'Close', () => { close(); if (done) done(); }, { size: 14 }));
     });

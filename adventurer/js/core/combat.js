@@ -136,6 +136,9 @@ Combat.create = function (charsA, charsB, opts) {
     hazards: [],                              // lane hazards: {side, lane, kind, power, rounds, srcUid, srcAtk}
     questTier: opts.questTier || 1,           // Paid Shot scaling
     encounterIndex: opts.encounterIndex || 0, // Veteran's Cut scaling
+    leaderId: opts.leaderId || null,
+    leaderFell: false,
+    leaderFled: false,
   };
   let i = 0;
   for (const ch of charsA) st.units.push(makeUnit(ch, 'a', i++));
@@ -864,7 +867,19 @@ Combat.spawnReinforcement = function (st, ch, side) {
   return u;
 };
 
+function noteLeaderOut(st, u, died) {
+  if (!st.leaderId || !u.ch || u.ch.id !== st.leaderId || u.ch.isPlayer) return;
+  if (died) st.leaderFell = true;
+  else st.leaderFled = true;
+  if (st.over) return;
+  st.over = true;
+  st.winner = u.side === 'a' ? 'b' : 'a';
+  Combat.applySurvivalGrowth(st);
+  ev(st, { t: 'end', winner: st.winner, reason: died ? 'leaderFell' : 'leaderFled' });
+}
+
 function onUnitDown(st, u) {
+  noteLeaderOut(st, u, true);
   // step a reserve into the field on the following turn (§15a)
   const side = u.side;
   const res = st.units.find(x => x.side === side && x.reserved && !x.downed && !x.fled);
@@ -1490,7 +1505,7 @@ function doFlee(st, u) {
   let success = st.rng.chance(p);
   if (!success && perkVal(u.ch, 'fallback_point', null) && !u.ch.__fallbackUsed) { success = true; u.ch.__fallbackUsed = true; }
   ev(st, { t: 'flee', uid: u.uid, success, chance: p });
-  if (success) { u.fled = true; checkEnd(st); }
+  if (success) { u.fled = true; noteLeaderOut(st, u, false); checkEnd(st); }
   return { ok: true, fled: success };
 }
 

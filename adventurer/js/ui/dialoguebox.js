@@ -58,12 +58,12 @@ const DialogueBox = {
     group.push(hint);
 
     if (ADV.Notices && ADV.Notices.block) ADV.Notices.block(scene);
-    if (scene.hideChrome) scene.hideChrome();
+    if (!scene.__cutscene && scene.hideChrome) scene.hideChrome();
     const close = () => {
       timer.remove(false);
       if (ADV.Music) ADV.Music.stopVoice();
       for (const g of group) { try { g.destroy(); } catch (e) {} }
-      if (scene.showChrome) scene.showChrome();
+      if (!scene.__cutscene && scene.showChrome) scene.showChrome();
       if (ADV.Notices && ADV.Notices.unblock) ADV.Notices.unblock(scene);
       if (onDone) onDone();
     };

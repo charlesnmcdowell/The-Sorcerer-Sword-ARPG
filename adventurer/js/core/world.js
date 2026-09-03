@@ -45,7 +45,7 @@ function seedEmployerParties(world, rng) {
     const want = rng.int(1, 2);
     for (const m of pool.slice(0, want)) {
       p.memberIds.push(m.id);
-      p.wages[m.id] = rng.int(28, 45);
+      p.wages[m.id] = rng.int(C().GOLD.wageAcceptMin, 45);
       m.partyId = p.id; m.leaderId = leader.id; m.wage = p.wages[m.id];
     }
   }
@@ -335,9 +335,64 @@ function npcShopping(world, rng, npc, feed) {
 // ---------------------------------------------------------------- parties
 // Employer parties grow, bleed members who want more pay, and new outfits
 // spring up from free agents with capital (request 15).
+const EMPLOYER_PARTY_TARGET = 4;
+
+function livingNpcParties(world, pid) {
+  return world.parties.filter(p => {
+    if (p.leaderId === pid) return false;
+    const leader = ADV.Party.leader(world, p);
+    return !!(leader && leader.alive);
+  });
+}
+
+function sweepDeadParties(world, feed) {
+  for (const p of world.parties.slice()) {
+    const leader = ADV.Party.leader(world, p);
+    if (leader && leader.alive) continue;
+    ADV.Party.disband(world, p);
+    if (feed) feed('A leaderless company folded.', p.memberIds || []);
+  }
+}
+
+function foundEmployerParty(world, rng, feed, freeFn) {
+  let pool = freeFn();
+  if (!pool.length) {
+    const pid = world.playerId;
+    const donors = world.parties
+      .map(p => ({ p, leader: ADV.Party.leader(world, p), hires: ADV.Party.members(world, p) }))
+      .filter(x => x.leader && x.leader.alive && x.leader.id !== pid && !x.leader.hiroNpc && x.hires.length)
+      .sort((a, b) => b.hires.length - a.hires.length);
+    if (donors.length) {
+      const m = donors[0].hires[0];
+      ADV.Party.removeMember(world, donors[0].p, m.id);
+      pool = [m];
+    }
+  }
+  if (!pool.length) return null;
+  const prefer = pool.filter(c => (c.personality.caution || 50) < 75);
+  const leader = rng.pick(prefer.length ? prefer : pool);
+  if (leader.inventory.gold < C().GOLD.partyStartupCapital + 60) leader.inventory.gold += 120;
+  const p = ADV.Party.create(world, leader.id);
+  p.employerParty = true;
+  const hirePool = freeFn().filter(c => c !== leader && !ADV.Party.hatredConflict(world, p, c.id));
+  if (hirePool.length) {
+    const first = rng.pick(hirePool);
+    const w = rng.int(C().GOLD.wageAcceptMin, 40);
+    p.memberIds.push(first.id); p.wages[first.id] = w;
+    first.partyId = p.id; first.leaderId = leader.id; first.wage = w;
+  }
+  feed(`${leader.name} has started a party of ${leader.sex === 'f' ? 'her' : 'his'} own.`, [leader.id]);
+  return p;
+}
+
 function partyDynamics(world, rng, feed) {
   const pid = world.playerId;
   const free = () => World.adults(world).filter(c => !c.isPlayer && !c.registryId && !c.partyId && c.status === 'normal' && !c.isUndead && !c.isConscript && c.hospitalizedQuestsLeft <= 0);
+  sweepDeadParties(world, feed);
+  // Replacements first — Hiro used to hire the free agents before anyone could found.
+  while (livingNpcParties(world, pid).length < EMPLOYER_PARTY_TARGET) {
+    if (!foundEmployerParty(world, rng, feed, free)) break;
+  }
   for (const p of world.parties.slice()) {
     const leader = ADV.Party.leader(world, p);
     if (!leader || !leader.alive) continue;
@@ -348,7 +403,8 @@ function partyDynamics(world, rng, feed) {
       const wage = p.wages[m.id] || 0;
       const itch = (m.personality.greed - 40) / 100 + (wage < C().GOLD.wageAcceptMin ? 0.15 : 0) + (m.questsCompleted > 6 ? 0.05 : 0);
       if (!rng.chance(Math.max(0.02, itch * 0.35))) continue;
-      const ask = wage + 10;
+      const ask = Math.min(C().GOLD.wageAcceptMax, wage + (C().GOLD.wageRaiseStep || 10));
+      if (ask <= wage) continue;
       if (npcLed) {
         const pays = leader.inventory.gold >= ask * 2 && rng.chance(0.6 - leader.personality.greed / 250);
         if (pays) { p.wages[m.id] = ask; m.wage = ask; }
@@ -367,25 +423,12 @@ function partyDynamics(world, rng, feed) {
       const cand = free().filter(c => !ADV.Party.hatredConflict(world, p, c.id));
       if (cand.length) {
         const c = rng.pick(cand);
-        const wage = rng.int(28, 45);
+        const wage = rng.int(C().GOLD.wageAcceptMin, 45);
         if (leader.inventory.gold >= wage * 2) {
           p.memberIds.push(c.id); p.wages[c.id] = wage; c.partyId = p.id; c.leaderId = leader.id; c.wage = wage;
           if (world.metIds.includes(c.id) || world.metIds.includes(leader.id)) feed(`${leader.name} hired ${c.name}.`, [leader.id, c.id]);
         }
       }
-    }
-  }
-  // new outfits: a free agent with capital and a rank starts hiring
-  const npcParties = world.parties.filter(p => p.leaderId !== pid).length;
-  if (npcParties < 4 && rng.chance(0.15)) {
-    const founders = free().filter(c => c.inventory.gold >= C().GOLD.partyStartupCapital + 60 && c.rank >= 1 && c.personality.caution < 70);
-    if (founders.length >= 1 && free().length >= 3) {
-      const leader = rng.pick(founders);
-      const p = ADV.Party.create(world, leader.id);
-      p.employerParty = true;
-      const first = rng.pick(free().filter(c => c !== leader && !ADV.Party.hatredConflict(world, p, c.id)));
-      if (first) { const w = rng.int(28, 40); p.memberIds.push(first.id); p.wages[first.id] = w; first.partyId = p.id; first.leaderId = leader.id; first.wage = w; }
-      feed(`${leader.name} has started a party of ${leader.sex === 'f' ? 'her' : 'his'} own.`, [leader.id]);
     }
   }
 }

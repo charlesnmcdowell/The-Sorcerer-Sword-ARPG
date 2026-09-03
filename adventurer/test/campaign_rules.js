@@ -81,7 +81,11 @@ const mem = memBackend;
   eq(cap.pct, 1.0, 'charming woman + happy husband = the whole vault');
   const r = ADV.Vault.requestWithdrawal(world, g.rng, wife, 1000);
   eq(r.amount, 1000, 'full withdrawal granted');
-  v.gold = 1000; v.sharedQuestStreak = 0; v.questsSinceShared = 3;
+  v.gold = 1000;
+  const blocked = ADV.Vault.requestWithdrawal(world, g.rng, wife, 1000);
+  ok(blocked.waited && blocked.amount === 0, 'second draw the same stay is refused');
+  world.questClock++;
+  v.sharedQuestStreak = 0; v.questsSinceShared = 3;
   cap = ADV.Vault.withdrawalCap(world, v, wife);
   eq(cap.state, 'neutral', 'three quests apart = Neutral');
   eq(cap.pct, 0.45, 'neutral husband 35% + Charm 10%');
@@ -132,6 +136,94 @@ const mem = memBackend;
   const dirty = world.characters.find(c => c.alive && c.status === 'normal');
   dirty.usedForbidden = true;
   ok(!ADV.Divine.heroEligible(world, dirty, killer.id), 'forbidden-art users are never named hero');
+})();
+
+(function () {
+  console.log('\n-- leader fall records a funeral --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 44, name: 'Hire', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'fire_bolt'] });
+  const world = g.world;
+  const me = ADV.Game.player(g);
+  const lead = world.characters.find(c => c.alive && !c.isPlayer && c.sex === 'm');
+  const mate = world.characters.find(c => c.alive && !c.isPlayer && c !== lead);
+  const party = ADV.Party.create(world, lead.id);
+  party.memberIds.push(me.id, mate.id);
+  me.partyId = party.id; mate.partyId = party.id;
+  me.leaderId = lead.id; mate.leaderId = lead.id;
+  ADV.Rel.move(world, mate.id, lead.id, 80, 'romance', { set: true });
+  ADV.Rel.commit(world, mate.id, lead.id);
+  g.quest = { quest: { name: 'A road job', encounters: [{}] }, encIdx: 0, over: false, failed: false, defeatedNamed: [], witnessedNew: [] };
+  ADV.Game.resolveLeaderFall(g, { leaderFell: true });
+  const rec = world.pendingLeaderDeath;
+  ok(rec && rec.leaderId === lead.id, 'the funeral remembers the lead');
+  ok(!ADV.Party.of(world, me), 'the company is gone');
+  ok(!lead.alive, 'the lead is dead');
+  const word = rec.words.find(w => w.id === mate.id);
+  ok(word && (word.band === 'romantic' || word.band === 'friendly'), 'the spouse speaks from their standing with the lead');
+})();
+
+(function () {
+  console.log('\n-- jilt a second spouse --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 9, name: 'Pat', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const me = ADV.Game.player(g);
+  me.inventory.gold = 400;
+  ADV.Housing.buy(g, 'brick');
+  const wives = world.characters.filter(c => c.alive && c.sex === 'f' && !c.isPlayer).slice(0, 2);
+  ok(wives.length === 2, 'two women to marry');
+  ADV.Rel.commit(world, me.id, wives[0].id);
+  ADV.Rel.commit(world, me.id, wives[1].id);
+  ok(ADV.Rel.isPartner(me, wives[0]) && ADV.Rel.isPartner(me, wives[1]), 'both wives held');
+  ADV.Rel.jilt(world, me, wives[1]);
+  ok(!ADV.Rel.isPartner(me, wives[1]), 'the second wife is gone');
+  ok(ADV.Rel.isPartner(me, wives[0]), 'the first wife stays');
+  ok(ADV.Rel.hates(world, wives[1].id, me.id), 'the jilted wife hates him');
+})();
+
+(function () {
+  console.log('\n-- employer parties refill after a leader dies --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 12, name: 'Pat', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const pid = world.playerId;
+  const npcParties = () => world.parties.filter(p => p.leaderId !== pid && ADV.Party.leader(world, p) && ADV.Party.leader(world, p).alive);
+  for (const p of world.parties.slice()) {
+    if (p.leaderId === pid) continue;
+    ADV.Party.disband(world, p);
+  }
+  eq(npcParties().length, 0, 'the town companies are gone');
+  ADV.World.tick(world, g.rng, {});
+  ok(npcParties().length >= 3, 'new companies form on the next clock', npcParties().length);
+})();
+
+(function () {
+  console.log('\n-- wages 30–100 and reputation raises --');
+  const G = ADV.DATA.CONST.GOLD;
+  eq(G.hirelingWage, 30, 'wages start at 30');
+  eq(G.typicalWage, 30, 'offers start at 30');
+  eq(G.wageAcceptMin, 30, 'floor is 30');
+  eq(G.wageAcceptMax, 100, 'cap is 100');
+  eq(ADV.Party.clampWage(20), 30, 'offers below 30 snap up');
+  eq(ADV.Party.clampWage(200), 100, 'offers above 100 snap down');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 3, name: 'Hire', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const party = world.parties[0];
+  ok(party, 'a company exists to serve');
+  party.memberIds.push(p.id); party.wages[p.id] = 30;
+  p.partyId = party.id; p.leaderId = party.leaderId; p.wage = 30;
+  p.reputation = 20;
+  const yes = ADV.Party.requestRaise(world, { chance: () => true }, p);
+  ok(yes.ok && yes.accepted && yes.wage === 40, 'a raise is granted after hire');
+  const twice = ADV.Party.requestRaise(world, { chance: () => true }, p);
+  eq(twice.ok, false, 'a second ask the same stay is refused');
+  world.questClock++;
+  p.reputation = -15;
+  ok(ADV.Party.raiseChance(p, 40, 50) < ADV.Party.raiseChance({ reputation: 20 }, 40, 50), 'reputation moves the odds');
+  const no = ADV.Party.requestRaise(world, { chance: () => false }, p);
+  ok(no.ok && !no.accepted && p.wage === 40, 'a refused raise leaves the wage');
 })();
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
