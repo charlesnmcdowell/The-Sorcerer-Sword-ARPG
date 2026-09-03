@@ -11,29 +11,17 @@ const W = 220, H = 280;
 const EYE_Y = 118;            // identical eye line across every portrait (§1a)
 
 const SKIN = {
-  deep:   ['#3a2418', '#4a3020'],
   dark:   ['#5a3a26', '#6b4630'],
   brown:  ['#8a5c3a', '#9c6c48'],
   tan:    ['#a5714a', '#b78257'],
-  gold:   ['#c8a078', '#d4b088'],
-  olive:  ['#b8926a', '#c9a47c'],
   fair:   ['#c9976b', '#d9a97c'],
   pale:   ['#d8ab87', '#e5bc97'],
   ashen:  ['#9a9a8a', '#ababa0'],
 };
-const HAIR_COLORS = ['#120e0c', '#191410', '#2e2013', '#4a2f18', '#6b4423', '#8a6a3a', '#3a3a3f', '#7a7a72', '#8a3020', '#b8b4a6', '#5a2030'];
+const HAIR_COLORS = ['#191410', '#2e2013', '#4a2f18', '#6b4423', '#8a6a3a', '#3a3a3f', '#7a7a72', '#8a3020', '#b8b4a6'];
 const BG = ['#43506088', '#50435f88', '#435f4e88', '#5f524388', '#5f434388', '#43585f88'];
 
 function rngFor(seed) { return new ADV.RNG((seed >>> 0) || 1); }
-
-// ---- drawing primitives ----------------------------------------------------
-function shade(hex, f) {
-  const n = parseInt(hex.slice(1, 7), 16);
-  const r = Math.min(255, Math.max(0, Math.round(((n >> 16) & 255) * f)));
-  const g = Math.min(255, Math.max(0, Math.round(((n >> 8) & 255) * f)));
-  const b = Math.min(255, Math.max(0, Math.round((n & 255) * f)));
-  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
-}
 
 function chinYOf(o) {
   return o.sex === 'f' ? EYE_Y + 38 : EYE_Y + 42 + (o.jaw || 0) * 2;
@@ -61,6 +49,15 @@ function drawNeck(ctx, o, cx, skin) {
     ctx.quadraticCurveTo(cx + 16, chinY + 36, cx + 28, chinY + 34);
     ctx.stroke();
   }
+}
+
+// ---- drawing primitives ----------------------------------------------------
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1, 7), 16);
+  const r = Math.min(255, Math.max(0, Math.round(((n >> 16) & 255) * f)));
+  const g = Math.min(255, Math.max(0, Math.round(((n >> 8) & 255) * f)));
+  const b = Math.min(255, Math.max(0, Math.round((n & 255) * f)));
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
 function drawBust(ctx, o) {
@@ -184,7 +181,6 @@ function hairBack(ctx, o, cx, headW) {
     return;
   }
   if (s === 'braids' || s === 'dreads') {
-    // Tight scalp, then hanging ropes — a filled disc in pale hair reads as a cap.
     ctx.beginPath();
     ctx.ellipse(cx, EYE_Y - 28, headW / 2 + 2, 22, 0, Math.PI, 0);
     ctx.fill();
@@ -198,7 +194,6 @@ function hairBack(ctx, o, cx, headW) {
     return;
   }
   if (s === 'afro') {
-    // Crown mass above the head — never a disc over the face.
     ctx.beginPath();
     ctx.arc(cx, EYE_Y - 42, headW / 2 + 20, 0, Math.PI * 2);
     ctx.fill();
@@ -208,9 +203,9 @@ function hairBack(ctx, o, cx, headW) {
     ctx.beginPath();
     ctx.ellipse(cx, EYE_Y - 16, headW / 2 + 14, 36, 0, 0, Math.PI * 2);
     ctx.fill();
-    const ids = [-3, -2, -1, 1, 2, 3];
+    const ids = f ? [-3.2, -2.2, -1.2, 1.2, 2.2, 3.2] : [-3, -2, -1, 0, 1, 2, 3];
     const thick = s === 'locs' ? 6 : 3.6;
-    const drop = s === 'locs' ? 32 : 26;
+    const drop = s === 'locs' ? (f ? 34 : 32) : 26;
     for (const i of ids) {
       ctx.beginPath();
       ctx.ellipse(cx + i * 11, EYE_Y + 60, thick, drop, i * 0.07, 0, Math.PI * 2);
@@ -242,57 +237,16 @@ function hairBack(ctx, o, cx, headW) {
     ctx.fill();
     return;
   }
-  if (s === 'silk' || s === 'hime') {
-    ctx.beginPath();
-    ctx.ellipse(cx, EYE_Y - 18, headW / 2 + 14, 36, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const gap = s === 'hime' ? 14 : 12;
-    ctx.beginPath();
-    ctx.moveTo(cx - headW / 2 - 14, EYE_Y + 4);
-    ctx.quadraticCurveTo(cx - headW / 2 - 28, EYE_Y + 58, cx - 36, EYE_Y + 118);
-    ctx.lineTo(cx - gap, EYE_Y + 118);
-    ctx.quadraticCurveTo(cx - 16, EYE_Y + 50, cx - headW / 2, EYE_Y + 10);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(cx + headW / 2 + 14, EYE_Y + 4);
-    ctx.quadraticCurveTo(cx + headW / 2 + 28, EYE_Y + 58, cx + 36, EYE_Y + 118);
-    ctx.lineTo(cx + gap, EYE_Y + 118);
-    ctx.quadraticCurveTo(cx + 16, EYE_Y + 50, cx + headW / 2, EYE_Y + 10);
-    ctx.closePath();
-    ctx.fill();
-    return;
-  }
-  if (s === 'bob') {
-    ctx.beginPath();
-    ctx.ellipse(cx, EYE_Y - 4, headW / 2 + 16, 42, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx - headW / 2 - 8, EYE_Y + 28, 10, 16, 0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + headW / 2 + 8, EYE_Y + 28, 10, 16, -0.2, 0, Math.PI * 2);
-    ctx.fill();
-    return;
-  }
-  if (s === 'twinbun') {
-    ctx.beginPath();
-    ctx.ellipse(cx, EYE_Y - 12, headW / 2 + 9, 36, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath(); ctx.arc(cx - 22, EYE_Y - 48, 13, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 22, EYE_Y - 48, 13, 0, Math.PI * 2); ctx.fill();
-    return;
-  }
   ctx.beginPath();
   if (s === 'ponytail') {
     ctx.ellipse(cx, EYE_Y - 10, headW / 2 + 10, 44, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(cx + headW / 2 + 16, EYE_Y + 26, 10, 46, -0.25, 0, Math.PI * 2);
-  } else if (s === 'bun') {
+  }
+  else if (s === 'bun') {
     ctx.ellipse(cx, EYE_Y - 12, headW / 2 + 9, 42, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx, EYE_Y - 52, 14, 0, Math.PI * 2);
-  } else {
-    ctx.ellipse(cx, EYE_Y - 8, headW / 2 + 10, 46, 0, 0, Math.PI * 2);
   }
+  else { ctx.ellipse(cx, EYE_Y - 8, headW / 2 + 10, 46, 0, 0, Math.PI * 2); }
   ctx.fill();
 }
 function hairFront(ctx, o, cx, headW) {
@@ -300,20 +254,6 @@ function hairFront(ctx, o, cx, headW) {
   ctx.beginPath();
   if (s === 'buzz' || s === 'bald' || s === 'twa' || s === 'puff' || s === 'locs' || s === 'twists') {
     if (s === 'buzz') { ctx.globalAlpha = 0.55; ctx.ellipse(cx, EYE_Y - 26, headW / 2 + 5, 24, 0, Math.PI, 0); ctx.fill(); ctx.globalAlpha = 1; }
-    return;
-  }
-  if (s === 'braids' || s === 'dreads') {
-    ctx.beginPath();
-    ctx.moveTo(cx - headW / 2 + 4, EYE_Y - 6);
-    ctx.quadraticCurveTo(cx, EYE_Y - 38, cx + headW / 2 - 4, EYE_Y - 6);
-    ctx.fill();
-    ctx.fillStyle = o.skin ? o.skin[0] : '#000';
-    ctx.beginPath();
-    ctx.moveTo(cx - 2, EYE_Y - 40);
-    ctx.lineTo(cx, EYE_Y - 8);
-    ctx.lineTo(cx + 2, EYE_Y - 40);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = o.hairColor;
     return;
   }
   if (s === 'afro') return;
@@ -328,40 +268,6 @@ function hairFront(ctx, o, cx, headW) {
       ctx.stroke();
     }
     ctx.fillStyle = o.hairColor;
-    return;
-  }
-  if (s === 'bob' || s === 'hime' || s === 'silk') {
-    // blunt bangs; silk gets a center part
-    ctx.fillStyle = o.hairColor;
-    ctx.beginPath();
-    ctx.moveTo(cx - headW / 2 - 4, EYE_Y - 10);
-    ctx.lineTo(cx - headW / 2 - 2, EYE_Y - 44);
-    ctx.lineTo(cx + headW / 2 + 2, EYE_Y - 44);
-    ctx.lineTo(cx + headW / 2 + 4, EYE_Y - 10);
-    if (s === 'silk') {
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = o.skin ? o.skin[0] : '#000';
-      ctx.beginPath();
-      ctx.moveTo(cx - 3, EYE_Y - 44);
-      ctx.lineTo(cx, EYE_Y - 12);
-      ctx.lineTo(cx + 3, EYE_Y - 44);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = o.hairColor;
-    } else {
-      ctx.closePath(); ctx.fill();
-    }
-    if (s === 'hime') {
-      ctx.beginPath();
-      ctx.ellipse(cx - 20, EYE_Y + 8, 7, 16, 0.15, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(cx + 20, EYE_Y + 8, 7, 16, -0.15, 0, Math.PI * 2); ctx.fill();
-    }
-    return;
-  }
-  if (s === 'twinbun') {
-    ctx.moveTo(cx - headW / 2 - 4, EYE_Y - 10);
-    ctx.quadraticCurveTo(cx, EYE_Y - 28, cx + headW / 2 + 4, EYE_Y - 10);
-    ctx.fill();
     return;
   }
   // generic fringe
@@ -440,110 +346,145 @@ function drawWardrobe(ctx, o, cx) {
   } else if (kind === 'robe') {
     ctx.strokeStyle = shade(col, 1.5); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(cx - 14, y0 - 4); ctx.lineTo(cx - 14, H); ctx.moveTo(cx + 14, y0 - 4); ctx.lineTo(cx + 14, H); ctx.stroke();
+  } else if (kind === 'pirate') {
+    ctx.fillStyle = '#e8e2d2';
+    ctx.beginPath(); ctx.moveTo(cx - 18, y0 - 2); ctx.lineTo(cx, y0 + 28); ctx.lineTo(cx + 18, y0 - 2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = shade(col, 1.15);
+    ctx.beginPath(); ctx.moveTo(cx - 72, y0 + 34); ctx.lineTo(cx + 72, y0 + 28); ctx.lineTo(cx + 68, y0 + 46); ctx.lineTo(cx - 68, y0 + 52); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d4a94e';
+    ctx.beginPath(); ctx.arc(cx + (o.sex === 'f' ? 22 : 24), EYE_Y + 8, 3.2, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'navy') {
+    ctx.fillStyle = shade(col, 1.45);
+    for (const s of [-1, 1]) {
+      ctx.beginPath(); ctx.ellipse(cx + s * 50, y0 + 8, 20, 11, s * 0.15, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = '#d4a94e';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(cx, y0 + 16 + i * 13, 3.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = '#d4a94e'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - 22, y0 + 4); ctx.quadraticCurveTo(cx, y0 + 10, cx + 22, y0 + 4); ctx.stroke();
   }
 }
 
 // ---- portrait recipes -------------------------------------------------------
-// The 10 creation portraits (§1a table) — 5 slots × 2 sexes.
+// Creation portraits — slots 1–5 keep the original looks; 6–17 add
+// more faces plus shinobi / samurai / privateer / Admiralty kits.
 const SLOT_RECIPES = {
-  1: { skin: 'dark',  f: { hair: 'afro', wardrobe: 'armor' },   m: { hair: 'buzz', wardrobe: 'armor' },   wardrobeColor: '#5a5f6e' },
-  2: { skin: 'brown', f: { hair: 'braids', wardrobe: 'ninja' }, m: { hair: 'hood', wardrobe: 'ninja' },   wardrobeColor: '#2a2d36' },
-  3: { skin: 'fair',  f: { hair: 'long', wardrobe: 'dress' },   m: { hair: 'short', wardrobe: 'suit' },   wardrobeColor: '#4a3550' },
-  4: { skin: 'pale',  f: { hair: 'ponytail', wardrobe: 'hiking' }, m: { hair: 'short', wardrobe: 'hiking' }, wardrobeColor: '#4e5a3e' },
-  5: { skin: 'tan',   f: { hair: 'long', wardrobe: 'hide' },    m: { hair: 'bun', wardrobe: 'hide' },     wardrobeColor: '#6e4a30' },
+  1: { skin: 'dark',  tag: 'Look', f: { hair: 'afro', wardrobe: 'armor' },   m: { hair: 'buzz', wardrobe: 'armor' },   wardrobeColor: '#5a5f6e' },
+  2: { skin: 'brown', tag: 'Look', f: { hair: 'braids', wardrobe: 'ninja' }, m: { hair: 'hood', wardrobe: 'ninja' },   wardrobeColor: '#2a2d36' },
+  3: { skin: 'fair',  tag: 'Look', f: { hair: 'long', wardrobe: 'dress' },   m: { hair: 'short', wardrobe: 'suit' },   wardrobeColor: '#4a3550' },
+  4: { skin: 'pale',  tag: 'Look', f: { hair: 'ponytail', wardrobe: 'hiking' }, m: { hair: 'short', wardrobe: 'hiking' }, wardrobeColor: '#4e5a3e' },
+  5: { skin: 'tan',   tag: 'Look', f: { hair: 'long', wardrobe: 'hide' },    m: { hair: 'bun', wardrobe: 'hide' },     wardrobeColor: '#6e4a30' },
+  // four more African-American looks, distinct hair on each face
+  6: { skin: 'dark',  tag: 'Look', hairColor: '#191410', f: { hair: 'locs', wardrobe: 'dress' }, m: { hair: 'twists', wardrobe: 'armor' }, wardrobeColor: '#4a3550' },
+  7: { skin: 'dark',  tag: 'Look', hairColor: '#2e2013', f: { hair: 'puff', wardrobe: 'hiking' }, m: { hair: 'twa', wardrobe: 'suit' }, wardrobeColor: '#3a4150' },
+  8: { skin: 'brown', tag: 'Look', hairColor: '#191410', f: { hair: 'cornrows', wardrobe: 'hide' }, m: { hair: 'cornrows', wardrobe: 'hiking' }, wardrobeColor: '#6e4a30' },
+  9: { skin: 'dark',  tag: 'Look', hairColor: '#3a3a3f', f: { hair: 'twists', wardrobe: 'robe' }, m: { hair: 'locs', wardrobe: 'robe', beard: true }, wardrobeColor: '#3f3a50' },
+  // Hollow Bell / Green-Eyed shinobi
+  10: { skin: 'tan',  tag: 'Shinobi', f: { hair: 'ponytail', wardrobe: 'ninja' }, m: { hair: 'hood', wardrobe: 'ninja' }, wardrobeColor: '#1a1c22' },
+  11: { skin: 'fair', tag: 'Shinobi', f: { hair: 'bun', wardrobe: 'ninja' }, m: { hair: 'sidecut', wardrobe: 'ninja', extras: 'mask' }, wardrobeColor: '#2a3228' },
+  // Green-Eyed / Bell samurai
+  12: { skin: 'tan',  tag: 'Samurai', f: { hair: 'long', wardrobe: 'samurai' }, m: { hair: 'bun', wardrobe: 'samurai' }, wardrobeColor: '#38343e' },
+  13: { skin: 'pale', tag: 'Samurai', f: { hair: 'ponytail', wardrobe: 'samurai' }, m: { hair: 'fringe', wardrobe: 'samurai' }, wardrobeColor: '#3a4a38' },
+  // Red Tally privateers
+  14: { skin: 'tan',  tag: 'Privateer', f: { hair: 'bandana', wardrobe: 'pirate', extras: 'bandana' }, m: { hair: 'fringe', wardrobe: 'pirate', extras: 'tricorne', beard: true }, wardrobeColor: '#503028' },
+  15: { skin: 'brown', tag: 'Privateer', f: { hair: 'long', wardrobe: 'pirate', extras: 'bandana' }, m: { hair: 'dreads', wardrobe: 'pirate', extras: 'bandana', beard: true }, wardrobeColor: '#3a2a22' },
+  // Admiralty
+  16: { skin: 'fair', tag: 'Admiralty', f: { hair: 'bun', wardrobe: 'navy', extras: 'bicorne' }, m: { hair: 'fringe', wardrobe: 'navy', extras: 'bicorne' }, wardrobeColor: '#2a3a55' },
+  17: { skin: 'pale', tag: 'Admiralty', f: { hair: 'ponytail', wardrobe: 'navy' }, m: { hair: 'buzz', wardrobe: 'navy', extras: 'bicorne' }, wardrobeColor: '#243048' },
 };
+
+function drawExtras(kind, col) {
+  return (ctx, cx, o) => {
+    if (kind === 'hood' || o.hairStyle === 'hood') {
+      const hc = col || '#2a2d36';
+      ctx.fillStyle = hc;
+      ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 12, 42, 52, 0, Math.PI, 0); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx - 42, EYE_Y - 10); ctx.quadraticCurveTo(cx, EYE_Y - 70, cx + 42, EYE_Y - 10); ctx.fill();
+    }
+    if (kind === 'mask') {
+      ctx.fillStyle = shade(col || '#2a2d36', 0.85);
+      ctx.beginPath(); ctx.rect(cx - 28, EYE_Y + 10, 56, 22); ctx.fill();
+    }
+    if (kind === 'bandana') {
+      ctx.fillStyle = col || '#8a3020';
+      ctx.beginPath();
+      ctx.moveTo(cx - 40, EYE_Y - 8);
+      ctx.quadraticCurveTo(cx, EYE_Y - 52, cx + 40, EYE_Y - 8);
+      ctx.lineTo(cx + 36, EYE_Y + 4);
+      ctx.quadraticCurveTo(cx, EYE_Y - 18, cx - 36, EYE_Y + 4);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx + 28, EYE_Y - 6);
+      ctx.lineTo(cx + 52, EYE_Y + 18);
+      ctx.lineTo(cx + 34, EYE_Y + 4);
+      ctx.closePath(); ctx.fill();
+    }
+    if (kind === 'tricorne') {
+      ctx.fillStyle = '#1c1c22';
+      ctx.beginPath();
+      ctx.moveTo(cx - 54, EYE_Y - 16);
+      ctx.quadraticCurveTo(cx, EYE_Y - 8, cx + 54, EYE_Y - 16);
+      ctx.quadraticCurveTo(cx + 20, EYE_Y - 54, cx, EYE_Y - 58);
+      ctx.quadraticCurveTo(cx - 20, EYE_Y - 54, cx - 54, EYE_Y - 16);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#d4a94e'; ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    if (kind === 'bicorne') {
+      ctx.fillStyle = '#1a2030';
+      ctx.beginPath();
+      ctx.ellipse(cx, EYE_Y - 36, 48, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 48, EYE_Y - 36);
+      ctx.quadraticCurveTo(cx, EYE_Y - 72, cx + 48, EYE_Y - 36);
+      ctx.quadraticCurveTo(cx, EYE_Y - 44, cx - 48, EYE_Y - 36);
+      ctx.fill();
+      ctx.fillStyle = '#d4a94e';
+      ctx.beginPath(); ctx.arc(cx, EYE_Y - 40, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  };
+}
 
 function recipePlayer(slot, sex, seed) {
   const r = rngFor(seed || (slot * 7919 + (sex === 'f' ? 13 : 29)));
   const rec = SLOT_RECIPES[slot] || SLOT_RECIPES[1];
   const v = rec[sex] || rec.m;
+  const hair = v.hair === 'short' || v.hair === 'bandana' ? 'fringe' : v.hair;
+  const extraKind = v.extras || (v.hair === 'hood' ? 'hood' : null);
   return {
     bg: BG[slot % BG.length],
     skin: SKIN[rec.skin],
-    hairColor: HAIR_COLORS[r.int(0, 4)],
-    hairStyle: v.hair === 'short' ? 'fringe' : v.hair,
-    sex, wardrobe: v.wardrobe, wardrobeColor: rec.wardrobeColor,
+    hairColor: rec.hairColor || HAIR_COLORS[r.int(0, 4)],
+    hairStyle: hair,
+    sex, wardrobe: v.wardrobe, wardrobeColor: v.wardrobeColor || rec.wardrobeColor,
     eyes: r.pick(['#4a3520', '#2f4a2a', '#2a3a55', '#4a2a20']),
     jaw: sex === 'f' ? 0 : 1.5, brow: r.int(0, 2), mouth: r.int(0, 3), fringe: r.int(-6, 6),
-    extras: v.hair === 'hood' ? (ctx, cx) => { // ninja hood up
-      const hc = '#2a2d36';
-      ctx.fillStyle = hc;
-      ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 12, 42, 52, 0, Math.PI, 0); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(cx - 42, EYE_Y - 10); ctx.quadraticCurveTo(cx, EYE_Y - 70, cx + 42, EYE_Y - 10); ctx.fill();
-    } : null,
+    beard: sex === 'm' && !!v.beard,
+    extras: extraKind ? drawExtras(extraKind, v.wardrobeColor || rec.wardrobeColor) : null,
   };
 }
 
 function recipeNPC(sex, seed) {
   const r = rngFor(seed);
-  if (sex === 'f') {
-    const authored = NPC_WOMAN_LOOKS;
-    const n = authored.length + 8;
-    const pick = ((seed >>> 0) % n);
-    if (pick < authored.length) return lookFrom(authored[pick], r, 'f');
-  }
   const skins = Object.keys(SKIN).filter(k => k !== 'ashen');
-  const skinKey = r.pick(skins);
-  const styles = sex === 'f'
-    ? (FEMALE_HAIR_BY_SKIN[skinKey] || ['long', 'ponytail', 'bun', 'braids'])
-    : ['fringe', 'buzz', 'dreads', 'sidecut', 'bald', 'afro', 'locs'];
-  const clothes = sex === 'f' ? ['dress', 'robe', 'hiking', 'hide', 'ninja']
-                              : ['armor', 'hiking', 'robe', 'suit', 'hide', 'ninja'];
-  const darkHair = ['#120e0c', '#191410', '#2e2013', '#4a2f18'];
-  const hairPool = (skinKey === 'gold' || skinKey === 'olive' || skinKey === 'deep' || skinKey === 'dark')
-    ? darkHair.concat(HAIR_COLORS.slice(0, 4))
-    : HAIR_COLORS;
+  const styles = sex === 'f' ? ['long', 'braids', 'ponytail', 'bun', 'fringe', 'afro', 'sidecut']
+                             : ['fringe', 'buzz', 'bun', 'dreads', 'afro', 'sidecut', 'bald'];
   return {
     bg: BG[r.int(0, BG.length - 1)],
-    skin: SKIN[skinKey],
-    hairColor: r.pick(hairPool),
+    skin: SKIN[r.pick(skins)],
+    hairColor: r.pick(HAIR_COLORS),
     hairStyle: r.pick(styles),
     sex,
-    wardrobe: r.pick(clothes),
-    wardrobeColor: r.pick(['#3a4150', '#504338', '#38503e', '#503a3a', '#3f3a50', '#4a3550']),
+    wardrobe: r.pick(['armor', 'hiking', 'robe', 'suit', 'hide', 'ninja']),
+    wardrobeColor: r.pick(['#3a4150', '#504338', '#38503e', '#503a3a', '#3f3a50']),
     eyes: r.pick(['#4a3520', '#2f4a2a', '#2a3a55', '#4a2a20', '#3a3a3a']),
-    jaw: sex === 'f' ? 0 : r.int(1, 3), brow: r.int(0, 3), mouth: r.int(-1, 3), fringe: r.int(-8, 8),
+    jaw: sex === 'f' ? 0 : r.int(0, 3), brow: r.int(0, 3), mouth: r.int(-1, 3), fringe: r.int(-8, 8),
     beard: sex === 'm' && r.chance(0.4),
   };
 }
-
-function lookFrom(look, r, sex) {
-  return {
-    bg: BG[r.int(0, BG.length - 1)],
-    skin: SKIN[look.skin] || SKIN.dark,
-    hairColor: look.hairColor,
-    hairStyle: look.hair,
-    sex,
-    wardrobe: look.wardrobe,
-    wardrobeColor: look.wardrobeColor,
-    eyes: r.pick(['#4a3520', '#2f4a2a', '#2a3a55', '#4a2a20', '#3a3a3a']),
-    jaw: 0, brow: r.int(0, 2), mouth: r.int(0, 2), fringe: r.int(-4, 4),
-  };
-}
-
-const FEMALE_HAIR_BY_SKIN = {
-  deep:  ['locs', 'twists', 'cornrows', 'puff', 'twa', 'afro', 'braids', 'silk'],
-  dark:  ['locs', 'twists', 'cornrows', 'puff', 'afro', 'braids', 'bun', 'silk'],
-  brown: ['braids', 'afro', 'ponytail', 'bun', 'locs', 'long', 'puff'],
-  gold:  ['bob', 'hime', 'twinbun', 'bun', 'long', 'ponytail'],
-  olive: ['bob', 'hime', 'twinbun', 'bun', 'long', 'ponytail'],
-  tan:   ['long', 'ponytail', 'bun', 'braids'],
-  fair:  ['long', 'ponytail', 'bun'],
-  pale:  ['long', 'ponytail', 'bun'],
-};
-
-// NPC-only looks — never on the creation grid. Six Black women, three Asian women.
-const NPC_WOMAN_LOOKS = [
-  { skin: 'deep',  hair: 'locs',     hairColor: '#1c1410', wardrobe: 'robe',   wardrobeColor: '#3f3a50' },
-  { skin: 'dark',  hair: 'twists',   hairColor: '#2a1810', wardrobe: 'hiking', wardrobeColor: '#38503e' },
-  { skin: 'deep',  hair: 'cornrows', hairColor: '#191410', wardrobe: 'armor',  wardrobeColor: '#3a4150' },
-  { skin: 'dark',  hair: 'puff',     hairColor: '#4a2a18', wardrobe: 'dress',  wardrobeColor: '#503a3a' },
-  { skin: 'brown', hair: 'twa',      hairColor: '#1a120c', wardrobe: 'hide',   wardrobeColor: '#504338' },
-  { skin: 'dark',  hair: 'silk',     hairColor: '#2e2013', wardrobe: 'ninja',  wardrobeColor: '#2a2d36' },
-  { skin: 'gold',  hair: 'bob',      hairColor: '#120e0c', wardrobe: 'robe',   wardrobeColor: '#4a3550' },
-  { skin: 'gold',  hair: 'hime',     hairColor: '#191410', wardrobe: 'dress',  wardrobeColor: '#3f3a50' },
-  { skin: 'olive', hair: 'twinbun',  hairColor: '#2e2013', wardrobe: 'hiking', wardrobeColor: '#4e5a3e' },
-];
 
 // Campaign characters (campaign doc §6a): fixed looks from their data recipe.
 function recipeCampaign(id) {
@@ -553,7 +494,7 @@ function recipeCampaign(id) {
   const r = rngFor(ADV.hashStr(id));
   return {
     bg: tint, skin: SKIN[pr.skin] || SKIN.tan,
-    hairColor: pr.hairColor || (pr.skin === 'ashen' ? '#333' : HAIR_COLORS[r.int(0, HAIR_COLORS.length - 1)]),
+    hairColor: pr.skin === 'ashen' ? '#333' : HAIR_COLORS[r.int(0, HAIR_COLORS.length - 1)],
     hairStyle: pr.hair, sex: def ? def.sex : 'm', wardrobe: pr.wardrobe, wardrobeColor: pr.color,
     eyes: pr.skin === 'ashen' ? '#7a9a8a' : r.pick(['#4a3520', '#2f4a2a', '#2a3a55', '#4a2a20']),
     jaw: def && def.sex === 'f' ? 0 : r.int(1, 3), brow: r.int(0, 2), mouth: r.int(-1, 2), fringe: r.int(-6, 6),
@@ -570,8 +511,7 @@ const HIRO_RECIPE = {
 };
 
 // ---- monster heads ----------------------------------------------------------
-function drawMonster(ctx, typeId, tint, variant) {
-  variant = variant || 0;
+function drawMonster(ctx, typeId, tint) {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = tint ? tint + '66' : '#4a303055';
   ctx.fillRect(0, 0, W, H);
@@ -580,117 +520,65 @@ function drawMonster(ctx, typeId, tint, variant) {
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
   const cx = W / 2;
   if (typeId === 'dire_wolf') {
-    const looks = [
-      { fur: tint || '#5a5a5f', eyes: '#c8a018', ruff: 75, earH: 72 },
-      { fur: tint || '#6a4a32', eyes: '#d4a94e', ruff: 68, earH: 62, notch: true },
-      { fur: tint || '#8a8a92', eyes: '#6fc0e8', ruff: 80, earH: 76, darkSnout: true },
-    ];
-    const L = looks[variant] || looks[0];
-    ctx.fillStyle = L.fur;
-    ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 30, L.ruff, 65, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 4, 48, 44, 0, 0, Math.PI * 2); ctx.fill();
-    for (const s of [-1, 1]) {
+    const fur = tint || '#5a5a5f';
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 30, 75, 65, 0, 0, Math.PI * 2); ctx.fill(); // ruff
+    ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 4, 48, 44, 0, 0, Math.PI * 2); ctx.fill(); // head
+    for (const s of [-1, 1]) { // ears
       ctx.beginPath(); ctx.moveTo(cx + s * 20, EYE_Y - 30);
-      ctx.lineTo(cx + s * 44, EYE_Y - L.earH); ctx.lineTo(cx + s * 44, EYE_Y - 28); ctx.closePath(); ctx.fill();
-      if (L.notch && s === 1) {
-        ctx.fillStyle = shade(L.fur, 0.7);
-        ctx.beginPath(); ctx.moveTo(cx + 32, EYE_Y - 48); ctx.lineTo(cx + 44, EYE_Y - L.earH + 8); ctx.lineTo(cx + 44, EYE_Y - 40); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = L.fur;
-      }
+      ctx.lineTo(cx + s * 44, EYE_Y - 72); ctx.lineTo(cx + s * 44, EYE_Y - 28); ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = shade(L.fur, L.darkSnout ? 0.55 : 0.8);
+    ctx.fillStyle = shade(fur, 0.8); // snout
     ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 34, 22, 26, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#1c1c1c';
     ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 24, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
-    for (const s of [-1, 1]) {
-      ctx.fillStyle = L.eyes;
+    for (const s of [-1, 1]) { // eyes
+      ctx.fillStyle = '#c8a018';
       ctx.beginPath(); ctx.ellipse(cx + s * 20, EYE_Y - 4, 8, 5, s * 0.3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#131313';
       ctx.beginPath(); ctx.arc(cx + s * 20, EYE_Y - 4, 2.2, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.strokeStyle = '#e8e2d2'; ctx.lineWidth = variant === 2 ? 4 : 3;
+    ctx.strokeStyle = '#e8e2d2'; ctx.lineWidth = 3; // fangs
     for (const s of [-1, 1]) {
       ctx.beginPath(); ctx.moveTo(cx + s * 12, EYE_Y + 48); ctx.lineTo(cx + s * 10, EYE_Y + 58); ctx.stroke();
     }
     return;
   }
   if (typeId === 'plated_sentinel') {
-    const looks = [
-      { metal: tint || '#6e7480', glow: '#58c8e8', visor: 'slit' },
-      { metal: tint || '#8a6a3a', glow: '#e8a048', visor: 't' },
-      { metal: tint || '#3a3e44', glow: '#d8574a', visor: 'slit', crest: true },
-    ];
-    const L = looks[variant] || looks[0];
-    const metal = L.metal;
+    const metal = tint || '#6e7480';
     drawWardrobe(ctx, { wardrobe: 'armor', wardrobeColor: shade(metal, 0.8), skin: SKIN.ashen, sex: 'm' }, cx);
     ctx.fillStyle = metal;
-    ctx.beginPath(); ctx.rect(cx - 34, EYE_Y - 44, 68, 92); ctx.fill();
+    ctx.beginPath(); ctx.rect(cx - 34, EYE_Y - 44, 68, 92); ctx.fill(); // helm block
     ctx.fillStyle = shade(metal, 1.25);
     ctx.beginPath(); ctx.rect(cx - 34, EYE_Y - 44, 68, 18); ctx.fill();
-    if (L.crest) {
-      ctx.fillStyle = shade(metal, 0.7);
-      ctx.beginPath(); ctx.moveTo(cx - 6, EYE_Y - 44); ctx.lineTo(cx, EYE_Y - 78); ctx.lineTo(cx + 6, EYE_Y - 44); ctx.closePath(); ctx.fill();
-    }
     ctx.fillStyle = '#0e0e12';
-    if (L.visor === 't') {
-      ctx.fillRect(cx - 26, EYE_Y - 8, 52, 10);
-      ctx.fillRect(cx - 6, EYE_Y - 8, 12, 28);
-    } else {
-      ctx.fillRect(cx - 26, EYE_Y - 8, 52, 14);
-    }
-    ctx.fillStyle = L.glow;
+    ctx.fillRect(cx - 26, EYE_Y - 8, 52, 14); // visor slit
+    ctx.fillStyle = '#58c8e8';
     for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * 14, EYE_Y - 1, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.strokeStyle = shade(metal, 0.6); ctx.lineWidth = 2;
     for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(cx - 34, EYE_Y + 12 + i * 12); ctx.lineTo(cx + 34, EYE_Y + 12 + i * 12); ctx.stroke(); }
     return;
   }
-  const packs = {
-    bandit: [
-      { skin: SKIN.tan, hairStyle: 'hood', hairColor: '#332d26', wardrobe: 'ninja', wardrobeColor: tint || '#4a3f30', eyes: '#3a3a3a', mask: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.brown, hairStyle: 'buzz', hairColor: '#191410', wardrobe: 'hide', wardrobeColor: tint || '#5a4030', eyes: '#2a1a10', scarf: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.pale, hairStyle: 'sidecut', hairColor: '#3a3a3f', wardrobe: 'ninja', wardrobeColor: tint || '#3a3038', eyes: '#4a2a20', patch: true, sex: 'm', jaw: 1 },
-    ],
-    hedge_mage: [
-      { skin: SKIN.pale, hairStyle: 'long', hairColor: '#7a7a72', wardrobe: 'robe', wardrobeColor: tint || '#3f3a50', eyes: '#2a3a55', hat: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.dark, hairStyle: 'fringe', hairColor: '#191410', wardrobe: 'robe', wardrobeColor: tint || '#4a3550', eyes: '#4a3520', hat: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.gold, hairStyle: 'bun', hairColor: '#7a7a72', wardrobe: 'robe', wardrobeColor: tint || '#2f3a40', eyes: '#2a3a55', cowl: true, sex: 'f', jaw: 0 },
-    ],
-    grave_acolyte: [
-      { skin: SKIN.ashen, hairStyle: 'bald', hairColor: '#222', wardrobe: 'robe', wardrobeColor: tint || '#333833', eyes: '#5d8a4a', cowl: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.ashen, hairStyle: 'buzz', hairColor: '#222', wardrobe: 'robe', wardrobeColor: tint || '#2a2228', eyes: '#8a9a4a', mask: true, sex: 'm', jaw: 2 },
-      { skin: SKIN.ashen, hairStyle: 'twinbun', hairColor: '#3a3a38', wardrobe: 'robe', wardrobeColor: tint || '#2a3228', eyes: '#5d8a4a', cowl: true, sex: 'f', jaw: 0 },
-    ],
-  };
-  const pack = packs[typeId];
-  const rec = (pack && (pack[variant] || pack[0])) || recipeNPC('m', 1);
-  const o = Object.assign({ brow: 2, mouth: -1, bg: 'transparent' }, rec);
+  // human-frame monsters
+  const rec = {
+    bandit:       { skin: SKIN.tan, hairStyle: 'hood', hairColor: '#332d26', wardrobe: 'ninja', wardrobeColor: tint || '#4a3f30', eyes: '#3a3a3a', mask: true },
+    hedge_mage:   { skin: SKIN.pale, hairStyle: 'long', hairColor: '#7a7a72', wardrobe: 'robe', wardrobeColor: tint || '#3f3a50', eyes: '#2a3a55', hat: true },
+    grave_acolyte:{ skin: SKIN.ashen, hairStyle: 'bald', hairColor: '#222', wardrobe: 'robe', wardrobeColor: tint || '#333833', eyes: '#5d8a4a', cowl: true },
+  }[typeId] || recipeNPC('m', 1);
+  const o = Object.assign({ sex: 'm', jaw: 2, brow: 2, mouth: -1, bg: 'transparent' }, rec);
   o.skin = rec.skin;
   drawBust(ctx, Object.assign({}, o, { bg: 'rgba(0,0,0,0)' }));
   if (rec.mask) {
     ctx.fillStyle = '#2a2620';
     ctx.beginPath(); ctx.rect(cx - 30, EYE_Y + 12, 60, 26); ctx.fill();
+    // hood up
     ctx.fillStyle = shade(rec.wardrobeColor, 0.85);
     ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 14, 44, 54, 0, Math.PI, 0); ctx.fill();
     ctx.beginPath(); ctx.moveTo(cx - 44, EYE_Y - 12); ctx.quadraticCurveTo(cx, EYE_Y - 74, cx + 44, EYE_Y - 12); ctx.fill();
   }
-  if (rec.scarf) {
-    ctx.fillStyle = shade(rec.wardrobeColor, 0.75);
-    ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 38, 28, 10, 0, 0, Math.PI * 2); ctx.fill();
-  }
-  if (rec.patch) {
-    ctx.fillStyle = '#1a1814';
-    ctx.beginPath(); ctx.ellipse(cx - 14, EYE_Y, 10, 8, -0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#1a1814'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(cx - 24, EYE_Y - 18); ctx.lineTo(cx + 8, EYE_Y + 8); ctx.stroke();
-  }
   if (rec.hat) {
     ctx.fillStyle = shade(rec.wardrobeColor, 1.1);
-    if (variant === 1) {
-      ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 28, 56, 10, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 48, 22, 22, 0, 0, Math.PI * 2); ctx.fill();
-    } else {
-      ctx.beginPath(); ctx.moveTo(cx - 52, EYE_Y - 26); ctx.lineTo(cx + 52, EYE_Y - 26); ctx.lineTo(cx + 8, EYE_Y - 96); ctx.closePath(); ctx.fill();
-    }
+    ctx.beginPath(); ctx.moveTo(cx - 52, EYE_Y - 26); ctx.lineTo(cx + 52, EYE_Y - 26); ctx.lineTo(cx + 8, EYE_Y - 96); ctx.closePath(); ctx.fill();
   }
   if (rec.cowl) {
     ctx.fillStyle = shade(rec.wardrobeColor, 0.85);
@@ -703,23 +591,27 @@ const cacheKeys = new Set();
 
 const Portraits = {
   W, H,
+  CREATION_SLOTS: 17,
+  slotTag(slot) {
+    const rec = SLOT_RECIPES[slot];
+    return (rec && rec.tag) || 'Look';
+  },
   // Returns a texture key, generating the canvas texture on first request.
   key(scene, ch) {
     let key;
     const TYPE_TINTS = { marsh_stalker: '#2a4a2a', ember_cultist: '#7a3a1a', frost_hag: '#2a4a6a', gravewarden: '#3a3a26' };
     const typeTint = ch.isMonster && TYPE_TINTS[ch.enemyTypeId];
-    const variant = Math.abs((ch.portraitSeed || 0) >>> 0) % 3;
-    if (ch.portraitId && ch.isMonster) key = 'pm5_' + ch.portraitId + '_v' + variant + (ch.boss ? '_boss' : '') + (ch.isUndead ? '_risen' : '') + (typeTint ? '_' + ch.enemyTypeId : '');
-    else if (ch.portraitKind === 'campaign') key = 'pc4_' + ch.portraitId;
-    else if (ch.portraitId) key = 'pr2_' + ch.portraitId;            // registry (Hiro)
-    else if (ch.portraitKind === 'player') key = 'pp4_' + ch.portraitSlot + '_' + ch.sex + '_' + (ch.portraitSeed % 1000);
-    else key = 'pn5_' + ch.sex + '_' + ch.portraitSeed;
+    if (ch.portraitId && ch.isMonster) key = 'pm_' + ch.portraitId + (ch.boss ? '_boss' : '') + (ch.isUndead ? '_risen' : '') + (typeTint ? '_' + ch.enemyTypeId : '');
+    else if (ch.portraitKind === 'campaign') key = 'pc_' + ch.portraitId;
+    else if (ch.portraitId) key = 'pr_' + ch.portraitId;            // registry (Hiro)
+    else if (ch.portraitKind === 'player') key = 'pp_' + ch.portraitSlot + '_' + ch.sex + '_' + (ch.portraitSeed % 1000);
+    else key = 'pn_' + ch.sex + '_' + ch.portraitSeed + '_v2';
     if (cacheKeys.has(key) && scene.textures.exists(key)) return key;
     const tex = scene.textures.createCanvas(key, W, H);
     const ctx = tex.getContext();
     if (ch.isMonster) {
       const bossTints = { bandit: '#7a3a2a', hedge_mage: '#5a2a6a', dire_wolf: '#3a1f1f', plated_sentinel: '#7a6a2a', grave_acolyte: '#2a4a3a' };
-      drawMonster(ctx, ch.portraitId, ch.isUndead ? '#2a3a3a' : ch.boss ? bossTints[ch.portraitId] : (typeTint || null), variant);
+      drawMonster(ctx, ch.portraitId, ch.isUndead ? '#2a3a3a' : ch.boss ? bossTints[ch.portraitId] : (typeTint || null));
     } else if (ch.portraitKind === 'campaign') {
       drawBust(ctx, recipeCampaign(ch.portraitId));
     } else if (ch.portraitId === 'hiro') {

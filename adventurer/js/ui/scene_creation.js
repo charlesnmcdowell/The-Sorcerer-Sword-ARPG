@@ -1,4 +1,5 @@
-// Character creation (§20): name entry, 10 portraits in a grid (5f/5m, §1a),
+// Character creation (§20): name entry, a scrolling grid of looks
+// (classic 5 + extra faces + faction kits, each as woman and man),
 // rolled stats, then a free pick of ANY 3 skills from the full pool.
 // There are no classes — the portrait is only a look (§1).
 (function () {
@@ -51,29 +52,60 @@ class CreationScene extends Phaser.Scene {
     T().text(this, 380, 92, '(type it — NPCs will use it)', { size: 11, oy: 0.5, color: T().css.inkFaint });
     this.firstGame = (ADV.Save.loadMeta().lives || 0) === 0;
 
-    // portrait grid — a look, nothing more (no classes, §1)
-    T().text(this, 80, 118, 'Pick a face. It changes nothing but the mirror.', { size: 13, italic: true, color: T().css.inkDim });
-    this.faceHint = T().text(this, 700, 118, '', { size: 13, ox: 1, color: T().css.gold });
+    // portrait grid — a look, nothing more (no classes, §1). Classic five
+    // stay in the original 2×5 slots so the first screen still matches;
+    // extra faces and faction kits sit below and the pane scrolls.
+    T().text(this, 80, 118, 'Pick a face. It changes nothing but the mirror. Scroll for more.', { size: 13, italic: true, color: T().css.inkDim });
+    this.faceHint = T().text(this, 780, 118, '', { size: 13, ox: 1, color: T().css.gold });
     this.cards = [];
     const gx = 80, gy = 140, cw = 128, chh = 170, gap = 14;
-    for (const [row, sex] of [[0, 'f'], [1, 'm']].values()) {
-      for (let slot = 1; slot <= 5; slot++) {
-        const x = gx + (slot - 1) * (cw + gap), y = gy + row * (chh + gap);
-        const key = ADV.Portraits.creationKey(this, slot, sex);
-        this.add.image(x + cw / 2, y + 78, key).setDisplaySize(cw - 16, 148);
-        const frame = this.add.graphics();
-        const zone = this.add.zone(x, y, cw, chh).setOrigin(0).setInteractive({ useHandCursor: true });
-        const card = { slot, sex, frame, x, y, cw, chh };
-        // the face's sex, stated plainly (request)
-        this.add.text(x + cw / 2, y + chh - 10, sex === 'f' ? 'Woman' : 'Man', { fontFamily: 'Georgia, serif', fontSize: '12px', color: sex === 'f' ? '#d4a0c0' : '#9ab0d0' }).setOrigin(0.5, 0.5);
-        zone.on('pointerdown', () => { this.sel.slot = slot; this.sel.sex = sex; this.refresh(); });
-        zone.on('pointerover', () => { if (this.faceHint) this.faceHint.setText(`${sex === 'f' ? 'A woman' : 'A man'} — look #${slot}`); });
-        this.cards.push(card);
+    const px = gx + 5 * (cw + gap) + 14;
+    const scrollBottom = this.carried ? 492 : 548;
+    const faceScroll = ADV.UI.scrollArea(this, { x: 64, y: 128, w: px - 72, h: scrollBottom - 128 });
+    this.faceScroll = faceScroll;
+    const sections = [
+      { label: null, slots: [1, 2, 3, 4, 5] },
+      { label: 'More faces', slots: [6, 7, 8, 9] },
+      { label: 'Shinobi', slots: [10, 11] },
+      { label: 'Samurai', slots: [12, 13] },
+      { label: 'Privateers', slots: [14, 15] },
+      { label: 'Admiralty', slots: [16, 17] },
+    ];
+    let y = gy;
+    for (const sec of sections) {
+      if (sec.label) {
+        faceScroll.add(T().text(this, gx, y + 2, sec.label, { size: 14, display: true, color: T().css.gold }));
+        y += 26;
       }
+      for (const [row, sex] of [[0, 'f'], [1, 'm']].values()) {
+        for (let i = 0; i < sec.slots.length; i++) {
+          const slot = sec.slots[i];
+          const x = gx + i * (cw + gap);
+          const cy = y + row * (chh + gap);
+          const key = ADV.Portraits.creationKey(this, slot, sex);
+          const img = this.add.image(x + cw / 2, cy + 78, key).setDisplaySize(cw - 16, 148);
+          const frame = this.add.graphics();
+          const zone = this.add.zone(x, cy, cw, chh).setOrigin(0).setInteractive({ useHandCursor: true });
+          const tag = ADV.Portraits.slotTag(slot);
+          const sexLabel = this.add.text(x + cw / 2, cy + chh - 10, sex === 'f' ? 'Woman' : 'Man', { fontFamily: 'Georgia, serif', fontSize: '12px', color: sex === 'f' ? '#d4a0c0' : '#9ab0d0' }).setOrigin(0.5, 0.5);
+          zone.on('pointerdown', () => { this.sel.slot = slot; this.sel.sex = sex; this.refresh(); });
+          zone.on('pointerover', () => {
+            if (this.faceHint) this.faceHint.setText(`${sex === 'f' ? 'A woman' : 'A man'} — ${tag} #${slot}`);
+          });
+          // Images use the texture size for height, which would over-extend
+          // the pane and clip the last row. Seat them without measuring.
+          faceScroll.container.add(img);
+          faceScroll.add(frame);
+          faceScroll.add(zone);
+          faceScroll.add(sexLabel);
+          this.cards.push({ slot, sex, frame, x, y: cy, cw, chh });
+        }
+      }
+      y += 2 * (chh + gap);
     }
+    faceScroll.extend(y + 12);
 
-    // stats panel
-    const px = 80 + 5 * (cw + gap) + 14;
+    // stats panel (fixed — not inside the face scroller)
     T().panel(this, px, 140, T().W - px - 60, 354);
     T().text(this, px + 18, 156, 'The dice are cast', { size: 17, display: true, color: T().css.gold });
     this.statsText = T().text(this, px + 18, 188, '', { size: 15 });
@@ -128,7 +160,6 @@ class CreationScene extends Phaser.Scene {
   // ---------------------------------------------------- phase 2: free skills
   buildPhase2() {
     this.phase = 2;
-    if (this.skillScroll) { this.skillScroll.destroy(); this.skillScroll = null; }
     this.children.removeAll();
     const W = T().W, H = T().H;
     this.add.rectangle(W / 2, H / 2, W, H, T().c.bg);
@@ -138,10 +169,6 @@ class CreationScene extends Phaser.Scene {
     this.counter = T().text(this, W / 2, 92, '', { size: 16, display: true, ox: 0.5, color: T().css.gold });
     this.descText = T().text(this, W / 2, H - 128, '', { size: 13, ox: 0.5, color: T().css.inkDim, wrap: 900, align: 'center' });
 
-    const gridTop = 118, gridBottom = H - 148;
-    this.skillScroll = ADV.UI.scrollArea(this, { x: 24, y: gridTop, w: W - 48, h: gridBottom - gridTop });
-    const scroll = this.skillScroll;
-
     this.skillButtons = [];
     const pool = ADV.DATA.TRAINER_POOL.filter(id => !ADV.DATA.SKILLS[id].forbidden && !ADV.DATA.SKILLS[id].campaign);
     const cols = 3, cw = 340, rh = 44;
@@ -150,34 +177,21 @@ class CreationScene extends Phaser.Scene {
     for (const id of pool) {
       const sk = ADV.DATA.SKILLS[id];
       const col = i % cols, row = Math.floor(i / cols);
-      const x = gx + col * (cw + 16), y = gridTop + 4 + row * rh;
+      const x = gx + col * (cw + 16), y = 120 + row * rh;
       const b = { id, x, y, w: cw, h: rh - 8 };
       b.g = this.add.graphics();
       b.txt = T().text(this, x + 14, y + (rh - 8) / 2, `${sk.name}${sk.kind === 'perk' ? ' ◆' : ''}`, { size: 14, oy: 0.5 });
       b.tag = T().text(this, x + cw - 14, y + (rh - 8) / 2, sk.archetype || 'social', { size: 11, ox: 1, oy: 0.5, color: T().css.inkFaint });
       const zone = this.add.zone(x, y, cw, rh - 8).setOrigin(0).setInteractive({ useHandCursor: true });
+      zone.on('pointerdown', () => this.toggleSkill(id));
       zone.on('pointerover', () => this.descText.setText(sk.name + ' — ' + sk.desc));
-      zone.on('pointerout', () => { zone.__press = null; });
-      zone.on('pointerdown', (p) => { zone.__press = { x: p.x, y: p.y }; });
-      zone.on('pointerup', (p) => {
-        const press = zone.__press; zone.__press = null;
-        if (!press) return;
-        if (Math.abs(p.x - press.x) + Math.abs(p.y - press.y) > 10) return;
-        this.toggleSkill(id);
-      });
       ADV.Tooltip.attach(this, zone, () => ADV.SkillInfo.describe(null, id));
-      b.zone = zone;
-      scroll.add(b.g); scroll.add(b.txt); scroll.add(b.tag); scroll.add(b.zone);
       this.skillButtons.push(b);
       i++;
     }
-    scroll.extend(gridTop + 4 + Math.ceil(pool.length / cols) * rh);
 
     this.beginBtn = null;
-    this.backBtn = T().button(this, 60, H - 76, 150, 42, '← Back', () => {
-      if (this.skillScroll) { this.skillScroll.destroy(); this.skillScroll = null; }
-      this.phase = 1; this.children.removeAll(); this.create();
-    }, { size: 14 });
+    this.backBtn = T().button(this, 60, H - 76, 150, 42, '← Back', () => { this.phase = 1; this.children.removeAll(); this.create(); }, { size: 14 });
     this.drawSkillButtons();
   }
 
