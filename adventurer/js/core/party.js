@@ -144,23 +144,9 @@ Party.removeMember = function (world, p, chId) {
 Party.disband = function (world, p) {
   for (const id of p.memberIds.slice()) Party.removeMember(world, p, id);
   const l = Party.leader(world, p);
-  if (l) { l.partyId = null; l.leaderId = null; }
+  if (l) l.partyId = null;
   const i = world.parties.indexOf(p);
   if (i >= 0) world.parties.splice(i, 1);
-};
-
-// Player leader folds the company and takes the founding purse back, so they
-// can hire on with someone else.
-Party.foldByLeader = function (world, leader) {
-  const p = Party.of(world, leader);
-  if (!p || p.leaderId !== leader.id) return { ok: false, error: 'you do not lead a party' };
-  const members = Party.members(world, p);
-  for (const m of members) Rel().move(world, m.id, leader.id, -15, 'quest');
-  Party.disband(world, p);
-  const gold = C().GOLD.partyStartupCapital;
-  leader.inventory.gold = (leader.inventory.gold || 0) + gold;
-  ADV.World.feed(world, `${leader.name} folded the company.`, [leader.id]);
-  return { ok: true, gold, laidOff: members.length };
 };
 
 // If a relationship degrades to Hatred during employment, the pairing dissolves (§5).
@@ -244,8 +230,6 @@ Party.companyCap = function () {
 };
 
 // Empty hired seats plus FORBIDDEN_EXTRA_SLOTS, minus followers already walking.
-// A solo caster has 4 empty seats + 3 extras (7 followers, company of 8).
-// A full hired five has 0 empty seats + 3 extras.
 Party.followerRoom = function (world, chOrParty, extra) {
   const regular = Math.max(1, Party.regularMembers(world, chOrParty).length);
   const walking = Party.followers(world, chOrParty, extra).length;

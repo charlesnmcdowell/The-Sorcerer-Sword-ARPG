@@ -10,7 +10,7 @@ Character.resetIds = function (n) { NEXT_ID = n || 1; };
 Character.peekNextId = function () { return NEXT_ID; };
 
 // Steel, ice, and lightning bite constructs and the risen; poison, bleed, and
-// burn do nothing — there is nothing left to rot. Necromancy cannot raise them.
+// burn do nothing. Necromancy cannot raise them.
 Character.enemyDef = function (ch) {
   if (!ch) return null;
   const id = ch.enemyTypeId;
@@ -54,7 +54,7 @@ Character.base = function (o) {
     stats: { hp: 100, atk: 10, def: 10, spd: 10 },
     bonusStats: { hp: 0, atk: 0, def: 0, spd: 0 },  // nepotism title + Hero + Finisher only
     perks: [], actives: [],                 // [{skillId, level, uses, auto?, autoOff?}]
-    autoAttack: false, autoRepeat: null,
+    autoAttack: false, autoRepeat: null,    // one repeating combat skill at a time
     perkCap: C().PLAYER_PERK_SLOTS, activeCap: C().PLAYER_ACTIVE_SLOTS,
     journal: {}, skillLevels: {}, freeSkillsUsed: 0,
     equipped: [], equippedSet: null,
@@ -99,30 +99,30 @@ Character.effStat = function (ch, key) {
 
 Character.maxHp = function (ch) { return Character.effStat(ch, 'hp'); };
 
+// ---- Voice routing for special speakers (add-on §0a) ------------------------
+// A demigod keeps their rolled personality's LINES and only changes VOICE, so
+// this returns a directory tag rather than a personality: clips live at
+// audio/vo/<tag>/<personalityId>/<band>_<idx>.mp3 and fall back to the ordinary
+// clip when that set has not been generated.
+Character.VOICE_TAGS = {
+  godf:      't9puW54s29EO0gQK6OMR',   // female demigod / The Pale Mother
+  godm:      'HMvHZWb0ZWSo5Kc5l22D',   // male demigod / The Drowned King
+  matriarch: '0KlQKzxy6Oee2hYOyHII',   // high-rank mothers holding an estate
+};
+Character.voiceTagFor = function (world, ch) {
+  if (!ch || ch.isPlayer || !ch.personalityId) return null;
+  if (ch.bloodline && ch.bloodline.demigod) return ch.sex === 'f' ? 'godf' : 'godm';
+  // §0a matriarch: a high-rank woman who has borne children and holds an estate
+  if (ch.sex === 'f' && (ch.childIds || []).length && ch.rank >= 3 &&
+      world && ADV.Vault && ADV.Vault.of(world, ch)) return 'matriarch';
+  return null;
+};
+
 // ---- Personality seeding (§17a) ---------------------------------------------
 function pickPersonality(rng, sex) {
   const pool = Object.values(ADV.DATA.DIALOGUE).filter(p => p.sex === sex && !p.hidden);
   return rng.pick(pool);
 }
-Character.pickPersonality = pickPersonality;
-
-// Portrait sex and the voice library must agree — a woman never speaks a
-// man's lines (or the reverse), including characters loaded from an old save.
-Character.ensurePersonalitySex = function (ch, rng) {
-  if (!ch || ch.isPlayer || ch.isMonster) return ch;
-  const D = ADV.DATA.DIALOGUE || {};
-  const cur = ch.personalityId ? D[ch.personalityId] : null;
-  if (cur && cur.sex === ch.sex) return ch;
-  const r = rng || new ADV.RNG(ADV.hashStr(ch.id || ch.name || 'npc') || 1);
-  const pers = pickPersonality(r, ch.sex);
-  if (pers) { ch.personalityId = pers.id; ch.lastVariantUsed = {}; }
-  return ch;
-};
-Character.repairWorldVoices = function (world, rng) {
-  if (!world || !world.characters) return;
-  const r = rng || new ADV.RNG(world.seed || 1);
-  for (const ch of world.characters) Character.ensurePersonalitySex(ch, r);
-};
 
 function rollVector(rng, personalityName) {
   const v = {};
@@ -179,7 +179,6 @@ Character.seedNPC = function (rng, world, opts) {
     ADV.SkillSys.learn(ch, opts.forbidden, { free: true });
     ch.usedForbidden = true;
   }
-  Character.ensurePersonalitySex(ch, rng);
   return ch;
 };
 
@@ -212,7 +211,7 @@ Character.makeEnemy = function (rng, typeId, opts) {
   const ch = Character.base({
     name: t.name, sex: 'm', species: t.species,
     stats: mookStats,
-    portraitSeed: 1, portraitKind: 'enemy',
+    portraitSeed: ADV.hashStr(t.portrait), portraitKind: 'enemy',
     portraitId: t.portrait,
     enemyTypeId: typeId, isMonster: true, boss: !!t.boss,
     organic: t.species !== 'construct' && t.organic !== false,
@@ -220,7 +219,6 @@ Character.makeEnemy = function (rng, typeId, opts) {
     perkCap: 8, activeCap: 8,
     personality: { aggression: 70, greed: 50, caution: 30, loyalty: 20, pride: 50 },
   });
-  ch.portraitSeed = ADV.hashStr((t.portrait || typeId) + ':' + ch.id);
   if (t.boss) { // palette shift + scale handled by UI; stats get a bump via species roll high end
     ch.stats.hp = Math.round(ch.stats.hp * 1.6);
   }

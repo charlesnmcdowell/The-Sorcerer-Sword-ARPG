@@ -11,7 +11,11 @@ const DialogueBox = {
     const r = ADV.util.speakEx(game.world, speaker, band, ctx || {});
     if (!r) { if (onDone) onDone(); return null; }
     // one personality, one voice — play this exact line's clip (§17a)
-    if (ADV.Music && speaker.personalityId) ADV.Music.speakFile(speaker.personalityId, r.band, r.idx + 1);
+    if (ADV.Music && speaker.personalityId) {
+      const world = game && game.world;
+      ADV.Music.speakFile(speaker.personalityId, r.band, r.idx + 1,
+        ADV.Character.voiceTagFor(world, speaker));
+    }
     return DialogueBox.showText(scene, game, speaker, r.text, onDone);
   },
 

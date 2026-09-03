@@ -8,24 +8,6 @@ const Quests = {};
 let QID = 1;
 Quests.resetIds = function (n) { QID = n || 1; };
 
-// The guided first party outing: two single bandits so a new hireling's
-// leader is not dropped on a 3–5 enemy party contract.
-Quests.makeTutorialParty = function () {
-  const T = C().QUEST_TIERS[1];
-  return {
-    id: 'q_tut_party',
-    tier: 1, track: 'party', factionAlignment: 'neutral',
-    name: 'A short road job',
-    payout: T.partyPay,
-    enemyLevels: [1, 2],
-    encounters: [
-      { enemyTypeIds: ['bandit'], boss: false },
-      { enemyTypeIds: ['bandit'], boss: false },
-    ],
-    isBoss: false, tutorialEasy: true,
-  };
-};
-
 Quests.generateBoard = function (world, rng) {
   const board = [];
   const factions = ['law', 'criminal', 'neutral'];
@@ -40,7 +22,75 @@ Quests.generateBoard = function (world, rng) {
   board.push(Quests.make(rng, 'boss', 'party', rng.pick(factions)));
   // the debuff contracts (request 14): poison, fire, frozen, heal-cancel crews
   for (const hz of ['hazard2', 'hazard2', 'hazard3', 'hazard3']) board.push(Quests.makeHazard(rng, hz, rng.pick(factions)));
+  // the faction war (add-on §6): two rotating contracts against the four
+  // ninja/pirate factions — the only place most players ever see them
+  for (const q of Quests.makeWarBoard(world, rng)) board.push(q);
+  // the god line (add-on §7): one route offered at a time, from rank 25
+  const god = Quests.makeGodQuest(world, rng);
+  if (god) board.push(god);
   return board;
+};
+
+// ---- The faction war (add-on §6) -------------------------------------------
+// Ordinary contracts in every respect; the enemies are faction members with
+// their full pools, so these are the witnessing ground for all 64 skills.
+// A member never sees a contract against their own faction.
+Quests.makeWarBoard = function (world, rng) {
+  const W = ADV.DATA.FACTION_WAR;
+  if (!W) return [];
+  const player = ADV.World.byId(world, world.playerId);
+  const joined = (player && player.factionTitles || []).map(t => t.factionId);
+  const open = Object.keys(W).filter(fid => !joined.includes(fid));
+  if (!open.length) return [];
+  const pick = rng.shuffle(open).slice(0, 2);
+  return pick.map(fid => Quests.makeWarQuest(rng, fid, rng.chance(0.5) ? 1 : 2));
+};
+Quests.makeWarQuest = function (rng, fid, tier) {
+  const w = ADV.DATA.FACTION_WAR[fid];
+  const T = C().QUEST_TIERS[tier];
+  const track = rng.chance(0.4) ? 'solo' : 'party';
+  const encN = track === 'solo' ? rng.int(2, 3) : rng.int(3, 4);
+  const encounters = [];
+  for (let i = 0; i < encN; i++) {
+    const n = track === 'solo' ? (i === encN - 1 && tier > 1 ? 2 : 1) : rng.int(2, 3);
+    const ids = [];
+    for (let k = 0; k < n; k++) ids.push(rng.pick(w.types));
+    encounters.push({ enemyTypeIds: ids, boss: false, campaign: true });
+  }
+  return {
+    id: 'war' + (QID++), tier, track, factionAlignment: w.shift,
+    warAgainst: fid, campaign: true, campaign2: true, war: true,
+    name: w.quest, brief: w.brief,
+    payout: track === 'solo' ? T.soloPay : T.partyPay,
+    enemyLevels: T.enemyLevels,
+    encounters, cEnc: encounters.map(e => ({ types: e.enemyTypeIds })), isBoss: false,
+  };
+};
+
+// ---- The god line (add-on §7) ----------------------------------------------
+// Party-only, rank 25+, 1000g halving per clear. Two bosses, two routes each:
+// one is a healing-denial check, the other a reflect-immunity check.
+Quests.godPayout = function (game) {
+  const G = ADV.DATA.GOD_LINE;
+  const runs = (game.campaign2 && game.campaign2.godRuns) || 0;
+  return Math.max(G.minPay, Math.round(G.basePay / Math.pow(2, runs)));
+};
+Quests.makeGodQuest = function (world, rng) {
+  const G = ADV.DATA.GOD_LINE;
+  if (!G) return null;
+  const player = ADV.World.byId(world, world.playerId);
+  if (!player || player.questsCompleted < G.gateQuests) return null;
+  const route = rng.pick(G.routes);
+  const T = C().QUEST_TIERS.boss;
+  const encounters = route.enc.map(e => ({ enemyTypeIds: e.types.slice(), boss: false, campaign: true }));
+  encounters.push({ enemyTypeIds: [], boss: true, campaign: true });
+  return {
+    id: 'god_' + route.id, tier: 'boss', track: 'party', factionAlignment: 'neutral',
+    campaign: true, campaign2: true, godLine: true, routeId: route.id, godBoss: route.boss,
+    name: route.name, brief: route.brief, isBoss: true,
+    payout: G.basePay, enemyLevels: T.enemyLevels,
+    encounters, cEnc: route.enc.concat([{ boss: route.boss }]),
+  };
 };
 
 const HAZARD_NAMES = {
@@ -122,6 +172,24 @@ Quests.make = function (rng, tier, track, faction) {
   };
 };
 
+// Guided first party job: two single bandits so the NPC lead does not die
+// on a 3–5 enemy board contract before the player has learned the ropes.
+Quests.makeTutorialParty = function () {
+  const T = C().QUEST_TIERS[1];
+  return {
+    id: 'q_tut_party',
+    tier: 1, track: 'party', factionAlignment: 'neutral',
+    name: 'A short road job',
+    payout: T.partyPay,
+    enemyLevels: [1, 2],
+    encounters: [
+      { enemyTypeIds: ['bandit'], boss: false },
+      { enemyTypeIds: ['bandit'], boss: false },
+    ],
+    isBoss: false, tutorialEasy: true,
+  };
+};
+
 // Spawn enemy characters for one encounter.
 Quests.spawnEncounter = function (rng, quest, encIdx) {
   const enc = quest.encounters[encIdx];
@@ -190,6 +258,40 @@ Quests.availableVerbs = function (world, player, party, quest, enemies) {
       tier: m.tier,
     });
   }
+  // ---- Second campaign's four encounter verbs (add-on §3) ------------------
+  // Each is a perk with its own stated resolution condition, so they are not
+  // reskins of Persuade: Bribe reads wealth, Command and Requisition read the
+  // opponent's alignment, Black Flag reads what they are carrying.
+  const carriedGold = (lead.inventory && lead.inventory.gold) || 0;
+  const enemyAlign = lead.factionAlignment
+    || (lead.factionStanding && lead.factionStanding.law >= 30 ? 'law'
+      : lead.factionStanding && lead.factionStanding.criminal >= 30 ? 'criminal' : null);
+  const hasCargo = !!(quest && (quest.cargo || /cargo|prize|smuggl|merchant|blockade/i.test(quest.name || ''))) || carriedGold >= 25;
+  const C2VERBS = {
+    // §3a Silent Trade — Bribe: resolves against anyone poorer than you
+    silent_trade: { label: 'Bribe them', test: () => player.inventory.gold > carriedGold,
+      fail: 'they have more coin than you do' },
+    // §3b Standing Order — Command: resolves against anyone lawfully aligned
+    standing_order: { label: 'Give them an order', test: () => enemyAlign === 'law',
+      fail: 'they answer to no lawful authority' },
+    // §3c Black Flag — Intimidate at Sea: against anyone carrying cargo or coin
+    black_flag: { label: 'Run up the colours', test: () => hasCargo,
+      fail: 'they are carrying nothing worth losing' },
+    // §3d Colours and Papers — Requisition: lawfully aligned, or carrying cargo
+    colours_and_papers: { label: 'Requisition it', test: () => enemyAlign === 'law' || hasCargo,
+      fail: 'nothing here answers to papers' },
+  };
+  for (const [perkId, spec] of Object.entries(C2VERBS)) {
+    const entry = player.perks.find(p => p.skillId === perkId);
+    if (!entry) continue;
+    const m = Sys().manifest(player, entry);
+    const applies = spec.test();
+    let odds = applies ? 0.85 : 0.25;
+    let note = applies ? '' : spec.fail;
+    if (lead.species !== 'human') { odds = 0; note = 'beasts do not bargain'; }
+    verbs.push({ verb: perkId, ok: odds > 0, odds, note, label: spec.label, mode: 'bypass', tier: m.tier });
+  }
+
   // Alignment pass (§8): criminal standing talks past bandits, law past guards
   const fs = player.factionStanding;
   const lawEnemies = ['plated_sentinel'];
@@ -226,6 +328,18 @@ Quests.attemptBypass = function (world, rng, player, party, verbInfo, enemies) {
       const g = rng.int(5, 15) + (e.enemyLevel || 1) * 2;
       out.stolen += g;
     }
+    player.inventory.gold += out.stolen;
+  }
+  if (verbInfo.verb === 'silent_trade') {
+    // A bribe is paid, not threatened: it costs, which is what separates it
+    // from Persuade and why it works on people stronger than you.
+    const cost = Math.min(player.inventory.gold, rng.int(10, 20) + (enemies[0].enemyLevel || 1) * 2);
+    player.inventory.gold -= cost;
+    out.stolen = -cost;
+  }
+  if (verbInfo.verb === 'black_flag') {
+    // Colours up: they hand over what they were carrying rather than fight for it.
+    out.stolen = rng.int(15, 30) + (enemies[0].enemyLevel || 1) * 3;
     player.inventory.gold += out.stolen;
   }
   if (verbInfo.verb === 'intimidate') {

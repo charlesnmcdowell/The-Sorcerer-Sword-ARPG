@@ -142,7 +142,9 @@ SkillSys.learn = function (ch, skillId, opts) {
   }
   // Levels survive drops (§3): restore prior level from the meta record if present.
   const prior = (ch.skillLevels && ch.skillLevels[skillId]) || { level: 1, uses: 0 };
-  const entry = { skillId, level: prior.level, uses: prior.uses, auto: !!prior.auto, autoOff: !!prior.autoOff };
+  const entry = { skillId, level: prior.level, uses: prior.uses };
+  if (prior.auto) entry.auto = true;
+  if (prior.autoOff) entry.autoOff = true;
   SkillSys.slotList(ch, kind).push(entry);
   const j = SkillSys.ensureJournal(ch);
   const je = j[skillId] || (j[skillId] = { witnessed: false, sawTier: 'basic', eligible: false });
@@ -213,6 +215,17 @@ SkillSys.recordUse = function (ch, skillId) {
   return leveled ? { leveled: true, level: entry.level, tier: SkillSys.tierForLevel(entry.level) } : null;
 };
 
+SkillSys.storeProgress = function (ch, entry) {
+  if (!ch || !entry) return;
+  ch.skillLevels = ch.skillLevels || {};
+  const rec = ch.skillLevels[entry.skillId] || {};
+  rec.level = entry.level;
+  rec.uses = entry.uses;
+  rec.auto = !!entry.auto;
+  rec.autoOff = !!entry.autoOff;
+  ch.skillLevels[entry.skillId] = rec;
+};
+
 // Journal view for the UI: Witnessed / Eligible / Learned / Mastered.
 SkillSys.journalState = function (ch, skillId) {
   const j = (ch.journal && ch.journal[skillId]) || null;
@@ -228,19 +241,6 @@ SkillSys.journalState = function (ch, skillId) {
 // Highest tier this character's version of the skill has reached (for enemy authoring).
 SkillSys.entryFor = function (ch, skillId) {
   return ch.perks.find(p => p.skillId === skillId) || ch.actives.find(a => a.skillId === skillId) || null;
-};
-
-// Persist level/uses plus auto-target flags so forget/relearn and combat
-// uses do not wipe the player's targeting preference.
-SkillSys.storeProgress = function (ch, entry) {
-  if (!ch || !entry) return;
-  ch.skillLevels = ch.skillLevels || {};
-  const rec = ch.skillLevels[entry.skillId] || {};
-  rec.level = entry.level;
-  rec.uses = entry.uses;
-  rec.auto = !!entry.auto;
-  rec.autoOff = !!entry.autoOff;
-  ch.skillLevels[entry.skillId] = rec;
 };
 
 ADV.SkillSys = SkillSys;

@@ -97,7 +97,7 @@ VFX.damageNumber = function (scene, x, y, val, color) {
 VFX.skillColor = function (skillId) {
   const m = {
     fire_bolt: 0xe86a30, frost_touch: 0x6fc0e8, aimed_shot: 0xd8d0b8, snare: 0x83b56b,
-    backstab: 0xd8574a, cleave: 0xe8dfc8, sunder: 0xd4a94e, two_hand_slash: 0xc4b48a, katana_slash: 0xcfd8e8,
+    backstab: 0xd8574a, cleave: 0xe8dfc8, sunder: 0xd4a94e, katana_slash: 0xcfd8e8,
     blood_pact: 0xa8352c, regenerate: 0x83b56b, mend: 0x83b56b, triage: 0x83b56b,
     basic_attack: 0xd8d0b8,
   };

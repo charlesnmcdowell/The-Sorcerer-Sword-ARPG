@@ -88,7 +88,7 @@ class TitleScene extends Phaser.Scene {
 
   msg(s) {
     const t = T().text(this, T().W / 2, T().H - 40, s, { size: 13, ox: 0.5, color: T().css.blood });
-    this.time.delayedCall(ADV.Notices && ADV.Notices.TOAST_HOLD_MS ? ADV.Notices.TOAST_HOLD_MS : 11000, () => t.destroy());
+    this.time.delayedCall(2200, () => t.destroy());
   }
 }
 

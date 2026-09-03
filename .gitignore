@@ -5,3 +5,9 @@ game/tools/voice_config.json
 
 # accidental nested copy of the repo-named folder (stray build-output path) — never commit
 /The Sorcerer Sword ARPG/
+
+# local sweep piles — keep on disk, never commit
+_to_delete/
+**/_to_delete/
+**/__pycache__/
+adventurer/_to_delete_vo.zip

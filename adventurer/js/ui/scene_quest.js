@@ -18,12 +18,7 @@ class QuestScene extends Phaser.Scene {
 
     const q = game.quest;
     if (q.playerDead) { this.scene.start('Death'); return; }
-    if (q.rival && !q.rivalResolved) {
-      if (!q.rivalPrompted) { q.rivalPrompted = true; this.playRivalIntercept(); }
-      return;
-    }
-    if (ADV.Game.maybeStartRivalFinale(game)) { /* fall through to the other company */ }
-    else if (q.readyToComplete || q.over || q.encIdx >= q.quest.encounters.length) { this.completeFlow(); return; }
+    if (q.readyToComplete || q.over || q.encIdx >= q.quest.encounters.length) { this.completeFlow(); return; }
 
     const enc = ADV.Game.currentEncounter(game);
     if (!enc) { this.completeFlow(); return; }
@@ -77,18 +72,7 @@ class QuestScene extends Phaser.Scene {
       x += 130;
     }
 
-    // verbs (§8): every route the player owns is offered at every encounter.
-    // A hireling does not call the field — the lead already did.
-    const hireling = ADV.Game.careerStage(game) === 'hireling';
-    if (hireling) {
-      T().text(this, W / 2, 420, enc.rival ? 'The other company is here. Steel it is.' : 'The lead takes the fight.', { size: 16, display: true, ox: 0.5, color: T().css.inkDim });
-      this.time.delayedCall(500, () => {
-        if (!this.scene.isActive()) return;
-        ADV.Game.startCombat(game, false);
-        this.scene.start('Combat', { mode: 'quest' });
-      });
-      return;
-    }
+    // verbs (§8): every route the player owns is offered at every encounter
     if (enc.verbs.length > 1) {
       const line = ADV.Game.prompt(game, 'firstNonCombat');
       if (line) ADV.Notices.toast(this, line);
@@ -103,14 +87,20 @@ class QuestScene extends Phaser.Scene {
       else if (v.verb === 'quiet_word') { label = 'Threaten'; sub = v.note || `${Math.round(v.odds * 100)}% · a quiet word works best on the isolated`; }
       else {
         const names = { persuade: 'Talk your way past', charm: 'Charm them', intimidate: 'Frighten them off', sneak: v.mode === 'ambush' ? 'Sneak — ambush them' : 'Sneak past (and steal)' };
-        label = names[v.verb];
-        sub = v.note || `${Math.round(v.odds * 100)}% · ${v.mode === 'ambush' ? "a party can't hide — strike first, twice" : 'witnessing nothing is the price'}`;
+        // the four campaign-2 verbs carry their own labels from availableVerbs
+        label = v.label || names[v.verb];
+        const c2sub = { silent_trade: 'coin, not steel — and it costs you some',
+                        standing_order: 'authority, if they recognise it',
+                        black_flag: 'they give up the cargo rather than the fight',
+                        colours_and_papers: 'take it by the king\'s word' }[v.verb];
+        sub = v.note || `${Math.round(v.odds * 100)}% · ${c2sub || (v.mode === 'ambush' ? "a party can't hide — strike first, twice" : 'witnessing nothing is the price')}`;
       }
       T().button(this, W / 2 - bw / 2, y, bw, 44, label, () => this.chooseVerb(v), {
         size: 15, display: v.verb === 'fight', sub, subColor: v.ok ? T().css.inkDim : T().css.blood, disabled: !v.ok,
       });
       y += 54;
     }
+    // give up
     T().button(this, W / 2 - 90, y + 10, 180, 34, 'Abandon the quest', () => {
       game.quest.failed = true; game.quest.fled = true; game.quest.over = true;
       this.completeFlow();
@@ -132,7 +122,7 @@ class QuestScene extends Phaser.Scene {
     const res = ADV.Game.tryVerb(game, v);
     if (res.success && res.mode === 'bypass') {
       ADV.Notices.toast(this, res.stolen ? `You slip past — ${res.stolen}g lighter for them.` : 'You pass without a fight. And learn nothing.');
-      this.time.delayedCall(ADV.Notices.TOAST_HOLD_MS, () => this.scene.restart());
+      this.time.delayedCall(900, () => this.scene.restart());
     } else if (res.success && res.mode === 'ambush') {
       const l = ADV.Game.prompt(game, 'firstAmbush');
       if (l) ADV.Notices.toast(this, l);
@@ -140,7 +130,7 @@ class QuestScene extends Phaser.Scene {
       this.scene.start('Combat', { mode: 'quest' });
     } else {
       ADV.Notices.toast(this, 'It fails. Steel it is.');
-      this.time.delayedCall(ADV.Notices.TOAST_HOLD_MS, () => {
+      this.time.delayedCall(700, () => {
         ADV.Game.startCombat(game, false);
         this.scene.start('Combat', { mode: 'quest' });
       });
@@ -168,7 +158,7 @@ class QuestScene extends Phaser.Scene {
     if (ADV.Tutor) ADV.Tutor.onQuestDone(game, failed || q.playerDead);
     const W = T().W;
     T().panel(this, W / 2 - 280, 180, 560, 320);
-    T().text(this, W / 2, 210, failed ? (q.leaderDied ? 'The lead fell.' : (q.fled || q.leaderFled ? 'The lead ran.' : 'The contract failed.')) : (q.quest.campaign && !q.quest.factionRepeatable ? `${q.quest.name} — done` : 'Contract complete'), { size: 26, display: true, ox: 0.5, color: failed ? T().css.blood : T().css.gold });
+    T().text(this, W / 2, 210, failed ? (q.fled ? 'You fled.' : 'The contract failed.') : (q.quest.campaign && !q.quest.factionRepeatable ? `${q.quest.name} — done` : 'Contract complete'), { size: 26, display: true, ox: 0.5, color: failed ? T().css.blood : T().css.gold });
     let y = 260;
     const line = (s, c) => { T().text(this, W / 2, y, s, { size: 15, ox: 0.5, color: c || T().css.ink }); y += 26; };
     if (!failed) {
@@ -187,14 +177,8 @@ class QuestScene extends Phaser.Scene {
         }
       }
     } else {
-      if (q.leaderDied) line('No payout. The company is broken — find a new party, or found your own.', T().css.blood);
-      else if (q.leaderFled) line('No payout. Reputation suffers when the lead runs.', T().css.inkDim);
-      else line('Reputation suffers. Payroll was owed anyway.', T().css.inkDim);
+      line('Reputation suffers. Payroll was owed anyway.', T().css.inkDim);
       if (out.fired) line('You have been let go from the party.', T().css.blood);
-      if (q.leaderDied || q.leaderFled || q.fled) {
-        const tip = ADV.Game.prompt(game, 'firstLeaderFall');
-        if (tip) ADV.Notices.toast(this, tip);
-      }
     }
     const fl = ADV.Game.prompt(game, 'firstFactionShift');
     if (fl) ADV.Notices.toast(this, fl);
@@ -204,53 +188,12 @@ class QuestScene extends Phaser.Scene {
     }
 
     T().button(this, W / 2 - 110, 430, 220, 44, 'Head back to town', () => {
+      // The ride home plays in Town, where the housing art is the backdrop —
+      // the mirror of the embark beat, which plays in Town on the way out.
+      if (!failed) game.rideHomeDue = true;
       if (out.ambush) this.ambushIntro(out.ambush);
       else this.scene.start('Town');
     }, { display: true, bold: true, size: 16 });
-  }
-
-  playRivalIntercept() {
-    const game = this.game_;
-    const q = game.quest;
-    const rival = q.rival;
-    const world = game.world;
-    const rLeader = ADV.World.byId(world, rival.leaderId);
-    const p = ADV.Game.player(game);
-    const myParty = ADV.Party.of(world, p);
-    const iLead = myParty ? ADV.Party.leader(world, myParty) : p;
-    const playerIsLead = !myParty || myParty.leaderId === p.id;
-    const alignName = rival.alignment === 'criminal' ? 'criminal' : rival.alignment === 'law' ? 'legal' : 'neutral';
-    const who = rLeader ? rLeader.name : 'Another company';
-    const notice = `Another company is on this job. ${who}'s party is running a ${alignName} contract. If you stay, you finish the work — then you settle it with them.`;
-    const afterTalk = () => {
-      if (playerIsLead) {
-        ADV.Notices.pickOne(this, 'Your call', (rLeader ? rLeader.name : 'They') + ' waits on your word.', [
-          { label: 'Flee', value: 'flee' },
-          { label: 'Surrender the quest', value: 'surrender' },
-          { label: 'Fight — settle it after the job', value: 'fight' },
-        ], (v) => this.afterRival(ADV.Game.applyRivalDecision(game, v || 'fight')));
-      } else {
-        this.afterRival(ADV.Game.applyRivalDecision(game, 'fight'));
-      }
-    };
-    const openTalk = () => {
-      if (!rLeader) return afterTalk();
-      ADV.DialogueBox.show(this, game, rLeader, 'hatred', ADV.DialogueBox.ctxFor(game, rLeader, { themName: iLead && iLead.name, target: iLead && iLead.name }), () => {
-        if (iLead && iLead !== p && iLead.personalityId) {
-          ADV.DialogueBox.show(this, game, iLead, 'hatred', ADV.DialogueBox.ctxFor(game, iLead, { themName: rLeader.name, target: rLeader.name }), afterTalk);
-        } else afterTalk();
-      });
-    };
-    if (playerIsLead) {
-      ADV.Notices.pickOne(this, 'A rival company', notice, [{ label: 'Continue', value: 'ok' }], openTalk);
-    } else {
-      openTalk();
-    }
-  }
-
-  afterRival(r) {
-    if (r.outcome === 'playerFlee' || r.outcome === 'playerSurrender') this.completeFlow();
-    else this.scene.restart();
   }
 
   ambushIntro(ambush) {

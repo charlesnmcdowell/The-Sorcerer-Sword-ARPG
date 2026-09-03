@@ -8,7 +8,7 @@ const path = require('path'); const fs = require('fs');
 const SHOT = (n) => path.join('/tmp/shots', n + '.png');
 (async () => {
   fs.mkdirSync('/tmp/shots', { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling'] }).catch(() => chromium.launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling'] }));
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling'] });
   const page = await browser.newPage({ viewport: { width: 1340, height: 820 } });
   const errors = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
@@ -20,14 +20,12 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
   const canvas = await page.$('canvas'); const box = await canvas.boundingBox();
   const scale = Math.min(box.width / 1280, box.height / 760); const ox = box.x + (box.width - 1280 * scale) / 2, oy = box.y + (box.height - 760 * scale) / 2;
   const click = async (x, y) => { await page.mouse.click(ox + x * scale, oy + y * scale); await page.waitForTimeout(350); };
-  const sceneTexts = (key) => page.evaluate((k) => ADV.UI.allText(window.__game.scene.getScene(k)).map(o => o.text).join(' | '), key);
+  const sceneTexts = (key) => page.evaluate((k) => window.__game.scene.getScene(k).children.list.filter(o => o.text).map(o => o.text).join(' | '), key);
   const clickText = async (key, re) => {
     const pos = await page.evaluate(([k, src]) => {
       const rx = new RegExp(src); const sc = window.__game.scene.getScene(k);
-      const t = ADV.UI.allText(sc).filter(o => rx.test(o.text) && o.visible).sort((a, b) => (b.depth || 0) - (a.depth || 0))[0];
-      if (!t) return null;
-      const b = t.getBounds();
-      return { x: b.centerX, y: b.centerY };
+      const t = sc.children.list.filter(o => o.text && rx.test(o.text) && o.visible).sort((a, b) => b.depth - a.depth)[0];
+      return t ? { x: t.x + (t.originX === 0 ? t.width / 2 : 0), y: t.y + (t.originY === 0 ? t.height / 2 : 0) } : null;
     }, [key, re]);
     if (!pos) return false;
     await click(pos.x, pos.y); return true;
@@ -74,12 +72,7 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
   ok(/Take this one/.test(t), 'board callout points at a Tier 1 solo contract');
   await page.screenshot({ path: SHOT('t04_first_quest') });
   // click the highlighted quest
-  const qpos = await page.evaluate(() => {
-    const b = window.__game.scene.getScene('Town').tutorFirstQuestBtn;
-    if (!b) return null;
-    const r = ADV.UI.worldRect(b.zone);
-    return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
-  });
+  const qpos = await page.evaluate(() => { const b = window.__game.scene.getScene('Town').tutorFirstQuestBtn; return b ? { x: b.zone.x + b.zone.width / 2, y: b.zone.y + b.zone.height / 2 } : null; });
   ok(!!qpos, 'a first-quest button is tracked');
   await click(qpos.x, qpos.y); await page.waitForTimeout(400);
   await clickText('Town', '^Set out$'); await page.waitForTimeout(800);
@@ -130,13 +123,7 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
   t = await sceneTexts('Town');
   ok(/Ask to join/.test(t) && /45g/.test(t), 'party callout explains the fixed 45g wage');
   await page.screenshot({ path: SHOT('t08_party') });
-  const partyBtn = async () => page.evaluate(() => {
-    const sc = window.__game.scene.getScene('Town');
-    const tt = ADV.UI.allText(sc).filter(o => /'s party$/.test(o.text))[0];
-    if (!tt) return null;
-    const b = tt.getBounds();
-    return { x: b.centerX, y: b.centerY };
-  });
+  const partyBtn = async () => page.evaluate(() => { const sc = window.__game.scene.getScene('Town'); const tt = sc.contentObjs.filter(o => o.text && /'s party$/.test(o.text))[0]; return tt ? { x: tt.x, y: tt.y } : null; });
   let pb = await partyBtn(); await click(pb.x, pb.y); await page.waitForTimeout(500);
   await click(640, 690); await click(640, 690); await page.waitForTimeout(500);   // leader's line
   let st = await page.evaluate(() => window.__game.scene.getScene('Town').registry.get('game').tutorial);

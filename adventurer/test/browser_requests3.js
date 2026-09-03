@@ -6,14 +6,14 @@ const path = require('path'); const fs = require('fs');
 const SHOT = (n) => path.join('/tmp/shots', n + '.png');
 (async () => {
   fs.mkdirSync('/tmp/shots', { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] }).catch(() => chromium.launch({ args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] }));
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required'] });
   const page = await browser.newPage({ viewport: { width: 1340, height: 820 } });
   const errors = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
   await page.goto('http://localhost:8734/index.html');
   await page.waitForTimeout(1000);
   const checks = []; const ok = (c, n) => { checks.push([!!c, n]); console.log((c ? '  ok  ' : 'FAIL  ') + n); };
-  const texts = () => page.evaluate(() => ADV.UI.allText(window.__game.scene.getScene('Town')).map(o => o.text).join(' | '));
+  const texts = () => page.evaluate(() => window.__game.scene.getScene('Town').children.list.filter(o => o.text).map(o => o.text).join(' | '));
 
   // hireling: the board shows "Ready for the quest" only
   await page.evaluate(() => {

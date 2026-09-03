@@ -197,21 +197,19 @@ Campaign.spawnEnemy = function (rng, typeId, level, opts) {
   const ch = ADV.Character.base({
     name: opts.name || t.name, sex: 'm', species: t.species,
     stats: ADV.Character.rollStats(rng, 'human'),
-    portraitSeed: 1, portraitKind: 'enemy', portraitId: t.portrait,
+    portraitSeed: ADV.hashStr(typeId), portraitKind: 'enemy', portraitId: t.portrait,
     enemyTypeId: typeId, isMonster: true, boss: !!opts.boss, campaignEnemy: true,
-    organic: t.species !== 'construct' && t.organic !== false && !t.undead && !opts.undead,
     perkCap: 8, activeCap: 8,
     personality: { aggression: 65, greed: 50, caution: 35, loyalty: 30, pride: 50 },
   });
-  ch.portraitSeed = ADV.hashStr((t.portrait || typeId) + ':' + ch.id);
   // mooks roll lighter than veterans; mini-bosses are full-strength
   if (!opts.boss) { ch.stats.hp = Math.round(ch.stats.hp * 0.7); ch.stats.atk = Math.max(8, ch.stats.atk - 1); }
   else ch.stats.hp = Math.round(ch.stats.hp * 1.4);
   if (t.statMult) for (const k of ['hp', 'atk', 'def', 'spd']) ch.stats[k] = Math.round(ch.stats[k] * t.statMult);
   if (t.undead || opts.undead) { ch.isUndead = true; ch.statusImmunities = t.statusImmunities || []; }
   if (t.statusImmunities) ch.statusImmunities = t.statusImmunities;
-  ADV.Character.applyNonOrganic(ch);
   if (opts.conscript) ch.isConscript = true;
+  if (ADV.Character.applyNonOrganic) ADV.Character.applyNonOrganic(ch);
   // roll the equipped subset from the pool (signature always included)
   const pool = t.pool.slice();
   const picks = [];

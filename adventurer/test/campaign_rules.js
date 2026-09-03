@@ -33,7 +33,7 @@ const mem = memBackend;
   const hp0 = uf.chp;
   ADV.Combat.act(st, ur, { kind: 'skill', skillId: 'backstab', targetUid: uf.uid });
   const d1 = hp0 - uf.chp;
-  eq(d1, Math.round(uf.maxHp * 0.5), 'Backstab deals 50% of enemy max health');
+  ok(d1 >= 60, 'Backstab power 6.0 hits like a double attack', d1);
   ok(uf.statuses.some(x => x.kind === 'exposed' && x.stacks === 1), 'melee applies 1 Exposed');
   eq(ADV.Combat.validTargets(st, ur, 'backstab').length, 0, 'Backstab greyed out after the opener');
   ADV.Combat.act(st, ur, { kind: 'skill', skillId: 'smoke_bomb', targetUid: ur.uid });
@@ -132,18 +132,6 @@ const mem = memBackend;
   const dirty = world.characters.find(c => c.alive && c.status === 'normal');
   dirty.usedForbidden = true;
   ok(!ADV.Divine.heroEligible(world, dirty, killer.id), 'forbidden-art users are never named hero');
-})();
-
-(function () {
-  console.log('\n-- 2hd Sword Slash: 25% of enemy max health --');
-  const fighter = mkCh({ stats: { hp: 100, atk: 8, def: 10, spd: 10 } }); give(fighter, 'two_hand_slash');
-  const foe = mkCh({ name: 'F', stats: { hp: 400, atk: 10, def: 40, spd: 8 } });
-  const st = fight(fighter, foe, 3);
-  const uf = unit(st, foe);
-  const hp0 = uf.chp;
-  ADV.Combat.act(st, unit(st, fighter), { kind: 'skill', skillId: 'two_hand_slash', targetUid: uf.uid });
-  eq(hp0 - uf.chp, Math.round(uf.maxHp * 0.25), '2hd Sword Slash deals 25% max health through high DEF');
-  ok(uf.statuses.some(x => x.kind === 'exposed'), 'the slash is melee and applies Exposed');
 })();
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

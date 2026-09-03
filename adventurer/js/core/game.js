@@ -34,7 +34,11 @@ Game.newGame = function (opts) {
   // restore levels onto equipped skills
   for (const e of player.perks.concat(player.actives)) {
     const rec = player.skillLevels[e.skillId];
-    if (rec) { e.level = rec.level; e.uses = rec.uses; }
+    if (rec) {
+      e.level = rec.level; e.uses = rec.uses;
+      if (rec.auto) e.auto = true;
+      if (rec.autoOff) e.autoOff = true;
+    }
   }
   world.characters.push(player);
   world.playerId = player.id;
@@ -45,6 +49,7 @@ Game.newGame = function (opts) {
     quest: null,           // active quest run state
     lastOutcome: null,
     campaign: ADV.Campaign ? ADV.Campaign.fresh() : null,
+    campaign2: ADV.Campaign2 ? ADV.Campaign2.fresh() : null,
     // the guided first hour runs once per fresh game; later lives and Hiro skip it
     tutorial: (meta.lives <= 1 && !player.registryId) ? { step: 'tour', tourIdx: 0, declined: false } : { step: 'done' },
   };
@@ -61,7 +66,8 @@ Game.load = function () {
   if (!player || !player.alive) return null;
   const rng = new ADV.RNG((world.seed ^ world.questClock * 2654435761) >>> 0);
   const game = { world, rng, meta: data.meta, player, board: data.board, life: data.life, quest: null, lastOutcome: null,
-    campaign: data.campaign || (ADV.Campaign ? ADV.Campaign.fresh() : null), tutorial: data.tutorial || { step: 'done' } };
+    campaign: data.campaign || (ADV.Campaign ? ADV.Campaign.fresh() : null),
+    campaign2: data.campaign2 || (ADV.Campaign2 ? ADV.Campaign2.fresh() : null), tutorial: data.tutorial || { step: 'done' } };
   if (!game.board) game.board = ADV.Quests.generateBoard(world, rng);
   return game;
 };
@@ -149,16 +155,13 @@ Game.leaderPick = function (game) {
   const party = ADV.Party.of(game.world, p);
   if (!party || party.leaderId === p.id) return null;
   const leader = ADV.Party.leader(game.world, party);
-  // the guided first party outing is a canned easy road job — never a
-  // 3–5 enemy party contract that can drop the leader on the first ride
-  if (game.tutorial && game.tutorial.step === 'partyQuest') {
-    return ADV.Quests.makeTutorialParty();
-  }
   const payroll = ADV.Party.payroll(game.world, party);
   let pool = game.board.filter(q => q.track === 'party' && q.payout > payroll);
   if (!pool.length) pool = game.board.filter(q => q.track === 'party');
   if (!pool.length) return null;
   pool.sort((a, b) => a.tier === b.tier ? a.payout - b.payout : (a.isBoss ? 9 : a.tier) - (b.isBoss ? 9 : b.tier));
+  // the guided first party quest is a canned easy road job, not a 3–5 pack
+  if (game.tutorial && game.tutorial.step === 'partyQuest') return ADV.Quests.makeTutorialParty();
   const per = leader ? leader.personality : { caution: 50, greed: 50, aggression: 50 };
   const bold = (per.aggression + per.greed) / 2 - per.caution;   // -100..100
   const idx = Math.max(0, Math.min(pool.length - 1, Math.round((pool.length - 1) * (0.5 + bold / 200))));
@@ -170,6 +173,21 @@ Game.contractCoversPayroll = function (game, quest) {
   const party = ADV.Party.of(game.world, p);
   if (!party || party.leaderId !== p.id) return true;
   return quest.payout > ADV.Party.payroll(game.world, party);
+};
+
+Game.wipeParty = function (world, party, killerId) {
+  if (!party) return;
+  const roster = ADV.Party.roster(world, party).slice();
+  const leader = ADV.Party.leader(world, party);
+  for (const c of roster) {
+    if (c === leader) continue;
+    if (c.isConscript || c.isUndead || c.isQuestThrall) continue;
+    if (c.alive && !c.isPlayer) ADV.Death.finalize(world, c, killerId, 'killed');
+  }
+  if (leader && leader.alive && !leader.isPlayer && !leader.isConscript && !leader.isUndead && !leader.isQuestThrall) {
+    ADV.Death.finalize(world, leader, killerId, 'killed');
+  }
+  if (world.parties.includes(party)) ADV.Party.disband(world, party);
 };
 
 // ---------------------------------------------------------------- departure
@@ -204,96 +222,76 @@ Game.stayHome = function (game) {
   return { ok: true };
 };
 
-// ---- rival companies (every 5th outing) ------------------------------------
-Game.rivalAlignment = function (quest) {
-  if (quest.factionAlignment === 'criminal') return 'law';
-  if (quest.factionAlignment === 'law') return 'criminal';
-  return 'law';
-};
-Game.shouldMeetRival = function (game, quest) {
-  if (!quest || quest.campaign) return false;
-  if (game.tutorial && game.tutorial.step && game.tutorial.step !== 'done') return false;
+// Begin a quest run. depositGold: how much carried gold to vault first.
+Game.startQuest = function (game, quest, opts) {
+  opts = opts || {};
   const p = Game.player(game);
-  return ((p.questsCompleted || 0) + (p.questsFailed || 0) + 1) % 5 === 0;
-};
-Game.pickRivalParty = function (game) {
-  const world = game.world;
-  const p = Game.player(game);
-  const mine = ADV.Party.of(world, p);
-  const others = world.parties.filter(x => x !== mine && ADV.Party.leader(world, x) && ADV.Party.leader(world, x).alive);
-  if (others.length) return game.rng.pick(others);
-  const formed = ADV.World.formFreeParties(world, game.rng, ADV.World.feeder(world), { max: 1 });
-  return formed[0] || null;
-};
-Game.attachRival = function (game, quest) {
-  if (!Game.shouldMeetRival(game, quest)) return null;
-  const party = Game.pickRivalParty(game);
-  if (!party) return null;
-  const leader = ADV.Party.leader(game.world, party);
-  if (!leader) return null;
-  return { partyId: party.id, alignment: Game.rivalAlignment(quest), leaderId: leader.id, resolved: false };
-};
-Game.rivalAIChoice = function (leader) {
-  const per = (leader && leader.personality) || {};
-  const a = per.aggression || 50, c = per.caution || 50, g = per.greed || 50;
-  if (a >= c && a >= 55) return 'fight';
-  if (c >= g && c >= 55) return 'flee';
-  if (g >= 55) return 'surrender';
-  return a > c ? 'fight' : 'flee';
-};
-Game.wipeParty = function (world, party, killerId) {
-  if (!party) return;
-  const roster = ADV.Party.roster(world, party).slice();
-  const leader = ADV.Party.leader(world, party);
-  for (const c of roster) {
-    if (c === leader) continue;
-    if (c.isConscript || c.isUndead || c.isQuestThrall) continue;
-    if (c.alive && !c.isPlayer) ADV.Death.finalize(world, c, killerId, 'killed');
+  if (opts.vaultGold && opts.vaultGold > 0) {
+    const amt = Math.min(opts.vaultGold, p.inventory.gold);
+    p.inventory.gold -= amt;
+    ADV.Vault.deposit(game.world, p, amt);
   }
-  if (leader && leader.alive && !leader.isPlayer && !leader.isConscript && !leader.isUndead && !leader.isQuestThrall) {
-    ADV.Death.finalize(world, leader, killerId, 'killed');
+  const kids = Game.youngDependents(p);
+  if (kids > 0) {
+    const tuition = kids * C().GOLD.tuitionPerChildPerQuest;
+    if (p.inventory.gold < tuition) return { ok: false, error: 'cannot afford tuition' };
+    p.inventory.gold -= tuition;
   }
-  if (world.parties.includes(party)) ADV.Party.disband(world, party);
-};
-Game.applyRivalDecision = function (game, playerChoice) {
-  const q = game.quest;
-  const rival = q && q.rival;
-  if (!rival) return { outcome: 'none' };
-  const world = game.world;
-  const rParty = world.parties.find(p => p.id === rival.partyId);
-  const rLeader = rParty ? ADV.Party.leader(world, rParty) : ADV.World.byId(world, rival.leaderId);
-  const rivalChoice = Game.rivalAIChoice(rLeader || { personality: { caution: 60 } });
-  rival.playerChoice = playerChoice;
-  rival.rivalChoice = rivalChoice;
-  rival.resolved = true;
-  q.rivalResolved = true;
-  if (playerChoice === 'flee') {
-    q.failed = true; q.fled = true; q.over = true;
-    ADV.World.feed(world, 'The company turned from the other party and left the contract.', []);
-    return { outcome: 'playerFlee' };
-  }
-  if (playerChoice === 'surrender') {
-    q.failed = true; q.surrendered = true; q.over = true;
-    ADV.World.feed(world, 'The contract was yielded to the other company.', []);
-    return { outcome: 'playerSurrender' };
-  }
-  // Choosing steel always means the other company waits at the end of the job.
-  // Their caution does not let them walk off the contract.
-  q.rivalPending = true;
-  q.rivalFight = false;
-  ADV.World.feed(world, (rLeader ? rLeader.name : 'The other company') + "'s party will be waiting when the contract is done.", rLeader ? [rLeader.id] : []);
-  return { outcome: 'fight' };
+  game.quest = {
+    quest, encIdx: 0, over: false, failed: false,
+    witnessedNew: [], lootGold: 0,
+    partnerAlong: false,
+    defeatedNamed: [],  // named NPCs beaten this run awaiting post-victory choice
+    thralls: [],
+  };
+  const roster = Game.partyRoster(game);
+  if (quest.track === 'party' && roster.length < 2) { game.quest = null; return { ok: false, error: 'party contracts need a party' }; }
+  if (quest.track === 'solo' && ADV.Party.of(game.world, p)) { game.quest = null; return { ok: false, error: 'a party does not take solo work' }; }
+  if (!Game.contractCoversPayroll(game, quest)) { game.quest = null; return { ok: false, error: 'that contract would not cover payroll' }; }
+  for (const ch of roster) { ch.combatHp = ADV.Character.maxHp(ch); ch.wasDowned = false; ch.hasFled = false; }
+  game.quest.partnerAlong = roster.some(c => ADV.Rel.isPartner(p, c));
+  if (quest.campaign) game.quest.departureBeats = ADV.Campaign.departureBeats(game, quest);
+  return { ok: true, quest: game.quest };
 };
 
-// After the contract encounters, the intercept fight (if chosen) is the last field.
-Game.maybeStartRivalFinale = function (game) {
+// Current encounter: spawn enemies + verb options.
+Game.currentEncounter = function (game) {
   const q = game.quest;
-  if (!q || q.over || q.failed || q.playerDead) return false;
-  if (!q.rivalPending || q.rivalCombatDone) return false;
-  if (!(q.readyToComplete || q.encIdx >= q.quest.encounters.length)) return false;
-  q.readyToComplete = false;
-  q.rivalFight = true;
-  return true;
+  if (!q || q.over || q.readyToComplete || q.encIdx >= q.quest.encounters.length) return null;
+  if (!q.enemies) {
+    q.enemies = q.quest.campaign ? ADV.Campaign.spawnEncounter(game, q.quest, q.encIdx)
+      : ADV.Quests.spawnEncounter(game.rng, q.quest, q.encIdx);
+    // campaign allies who exited the last fight walk back in at full health (§5a)
+    for (const ch of Game.partyRoster(game)) if (ch.campaign && ch.hasFled) { ch.hasFled = false; ch.combatHp = ADV.Character.maxHp(ch); }
+    if (q.quest.campaign) {
+      const onBoss = !!q.quest.encounters[q.encIdx].boss;
+      if (q.quest.godLine) {
+        // §7: the god speaks once, when you finally reach the room.
+        const lines = onBoss ? (ADV.DATA.GOD_LINE_DIALOGUE || {})[q.quest.godBoss] : null;
+        q.openerBeats = lines ? [{ who: q.quest.godBoss, key: 'open', lines }] : [];
+      } else if (q.quest.campaign2) {
+        q.openerBeats = (onBoss && q.quest.n === 5) ? ADV.Campaign.finalOpener(game, q.quest.factionId) : [];
+      } else {
+        q.openerBeats = (onBoss && q.quest.n === 5) ? ADV.Campaign.finalOpener(game) : [];
+      }
+    }
+    q.verbs = ADV.Quests.availableVerbs(game.world, Game.player(game), Game.partyRoster(game).slice(1), q.quest, q.enemies);
+  }
+  const revealed = !!(q.revealNext || Game.player(game).perks.some(x => x.skillId === 'case_the_room'));
+  q.revealNext = false;
+  return { encIdx: q.encIdx, total: q.quest.encounters.length, enemies: q.enemies, verbs: q.verbs, boss: q.quest.encounters[q.encIdx].boss, revealed, openerBeats: q.openerBeats || [] };
+};
+
+// Try a non-fight verb. Returns {success, mode:'bypass'|'ambush', stolen}.
+Game.tryVerb = function (game, verbInfo) {
+  const q = game.quest;
+  const res = ADV.Quests.attemptBypass(game.world, game.rng, Game.player(game), Game.partyRoster(game).slice(1), verbInfo, q.enemies);
+  if (res.success && res.mode === 'bypass') {
+    q.encIdx++; q.enemies = null; q.verbs = null;
+    if (q.encIdx >= q.quest.encounters.length) q.readyToComplete = true;
+  }
+  // ambush: caller starts combat with ambushBy = player id
+  return res;
 };
 
 Game.necroCaster = function (game) {
@@ -331,7 +329,6 @@ Game.autoRaiseFallen = function (game, fallen) {
   for (const src of fallen) {
     if (!src || src.isPlayer || src.isQuestThrall) continue;
     if (!ADV.Character.isOrganic(src)) continue;
-    // Leave living guild members for the victor's choice when Conscript is known.
     if (!src.isMonster && ADV.Divine && ADV.Divine.guildNpc(game.world, src)) {
       const player = Game.player(game);
       if (player && ADV.SkillSys.entryFor(player, 'conscript')) continue;
@@ -372,51 +369,6 @@ Game.autoRaiseFallen = function (game, fallen) {
   return raised;
 };
 
-Game.questPartyLeader = function (game) {
-  const p = Game.player(game);
-  const party = ADV.Party.of(game.world, p);
-  return party ? ADV.Party.leader(game.world, party) : p;
-};
-
-// Lead fell or ran: the contract is void. Death also breaks the company.
-Game.resolveLeaderFall = function (game, st) {
-  const q = game.quest;
-  const world = game.world;
-  const p = Game.player(game);
-  const party = ADV.Party.of(world, p);
-  const leader = Game.questPartyLeader(game);
-  const ids = party ? ADV.Party.roster(world, party).map(c => c.id) : [p.id];
-  q.exPartyIds = ids;
-  q.failed = true;
-  q.over = true;
-  if (st && st.leaderFled) {
-    q.fled = true;
-    q.leaderFled = true;
-    ADV.World.feed(world, (leader ? leader.name : 'The lead') + ' fled the field. The contract is void.', leader ? [leader.id] : []);
-    return;
-  }
-  q.leaderDied = true;
-  if (leader && leader.isPlayer) {
-    q.playerDead = true;
-    if (party) ADV.Party.disband(world, party);
-    ADV.World.feed(world, 'The lead fell. The company is broken.', [p.id]);
-    return;
-  }
-  if (p.combatHp != null && p.combatHp <= 0) p.combatHp = 1;
-  const survivors = party ? ADV.Party.roster(world, party).filter(c => c !== leader && c.alive) : [];
-  if (party && survivors.some(c => c.isPlayer) && !(leader && leader.hiroNpc)) {
-    world.pendingLeaderDeath = {
-      leaderName: leader ? leader.name : 'The lead',
-      memberIds: survivors.filter(c => !c.isPlayer).map(c => c.id),
-    };
-  }
-  if (party) ADV.Party.disband(world, party);
-  if (leader && leader.alive && !leader.isPlayer) ADV.Death.finalize(world, leader, null, 'killed');
-  if (!leader || !leader.alive) {
-    ADV.World.feed(world, (leader ? leader.name : 'The lead') + ' died on the road. The company is broken.', leader ? [leader.id] : []);
-  }
-};
-
 Game.releaseQuestThralls = function (game) {
   const q = game.quest;
   if (!q || !q.thralls) return;
@@ -433,83 +385,6 @@ Game.releaseQuestThralls = function (game) {
     }
   }
   q.thralls = [];
-};
-
-// Begin a quest run. depositGold: how much carried gold to vault first.
-Game.startQuest = function (game, quest, opts) {
-  opts = opts || {};
-  const p = Game.player(game);
-  if (opts.vaultGold && opts.vaultGold > 0) {
-    const amt = Math.min(opts.vaultGold, p.inventory.gold);
-    p.inventory.gold -= amt;
-    ADV.Vault.deposit(game.world, p, amt);
-  }
-  const kids = Game.youngDependents(p);
-  if (kids > 0) {
-    const tuition = kids * C().GOLD.tuitionPerChildPerQuest;
-    if (p.inventory.gold < tuition) return { ok: false, error: 'cannot afford tuition' };
-    p.inventory.gold -= tuition;
-  }
-  game.quest = {
-    quest, encIdx: 0, over: false, failed: false,
-    witnessedNew: [], lootGold: 0,
-    partnerAlong: false,
-    defeatedNamed: [],  // named NPCs beaten this run awaiting post-victory choice
-    thralls: [],
-    rival: Game.attachRival(game, quest),
-  };
-  const roster = Game.partyRoster(game);
-  if (quest.track === 'party' && roster.length < 2) { game.quest = null; return { ok: false, error: 'party contracts need a party' }; }
-  if (quest.track === 'solo' && ADV.Party.of(game.world, p)) { game.quest = null; return { ok: false, error: 'a party does not take solo work' }; }
-  if (!Game.contractCoversPayroll(game, quest)) { game.quest = null; return { ok: false, error: 'that contract would not cover payroll' }; }
-  for (const ch of roster) { ch.combatHp = ADV.Character.maxHp(ch); ch.wasDowned = false; ch.hasFled = false; }
-  game.quest.partnerAlong = roster.some(c => ADV.Rel.isPartner(p, c));
-  if (quest.campaign) game.quest.departureBeats = ADV.Campaign.departureBeats(game, quest);
-  return { ok: true, quest: game.quest };
-};
-
-// Current encounter: spawn enemies + verb options.
-Game.currentEncounter = function (game) {
-  const q = game.quest;
-  if (!q || q.over || q.readyToComplete) return null;
-  if (q.rivalFight && !q.rivalCombatDone) {
-    const rParty = game.world.parties.find(p => p.id === q.rival.partyId);
-    q.enemies = rParty ? ADV.Party.roster(game.world, rParty).filter(c => c.alive) : [];
-    if (!q.enemies.length) {
-      q.rivalCombatDone = true; q.rivalFight = false; q.rivalPending = false;
-      q.readyToComplete = true;
-      return null;
-    }
-    q.verbs = [{ verb: 'fight', ok: true }];
-    return {
-      encIdx: q.quest.encounters.length, total: q.quest.encounters.length + 1, enemies: q.enemies, verbs: q.verbs,
-      boss: false, revealed: false, openerBeats: [], rival: true,
-    };
-  }
-  if (!q.enemies) {
-    q.enemies = q.quest.campaign ? ADV.Campaign.spawnEncounter(game, q.quest, q.encIdx)
-      : ADV.Quests.spawnEncounter(game.rng, q.quest, q.encIdx);
-    // campaign allies who exited the last fight walk back in at full health (§5a)
-    for (const ch of Game.partyRoster(game)) if (ch.campaign && ch.hasFled) { ch.hasFled = false; ch.combatHp = ADV.Character.maxHp(ch); }
-    if (q.quest.campaign) q.openerBeats = (q.quest.encounters[q.encIdx].boss && q.quest.n === 5) ? ADV.Campaign.finalOpener(game) : [];
-    q.verbs = ADV.Quests.availableVerbs(game.world, Game.player(game), Game.partyRoster(game).slice(1), q.quest, q.enemies);
-  }
-  if (q.encIdx >= q.quest.encounters.length) return null;
-  const revealed = !!(q.revealNext || Game.player(game).perks.some(x => x.skillId === 'case_the_room'));
-  q.revealNext = false;
-  return { encIdx: q.encIdx, total: q.quest.encounters.length, enemies: q.enemies, verbs: q.verbs, boss: q.quest.encounters[q.encIdx].boss, revealed, openerBeats: q.openerBeats || [] };
-};
-
-// Try a non-fight verb. Returns {success, mode:'bypass'|'ambush', stolen}.
-Game.tryVerb = function (game, verbInfo) {
-  const q = game.quest;
-  const res = ADV.Quests.attemptBypass(game.world, game.rng, Game.player(game), Game.partyRoster(game).slice(1), verbInfo, q.enemies);
-  if (res.success && res.mode === 'bypass') {
-    q.encIdx++; q.enemies = null; q.verbs = null;
-    if (q.encIdx >= q.quest.encounters.length) q.readyToComplete = true;
-  }
-  // ambush: caller starts combat with ambushBy = player id
-  return res;
 };
 
 // Build the combat state for the current encounter.
@@ -598,28 +473,12 @@ Game.finishCombat = function (game) {
         fallen.push(u.ch);
       } else {
         fallen.push(u.ch);
-        if (!q.rivalFight) {
-          q.defeatedNamed.push(u.ch);
-          u.ch.combatHp = 0; // held at 0 until the victor decides
-        }
+        q.defeatedNamed.push(u.ch);
+        u.ch.combatHp = 0; // held at 0 until the victor decides
       }
     }
-    // Necromancy: every organic corpse that fits walks until the quest ends.
     const risen = Game.autoRaiseFallen(game, fallen);
     q.defeatedNamed = (q.defeatedNamed || []).filter(c => !risen.includes(c));
-    if (q.rivalFight) {
-      const rParty = game.world.parties.find(x => q.rival && x.id === q.rival.partyId);
-      Game.wipeParty(game.world, rParty, p.id);
-      q.rivalCombatDone = true;
-      q.rivalFight = false;
-      q.rivalPending = false;
-      q.readyToComplete = true;
-      q.enemies = null; q.verbs = null; q.combat = null;
-      const roster = Game.partyRoster(game);
-      ADV.Combat.applyPostVictoryRecovery(roster);
-      if (p.combatHp <= 0 || p.wasDowned) p.combatHp = Math.max(1, p.combatHp);
-      return { won, playerDead: q.playerDead };
-    }
     const roster = Game.partyRoster(game);
     ADV.Combat.applyPostVictoryRecovery(roster);
     // Quartermaster's Root: the best root in the party heals everyone a little more between fights
@@ -630,7 +489,17 @@ Game.finishCombat = function (game) {
     q.encIdx++; q.enemies = null; q.verbs = null; q.combat = null;
     if (q.encIdx >= q.quest.encounters.length) {
       q.readyToComplete = true;
-      if (q.quest.campaign && q.quest.rivalDies && game.campaign && game.campaign.rivalToggle) q.closingBeats = ADV.Campaign.rivalDeathSequence(game);
+      if (q.quest.godLine || q.quest.war) { /* no faction beats: nobody's rival, nobody's boss */ }
+      else if (q.quest.campaign2) {
+        // The second campaign keeps its rival flag per faction, not per game.
+        const fid = q.quest.factionId;
+        const m = ADV.Campaign2.member(game, fid);
+        if (q.quest.rivalDies && m && m.rivalToggle) q.closingBeats = ADV.Campaign.rivalDeathSequence(game, fid);
+        else if (q.quest.rivalDies) q.closingBeats = ADV.Campaign.rivalDeathSequence(game, fid).filter(b => !b.death)
+          .concat([{ who: ADV.Campaign2.faction(fid).rival, key: 'death', death: true, offscreen: true }]);
+        else if (q.quest.isBoss) q.closingBeats = ADV.Campaign.afterBossBeats(game, fid);
+      }
+      else if (q.quest.campaign && q.quest.rivalDies && game.campaign && game.campaign.rivalToggle) q.closingBeats = ADV.Campaign.rivalDeathSequence(game);
       else if (q.quest.campaign && q.quest.rivalDies) q.closingBeats = ADV.Campaign.rivalDeathSequence(game).filter(b => !b.death).concat([{ who: ADV.Campaign.faction(game).rival, key: 'death', death: true, offscreen: true }]);
       else if (q.quest.campaign && q.quest.isBoss) q.closingBeats = ADV.Campaign.afterBossBeats(game);
     }
@@ -640,17 +509,8 @@ Game.finishCombat = function (game) {
       p.combatHp = Math.max(1, p.combatHp);
     }
   } else {
-    // player side lost, fled, or the party lead fell
-    if (q.rivalFight) {
-      const mine = ADV.Party.of(game.world, p);
-      if (mine) {
-        for (const c of ADV.Party.roster(game.world, mine)) {
-          if (!c.isPlayer && c.alive) ADV.Death.finalize(game.world, c, q.rival ? q.rival.leaderId : null, 'killed');
-        }
-      }
-    }
-    if (st.leaderFled || st.leaderFell) Game.resolveLeaderFall(game, st);
-    else if (p.hasFled) { q.failed = true; q.fled = true; q.over = true; }
+    // player side lost or fled
+    if (p.hasFled) { q.failed = true; q.fled = true; q.over = true; }
     else if (st.units.find(u => u.ch === p && u.downed)) {
       q.playerDead = true; q.over = true;
     } else { q.failed = true; q.over = true; }
@@ -681,19 +541,24 @@ Game.completeQuest = function (game) {
   // shared-quest streak for the vault (§7)
   ADV.Vault.onQuestResolved(world, p, q.partnerAlong && !q.failed);
   if (q.partnerAlong && !q.failed) {
-    const along = new Set(Game.partyRoster(game).map(c => c.id));
-    for (const pid of ADV.Rel.partnerIds(p)) {
-      const partner = ADV.World.byId(world, pid);
-      if (partner && along.has(partner.id)) Rel().move(world, partner.id, p.id, C().REL_MOVE.sharedQuestWin, 'quest');
-    }
+    const partner = ADV.World.byId(world, p.partnerId);
+    if (partner) Rel().move(world, partner.id, p.id, C().REL_MOVE.sharedQuestWin, 'quest');
   }
 
   // the meal was for this quest (request: food lasts one quest)
   ADV.Character.digest(p);
 
+  // the god line pays on a halving scale and counts its own clears (§7)
+  if (!q.failed && !q.playerDead && q.quest.godLine && ADV.Campaign2) {
+    const s2 = ADV.Campaign2.state(game);
+    out.gold = (out.gold || 0);
+    s2.godRuns = (s2.godRuns || 0) + 1;
+  }
+
   // campaign bookkeeping (§3 recruitment gates, §4 progression)
   if (ADV.Campaign) {
-    if (q.quest.campaign && !q.quest.factionRepeatable) { if (!q.failed && !q.playerDead) ADV.Campaign.onCampaignQuestDone(game, q.quest); }
+    const factionLine = q.quest.campaign && !q.quest.factionRepeatable && !q.quest.war && !q.quest.godLine;
+    if (factionLine) { if (!q.failed && !q.playerDead) ADV.Campaign.onCampaignQuestDone(game, q.quest); }
     else ADV.Campaign.onContractComplete(game, q.quest, q.failed || q.playerDead);
   }
 
@@ -707,8 +572,6 @@ Game.completeQuest = function (game) {
   // world advances (§6)
   if (ADV.Courtship) ADV.Courtship.invalidate(world);
   ADV.World.tick(world, game.rng, { playerQuested: true });
-  world.playerOutings = (world.playerOutings || 0) + 1;
-  if (world.playerOutings % 2 === 0) ADV.World.formFreeParties(world, game.rng, ADV.World.feeder(world));
 
   // Payouts default to the vault (§10): auto-deposit above carry comfort
   // (kept manual for the player; NPC payouts bank automatically)
@@ -794,15 +657,7 @@ function applyQuestFailure(game, q, out) {
   const stage = Game.careerStage(game);
   const party = ADV.Party.of(world, p);
   p.questsFailed++;
-  const hit = Math.abs(q.fled ? C().REP_FLEE : C().REP_QUEST_FAIL);
-  const ids = (q.exPartyIds && q.exPartyIds.length) ? q.exPartyIds : [p.id].concat(party ? party.memberIds : []);
-  for (const id of ids) {
-    const c = ADV.World.byId(world, id);
-    if (c && c.alive) c.reputation = Math.max(-20, (c.reputation || 0) - hit);
-  }
-  out.gold = 0;
-  out.wage = 0;
-  if (q.leaderDied) return;
+  p.reputation = Math.max(-20, p.reputation - (q.fled ? C().REP_FLEE : -C().REP_QUEST_FAIL));
   if (stage === 'leader' && party) {
     for (const m of ADV.Party.members(world, party)) {
       const w = party.wages[m.id] || 0;
@@ -907,7 +762,6 @@ Game.startAmbush = function (game, ambush) {
   const st = ADV.Combat.create(defenders, attackers, {
     rng: game.rng.fork('ambush' + world.questClock),
     context: ambush.kind,
-    world,
   });
   game.ambushCombat = { st, ambush };
   return st;
@@ -962,7 +816,6 @@ Game.beginAssassination = function (game, targetId) {
   for (const ch of attackers) ch.combatHp = ADV.Character.maxHp(ch);
   const st = ADV.Combat.create(attackers, defenders, {
     rng: game.rng.fork('assassinate' + world.questClock), context: 'assassination',
-    world,
   });
   game.assassination = { st, target };
   return { ok: true, st };
@@ -1018,7 +871,6 @@ Game.acceptRescue = function (game, rescue) {
   for (const ch of defenders.concat(attackers)) ch.combatHp = ADV.Character.maxHp(ch);
   const st = ADV.Combat.create(defenders, attackers, {
     rng: game.rng.fork('rescue' + world.questClock), context: 'rescue',
-    world,
   });
   game.rescueCombat = { st, target, attacker: rescue.kind === 'assassination' ? attacker : null };
   return { ok: true, st };
@@ -1047,9 +899,7 @@ Game.finishRescue = function (game) {
     if (pu && pu.downed) out.playerDead = true;
     else {
       ADV.Death.finalize(world, target, attacker ? attacker.id : null, 'assassinated');
-      if (!target.alive) {
-        ADV.World.feed(world, attacker ? `${attacker.name} killed ${target.name}. You could not stop it.` : `${target.name} did not make it home. You could not stop it.`, [target.id].concat(attacker ? [attacker.id] : []));
-      }
+      ADV.World.feed(world, attacker ? `${attacker.name} killed ${target.name}. You could not stop it.` : `${target.name} did not make it home. You could not stop it.`, [target.id].concat(attacker ? [attacker.id] : []));
     }
   }
   // accepting consumed world time (§6)

@@ -45,7 +45,11 @@ ok(p.inventory.gold === goldBefore - 20, 'tuition charged per child per quest', 
 game.quest.encIdx = q2.encounters.length; game.quest.readyToComplete = true;
 ADV.Game.completeQuest(game);
 
-// Broke mother must stay home — never soft-locked
+// Broke mother must stay home — never soft-locked. (Guarantee a young
+// dependent: the board's RNG draws otherwise decide whether hers has aged out.)
+if (!ADV.Game.youngDependents(p)) {
+  p.dependents.push(ADV.Character.makeDependent(game.rng, world, p, p.partnerId));
+}
 const savedGold = p.inventory.gold; p.inventory.gold = 5;
 const q3 = game.board.find(x => x.tier === 1 && x.track === 'solo');
 const s3 = ADV.Game.startQuest(game, q3, {});

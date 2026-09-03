@@ -105,6 +105,8 @@ function enforceSlots(world, fromId) {
 // set/add with cause. opts: {set: bool, cause, decays, noPropagate, feed}
 Rel.move = function (world, fromId, toId, delta, cause, opts) {
   if (fromId === toId) return null;
+  const from = ADV.World.byId(world, fromId);
+  if (from && !from.alive) return null;
   opts = opts || {};
   let e = Rel.get(world, fromId, toId);
   const before = e ? e.score : 0;
@@ -197,7 +199,7 @@ Rel.commit = function (world, aId, bId, feed) {
       const others = Rel.partnerIds(x).filter(id => id !== y.id);
       if (others.length + 1 <= capOf(x)) break;
       const ex = ADV.World.byId(world, others[0]);
-      if (!ex) { Rel.removePartner(x, others[0]); continue; }
+      if (!ex || !ex.alive) { Rel.removePartner(x, others[0]); continue; }
       lines.push(...Rel.jilt(world, x, ex));
     }
   }
@@ -236,6 +238,7 @@ Rel.jilt = function (world, leaver, abandoned) {
   const lines = [];
   Rel.removePartner(leaver, abandoned.id);
   Rel.removePartner(abandoned, leaver.id);
+  if (!abandoned.alive) return lines;
   leaver.jiltCount = (leaver.jiltCount || 0) + 1;
   ADV.Vault.onBreakup(world, leaver, abandoned);
   const softJilt = leaver.perks.some(p => p.skillId === 'lookism');   // Lookism: they stay Friendly

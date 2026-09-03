@@ -63,13 +63,13 @@ chr({ id: 'arden', name: 'Vesna Arden', epithet: 'the Lamplighter', faction: 'ma
 chr({ id: 'holt', name: 'Bregga Holt', faction: 'antler', role: 'recruiter', sex: 'f', fights: false,
   portrait: { skin: 'fair', hair: 'sidecut', wardrobe: 'armor', color: '#4e4a44' } });
 chr({ id: 'roscarrow', name: 'Dain Roscarrow', faction: 'antler', role: 'rival', sex: 'm', campaignExit: true,
-  perks: ['momentum'], actives: ['hold_the_road', 'line_advance', 'shield_breaker', 'veterans_cut', 'cleave', 'sunder', 'two_hand_slash'],
+  perks: ['momentum'], actives: ['hold_the_road', 'line_advance', 'shield_breaker', 'veterans_cut', 'cleave', 'sunder'],
   level: 19, portrait: { skin: 'tan', hair: 'buzz', wardrobe: 'armor', color: '#5a5f6e' } });
 chr({ id: 'crane', name: 'Aldis Crane', epithet: 'First Horn', faction: 'antler', role: 'boss', sex: 'f', campaignExit: true,
   perks: ['bulwark', 'momentum'], actives: ['bulwark_formation', 'hold_the_road', 'paid_in_full', 'line_advance', 'shield_breaker'],
   level: 26, portrait: { skin: 'fair', hair: 'bun', wardrobe: 'armor', color: '#6e6a5a' } });
 chr({ id: 'holloway', name: 'Holloway', faction: 'antler', role: 'antagonist', sex: 'm', hero: true,
-  perks: ['momentum', 'bulwark'], actives: ['cleave', 'sunder', 'two_hand_slash', 'veterans_cut', 'shield_breaker'],
+  perks: ['momentum', 'bulwark'], actives: ['cleave', 'sunder', 'veterans_cut', 'shield_breaker'],
   level: 26, portrait: { skin: 'pale', hair: 'fringe', wardrobe: 'armor', color: '#3a3a44' } });
 // Varenholm Academy
 chr({ id: 'lirien', name: 'Adept Lirien', faction: 'varenholm', role: 'recruiter', sex: 'f', fights: false,
@@ -79,7 +79,7 @@ chr({ id: 'vaunt', name: 'Cassiel Vaunt', faction: 'varenholm', role: 'rival', s
   level: 18, portrait: { skin: 'pale', hair: 'long', wardrobe: 'robe', color: '#4a3550' } });
 chr({ id: 'venn', name: 'Ilaria Venn', epithet: 'Magister', faction: 'varenholm', role: 'boss', sex: 'f', campaignExit: true,
   perks: ['arcane_focus', 'see_invisibility'], actives: ['chain_lightning', 'arcane_cascade', 'dispel', 'restorative_circle', 'aegis_protocol'],
-  level: 27, portrait: { skin: 'deep', hair: 'braids', hairColor: '#ebe6d8', wardrobe: 'robe', color: '#2f2a3a' } });
+  level: 27, portrait: { skin: 'dark', hair: 'afro', wardrobe: 'robe', color: '#2f2a3a' } });
 chr({ id: 'quiet', name: 'The Quiet', faction: 'varenholm', role: 'antagonist', sex: 'm',
   perks: ['arcane_focus', 'see_invisibility'], actives: ['necromancy', 'silenced_step', 'whisper_of_ending', 'shadow_lance', 'chain_lightning'],
   level: 27, raisesMidFight: true, portrait: { skin: 'ashen', hair: 'bald', wardrobe: 'robe', color: '#26262a' } });

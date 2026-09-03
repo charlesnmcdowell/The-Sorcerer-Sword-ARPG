@@ -39,8 +39,8 @@ Save.saveGame = function (game) {
     playerId: w.playerId, metIds: w.metIds,
     parties: w.parties, campaignWorld: w.campaignWorld || null, mawContracts: w.mawContracts || [], pendingRaises: w.pendingRaises || [], hiroId: w.hiroId || null,
     sharedQuests: w.sharedQuests || {}, pendingProposals: w.pendingProposals || [], cooldowns: w.cooldowns || {},
-    pendingLeaderDeath: w.pendingLeaderDeath || null, playerOutings: w.playerOutings || 0,
-    board: game.board, life: game.life, campaign: game.campaign || null, tutorial: game.tutorial || null,
+    board: game.board, life: game.life, campaign: game.campaign || null, campaign2: game.campaign2 || null, tutorial: game.tutorial || null,
+    campaignProgress: w.campaignProgress || [],
   });
   put('adv:characters', w.characters);
   put('adv:edges', w.edges);
@@ -72,12 +72,10 @@ Save.loadGame = function () {
     orphans: ws.orphans || [], divineOffers: ws.divineOffers || [],
     pendingHeroInvites: ws.pendingHeroInvites || [], pendingPlayerJilt: ws.pendingPlayerJilt || null,
     playerId: ws.playerId, metIds: ws.metIds || [],
-    campaignWorld: ws.campaignWorld || null, mawContracts: ws.mawContracts || [], pendingRaises: ws.pendingRaises || [], hiroId: ws.hiroId || null,
+    campaignWorld: ws.campaignWorld || null, campaignProgress: ws.campaignProgress || [], mawContracts: ws.mawContracts || [], pendingRaises: ws.pendingRaises || [], hiroId: ws.hiroId || null,
     sharedQuests: ws.sharedQuests || {}, pendingProposals: ws.pendingProposals || [], cooldowns: ws.cooldowns || {},
-    pendingLeaderDeath: ws.pendingLeaderDeath || null, playerOutings: ws.playerOutings || 0,
   };
-  if (ADV.Character && ADV.Character.repairWorldVoices) ADV.Character.repairWorldVoices(world);
-  return { world, board: ws.board || null, life: ws.life || 1, meta: Save.loadMeta(), campaign: ws.campaign || null, tutorial: ws.tutorial || null };
+  return { world, board: ws.board || null, life: ws.life || 1, meta: Save.loadMeta(), campaign: ws.campaign || null, campaign2: ws.campaign2 || null, tutorial: ws.tutorial || null };
 };
 
 Save.hasSave = function () { return !!get('adv:world'); };

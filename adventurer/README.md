@@ -381,6 +381,76 @@ when the rival is talking about an enemy). Every clip under `audio/vo/` was
 regenerated; Hiro's were left as they were. The Q5 boss-ally banter beat is
 not in the new script, so bosses fight quietly beside you.
 
+## Second campaign: ninja / samurai / pirate / navy (ninjavspirates.md)
+
+Purely additive. `js/core/campaign2.js` wraps `ADV.Campaign`'s methods and
+dispatches on `quest.campaign2`, so campaign 1 runs through the same hooks
+untouched — `test/campaign_flow.js` still passes unchanged. New files:
+`js/data/campaign2_skills.js`, `campaign2_data.js`, `campaign2_dialogue.js`,
+`js/data/dialogue2.js`, `js/core/campaign2.js`, `js/ui/campaign2_ui.js`,
+`test/campaign2.js`.
+
+- **Four factions** — The Hollow Bell (neutral), The Green-Eyed (law),
+  The Red Tally (criminal), The Admiralty (law). 64 skills, 20 enemy types with
+  three skins each, 16 mini-bosses, 20 quests, 4 gear sets flooring at 15.
+- **Alignment lock (§1a)** — the first non-neutral faction you join fixes your
+  alignment for the life. Only death clears it; finishing the line does not.
+- **Three per life (§1b)** — a lawful life can hold Bell + Green-Eyed +
+  Admiralty at once, and carries all three titles; a criminal one tops out at two.
+- **Inheritance (§1c)** — reincarnation *closes* every line the bloodline
+  started; a nepotism heir *resumes* at the quest the parent died on, with the
+  title and the alignment lock. The consumed flag is mirrored into
+  `meta.campaign2Consumed` because reincarnation rebuilds the world, so the
+  §9 `world.campaignProgress` row alone cannot survive it.
+- **Horizontal slice (§1d)** — completing any one of the four opens all 64 at
+  the trainer, including the factions your alignment forbids. Gear sets and
+  titles stay faction-locked.
+- **The faction war (§6)** — four contract types on the ordinary board, open to
+  everyone. Three against a faction and it stops recruiting you; three against
+  its enemy and the other side approaches regardless of contract count. Every
+  one of the 48 actives is witnessable there (asserted in `test/campaign2.js`).
+- **The god line (§7)** — party-only, gated at 25 quests, 1000g halving per
+  clear down to a 125g floor. Two bosses, two routes each.
+- **20 new personalities (§8)** — M21-M30, F21-F30, 320 lines, taking the
+  roster to 60 and the library to 960. Every line is unique across all 60
+  (`test/run_tests.js` asserts it) and every band has an unconditional line.
+- Admiral Vane-Kessler is deliberately one character in two chairs: the Red
+  Tally's antagonist and the Admiralty's boss, so 15 people fill 16 roles.
+  Jiro is undead and immune to True Rest — nothing animates him.
+
+**Voices.** All 24 ids from §0a are cast in `tools/voice_casting.json` (52 → 89
+entries): the 20 personalities, the 15 campaign characters, and the two gods.
+The personality/character voice sharing is the doc's own (§8: M30 Unquiet is
+deliberately Jiro's voice, F30 Bereaved is Kira's). `tools/gen_voices.py` used
+to regex `ADV.DATA.DIALOGUE` out of `dialogue.js`, which silently skipped every
+personality declared elsewhere — Hiro, and now all twenty new ones; it loads the
+whole library through the harness instead. **548 clips remain to be generated**
+(320 personality + 228 campaign/god); until then those lines display as text
+with no audio, which the audio layer already treats as a silent line.
+
+**Two voice collisions the doc did not catch.** §0a states no voice overlaps the
+base game's 40, and that holds — but it does not check the first campaign's
+*characters*: `t9puW54s29EO0gQK6OMR` (The Pale Mother) is already Vesna Arden's,
+and `HMvHZWb0ZWSo5Kc5l22D` (The Drowned King) is already The Quiet's. Both are
+cast as the doc specifies; recasting is a one-line change if the sameness reads
+as a bug rather than an echo.
+
+**§0a demigod and matriarch voices.** `Character.voiceTagFor(world, ch)` returns
+`godf`/`godm` for a demigod and `matriarch` for a high-rank mother holding an
+estate; `Music.speakFile` looks for `audio/vo/<tag>/<personalityId>/<band>_<n>.mp3`
+and falls back to the ordinary clip when that set does not exist. The routing is
+live; the alternate clip sets are a generation decision, not a code change.
+
+**§3's four encounter verbs are implemented** — Bribe (resolves against anyone
+poorer than you, and *costs* the coin, which is what separates it from
+Persuade), Command and Requisition (read the opponent's alignment), Intimidate
+at Sea (reads cargo or coin, and takes it). `Quests.availableVerbs` had a
+hardcoded perk list, so these four had no way to appear before.
+
+Open questions the doc itself flags, decided as follows and easy to reverse:
+faction-war quests do **not** count toward faction titles; the god line is open
+to a Villain; the two lawful factions do not acknowledge each other in dialogue.
+
 ## Deviations from the doc (all flagged in code comments)
 
 - Taunt retaliation ignores DEF (matches the §15a worked check: ATK 9 → 14).
@@ -393,3 +463,12 @@ not in the new script, so bosses fight quietly beside you.
   ranger+rogue, Mage covers mage+druid, Healer covers healer.
 - Nepotism is playable in this build (the slice defers it; the machinery was
   already there).
+- Campaign quests use `track: 'campaign'`, which passes both the party-required
+  and solo-only guards, so a faction line is runnable whether or not you lead a
+  party. (Campaign 2 first shipped with solo/party tracks, which walled the
+  player out of quest 1 or quest 2 depending on party state.)
+- Marriages and births involving NPCs the player has never met now appear in the
+  event feed, rendered dimmer as hearsay. They were previously suppressed
+  entirely by the `metIds` gate, which made the NPC relationship system look
+  broken — a 60-tick soak produces 30 marriages and 47 births, none of which
+  used to be visible.

@@ -35,17 +35,25 @@ def load_key():
     return cfg["api_key"]
 
 def load_dialogue():
-    src = (GAME / "js" / "data" / "dialogue.js").read_text(encoding="utf-8")
-    m = re.search(r"ADV\.DATA\.DIALOGUE = (\{.*\});", src, re.S)
-    d = json.loads(m.group(1))
-    # Hiro's own lines live in dialogue_hiro.js (hand-written JS): pull them via node
+    """Load the WHOLE personality library through the harness.
+
+    It used to regex ADV.DATA.DIALOGUE out of dialogue.js, which silently
+    missed every personality declared anywhere else — Hiro (dialogue_hiro.js)
+    and, since the ninja/pirate add-on, M21-M30 and F21-F30 (dialogue2.js).
+    Loading through node is the only reading that stays correct as files split.
+    """
+    harness = str((GAME / 'test' / 'harness').resolve()).replace('\\', '/')
     try:
-        harness = str((GAME / 'test' / 'harness').resolve()).replace('\\', '/')
-        out = subprocess.run(["node", "-e", "const {load}=require('" + harness + "');const A=load();process.stdout.write(JSON.stringify(A.DATA.DIALOGUE.HIRO))"], capture_output=True, text=True, check=True).stdout
-        d["HIRO"] = json.loads(out)
+        out = subprocess.run(
+            ["node", "-e", "const {load}=require('" + harness + "');const A=load();"
+                           "process.stdout.write(JSON.stringify(A.DATA.DIALOGUE))"],
+            capture_output=True, text=True, check=True).stdout
+        return json.loads(out)
     except Exception as e:
-        print("no HIRO lines:", e)
-    return d
+        print("harness load failed (" + str(e) + "); falling back to dialogue.js only")
+        src = (GAME / "js" / "data" / "dialogue.js").read_text(encoding="utf-8")
+        m = re.search(r"ADV\.DATA\.DIALOGUE = (\{.*\});", src, re.S)
+        return json.loads(m.group(1))
 
 PREP_RE = [
     (re.compile(r",\s*\{target\}"), ""),          # ", {target}" -> ""

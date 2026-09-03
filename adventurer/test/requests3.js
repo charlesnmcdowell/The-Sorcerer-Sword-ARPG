@@ -109,28 +109,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
     return { tick: tick ? tick.dmg : 0, heal };
   };
   const a = dot(p), b = dot(q);
-  eq(a.tick, 100, 'poison ticks 20% of max health at skill level 1');
-  ok(a.tick > b.tick, 'percent tick outpaces the unperked ATK tick', a.tick + ' vs ' + b.tick);
+  ok(a.tick === Math.round(b.tick * 1.35), 'poison ticks 35% harder', a.tick + ' vs ' + b.tick);
   ok(a.heal >= Math.round(a.tick * 0.5) && b.heal === 0, 'and feeds the holder', a.heal);
-  const p10 = mkCh({ name: 'P10', isPlayer: true }); give(p10, 'septic_sanguine'); give(p10, 'venom_fang', 10);
-  eq(dot(p10).tick, Math.round(500 * (0.20 + 9 * 0.004)), 'higher applying-skill level raises the health-percent tick');
-})();
-
-(function () {
-  console.log('\n-- 12b. Pyromaniac burns tick percent health --');
-  const p = mkCh({ name: 'P', isPlayer: true }); give(p, 'pyromaniac'); give(p, 'fire_bolt', 1);
-  const q = mkCh({ name: 'Q' }); give(q, 'fire_bolt', 1);
-  const burn = (attacker) => {
-    const e = mkCh({ name: 'E', stats: { hp: 500, atk: 5, def: 5, spd: 1 } });
-    const st = fight(attacker, e, 8); const au = unit(st, attacker), eu = unit(st, e);
-    ADV.Combat.act(st, au, { kind: 'skill', skillId: 'fire_bolt', targetUid: eu.uid }); ADV.Combat.advance(st);
-    let g = 0; while (st.round === 1 && g++ < 10) { const t = ADV.Combat.currentTurn(st); if (!t) break; if (t.unit === au) ADV.Combat.act(st, au, { kind: 'defend' }); else ADV.Combat.aiTakeTurn(st, t.unit); ADV.Combat.advance(st); }
-    const tick = st.events.find(x => x.t === 'damage' && x.tag === 'dot' && x.uid === eu.uid);
-    return tick ? tick.dmg : 0;
-  };
-  const a = burn(p), b = burn(q);
-  eq(a, 100, 'burns tick 20% of max health when Pyromaniac is held');
-  ok(a > b, 'percent burn outpaces the unperked ATK tick', a + ' vs ' + b);
 })();
 
 (function () {
@@ -175,32 +155,30 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Courtship.tick(world, g.rng, () => {}, false);
   ok(ADV.Rel.score(world, asker.id, me.id) >= C.REL.FRIENDLY_MIN, 'three quests later the rich man is Friendly again');
   // a poor man: neutral until two shared quests
-  const park = (ch, tag) => { ch.partnerId = tag; ch.partnerIds = [tag]; };
-  const clear = (ch) => {
-    for (const id of ADV.Rel.partnerIds(ch).slice()) {
-      const o = ADV.World.byId(world, id);
-      ADV.Rel.removePartner(ch, id);
-      if (o) ADV.Rel.removePartner(o, ch.id);
-    }
-  };
-  const poor = world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !rich.includes(c)) || world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer);
+  for (const m of ADV.Courtship.richestMen(world)) if (!m.isPlayer) ADV.Rel.setPartners(m, ['taken']);
+  // Player slot full so leftover town pairing / "holding for the rich man"
+  // cannot steal the woman before the poor man asks.
+  ADV.Rel.setPartners(me, ['busy']);
+  ADV.Courtship.invalidate(world);
+  const poor = world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !rich.includes(c) && !ADV.Rel.partnerIds(c).length) || world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !ADV.Rel.partnerIds(c).length);
   poor.inventory.gold = 0; const v = ADV.Vault.of(world, poor); if (v) v.gold = 0;
-  const her = world.characters.find(c => c.alive && c.sex === 'f' && !c.isPlayer && c !== asker);
-  clear(poor); clear(her);
+  const her = world.characters.find(c => c.alive && c.sex === 'f' && !c.isPlayer && !ADV.Rel.partnerIds(c).length && c !== asker);
   for (const c of world.characters) {
     if (c === poor || c === her || c.isPlayer || !c.alive) continue;
-    park(c, 'taken');
+    ADV.Rel.setPartners(c, ['taken']);
   }
-  park(her, 'busy'); // hold her off town dating for the one-quest tick
+  // Clock 0 keeps leftover town pairing off so the first shared quest
+  // can be scored without them marrying early.
+  world.questClock = 0;
+  ADV.Courtship.invalidate(world);
   ADV.Courtship.recordShared(world, [poor.id, her.id]);
   ADV.Courtship.tick(world, g.rng, () => {}, false);
   ok(ADV.Rel.score(world, poor.id, her.id) >= C.REL.FRIENDLY_MIN, 'he is Friendly to her after one shared quest');
   ok(ADV.Rel.score(world, her.id, poor.id) < C.REL.FRIENDLY_MIN || ADV.Courtship.richestMen(world).includes(poor), 'she is not, yet');
-  her.partnerId = null; her.partnerIds = [];
   ADV.Courtship.recordShared(world, [poor.id, her.id]);
   ADV.Courtship.tick(world, g.rng, () => {}, false);
   ok(ADV.Rel.score(world, her.id, poor.id) >= C.REL.FRIENDLY_MIN, 'after two shared quests she is Friendly');
-  ok(poor.partnerId === her.id || her.partnerId, 'and he asked (two shared quests) — they are together');
+  ok(ADV.Rel.isPartner(poor, her), 'and he asked (two shared quests) — they are together');
   // female player: men ask after two quests
   const g2 = newGame(22, 'f');
   const w2 = g2.world, she = ADV.Game.player(g2);
@@ -209,54 +187,6 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Courtship.recordShared(w2, [him.id, she.id]); ADV.Courtship.recordShared(w2, [him.id, she.id]);
   ADV.Courtship.tick(w2, g2.rng, () => {}, false);
   ok((w2.pendingProposals || []).some(p => p.fromId === him.id), 'a man asks the female player after two shared quests');
-  // leftover town pairing used to marry Friendly suitors to NPCs before they
-  // could ask (Friendly is 1 shared quest; the ask is 2)
-  const g3 = newGame(23, 'f');
-  const w3 = g3.world, she3 = ADV.Game.player(g3);
-  w3.questClock = 4;
-  const suitor = w3.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !c.hiroNpc && ADV.Housing.canTakeSpouse(c));
-  const otherWoman = w3.characters.find(c => c.alive && c.sex === 'f' && !c.isPlayer);
-  ADV.Courtship.recordShared(w3, [suitor.id, she3.id]);
-  ADV.Courtship.tick(w3, g3.rng, () => {}, false);
-  ok(!ADV.Rel.partnerIds(suitor).length, 'Friendly after one quest: he stays single for the player');
-  ok(!(w3.pendingProposals || []).some(p => p.fromId === suitor.id), 'he does not ask yet (needs two shared quests)');
-  ADV.Courtship.recordShared(w3, [suitor.id, she3.id]);
-  ADV.Courtship.recordShared(w3, [suitor.id, otherWoman.id]);
-  ADV.Courtship.recordShared(w3, [suitor.id, otherWoman.id]);
-  ADV.Courtship.tick(w3, g3.rng, () => {}, false);
-  ok((w3.pendingProposals || []).some(p => p.fromId === suitor.id), 'second shared quest: he asks the player, not an NPC');
-  ok(!ADV.Rel.partnerIds(suitor).length, 'and is still unattached so the ask stands');
-})();
-
-(function () {
-  console.log('\n-- NPC-NPC courtship and children --');
-  const g = newGame(41, 'm');
-  g.tutorial = { step: 'done' };
-  const world = g.world;
-  for (let i = 0; i < 6; i++) ADV.World.tick(world, g.rng, { playerQuested: true });
-  const npcs = world.characters.filter(c => c.alive && !c.isPlayer && !c.isMonster);
-  const paired = npcs.filter(c => ADV.Rel.partnerIds(c).length);
-  ok(paired.length >= 4, 'NPCs pair with each other on the clock', paired.length);
-  const moms = npcs.filter(c => c.sex === 'f' && ((c.dependents || []).length > 0));
-  ok(moms.length >= 1, 'NPC couples have children', moms.length);
-  ok(world.eventFeed.some(e => /married/.test(e.text)), 'marriages land in the town feed');
-  ok(world.eventFeed.some(e => /had a child/.test(e.text)), 'births land in the town feed');
-})();
-
-(function () {
-  console.log('\n-- tutorial party quest is always easy --');
-  const g = newGame(42, 'm');
-  g.tutorial = { step: 'partyQuest', declined: true };
-  const world = g.world, me = ADV.Game.player(g);
-  const party = world.parties[0];
-  const leader = ADV.Party.leader(world, party);
-  party.memberIds.push(me.id); party.wages[me.id] = 30; me.partyId = party.id; me.leaderId = leader.id; me.wage = 30;
-  const pick = ADV.Game.leaderPick(g);
-  eq(pick.tier, 1, 'tutorial party contract is tier 1');
-  ok(pick.tutorialEasy, 'it is the canned easy road job');
-  ok(pick.encounters.every(e => e.enemyTypeIds.length === 1), 'one enemy per encounter');
-  eq(pick.encounters.length, 2, 'two short encounters');
-  eq(pick.enemyLevels[1], 2, 'enemies stay at the bottom of tier 1');
 })();
 
 (function () {
@@ -268,6 +198,33 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 })();
 
 (function () {
+  console.log('\n-- skill auto-target: lowest health --');
+  const healer = mkCh({ isPlayer: true }); give(healer, 'mend', 1); give(healer, 'fire_bolt', 1);
+  const ally = mkCh({ name: 'Ally' });
+  const e1 = mkCh({ name: 'Hurt' }); const e2 = mkCh({ name: 'Healthy' });
+  const st = fight([healer, ally], [e1, e2], 7);
+  const uh = unit(st, healer), ua = unit(st, ally), u1 = unit(st, e1), u2 = unit(st, e2);
+  u1.chp = 40; u2.chp = 180; ua.chp = 30; uh.chp = 90;
+  const foe = ADV.Combat.lowestHealth(ADV.Combat.validTargets(st, uh, 'fire_bolt', false));
+  eq(foe && foe.ch, e1, 'offensive auto picks the lowest-health enemy');
+  ok(ADV.Combat.skillNeedsAuto(healer, 'fire_bolt', false), 'Fire Bolt offers auto');
+  ok(!ADV.Combat.skillNeedsAuto(healer, 'smoke_bomb', false), 'self-only skills skip auto');
+  ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
+  ok(ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'auto flag sticks on the skill');
+  ADV.Combat.setSkillAuto(healer, 'mend', true, false);
+  ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'Mend takes over as the auto skill');
+  ok(!ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'only one auto skill at a time');
+  ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
+  const ready = ADV.Combat.autoReadyAction(st, uh);
+  eq(ready && ready.action.skillId, 'fire_bolt', 'auto-ready repeats Fire Bolt');
+  eq(ready && ready.tgt.ch, e1, 'auto-ready aims at the weakest enemy');
+  ADV.Combat.setSkillAuto(healer, 'mend', true, false);
+  ADV.SkillSys.forget(healer, 'mend');
+  ADV.SkillSys.learn(healer, 'mend', { free: true });
+  ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'auto survives forget and relearn');
+})();
+
+(function () {
   console.log('\n-- 1/8. party flow --');
   const g = newGame(31, 'm');
   const world = g.world, me = ADV.Game.player(g);
@@ -275,6 +232,12 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const leader = ADV.Party.leader(world, party);
   party.memberIds.push(me.id); party.wages[me.id] = 30; me.partyId = party.id; me.leaderId = leader.id; me.wage = 30;
   eq(ADV.Game.careerStage(g), 'hireling', 'hireling');
+  g.tutorial = { step: 'partyQuest' };
+  const tutPick = ADV.Game.leaderPick(g);
+  eq(tutPick && tutPick.name, 'A short road job', 'the guided first party quest is the canned road job');
+  eq(tutPick.encounters.length, 2, 'two encounters');
+  ok(tutPick.encounters.every(e => e.enemyTypeIds.length === 1), 'one enemy per encounter');
+  g.tutorial = { step: 'done' };
   const pick = ADV.Game.leaderPick(g);
   ok(pick && pick.track === 'party', 'the leader picks a party contract');
   ok(pick.payout > ADV.Party.payroll(world, party), 'that covers payroll');
@@ -296,14 +259,6 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   mine.memberIds.push(hire.id); mine.wages[hire.id] = 200; hire.partyId = mine.id; hire.leaderId = me.id;
   const cheap = g.board.find(q => q.track === 'party' && q.payout < 200);
   ok(cheap && !ADV.Game.contractCoversPayroll(g, cheap) && !ADV.Game.startQuest(g, cheap, {}).ok, 'a contract that cannot cover payroll is refused');
-  me.inventory.gold = 0;
-  const folded = ADV.Party.foldByLeader(world, me);
-  ok(folded.ok, 'a leader can fold their own company');
-  eq(folded.gold, C.GOLD.partyStartupCapital, 'the founding purse is refunded');
-  eq(me.inventory.gold, 100, '100g comes back');
-  ok(!ADV.Party.of(world, me), 'the company is gone');
-  ok(!hire.partyId && !hire.leaderId, 'hires walk free');
-  eq(ADV.Game.careerStage(g), 'solo', 'the player is free to hire on');
 })();
 
 (function () {

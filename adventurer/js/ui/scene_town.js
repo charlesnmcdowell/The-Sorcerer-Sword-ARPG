@@ -32,7 +32,17 @@ class TownScene extends Phaser.Scene {
 
     // arrival notices: jilt choice, rescues, divine offers, withdrawals, prompts
     this.queueArrivalNotices();
-    this.time.delayedCall(150, () => this.nextNotice());
+    // A won contract earns the walk back before the town starts talking at you.
+    // The cutscene restores the chrome itself, and the guided tutorial keeps
+    // the floor rather than being interrupted by it.
+    const tutorRunning = ADV.Tutor && ADV.Tutor.active(this.game_);
+    if (this.game_.rideHomeDue && ADV.Cutscenes && !tutorRunning) {
+      this.game_.rideHomeDue = false;
+      this.time.delayedCall(120, () => ADV.Cutscenes.rideHome(this, () => this.nextNotice()));
+    } else {
+      this.game_.rideHomeDue = false;
+      this.time.delayedCall(150, () => this.nextNotice());
+    }
   }
 
   g() { return this.game_; }
@@ -145,6 +155,11 @@ class TownScene extends Phaser.Scene {
     const items = [
       ['board', 'Quest Board'],
       ...(ADV.Campaign && ADV.Campaign.menuVisible(this.game_) ? [['campaign', ADV.Campaign.faction(this.game_) ? ADV.Campaign.faction(this.game_).name : 'Campaign']] : []),
+      ...(ADV.Campaign2 && ADV.Campaign2.menuVisible(this.game_)
+        ? [['campaign2', ADV.Campaign2.joined(this.game_).length === 1
+            ? ADV.Campaign2.faction(ADV.Campaign2.joined(this.game_)[0]).short
+            : 'Allegiances']]
+        : []),
       ['store', 'Store'],
       ['home', 'Home'],
       ['trainer', 'Trainer'],
@@ -208,9 +223,11 @@ class TownScene extends Phaser.Scene {
     const r = this.contentRect();
     this.keep(T().panel(this, r.x, r.y, r.w, r.h, { alpha: T().chromeAlpha }));
     const P = ADV.Panels;
-    ({ board: P.questBoard, store: P.store, trainer: P.trainer, apply: P.applyParty,
+    const panel = { board: P.questBoard, store: P.store, trainer: P.trainer, apply: P.applyParty,
        create: P.createParty, roster: P.roster, graveyard: P.graveyard, rel: P.relationships,
-       faction: P.factions, journal: P.journal, codex: P.codex, campaign: P.campaign, vault: P.vault, home: P.home }[id])(this, r);
+       faction: P.factions, journal: P.journal, codex: P.codex, campaign: P.campaign,
+       campaign2: P.campaign2, vault: P.vault, home: P.home }[id];
+    if (panel) panel(this, r);
     if (ADV.Tutor && ADV.Tutor.active(this.game_)) ADV.Tutor.panel(this, this.game_, id, r);
     if (this._chromeHidden) this.applyChromeHidden(false);
   }
@@ -332,9 +349,15 @@ class TownScene extends Phaser.Scene {
       if (ADV.CampaignUI && !this.campaignArrivalDone) {
         this.campaignArrivalDone = true;
         const hadMenu = !!this.menuButtons.campaign;
-        ADV.CampaignUI.arrival(this, this.game_, () => {
+        const hadMenu2 = !!this.menuButtons.campaign2;
+        const settle = () => {
           finishArrival();
-          if (!hadMenu && ADV.Campaign.menuVisible(this.game_)) this.scene.restart();
+          const gained = (!hadMenu && ADV.Campaign.menuVisible(this.game_)) ||
+                         (!hadMenu2 && ADV.Campaign2 && ADV.Campaign2.menuVisible(this.game_));
+          if (gained) this.scene.restart();
+        };
+        ADV.CampaignUI.arrival(this, this.game_, () => {
+          if (ADV.Campaign2UI) ADV.Campaign2UI.arrival(this, this.game_, settle); else settle();
         });
         return;
       }

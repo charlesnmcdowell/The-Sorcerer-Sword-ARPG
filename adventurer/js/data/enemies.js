@@ -23,7 +23,7 @@ ADV.DATA.ENEMIES = {
   },
   plated_sentinel: {
     id: 'plated_sentinel', name: 'Plated Sentinel', species: 'construct', portrait: 'plated_sentinel',
-    perks: ['bulwark'], actives: ['cleave', 'taunt', 'two_hand_slash'],
+    perks: ['bulwark'], actives: ['cleave', 'taunt'],
     levels: [5, 14], armored: true,
   },
   grave_acolyte: {
@@ -57,7 +57,7 @@ ADV.DATA.ENEMIES = {
 ADV.DATA.BOSSES = {
   bandit_king: {
     id: 'bandit_king', name: 'Bandit King', species: 'human', portrait: 'bandit', boss: true,
-    perks: ['opportunist', 'momentum'], actives: ['backstab', 'smoke_bomb', 'cleave', 'sunder', 'two_hand_slash'],
+    perks: ['opportunist', 'momentum'], actives: ['backstab', 'smoke_bomb', 'cleave', 'sunder'],
     levels: [25, 32],
   },
   archmagister: {
@@ -72,7 +72,7 @@ ADV.DATA.BOSSES = {
   },
   sentinel_prime: {
     id: 'sentinel_prime', name: 'Sentinel Prime', species: 'construct', portrait: 'plated_sentinel', boss: true,
-    perks: ['bulwark', 'momentum'], actives: ['cleave', 'taunt', 'shield_wall', 'sunder', 'two_hand_slash'],
+    perks: ['bulwark', 'momentum'], actives: ['cleave', 'taunt', 'shield_wall', 'sunder'],
     levels: [25, 32], armored: true,
   },
   grave_bishop: {

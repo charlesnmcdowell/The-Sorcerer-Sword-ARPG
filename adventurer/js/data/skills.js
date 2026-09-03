@@ -22,10 +22,10 @@ def({ id: 'arcane_focus', name: 'Arcane Focus', kind: 'perk', archetype: 'mage',
   } });
 def({ id: 'fire_bolt', name: 'Fire Bolt', kind: 'active', archetype: 'mage',
   elemental: true, element: 'fire', power: 3.0, reach: 'any', target: 'enemy',
-  desc: 'Fire damage that always leaves Burning. Intermediate and above wash a whole lane.',
+  desc: 'Single-target fire damage. Always leaves the target Burning; the burn grows with the skill.',
   tiers: {
     basic:        { name: 'Fire Bolt', status: { burn: { power: 0.8, rounds: 3 } } },
-    intermediate: { name: 'Fire Blast', target: 'enemyLane', status: { burn: { power: 1.1, rounds: 3 } } },
+    intermediate: { name: 'Fire Blast', status: { burn: { power: 1.1, rounds: 3 } } },
     advanced:     { name: 'Fire Ball', target: 'enemyLane', power: 2.2, status: { burn: { power: 1.4, rounds: 3 } } },
   } });
 def({ id: 'frost_touch', name: 'Frost Touch', kind: 'active', archetype: 'mage',
@@ -46,11 +46,11 @@ def({ id: 'spark', name: 'Spark', kind: 'active', archetype: 'mage',
     advanced:     { name: 'Thunderstorm',    shock: 0.25, shockRounds: 3, target: 'allEnemies', power: 1.9 },
   } });
 def({ id: 'pyromaniac', name: 'Pyromaniac', kind: 'perk', archetype: 'mage',
-  desc: 'Fire answers to you: resist fire, heal from fire you deal, and your burns eat a share of the target\'s health each turn.',
+  desc: 'Fire answers to you: resist fire damage, and heal for a share of the fire damage you deal.',
   tiers: {
-    basic:        { name: 'Pyromaniac',   fireResist: 0.05, fireLeech: 0.05, dotHpPct: 0.20, dotHpPctPerLevel: 0.004 },
-    intermediate: { name: 'Pyromaniac+',  fireResist: 0.15, fireLeech: 0.15, dotHpPct: 0.20, dotHpPctPerLevel: 0.004 },
-    advanced:     { name: 'Fire Lord',    fireResist: 0.25, fireLeech: 0.25, dotHpPct: 0.20, dotHpPctPerLevel: 0.004 },
+    basic:        { name: 'Pyromaniac',   fireResist: 0.05, fireLeech: 0.05 },
+    intermediate: { name: 'Pyromaniac+',  fireResist: 0.15, fireLeech: 0.15 },
+    advanced:     { name: 'Fire Lord',    fireResist: 0.25, fireLeech: 0.25 },
   } });
 def({ id: 'ice_queen', name: 'Ice Queen', kind: 'perk', archetype: 'mage',
   desc: 'Every strike of ice you land layers frost armor on you — stacking damage reduction from all sources.',
@@ -109,11 +109,11 @@ def({ id: 'arena_champion', name: 'Arena Champion', kind: 'perk', archetype: 'fi
     advanced:     { name: 'Crowd Favourite', killHealPct: 0.5, stackPct: 0.10, tauntRounds: 2 },
   } });
 def({ id: 'septic_sanguine', name: 'Septic Sanguine', kind: 'perk', archetype: 'rogue',
-  desc: 'Your bleeds and poisons eat a share of the target\'s health each turn, and every tick of them feeds you.',
+  desc: 'Your bleeds and poisons bite 35% harder, and every tick of them feeds you.',
   tiers: {
-    basic:        { name: 'Septic Sanguine', dotHpPct: 0.20, dotHpPctPerLevel: 0.004, dotLeech: 0.5 },
-    intermediate: { name: 'Septic Sanguine', dotHpPct: 0.20, dotHpPctPerLevel: 0.004, dotLeech: 0.5 },
-    advanced:     { name: 'Blood Culture',   dotHpPct: 0.20, dotHpPctPerLevel: 0.004, dotLeech: 0.5 },
+    basic:        { name: 'Septic Sanguine', dotMult: 1.35, dotLeech: 0.5 },
+    intermediate: { name: 'Septic Sanguine', dotMult: 1.35, dotLeech: 0.5 },
+    advanced:     { name: 'Blood Culture',   dotMult: 1.35, dotLeech: 0.5 },
   } });
 def({ id: 'lookism', name: 'Lookism', kind: 'perk', archetype: null,
   desc: 'A face that opens doors: hired for 10g over your price, your hires take 10g under theirs, the opposite sex starts out Friendly, the ones you leave stay Friendly, and enemies would rather hit anyone but you.',
@@ -123,8 +123,8 @@ def({ id: 'lookism', name: 'Lookism', kind: 'perk', archetype: null,
     advanced:     { name: 'Adored',  wageEdge: 10, oppositeSexFriendly: true, softJilt: true, targetedLast: true },
   } });
 def({ id: 'backstab', name: 'Backstab', kind: 'active', archetype: 'rogue',
-  hpPct: 0.5, reach: 'any', target: 'enemy', melee: true, openerOrStealth: true,
-  desc: 'A burst from nowhere: half the target\'s health, any lane — but ONLY as the opening action of an encounter or from stealth.',
+  power: 6.0, reach: 'any', target: 'enemy', melee: true, openerOrStealth: true,
+  desc: 'A burst from nowhere: roughly double a standard attack, any lane — but ONLY as the opening action of an encounter or from stealth.',
   tiers: {
     basic:        { name: 'Backstab' },
     intermediate: { name: 'Throat Cut', status: { bleed: { power: 0.6, rounds: 3, stacks: true } } },
@@ -188,14 +188,6 @@ def({ id: 'sunder', name: 'Sunder', kind: 'active', archetype: 'fighter',
     intermediate: { name: 'Rend', defStrip: 12, status: { bleed: { power: 0.6, rounds: 3, stacks: true } } },
     advanced:     { name: 'Shatter', defStripAll: true },
   } });
-def({ id: 'two_hand_slash', name: '2hd Sword Slash', kind: 'active', archetype: 'fighter',
-  hpPct: 0.25, reach: 'front', target: 'enemy',
-  desc: 'A two-handed cut that takes a quarter of the target\'s health.',
-  tiers: {
-    basic:        { name: '2hd Sword Slash' },
-    intermediate: { name: '2hd Sword Slash' },
-    advanced:     { name: 'Great Cleave' },
-  } });
 
 // ============ DRUID / SHAPESHIFTER ============
 def({ id: 'wild_form', name: 'Wild Form', kind: 'perk', archetype: 'druid',
@@ -245,8 +237,8 @@ def({ id: 'cleanse', name: 'Cleanse', kind: 'active', archetype: 'healer',
   desc: 'Strips every negative status. Frees conscripts from compulsion, and burns the undead with holy force.',
   tiers: {
     basic:        { name: 'Cleanse',    cureCount: 99, undeadPower: 1.8 },
-    intermediate: { name: 'Purify',     cureCount: 99, undeadPower: 1.8, purifyRounds: 3, target: 'party' },
-    advanced:     { name: 'Absolution', cureCount: 99, undeadPower: 2.2, purifyRounds: 6, unraise: true, target: 'party' },
+    intermediate: { name: 'Purify',     cureCount: 99, undeadPower: 1.8, purifyRounds: 3 },
+    advanced:     { name: 'Absolution', cureCount: 99, undeadPower: 2.2, purifyRounds: 6, unraise: true },
   } });
 def({ id: 'regenerate', name: 'Regenerate', kind: 'active', archetype: 'healer',
   power: 1.0, hotRounds: 3, target: 'ally', reach: 'any', heal: true,
@@ -254,8 +246,8 @@ def({ id: 'regenerate', name: 'Regenerate', kind: 'active', archetype: 'healer',
   desc: 'Heal over time. Offensive: damage over time instead.',
   tiers: {
     basic:        { name: 'Regenerate' },
-    intermediate: { name: 'Sustain', power: 1.2, hotRounds: 4, target: 'party', offensiveTarget: 'enemyLane' },
-    advanced:     { name: 'Everbloom', power: 1.4, hotRounds: 4, target: 'party', offensiveTarget: 'allEnemies' },
+    intermediate: { name: 'Sustain', power: 1.2, hotRounds: 4, target: 'party' },
+    advanced:     { name: 'Everbloom', power: 1.4, hotRounds: 4, target: 'party' },
   } });
 def({ id: 'guardian_ward', name: 'Guardian Ward', kind: 'active', archetype: 'healer',
   power: 0, target: 'ally', reach: 'any', heal: true, wardAhead: true,
@@ -263,7 +255,7 @@ def({ id: 'guardian_ward', name: 'Guardian Ward', kind: 'active', archetype: 'he
   desc: 'Shields an ally from the next hit. Offensive mode adds damage reflect to the ward.',
   tiers: {
     basic:        { name: 'Guardian Ward', shieldHits: 1 },
-    intermediate: { name: 'Sanctuary', shieldRounds: 1, target: 'allyLane' },
+    intermediate: { name: 'Sanctuary', shieldRounds: 1 },
     advanced:     { name: 'Divine Aegis', shieldRounds: 1, target: 'allyLane' },
   } });
 def({ id: 'triage', name: 'Triage', kind: 'active', archetype: 'healer',
@@ -286,23 +278,22 @@ def({ id: 'blood_pact', name: 'Blood Pact', kind: 'active', archetype: 'healer',
 
 // ============ FORBIDDEN ============
 def({ id: 'conscript', name: 'Conscript', kind: 'active', archetype: null, forbidden: true,
-  power: 0, target: 'enemy', reach: 'any',
-  conscript: true, hpBelow: 0.6, guildOnly: true,
+  power: 0, target: 'postVictory', reach: 'any',
   warning: 'This skill will cost you. Not today.',
-  desc: 'Bind a living guild NPC below 60% health. They march unpaid for 3 quests, then escape at Hatred. Cleanse frees them and they flee the field. They fill empty seats, then up to 3 extra.',
+  desc: 'Take a defeated named opponent into your service.',
   tiers: {
-    basic:        { name: 'Conscript',   duration: 3 },
-    intermediate: { name: 'Conscript+',  duration: 3 },
-    advanced:     { name: 'Impressment', duration: 3 },
+    basic:        { name: 'Conscript',   duration: 3, cap: 2 },
+    intermediate: { name: 'Conscript+',  duration: 4, cap: 3 },
+    advanced:     { name: 'Impressment', duration: 5, cap: 4 },
   } });
 def({ id: 'necromancy', name: 'Necromancy', kind: 'active', archetype: null, forbidden: true,
   power: 0, target: 'postVictory', reach: 'any',
   warning: 'This skill will cost you. Not today.',
-  desc: 'After each won fight, every fallen organic enemy rises and walks with you until the quest ends. They fill empty seats, then up to 3 extra, and they do not crumble mid-quest.',
+  desc: 'Raise a defeated named opponent as undead.',
   tiers: {
-    basic:        { name: 'Necromancy',   duration: 1 },
-    intermediate: { name: 'Necromancy+',  duration: 1 },
-    advanced:     { name: 'Dread Calling', duration: 1, undeadKeepSkills: true },
+    basic:        { name: 'Necromancy',   duration: 3, cap: 1 },
+    intermediate: { name: 'Necromancy+',  duration: 3, cap: 2 },
+    advanced:     { name: 'Dread Calling', duration: 3, cap: 3, undeadKeepSkills: true },
   } });
 
 // ============ SOCIAL & STEALTH PERKS (§3a) ============
@@ -407,8 +398,8 @@ def({ id: 'venom_fang', name: 'Venom Fang', kind: 'active', archetype: 'rogue',
   desc: 'A shallow, dirty cut: Poison that stacks with every bite.',
   tiers: {
     basic:        { name: 'Venom Fang',  status: { poison: { power: 0.6, rounds: 3, stacks: true } } },
-    intermediate: { name: 'Black Fang',  status: { poison: { power: 0.8, rounds: 3, stacks: true } }, adjacent: 1 },
-    advanced:     { name: 'Plague Fang', status: { poison: { power: 1.0, rounds: 4, stacks: true } }, target: 'enemyLane' },
+    intermediate: { name: 'Black Fang',  status: { poison: { power: 0.8, rounds: 3, stacks: true } } },
+    advanced:     { name: 'Plague Fang', status: { poison: { power: 1.0, rounds: 4, stacks: true } }, adjacent: 1 },
   } });
 def({ id: 'ember_lash', name: 'Ember Lash', kind: 'active', archetype: 'mage',
   elemental: true, element: 'fire', power: 1.8, reach: 'any', target: 'enemy',
@@ -431,8 +422,8 @@ def({ id: 'wither_touch', name: 'Wither Touch', kind: 'active', archetype: 'drui
   desc: 'Rot in the wound: the target cannot be healed for a while (heal cancel).',
   tiers: {
     basic:        { name: 'Wither Touch', healcutRounds: 2 },
-    intermediate: { name: 'Blight Touch', healcutRounds: 3, status: { poison: { power: 0.5, rounds: 2 } }, adjacent: 1 },
-    advanced:     { name: 'Grave Touch', healcutRounds: 4, status: { poison: { power: 0.8, rounds: 3, stacks: true } }, target: 'enemyLane' },
+    intermediate: { name: 'Blight Touch', healcutRounds: 3, status: { poison: { power: 0.5, rounds: 2 } } },
+    advanced:     { name: 'Grave Touch', healcutRounds: 4, status: { poison: { power: 0.8, rounds: 3, stacks: true } }, adjacent: 1 },
   } });
 
 ADV.DATA.ARCHETYPE_SKILLS = {
@@ -440,7 +431,7 @@ ADV.DATA.ARCHETYPE_SKILLS = {
   tank:    { perk: 'bulwark',      actives: ['shield_wall', 'taunt'] },
   rogue:   { perk: 'opportunist',  actives: ['backstab', 'smoke_bomb'] },
   ranger:  { perk: 'marksman',     actives: ['aimed_shot', 'snare'] },
-  fighter: { perk: 'momentum',     actives: ['cleave', 'sunder', 'two_hand_slash'] },
+  fighter: { perk: 'momentum',     actives: ['cleave', 'sunder'] },
   druid:   { perk: 'wild_form',    actives: ['thorn_skin', 'beast_shape'] },
   healer:  { perk: 'devoted',      actives: ['mend', 'cleanse', 'regenerate', 'guardian_ward', 'triage', 'blood_pact'] },
 };

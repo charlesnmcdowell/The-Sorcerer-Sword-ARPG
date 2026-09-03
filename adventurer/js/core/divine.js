@@ -21,8 +21,32 @@ Divine.resolveDefeated = function (world, rng, victor, defeated, choice, feedPus
     return out;
   }
   if (choice === 'conscript') {
-    const r = Divine.applyConscript(world, victor, defeated, feedPush, { skipHpCheck: true });
-    if (r.error) return r;
+    const entry = ADV.SkillSys.entryFor(victor, 'conscript');
+    if (!entry) return { error: 'no conscript skill' };
+    if (defeated.__purifiedAtEnd) return { error: 'their soul is warded — conscription fails' };
+    const m = ADV.SkillSys.manifest(victor, entry);
+    const cap = C().CONSCRIPT_CAP[tierIdx(m.tier)];
+    const dur = C().CONSCRIPT_DURATION[tierIdx(m.tier)];
+    victor.conscriptIds = victor.conscriptIds || [];
+    // Cap enforces itself: oldest escapes at Hatred (§3a)
+    if (victor.conscriptIds.length >= cap) {
+      const oldId = victor.conscriptIds.shift();
+      const old = ADV.World.byId(world, oldId);
+      if (old) {
+        Divine.releaseConscript(world, old, victor, feedPush, true);
+      }
+    }
+    defeated.isConscript = true;
+    defeated.conscriptQuestsLeft = dur;
+    defeated.conscriptorId = victor.id;
+    defeated.combatHp = null; defeated.partyId = null; defeated.leaderId = null;
+    victor.conscriptIds.push(defeated.id);
+    victor.usedForbidden = true;
+    // population debt: +3 lives, 3 quests later, hostile to the conscriptor (§3a)
+    world.pendingPopulation.push({ dueAtQuest: world.questClock + C().CONSCRIPT_POP_DELAY,
+      count: C().CONSCRIPT_POP_ADD, hostileToId: victor.id });
+    ADV.SkillSys.recordUse(victor, 'conscript');
+    if (feedPush) feedPush(`${victor.name} conscripted ${defeated.name}.`, [victor.id, defeated.id]);
     return out;
   }
   if (choice === 'necromancy') {
@@ -68,74 +92,11 @@ Divine.resolveDefeated = function (world, rng, victor, defeated, choice, feedPus
 
 Divine.killCharacter = function (world, rng, killer, victim, feedPush) {
   ADV.Death.finalize(world, victim, killer ? killer.id : null, 'killed');
-  if (feedPush && !victim.alive) feedPush(`${victim.name} is dead${killer ? ' — killed by ' + killer.name : ''}.`, killer ? [victim.id, killer.id] : [victim.id]);
+  if (feedPush) feedPush(`${victim.name} is dead${killer ? ' — killed by ' + killer.name : ''}.`, killer ? [victim.id, killer.id] : [victim.id]);
   return { choice: 'kill' };
 };
 
-// A living guild-roster NPC the caster can take in a fight.
-Divine.guildNpc = function (world, ch) {
-  if (!ch || ch.isPlayer || ch.isMonster || ch.isQuestThrall || ch.campaign) return false;
-  if (!world || !ADV.World.byId(world, ch.id)) return false;
-  return true;
-};
-
-Divine.canConscript = function (world, caster, target, opts) {
-  opts = opts || {};
-  if (!caster || !target) return { ok: false, error: 'no target' };
-  if (!ADV.SkillSys.entryFor(caster, 'conscript')) return { ok: false, error: 'no conscript skill' };
-  if (target.isPlayer) return { ok: false, error: 'the player cannot be conscripted' };
-  if (target.__purifiedAtEnd || opts.purified) return { ok: false, error: 'their soul is warded — conscription fails' };
-  if (!Divine.guildNpc(world, target)) return { ok: false, error: 'only a guild member can be taken' };
-  if (target.isConscript || target.isUndead) return { ok: false, error: 'already bound' };
-  if (target.status === 'hero') return { ok: false, error: 'a hero cannot be taken' };
-  if (opts.hpFrac == null || opts.hpFrac >= (C().CONSCRIPT_HP_FRAC || 0.6)) {
-    return { ok: false, error: 'they are not hurt enough' };
-  }
-  const extra = opts.questThralls || [];
-  if (ADV.Party && ADV.Party.followerRoom(world, caster, extra) <= 0) {
-    return { ok: false, error: 'no room in the company' };
-  }
-  return { ok: true };
-};
-
-Divine.applyConscript = function (world, caster, target, feedPush, opts) {
-  opts = opts || {};
-  if (opts.skipHpCheck) {
-    const gate = Divine.canConscript(world, caster, target, Object.assign({}, opts, { hpFrac: 0 }));
-    if (!gate.ok) return { error: gate.error };
-  } else if (opts.check !== false) {
-    const gate = Divine.canConscript(world, caster, target, opts);
-    if (!gate.ok) return { error: gate.error };
-  }
-  const entry = ADV.SkillSys.entryFor(caster, 'conscript');
-  const m = entry ? ADV.SkillSys.manifest(caster, entry) : null;
-  const dur = (m && m.data && m.data.duration) || C().CONSCRIPT_DURATION[0] || 3;
-  const party = ADV.Party.of(world, target);
-  if (party) {
-    if (party.leaderId === target.id) ADV.Party.succession(world, party);
-    else ADV.Party.removeMember(world, party, target.id);
-  }
-  target.isConscript = true;
-  target.conscriptQuestsLeft = dur;
-  target.conscriptorId = caster.id;
-  target.combatHp = target.combatHp == null ? null : Math.max(1, target.combatHp);
-  target.partyId = null;
-  target.leaderId = null;
-  target.wage = 0;
-  caster.conscriptIds = caster.conscriptIds || [];
-  if (!caster.conscriptIds.includes(target.id)) caster.conscriptIds.push(target.id);
-  caster.usedForbidden = true;
-  world.pendingPopulation = world.pendingPopulation || [];
-  world.pendingPopulation.push({
-    dueAtQuest: world.questClock + C().CONSCRIPT_POP_DELAY,
-    count: C().CONSCRIPT_POP_ADD, hostileToId: caster.id,
-  });
-  if (opts.recordUse !== false) ADV.SkillSys.recordUse(caster, 'conscript');
-  if (feedPush) feedPush(`${caster.name} conscripted ${target.name}.`, [caster.id, target.id]);
-  return { ok: true };
-};
-
-// Conscript term ends or they are cleansed: they leave at permanent Hatred (§3a).
+// Conscript term ends or cap overflow: leaves at permanent Hatred (§3a).
 Divine.releaseConscript = function (world, conscript, master, feedPush, escaped) {
   conscript.isConscript = false;
   conscript.conscriptQuestsLeft = 0;
@@ -337,7 +298,7 @@ Divine.tickFollowers = function (world, feedPush) {
         const master = ADV.World.byId(world, ch.conscriptorId);
         if (master) {
           master.conscriptIds = (master.conscriptIds || []).filter(id => id !== ch.id);
-          Divine.releaseConscript(world, ch, master, feedPush, true);
+          Divine.releaseConscript(world, ch, master, feedPush, false);
         }
       }
     }

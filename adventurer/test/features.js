@@ -353,6 +353,28 @@ function newGame(seed, skills) {
 })();
 
 (function () {
+  console.log('\n-- tutorial party quest is a canned easy job --');
+  const q = ADV.Quests.makeTutorialParty();
+  eq(q.tier, 1, 'tier 1');
+  eq(q.track, 'party', 'party track');
+  eq(q.name, 'A short road job', 'canned name');
+  ok(q.tutorialEasy, 'marked easy');
+  eq(q.encounters.length, 2, 'two encounters');
+  ok(q.encounters.every(e => e.enemyTypeIds.length === 1 && e.enemyTypeIds[0] === 'bandit'), 'one bandit each');
+  eq(q.enemyLevels[0], 1, 'levels start at the bottom of tier 1');
+  eq(q.enemyLevels[1], 2, 'levels stay at the bottom of tier 1');
+  const g = newGame(31);
+  g.tutorial = { step: 'partyQuest' };
+  const p = ADV.Game.player(g);
+  const party = g.world.parties[0];
+  const leader = ADV.Party.leader(g.world, party);
+  party.memberIds.push(p.id); party.wages[p.id] = 30; p.partyId = party.id; p.leaderId = leader.id; p.wage = 30;
+  const pick = ADV.Game.leaderPick(g);
+  eq(pick && pick.id, 'q_tut_party', 'the guided hireling quest is the canned road job');
+  ok(pick.encounters.every(e => e.enemyTypeIds.length === 1), 'the leader is not facing a 3–5 pack');
+})();
+
+(function () {
   console.log('\n-- enemy look variants --');
   const a = ADV.Character.makeEnemy(new ADV.RNG(1), 'bandit', { level: 3 });
   const b = ADV.Character.makeEnemy(new ADV.RNG(2), 'bandit', { level: 3 });

@@ -39,10 +39,7 @@ Vault.wealthOf = function (world, ch) {
 // On commitment: all of the male partner's assets transfer into her vault (§7).
 Vault.onCommit = function (world, woman, man) {
   const hers = Vault.ensureOwn(world, woman);
-  if (man.vaultId === hers.id) return;
   const his = Vault.of(world, man);
-  // Polygamy: the first wife's vault stays his estate. A later wife does not take it.
-  if (his && his.holderId !== woman.id && his.sharedWithId === man.id) return;
   if (his && his.holderId === man.id) {
     hers.gold += his.gold; hers.items.push(...his.items);
     his.gold = 0; his.items = [];
@@ -50,11 +47,9 @@ Vault.onCommit = function (world, woman, man) {
     if (i >= 0) world.vaults.splice(i, 1);
   }
   hers.gold += man.inventory.gold; man.inventory.gold = 0;
-  if (!hers.sharedWithId) {
-    hers.sharedWithId = man.id;
-    hers.sharedQuestStreak = 0; hers.questsSinceShared = 0;
-  }
+  hers.sharedWithId = man.id;
   man.vaultId = hers.id;
+  hers.sharedQuestStreak = 0; hers.questsSinceShared = 0;
 };
 
 // On breakup: he loses access permanently; she keeps everything (§7).

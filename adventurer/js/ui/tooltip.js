@@ -78,6 +78,35 @@ Tooltip.attachZone = function (scene, x, y, w, h, textFn) {
 // Human labels for every engine parameter a tier can carry. Anything not
 // listed still prints raw as `key: value` so nothing is ever hidden.
 const PARAM_LABEL = {
+  // ---- second campaign (add-on §3): the new engine primitives -------------
+  immovable: () => 'cannot be moved, pulled or pushed out of this lane',
+  laneNoDelay: () => 'ignores Shock and any effect that delays your place in the order',
+  firstInRoundOne: () => 'acts first in round 1, before anything else on the field',
+  grantTurn: v => `gives an ally ${v} extra action(s) this round`,
+  pull: v => `drags the target ${v} lane(s) toward you`,
+  pullAttacker: () => 'anyone who attacks you is dragged one lane forward',
+  rootRounds: v => `roots the target for ${v} round(s): it cannot change lane`,
+  selfRoot: () => 'you cannot change lane while this holds',
+  reactionLock: () => 'the target cannot counter, reflect or retaliate',
+  defIgnorePct: v => `ignores ${Math.round(v * 100)}% of the target's DEF`,
+  laneFocusScale: v => `+${Math.round(v * 100)}% per previous hit into the same lane this round`,
+  lifeKillScale: v => `scales with everyone this character has ever killed (+${Math.round(v * 100)}% each)`,
+  laneAllyGuard: () => 'guards every ally sharing your lane',
+  allyStealth: () => 'hides an ally as well as yourself',
+  stealthRounds: v => `stealth holds for ${v} round(s)`,
+  stealthKeepsOnHit: () => 'attacking does not break stealth',
+  revealIntents: () => 'shows every hidden enemy and the skills they carry, all battle',
+  onHitExposed: () => 'hits apply Exposed',
+  onHitPoison: () => 'hits apply poison',
+  wardPoison: () => 'anyone who strikes you is poisoned',
+  exposedOnSecond: () => 'the second hit on the same target applies Exposed',
+  selfBleedOnTarget: v => `costs you ${v} HP per use`,
+  healAtEnd: v => `heals ${v}× at the end of the round instead of now`,
+  healFromTaken: v => `heals ${Math.round(v * 100)}% of the damage you have taken this battle`,
+  noReload: () => 'no reload lock: usable every round',
+  rangedExtraTarget: () => 'ranged attacks strike one extra target',
+  lawfulPayMult: v => `×${v} gold from lawful contracts`,
+  witnessStartLevel: v => `skills you witness start at level ${v}`,
   power: v => `power ${v} (damage/heal multiplier in the formula)`,
   eleDmgMult: v => `elemental damage ×${v} (applies to elemental actives)`,
   dmgTakenMult: v => `damage taken ×${v}`,
@@ -92,7 +121,6 @@ const PARAM_LABEL = {
   backLaneBonus: v => `×${v} damage while you stand in the back lane`,
   ignoreCover: () => 'ignores lane cover',
   noReflect: () => 'back-lane attacks take NO reflect damage from any source',
-  hpPct: v => `deals ${Math.round(v * 100)}% of the target's max health (ignores ATK and DEF)`,
   openerOrStealth: () => 'usable ONLY as the opening action of an encounter, or from stealth',
   stealthOnUse: () => 'enters stealth (untargetable without See Invisibility; broken by attacking)',
   melee: () => 'counts as melee: applies and consumes Exposed',
@@ -168,10 +196,7 @@ const PARAM_LABEL = {
   spreadLanes: () => "hits the target's lane AND both adjacent lanes",
   wardAhead: () => 'usable on allies in your lane or behind you — you shield what stands behind you',
   undeadPower: v => `vs undead: holy damage at power ${v} instead`,
-  purifyRounds: v => `grants immunity to ALL negative statuses (and conscription) for ${v} rounds`,
-  conscript: () => 'binds a guild NPC below 60% health for 3 quests',
-  hpBelow: v => `only lands while the target is under ${Math.round(v * 100)}% health`,
-  guildOnly: () => 'only living guild-roster NPCs — not monsters or campaign fixtures',
+  purifyRounds: v => `grants immunity to ALL negative statuses (and post-battle conscription) for ${v} rounds`,
   unraise: () => 'cast on a walking undead: restores them to LIFE, undoing the true death (never revives the ordinary dead)',
   bribeChance: v => `in battle: bribe a hostile named enemy to flee — ${Math.round(v * 100)}% odds, fee 30 + 20×rank, spent either way`,
   fireResist: v => `takes ${Math.round(v * 100)}% less fire damage`,
@@ -182,8 +207,7 @@ const PARAM_LABEL = {
   killHealPct: v => `each kill restores ${Math.round(v * 100)}% of max HP`,
   stackPct: v => `each kill adds +${Math.round(v * 100)}% damage for the rest of the battle (stacking)`,
   tauntRounds: v => `each kill taunts EVERY enemy onto you for ${v} rounds`,
-  dotHpPct: v => `DoT ticks deal ${Math.round(v * 100)}% of the target's max health`,
-  dotHpPctPerLevel: v => `+${(v * 100).toFixed(1)}% of max health per applying-skill level after 1`,
+  dotMult: v => `bleed and poison damage ×${v}`,
   dotLeech: v => `heals you for ${Math.round(v * 100)}% of bleed/poison damage dealt`,
   wageEdge: v => `hired ${v}g above your price; your hires accept ${v}g below theirs`,
   oppositeSexFriendly: () => 'the opposite sex starts at Friendly toward you',
@@ -294,9 +318,7 @@ const SkillInfo = {
 
     // formula with real numbers
     const atk = ch ? ADV.Character.effStat(ch, 'atk') : 10;
-    if (data.hpPct) {
-      L.push(`damage = ${Math.round(data.hpPct * 100)}% of the target's max health (ignores ATK and DEF)`);
-    } else if (data.power > 0 && !data.heal) {
+    if (data.power > 0 && !data.heal) {
       const raw = Math.round(atk * data.power * tierMult * (1 + effLevel * C().LEVEL_DAMAGE_SCALAR));
       L.push(`damage = round(ATK ${atk} × power ${data.power} × tier ×${tierMult} × (1 + ${effLevel}×0.015)) − targetDEF`);
       L.push(`       = ${raw} − DEF  (vs DEF 10 → ${Math.max(1, raw - 10)}; minimum 1)`);

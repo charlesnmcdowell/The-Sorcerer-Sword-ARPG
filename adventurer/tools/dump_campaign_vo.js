@@ -23,6 +23,26 @@ for (const [fid, chars] of Object.entries(ADV.DATA.CAMPAIGN_DIALOGUE)) for (cons
   for (const [k, lines] of Object.entries(beats)) { out[who][k] = lines.map(l => spoken(fid, who, l)); n += lines.length; }
 }
 for (const [id, c] of Object.entries(ADV.DATA.CAMPAIGN_CHARS)) if (c.exitLines) { out[id] = out[id] || {}; out[id].exit = c.exitLines; n += c.exitLines.length; }
+// The second campaign keeps its lines in its own table and has its own
+// name-free renderer (add-on §2). Vane-Kessler appears under two factions and
+// merges into one folder, which is the point of him.
+for (const [fid, chars] of Object.entries(ADV.DATA.CAMPAIGN2_DIALOGUE || {})) {
+  for (const [who, beats] of Object.entries(chars)) {
+    out[who] = out[who] || {};
+    for (const [k, lines] of Object.entries(beats)) {
+      out[who][k] = lines.map(l => ADV.DATA.campaign2VoiceText(fid, who, l));
+      n += lines.length;
+    }
+  }
+}
+// The god line belongs to no faction (§7): its cutscenes carry no tokens.
+for (const [who, lines] of Object.entries(ADV.DATA.GOD_LINE_DIALOGUE || {})) {
+  out[who] = out[who] || {};
+  out[who].open = lines.map(l => String(l.t || l)
+    .replace(/,\s*\{target\}/g, '').replace(/\{target\}[.!?]\s*/g, '').replace(/\{target\},?\s*/g, '')
+    .replace(/\s+([,.!?])/g, '$1').replace(/^\s+/, ''));
+  n += lines.length;
+}
 // The player's name must never be spoken: no unfilled token may survive.
 // (Fixed campaign names are the author's to voice — they never change.)
 let leaks = 0;

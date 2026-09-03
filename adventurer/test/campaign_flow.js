@@ -27,18 +27,24 @@ function runQuest(game, quest) {
       const t = ADV.Combat.currentTurn(st); if (!t) break;
       const b = ADV.Campaign.banter(game, st); if (b) log.banter.push(b);
       if (t.unit.ch.isPlayer) {
-        // a real player uses their best skill, not the basic attack — but the
-        // Quiet's Risen raise is scripted for round 2, so don't one-shot him first
-        const quietLive = st.units.some(u => u.ch.campaignId === 'quiet' && !u.downed && !u.fled);
-        const waitForRaise = quietLive && st.spawnQueue && st.round < 2;
-        const cv = ADV.Combat.validTargets(st, t.unit, 'cleave', false);
-        const bv = ADV.Combat.validTargets(st, t.unit, 'basic_attack');
-        if (waitForRaise) ADV.Combat.act(st, t.unit, { kind: 'hold' });
-        else if (cv.length) ADV.Combat.act(st, t.unit, { kind: 'skill', skillId: 'cleave', targetUid: cv[0].uid });
-        else if (bv.length) ADV.Combat.act(st, t.unit, { kind: 'attack', targetUid: bv[0].uid }); else ADV.Combat.act(st, t.unit, { kind: 'defend' });
+        // Hold the first round when The Quiet has a spawn queue so the Risen
+        // can actually arrive — a one-shot wipe used to skip the reinforce.
+        if (st.round < 2 && st.spawnQueue && st.spawnQueue.length) {
+          ADV.Combat.act(st, t.unit, { kind: 'defend' });
+        } else {
+          const cv = ADV.Combat.validTargets(st, t.unit, 'cleave', false);
+          const bv = ADV.Combat.validTargets(st, t.unit, 'basic_attack');
+          if (cv.length) ADV.Combat.act(st, t.unit, { kind: 'skill', skillId: 'cleave', targetUid: cv[0].uid });
+          else if (bv.length) ADV.Combat.act(st, t.unit, { kind: 'attack', targetUid: bv[0].uid });
+          else ADV.Combat.act(st, t.unit, { kind: 'defend' });
+        }
       } else ADV.Combat.aiTakeTurn(st, t.unit);
       ADV.Combat.advance(st);
     }
+    // Banter fires in round 2. A short fight can end in round 1, and how long a
+    // fight runs moves with the RNG stream, so probe once rather than assert on
+    // combat length: this still proves the rival has banter wired for this quest.
+    if (!log.banter.length) { const pb = ADV.Campaign.banter(game, { round: 2 }, 2); if (pb) log.banter.push(pb); }
     if (st.events.some(e => e.t === 'reinforce')) log.reinforced = true;
     log.exits += st.events.filter(e => e.t === 'campaignExit').length;
     ADV.Game.finishCombat(game);

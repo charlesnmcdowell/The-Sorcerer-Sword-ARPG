@@ -92,7 +92,6 @@ UI2.offer = function (scene, game, fid, done) {
 
 // Called by the Town scene alongside CampaignUI.arrival.
 UI2.arrival = function (scene, game, done) {
-  const s = C2().state(game);
   const steps = [];
   for (const fid of C2().joined(game)) {
     const m = C2().member(game, fid);

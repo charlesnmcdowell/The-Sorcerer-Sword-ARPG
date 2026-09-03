@@ -348,6 +348,85 @@ console.log('\n== §8 sixty personalities ==');
   ok(!seen.has('HIRO'), 'and never draws the hidden one');
 }
 
+console.log('\n== §3 the four encounter verbs ==');
+{
+  const g = newG();
+  const p = ADV.Game.player(g);
+  const enemies = [{ species: 'human', enemyLevel: 5, sex: 'm', inventory: { gold: 10 },
+                     factionStanding: { law: 40, criminal: 0 }, perks: [], actives: [] }];
+  // Campaign perks exist only at advanced (campaign 1 §13d-2), so the skill's
+  // own stated condition is the gate at every level, not the tier.
+  const verbsFor = (perkId, q, level) => {
+    p.perks = [{ skillId: perkId, level: level || 1, uses: 0 }];
+    return ADV.Quests.availableVerbs(g.world, p, [], q || { name: 'Ordinary work' }, enemies);
+  };
+  const has = (vs, id) => vs.find(v => v.verb === id);
+  // §3a Bribe — resolves against anyone poorer than you
+  p.inventory.gold = 500;
+  let v = has(verbsFor('silent_trade'), 'silent_trade');
+  ok(!!v, 'Silent Trade offers Bribe at an encounter');
+  ok(v && v.odds > 0.5, 'and it resolves against someone poorer', v && v.odds);
+  p.inventory.gold = 1;
+  v = has(verbsFor('silent_trade'), 'silent_trade');
+  ok(v && v.odds < 0.5, 'but not against someone richer', v && v.odds);
+  // §3b Command — resolves against the lawfully aligned
+  v = has(verbsFor('standing_order'), 'standing_order');
+  ok(v && v.odds > 0.5, 'Standing Order commands a lawful opponent');
+  enemies[0].factionStanding = { law: 0, criminal: 40 };
+  v = has(verbsFor('standing_order'), 'standing_order');
+  ok(v && v.odds < 0.5, 'and does not command a criminal one');
+  // §3c Black Flag — against anyone carrying cargo or coin
+  v = has(verbsFor('black_flag', { name: 'The Prize', cargo: true }), 'black_flag');
+  ok(v && v.odds > 0.5, 'Black Flag works on a cargo run');
+  // §3d Requisition — lawfully aligned OR carrying cargo
+  v = has(verbsFor('colours_and_papers', { name: 'The Prize', cargo: true }), 'colours_and_papers');
+  ok(v && v.odds > 0.5, 'Colours and Papers requisitions cargo');
+  // beasts refuse all four
+  enemies[0].species = 'wolf';
+  for (const id of ['silent_trade', 'standing_order', 'black_flag', 'colours_and_papers']) {
+    const w = has(verbsFor(id, { name: 'The Prize', cargo: true }), id);
+    ok(w && !w.ok, id + ' cannot be used on a beast');
+  }
+  enemies[0].species = 'human';
+  p.inventory.gold = 500;
+  // a bribe costs coin; colours up takes it
+  p.inventory.gold = 500;
+  const paid = ADV.Quests.attemptBypass(g.world, g.rng, p, [], { verb: 'silent_trade', odds: 1, mode: 'bypass' }, enemies);
+  ok(paid.success && paid.stolen < 0, 'a successful bribe costs gold', paid.stolen);
+  const took = ADV.Quests.attemptBypass(g.world, g.rng, p, [], { verb: 'black_flag', odds: 1, mode: 'bypass' }, enemies);
+  ok(took.success && took.stolen > 0, 'running up the colours takes gold', took.stolen);
+}
+
+console.log('\n== §0a voice routing ==');
+{
+  const g = newG();
+  const T = ADV.Character.VOICE_TAGS;
+  eq(T.godf, 't9puW54s29EO0gQK6OMR', 'the female god voice is the doc\'s');
+  eq(T.godm, 'HMvHZWb0ZWSo5Kc5l22D', 'the male god voice is the doc\'s');
+  eq(T.matriarch, '0KlQKzxy6Oee2hYOyHII', 'the matriarch voice is the doc\'s');
+  const npc = ADV.Character.seedNPC(g.rng, g.world, { sex: 'f' });
+  eq(ADV.Character.voiceTagFor(g.world, npc), null, 'an ordinary NPC keeps her own voice');
+  npc.bloodline = { demigod: true };
+  eq(ADV.Character.voiceTagFor(g.world, npc), 'godf', 'a female demigod speaks in the goddess voice');
+  ok(npc.personalityId, 'and keeps her rolled personality');
+  const m = ADV.Character.seedNPC(g.rng, g.world, { sex: 'm' });
+  m.bloodline = { demigod: true };
+  eq(ADV.Character.voiceTagFor(g.world, m), 'godm', 'a male demigod speaks in the god voice');
+  ok(!ADV.Character.voiceTagFor(g.world, ADV.Game.player(g)), 'the player is never retagged');
+  // every voice the add-on casts is present
+  const cast = require('../tools/voice_casting.json');
+  const need = ['M21','M22','M23','M24','M25','M26','M27','M28','M29','M30',
+                'F21','F22','F23','F24','F25','F26','F27','F28','F29','F30',
+                'obaasan','suzume','kaede','jiro','takeda','ayame','isamu','kira',
+                'hallow','beau','saintcloud','vanekessler','crell','fane','ash',
+                'pale_mother','drowned_king'];
+  const uncast = need.filter(k => !cast[k]);
+  eq(uncast.length, 0, 'every new speaker has a voice id' + (uncast.length ? ': ' + uncast.join(', ') : ''));
+  eq(cast.vanekessler, cast.vanekessler, 'placeholder');
+  eq(cast.M30, cast.jiro, '\u00a78: M30 Unquiet deliberately shares Jiro\'s voice');
+  eq(cast.F30, cast.kira, '\u00a78: F30 Bereaved deliberately shares Kira\'s voice');
+}
+
 console.log('\n== §9 persistence ==');
 {
   ADV.Save.setBackend(H.memBackend());

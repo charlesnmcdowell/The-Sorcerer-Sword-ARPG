@@ -97,13 +97,13 @@ function chooseAction(st, u) {
     }
     if (!pool.length) continue;
     pool = avoidLookism(pool);
-    // Nameless mooks never Backstab (campaign §0d makes it a half-health any-lane
-    // burst; §11a: the first two minutes matter). Bosses and named rogues still
-    // do — that is where the player witnesses it.
+    // Nameless mooks never Backstab (campaign §0d makes it a 6.0 any-lane burst;
+    // §11a: the first two minutes matter). Bosses and named rogues still do —
+    // that is where the player witnesses it.
     if (d.openerOrStealth && u.ch.isMonster && !u.ch.boss) continue;
     // damaging active: prefer wounded targets, back-lane for backstab handled by pool
     const t = pool.sort((x, y) => (x.chp / x.maxHp) - (y.chp / y.maxHp))[0];
-    let w = 3 + (d.power || 0) * 0.5 + (d.hpPct || 0) * 20 + (p.aggression || 50) / 50;
+    let w = 3 + (d.power || 0) * 0.5 + (p.aggression || 50) / 50;
     if (d.executeBelow && (t.chp / t.maxHp) < d.executeBelow) w += 20;
     candidates.push({ kind: 'skill', skillId: e.skillId, targetUid: t.uid, weight: w, offensiveMode });
   }

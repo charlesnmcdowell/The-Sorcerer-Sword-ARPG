@@ -30,7 +30,6 @@ World.create = function (seed) {
   for (let i = 0; i < C().POP_START.women; i++) world.characters.push(Ch().seedNPC(rng, world, Object.assign({ sex: 'f' }, womenPlan[i] || {})));
   // Two employer parties covering different archetypes (§11)
   seedEmployerParties(world, rng);
-  Ch().repairWorldVoices(world, rng);
   return world;
 };
 
@@ -61,8 +60,14 @@ World.feeder = function (world) {
   return (text, actorIds) => World.feed(world, text, actorIds);
 };
 
+// `known` is whether the player has met anyone involved. Unknown-actor entries
+// still go in the feed — the world's social life is the point of the feed, and
+// hiding it made the relationship system look broken — but the panel renders
+// them as hearsay so the player can tell a friend's wedding from a stranger's.
 World.feed = function (world, text, actorIds) {
-  world.eventFeed.push({ questClock: world.questClock, text, actorIds: actorIds || [] });
+  const ids = actorIds || [];
+  const known = !ids.length || ids.some(id => world.metIds.includes(id));
+  world.eventFeed.push({ questClock: world.questClock, text, actorIds: ids, known });
   if (world.eventFeed.length > 400) world.eventFeed.splice(0, world.eventFeed.length - 400);
 };
 
@@ -138,7 +143,7 @@ World.tick = function (world, rng, opts) {
       }
     } else if (rng.chance(deathChance)) {
       ADV.Death.finalize(world, npc, null, 'quest');
-      if (!npc.alive) feed(`${npc.name} failed a contract and did not return.`, [npc.id]);
+      feed(`${npc.name} failed a contract and did not return.`, [npc.id]);
       continue;
     } else {
       npc.questsFailed++; npc.reputation = Math.max(-20, npc.reputation - 1);
@@ -176,7 +181,7 @@ World.tick = function (world, rng, opts) {
     const aPow = 18 + Math.max(1, target.reputation) * 2;
     if (rng.chance(aPow / (aPow + tPow))) {
       ADV.Death.finalize(world, target, null, 'assassinated');
-      if (!target.alive) feed(`${target.name} was found in an alley. Nobody saw anything.`, [target.id]);
+      feed(`${target.name} was found in an alley. Nobody saw anything.`, [target.id]);
     } else {
       Rel().move(world, target.id, k.byId, -100, 'murder', { set: true, decays: false });
       feed(`${target.name} survived a Maw knife — and learned who paid for it.`, [target.id, k.byId]);
@@ -385,33 +390,6 @@ function partyDynamics(world, rng, feed) {
   }
 }
 
-// Every two player quests: gather leftover free agents into new board parties.
-World.formFreeParties = function (world, rng, feed, opts) {
-  opts = opts || {};
-  const max = opts.max != null ? opts.max : 2;
-  const free = () => World.adults(world).filter(c =>
-    !c.isPlayer && !c.registryId && !c.hiroNpc && !c.partyId &&
-    c.status === 'normal' && !c.isUndead && !c.isConscript && c.hospitalizedQuestsLeft <= 0);
-  const made = [];
-  while (made.length < max && free().length >= 2) {
-    const pool = free();
-    const founders = pool.filter(c => c.rank >= 1);
-    const leader = rng.pick(founders.length ? founders : pool);
-    const p = ADV.Party.create(world, leader.id);
-    p.employerParty = true;
-    const want = rng.int(1, Math.min(3, free().length));
-    const hires = rng.shuffle(free().filter(c => c !== leader && !ADV.Party.hatredConflict(world, p, c.id)));
-    for (const m of hires.slice(0, want)) {
-      const w = rng.int(28, 45);
-      p.memberIds.push(m.id); p.wages[m.id] = w;
-      m.partyId = p.id; m.leaderId = leader.id; m.wage = w;
-    }
-    if (feed) feed(`${leader.name} has gathered a party from those still unaligned.`, [leader.id]);
-    made.push(p);
-  }
-  return made;
-};
-
 // ---------------------------------------------------------------- courtship
 function npcCourtship(world, rng, feed, lowPop) {
   // The rules (js/core/courtship.js) decide who warms and who asks. Population
@@ -446,9 +424,8 @@ function tickChildren(world, rng, feed) {
       w.dependents.splice(w.dependents.indexOf(g), 1);
       world.orphans.push(g);
     }
-    const spouseId = (ADV.Rel && ADV.Rel.partnerIds ? ADV.Rel.partnerIds(w)[0] : w.partnerId) || null;
-    if (!spouseId || w.isPlayer) continue; // player conception handled in game layer for consent/visibility
-    const partner = ADV.World.byId(world, spouseId);
+    if (!w.partnerId || w.isPlayer) continue; // player conception handled in game layer for consent/visibility
+    const partner = ADV.World.byId(world, w.partnerId);
     if (!partner || !partner.alive) continue;
     w.relationshipQuests = (w.relationshipQuests || 0) + 1;
     const kids = (w.dependents || []).length + (w.childIds || []).length;
@@ -504,10 +481,10 @@ function resolveRescueAbstract(world, rng, r, feed) {
   const attackerWins = rng.chance(aPow / (aPow + tPow));
   if (attackerWins) {
     ADV.Death.finalize(world, target, attacker.id, 'assassinated');
-    if (!target.alive) feed(`${attacker.name} killed ${target.name}.`, [attacker.id, target.id]);
+    feed(`${attacker.name} killed ${target.name}.`, [attacker.id, target.id]);
   } else {
     ADV.Death.finalize(world, attacker, target.id, 'assassinated');
-    if (!attacker.alive) feed(`${target.name} survived ${attacker.name}'s ambush — and ended ${attacker.sex === 'f' ? 'her' : 'him'}.`, [target.id, attacker.id]);
+    feed(`${target.name} survived ${attacker.name}'s ambush — and ended ${attacker.sex === 'f' ? 'her' : 'him'}.`, [target.id, attacker.id]);
   }
 }
 World.resolveRescueAbstract = resolveRescueAbstract;
@@ -571,10 +548,10 @@ function npcHeroHunts(world, rng, feed) {
         continue;
       }
       ADV.Death.finalize(world, target, hero.id, 'killed');
-      if (!target.alive) feed(`The hero ${hero.name} has ended ${target.name}.`, [hero.id, target.id]);
+      feed(`The hero ${hero.name} has ended ${target.name}.`, [hero.id, target.id]);
     } else if (rng.chance(0.5)) {
       ADV.Death.finalize(world, hero, target.id, 'killed');
-      if (!hero.alive) ADV.Divine.onHeroDefeated(world, hero, target, feed);
+      ADV.Divine.onHeroDefeated(world, hero, target, feed);
     }
   }
 }

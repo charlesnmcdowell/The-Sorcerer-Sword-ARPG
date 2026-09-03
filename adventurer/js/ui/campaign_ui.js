@@ -54,7 +54,7 @@ CampaignUI.playBeat = function (scene, game, beat, done) {
   }
   if (beat.death && beat.offscreen) {
     ADV.Notices.toast(scene, `${speaker.name} went ahead alone. ${speaker.name} did not come back.`);
-    scene.time.delayedCall(ADV.Notices.TOAST_HOLD_MS, done); return;
+    scene.time.delayedCall(1800, done); return;
   }
   next();
 };
@@ -113,28 +113,25 @@ Panels.campaign = function (scene, r) {
   const offer = ADV.Campaign.currentOffer(game);
   if (!s.factionId) {
     ADV.UI.header(scene, r, 'Campaign', 'A faction noticed you. Five contracts, a rival, a boss, and a title that grows with the work.');
-    const listTop = r.y + 100;
-    const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.h - 100 - 52 });
-    let y = listTop;
+    let y = r.y + 100;
     if (offer) {
-      scroll.addBtn(T().button(scene, r.x + 24, y, 320, 44, 'Hear ' + D().FACTIONS[offer].name + ' out', () => CampaignUI.offer(scene, game, offer, () => scene.openPanel('campaign')), { size: 14, display: true }));
+      keepBtn(scene, T().button(scene, r.x + 24, y, 320, 44, 'Hear ' + D().FACTIONS[offer].name + ' out', () => CampaignUI.offer(scene, game, offer, () => scene.openPanel('campaign')), { size: 14, display: true }));
       y += 60;
     }
     if (ADV.Campaign.antlerAvailable(game) && offer !== 'antler') {
-      scroll.addBtn(T().button(scene, r.x + 24, y, 320, 44, "The Antler's standing offer", () => {
+      keepBtn(scene, T().button(scene, r.x + 24, y, 320, 44, "The Antler's standing offer", () => {
         ADV.Campaign.state(game).pendingOffer = 'antler';
         CampaignUI.offer(scene, game, 'antler', () => scene.openPanel('campaign'));
       }, { size: 14, sub: 'a company, not a cause — it takes anyone', subColor: T().css.inkDim }));
       y += 60;
     }
-    for (const fid of ['maw', 'varenholm']) if (s.declined[fid]) { scroll.add(T().text(scene, r.x + 24, y, `You turned ${D().FACTIONS[fid].name} down. They will not ask twice this life.`, { size: 12, italic: true, color: T().css.inkFaint })); y += 20; }
-    scroll.extend(y);
+    for (const fid of ['maw', 'varenholm']) if (s.declined[fid]) { scene.keep(T().text(scene, r.x + 24, y, `You turned ${D().FACTIONS[fid].name} down. They will not ask twice this life.`, { size: 12, italic: true, color: T().css.inkFaint })); y += 20; }
     CampaignUI.debugRow(scene, r);
     return;
   }
   const v = ADV.Campaign.hallView(game);
   const f = v.faction;
-  ADV.UI.header(scene, r, f.name, f.blurb);
+  ADV.UI.header(scene, r, f.name, f.blurb, { reserveRight: 140 });
   // banner + boss portrait
   const bossCh = CampaignUI.speaker(game, ADV.Campaign.bossId(game));
   const key = ADV.Portraits.key(scene, bossCh);
@@ -143,12 +140,10 @@ Panels.campaign = function (scene, r) {
   scene.keep(T().text(scene, r.x + r.w - 92, r.y + 210, v.boss.name, { size: 12, ox: 0.5, color: T().css.gold }));
   scene.keep(T().text(scene, r.x + r.w - 92, r.y + 226, v.boss.epithet || 'runs the hall', { size: 11, ox: 0.5, italic: true, color: T().css.inkDim }));
 
-  const listTop = r.y + 84;
-  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 176, h: r.h - 84 - 52 });
-  let y = listTop;
-  scroll.add(T().text(scene, r.x + 24, y, `Standing: ${v.title}${v.nextTitle ? `  →  ${v.nextTitle} (${v.nextTitleAt})` : '  · the top of the ladder'}`, { size: 14, color: T().css.purple })); y += 22;
+  let y = r.y + 84;
+  scene.keep(T().text(scene, r.x + 24, y, `Standing: ${v.title}${v.nextTitle ? `  →  ${v.nextTitle} (${v.nextTitleAt})` : '  · the top of the ladder'}`, { size: 14, color: T().css.purple })); y += 22;
   const rate = v.titleTier >= 2 ? '3×' : '2×';
-  scroll.add(T().text(scene, r.x + 24, y, `${rate} levelling on ${f.archetypes.join('/')} skills${v.titleTier >= 3 ? ' · faction skills manifest one tier up' : ''} · ${v.factionContracts} contracts for the hall`, { size: 12, color: T().css.inkDim, wrap: r.w - 220 })); y += 30;
+  scene.keep(T().text(scene, r.x + 24, y, `${rate} levelling on ${f.archetypes.join('/')} skills${v.titleTier >= 3 ? ' · faction skills manifest one tier up' : ''} · ${v.factionContracts} contracts for the hall`, { size: 12, color: T().css.inkDim, wrap: r.w - 220 })); y += 30;
 
   for (const q of v.quests) {
     const status = q.status;
@@ -159,34 +154,33 @@ Panels.campaign = function (scene, r) {
       if (q.branch && !s.branch) { CampaignUI.branchChoice(scene, game, () => scene.openPanel('campaign')); return; }
       ADV.Panels.departure(scene, ADV.Campaign.buildQuest(game, q.n));
     }, { size: 14, disabled: status !== 'open', display: status === 'open', sub: CampaignUI.fill(game, sub, f.rival), subColor: status === 'done' ? T().css.green : T().css.inkDim });
-    scroll.addBtn(b);
+    keepBtn(scene, b);
     y += 52;
   }
   y += 6;
   // rival toggle (§5a)
   if (v.rivalAvailable) {
-    scroll.addBtn(T().button(scene, r.x + 24, y, 440, 40, `${v.rival.name}: ${v.rivalToggle ? 'coming along' : 'staying behind'}`, () => {
+    keepBtn(scene, T().button(scene, r.x + 24, y, 440, 40, `${v.rival.name}: ${v.rivalToggle ? 'coming along' : 'staying behind'}`, () => {
       s.rivalToggle = !s.rivalToggle; ADV.Save.saveGame(game); scene.openPanel('campaign');
     }, { size: 13, color: v.rivalToggle ? T().css.gold : T().css.ink, sub: 'no wage · cannot die in your fights · walks off when beaten', subColor: T().css.inkFaint }));
     y += 46;
-  } else if (!s.rivalAlive) { scroll.add(T().text(scene, r.x + 24, y, `${v.rival.name} is gone. The hall does not say the name.`, { size: 12, italic: true, color: T().css.inkFaint })); y += 22; }
+  } else if (!s.rivalAlive) { scene.keep(T().text(scene, r.x + 24, y, `${v.rival.name} is gone. The hall does not say the name.`, { size: 12, italic: true, color: T().css.inkFaint })); y += 22; }
   // motivation speech (§10) — the boss's why, after two quests
   if (v.speechUnlocked) {
-    scroll.addBtn(T().button(scene, r.x + 24, y, 440, 36, `Ask ${D().CAMPAIGN_CHARS[f.recruiter].name.split(' ')[0]} why the ${f.short.replace('the ', '')} does this`, () => CampaignUI.playBeat(scene, game, { who: f.recruiter, key: 'why' }), { size: 13 }));
+    keepBtn(scene, T().button(scene, r.x + 24, y, 440, 36, `Ask ${D().CAMPAIGN_CHARS[f.recruiter].name.split(' ')[0]} why the ${f.short.replace('the ', '')} does this`, () => CampaignUI.playBeat(scene, game, { who: f.recruiter, key: 'why' }), { size: 13 }));
     y += 46;
   }
   if (v.completed) {
-    scroll.add(T().text(scene, r.x + 24, y, `Campaign complete. ${D().GEAR_SETS[f.gearSet].name} issued — it floors ${D().GEAR_SETS[f.gearSet].archetypes.join('/')} skills at 15.`, { size: 12, color: T().css.green, wrap: r.w - 220 })); y += 24;
-    if (v.canReissue) { scroll.addBtn(T().button(scene, r.x + 24, y, 300, 34, 'Quartermaster: re-issue the set', () => { ADV.Campaign.reissue(game); scene.refreshAll(); scene.openPanel('campaign'); }, { size: 12 })); y += 42; }
-    scroll.add(T().text(scene, r.x + 24, y, 'STANDING CONTRACTS', { size: 12, color: T().css.inkDim })); y += 20;
+    scene.keep(T().text(scene, r.x + 24, y, `Campaign complete. ${D().GEAR_SETS[f.gearSet].name} issued — it floors ${D().GEAR_SETS[f.gearSet].archetypes.join('/')} skills at 15.`, { size: 12, color: T().css.green, wrap: r.w - 220 })); y += 24;
+    if (v.canReissue) { keepBtn(scene, T().button(scene, r.x + 24, y, 300, 34, 'Quartermaster: re-issue the set', () => { ADV.Campaign.reissue(game); scene.refreshAll(); scene.openPanel('campaign'); }, { size: 12 })); y += 42; }
+    scene.keep(T().text(scene, r.x + 24, y, 'STANDING CONTRACTS', { size: 12, color: T().css.inkDim })); y += 20;
     for (const q of v.repeatables) {
-      scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 220, 40, q.name, () => ADV.Panels.departure(scene, q), { size: 13, sub: `Tier ${q.tier} · 3 encounters · pays ${q.payout}g`, subColor: T().css.inkDim }));
+      keepBtn(scene, T().button(scene, r.x + 24, y, r.w - 220, 40, q.name, () => ADV.Panels.departure(scene, q), { size: 13, sub: `Tier ${q.tier} · 3 encounters · pays ${q.payout}g`, subColor: T().css.inkDim }));
       y += 46;
     }
-    scroll.addBtn(T().button(scene, r.x + 24, y, 300, 32, 'The end card, again', () => CampaignUI.endCard(scene, game), { size: 12, color: T().css.inkDim }));
+    keepBtn(scene, T().button(scene, r.x + 24, y, 300, 32, 'The end card, again', () => CampaignUI.endCard(scene, game), { size: 12, color: T().css.inkDim }));
     y += 40;
   }
-  scroll.extend(y);
   CampaignUI.debugRow(scene, r);
 };
 

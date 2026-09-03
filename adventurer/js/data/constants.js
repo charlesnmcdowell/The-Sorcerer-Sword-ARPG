@@ -28,8 +28,6 @@ ADV.DATA.CONST = {
     construct: { hp: [130, 160],atk: [9, 12],  def: [16, 20], spd: [4, 6] },
   },
   UNDEAD_STAT_MULT: 1.5,
-  // Constructs and the risen have no blood to spoil: immune to poison / bleed /
-  // burn, and they fold under lightning, ice, and ordinary steel.
   NON_ORGANIC_IMMUNITIES: ['poison', 'bleed', 'burn'],
   NON_ORGANIC_WEAK: 1.35,
 
@@ -69,8 +67,7 @@ ADV.DATA.CONST = {
   // Campaign recruiters wait for a record (request): 4 contracts done, moderate rep
   CAMPAIGN_GATE: { minQuests: 4, minRep: 4 },
   // Courtship (request 7/13): shared-quest gates and the wealth ladder
-  COURT: { maleFriendlyAfter: 1, maleProposeAfter: 2, femaleFriendlyAfter: 2, wealthTop: 5, declineCooldown: 3,
-    npcTownAfter: 1, npcAskChance: 0.45 },
+  COURT: { maleFriendlyAfter: 1, maleProposeAfter: 2, femaleFriendlyAfter: 2, wealthTop: 5, declineCooldown: 3 },
   ENVY_RATIO_TRIGGER: 4,
   ENVY_RATIO_DECAY: 2,
 
@@ -120,7 +117,6 @@ ADV.DATA.CONST = {
   // ---- Career (§5) -------------------------------------------------------
   PARTY_MAX: 5,               // leader + 4 hired. Thralls/conscripts fill empty
   FORBIDDEN_EXTRA_SLOTS: 3,   // seats first, then these 3 extra (party can be 8)
-  CONSCRIPT_HP_FRAC: 0.60,    // Conscript only lands below this health share
 
   // ---- Children & population (§6/§7) ------------------------------------ LB
   CHILD_SELF_SUFFICIENT: 2,          // request: children grow into NPCs in 3 quests
@@ -165,12 +161,13 @@ ADV.DATA.CONST = {
   // ---- Personality vector biases by dialogue personality (§17a) ----------
   VECTOR_BIAS: {
     // name -> partial bias {stat: [min,max]} applied over a 0-100 roll
-    caution:   ['Timid', 'Nervous', 'Meek', 'Skittish'],
-    aggression:['Brash', 'Wrathful', 'Bold', 'Furious'],
-    greed:     ['Avaricious', 'Sly', 'Grasping', 'Cunning'],
-    loyalty:   ['Devout', 'Earnest', 'Pious', 'Sincere'],
-    pride:     ['Haughty', 'Theatrical', 'Imperious', 'Dramatic'],
-    balanced:  ['Stoic', 'Cool', 'Steely', 'Aloof'],
+    caution:   ['Timid', 'Nervous', 'Meek', 'Skittish', 'Watchful', 'Patient'],
+    aggression:['Brash', 'Wrathful', 'Bold', 'Furious', 'Brazen', 'Sharp'],
+    greed:     ['Avaricious', 'Sly', 'Grasping', 'Cunning', 'Silver-Tongued', 'Rakish'],
+    loyalty:   ['Devout', 'Earnest', 'Pious', 'Sincere', 'Dutiful', 'Salted'],
+    pride:     ['Haughty', 'Theatrical', 'Imperious', 'Dramatic', 'Boastful', 'Elegant', 'Commanding'],
+    balanced:  ['Stoic', 'Cool', 'Steely', 'Aloof', 'Composed', 'Disciplined', 'Formal',
+                'Severe', 'Grave', 'Exacting', 'Elder', 'Unquiet', 'Bereaved'],
   },
 
   ARCHETYPES: ['mage', 'tank', 'rogue', 'ranger', 'fighter', 'druid', 'healer'],

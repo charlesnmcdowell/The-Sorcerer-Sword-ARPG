@@ -166,7 +166,7 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
 (function () {
   console.log('\n-- Dialogue library (§17a) --');
   const D = ADV.DATA.DIALOGUE;
-  eq(Object.values(D).filter(p => !p.hidden).length, 40, '40 personalities (plus Hiro, hidden from the draw)');
+  eq(Object.values(D).filter(p => !p.hidden).length, 60, '60 personalities (plus Hiro, hidden from the draw)');
   let lines = 0, unconditionalOk = true;
   for (const p of Object.values(D).filter(p => !p.hidden)) {
     for (const b of ['general', 'friendly', 'hatred', 'romantic']) {
@@ -174,7 +174,15 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
       if (!p[b].some(l => !/\{(them|their|they|partner)\}/.test(l))) unconditionalOk = false;
     }
   }
-  eq(lines, 640, '640 lines');
+  eq(lines, 960, '960 lines');
+  // §17a: no line may be shared between two personalities.
+  const bagged = new Map(); let dupes = 0;
+  for (const p of Object.values(D)) for (const b of ['general', 'friendly', 'hatred', 'romantic'])
+    for (const l of p[b]) {
+      const k = l.replace(/\[[^\]]*\]\s*/g, '').trim().toLowerCase();
+      if (bagged.has(k)) { dupes++; console.log('   dupe:', p.id, 'vs', bagged.get(k), '::', k); } else bagged.set(k, p.id);
+    }
+  eq(dupes, 0, 'every line unique across the whole roster');
   ok(unconditionalOk, 'every band has an unconditional line');
   // speak(): render + no-repeat + conditional exclusion
   const sp = { personalityId: 'M01', lastVariantUsed: {} };

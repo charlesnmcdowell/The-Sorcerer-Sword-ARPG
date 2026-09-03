@@ -32,8 +32,9 @@ const T = {
   },
   // Faction palettes recolor panel chrome per quest region (§1a)
   factionTint: { law: 0x4a6f8a, criminal: 0x6a4a8a, neutral: 0x5d8a4a },
-  // Town hub panels: almost opaque so text stays readable over housing art
-  chromeAlpha: 0.97,
+  // Town hub panels: translucent enough that the housing art and the time of
+  // day read through the chrome, opaque enough to keep body text legible.
+  chromeAlpha: 0.78,
 
   text(scene, x, y, str, opts) {
     opts = opts || {};

@@ -28,8 +28,8 @@ class CombatScene extends Phaser.Scene {
     this.ended = false;
     this.processing = false;
     this.targeting = null;
-    this.autoTimer = null;
     this.actionObjs = [];
+    this.autoTimer = null;
     const W = T().W, H = T().H;
     this.add.rectangle(W / 2, H / 2, W, H, 0x121110);
     const st = this.st();
@@ -108,13 +108,10 @@ class CombatScene extends Phaser.Scene {
       if (glyph) marks.push(glyph);
     }
     if (u.evade > 0) marks.push('◌');
-    if (u.stealth || u.untargetable > 0) marks.push('☁');
     if (u.marksBy.length) marks.push('⚑');
     v.status.setText(marks.join(' '));
     if (u.downed) { ADV.VFX.desaturate(v.img); v.intent.setText(''); v.frame.setAlpha(0.4); v.name.setAlpha(0.5); }
-    else if (u.fled) { v.img.setAlpha(0.2); v.intent.setText('fled'); }
-    else if (u.stealth || u.untargetable > 0) { v.img.setAlpha(0.55); }
-    else { v.img.setAlpha(1); }
+    if (u.fled) { v.img.setAlpha(0.2); v.intent.setText('fled'); }
   }
 
   refreshIntents() {
@@ -227,6 +224,7 @@ class CombatScene extends Phaser.Scene {
         if (v) V.damageNumber(this, v.x, v.y - 30, e.reason === 'frozen' ? 'frozen!' : 'bound!', '#6fc0e8');
         return 200;
       }
+      case 'hold': { if (v) V.damageNumber(this, v.x, v.y - 30, 'waiting', '#a89a7c'); return 160; }
       case 'bribe': {
         const tv = e.target ? this.view(e.target) : null;
         if (tv) V.damageNumber(this, tv.x, tv.y - 30, e.success ? `bought off (${e.fee}g)` : `kept the ${e.fee}g anyway`, '#d4a94e');
@@ -267,8 +265,6 @@ class CombatScene extends Phaser.Scene {
         return 220;
       }
       case 'execute': { if (v) { V.scalePunch(this, v.img); V.camShake(this, 0.008); V.flashOverlay(this, 0xa8352c); this.redrawUnit(v); } return 260; }
-      case 'hold': { if (v) V.damageNumber(this, v.x, v.y - 30, 'waiting', '#a89a7c'); return 160; }
-      case 'stealth': { if (v) { V.damageNumber(this, v.x, v.y - 30, 'in smoke', '#a89a7c'); this.redrawUnit(v); } return 180; }
       case 'evade': { if (v) V.damageNumber(this, v.x, v.y - 30, 'miss', '#a89a7c'); return 100; }
       case 'counter': { if (v) V.damageNumber(this, v.x, v.y - 30, 'counter!', '#6fa0bf'); return 140; }
       case 'ward': { if (v) V.damageNumber(this, v.x, v.y - 30, 'blocked', '#d4a94e'); return 100; }
@@ -311,7 +307,7 @@ class CombatScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ player turn
   clearActionBar() {
-    if (this.autoTimer) { this.autoTimer.remove(false); this.autoTimer = null; }
+    if (this.autoTimer) { try { this.autoTimer.remove(false); } catch (e) {} this.autoTimer = null; }
     for (const o of this.actionObjs) { try { o.destroy(); } catch (e) {} }
     this.actionObjs = [];
     this.targeting = null;
@@ -334,13 +330,10 @@ class CombatScene extends Phaser.Scene {
         if (this.ended) return;
         const again = ADV.Combat.autoReadyAction(this.st(), u);
         if (again) { this.commitAction(u, again.action, again.tgt); return; }
-        // Smoke / cover emptied the pool mid-wait — pass rather than lock the bar.
         this.commitHold(u);
       });
       return true;
     }
-    // Auto is armed but nothing is legal (stealthed foe, sealed skill with no
-    // fallback). Waiting lets the round advance so stealth can expire.
     if (!ADV.Combat.ensureAutoRepeat(u.ch)) return false;
     if (ADV.Combat.hasLegalCombatAction(this.st(), u)) return false;
     this.showAutoWaitStrip(u);
@@ -393,14 +386,12 @@ class CombatScene extends Phaser.Scene {
     const keep = o => { this.actionObjs.push(o); return o; };
     keep(T().panel(this, 40, H - 110, W - 80, 96));
     keep(T().text(this, 56, H - 104, 'Your move', { size: 12, color: T().css.gold }));
-    this.panelScrolls = [];
-    const scroll = ADV.UI.scrollArea(this, { x: 48, y: H - 90, w: W - 96, h: 68 }, { keep, horizontal: true });
     let x = 56;
     const mkBtn = (label, sub, fn, disabled, tipSkillId) => {
       const w = Math.max(96, label.length * 8 + 22);
       const b = T().button(this, x, H - 86, w, 60, label, fn, { size: 13, sub, disabled });
       if (tipSkillId) ADV.Tooltip.attach(this, b.zone, () => ADV.SkillInfo.describe(u.ch, tipSkillId));
-      scroll.addBtn(b);
+      keep(b.g); keep(b.txt); if (b.sub) keep(b.sub); keep(b.zone);
       x += w + 8;
     };
     const seal = u.statuses.find(x => x.kind === 'sealed');
@@ -449,7 +440,7 @@ class CombatScene extends Phaser.Scene {
           color: on ? T().css.green : T().css.inkDim,
           edge: on ? T().c.green : undefined,
         });
-        scroll.addBtn(ab);
+        keep(ab.g); keep(ab.txt); if (ab.sub) keep(ab.sub); keep(ab.zone);
         ADV.Tooltip.attach(this, ab.zone, () => {
           const heal = !a.off && ADV.DATA.SKILLS[a.skillId] && ADV.DATA.SKILLS[a.skillId].heal;
           return on
@@ -471,7 +462,6 @@ class CombatScene extends Phaser.Scene {
       ADV.Combat.advance(st);
       this.loop();
     });
-    scroll.extend(x);
   }
 
   commitHold(u) {
@@ -528,11 +518,6 @@ class CombatScene extends Phaser.Scene {
       : action.isAttack ? { kind: 'attack', targetUid: tgt.uid }
       : { kind: 'skill', skillId: action.skillId, targetUid: tgt.uid, offensiveMode: action.off };
     const res = ADV.Combat.act(st, u, act);
-    if (res && res.error) {
-      ADV.Notices.toast(this, res.error);
-      this.drainEvents(() => this.showActionBar(u));
-      return;
-    }
     if (res && res.refund) { this.drainEvents(() => this.showActionBar(u)); return; }
     ADV.Combat.advance(st);
     this.loop();
@@ -566,8 +551,8 @@ class CombatScene extends Phaser.Scene {
     });
   }
 
-  // Post-battle choices for defeated named characters: kill / KO / conscript.
-  // Necromancy still raises organic fallen automatically.
+  // Post-battle choices for defeated named characters (§3a): kill / KO /
+  // conscript / necromancy.
   namedChoices(list, done) {
     const game = this.game_;
     const p = ADV.Game.player(game);
@@ -579,9 +564,8 @@ class CombatScene extends Phaser.Scene {
         { label: 'Kill — take what they carry', value: 'kill' },
         { label: 'Knock out — hospitalized 3 quests', value: 'knockout' },
       ];
-      if (ADV.SkillSys.entryFor(p, 'conscript') && ADV.Divine.guildNpc(game.world, c)) {
-        opts.push({ label: 'Conscript them — 3 quests, then they flee at Hatred', value: 'conscript' });
-      }
+      if (ADV.SkillSys.entryFor(p, 'conscript')) opts.push({ label: 'Conscript them', value: 'conscript' });
+      if (ADV.SkillSys.entryFor(p, 'necromancy')) opts.push({ label: 'Raise them', value: 'necromancy' });
       ADV.DialogueBox.show(this, game, c, 'general', ADV.DialogueBox.ctxFor(game, c), () => {
         ADV.Notices.pickOne(this, c.name + ' is beaten', 'The choice is the victor\'s.', opts, (v) => {
           const r = ADV.Game.resolveDefeatedNamed(game, c, v || 'knockout');

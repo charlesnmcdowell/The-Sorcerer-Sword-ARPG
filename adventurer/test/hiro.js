@@ -103,9 +103,13 @@ function contract(game) {
     if (o) ADV.Rel.removePartner(o, w.id);
   }
   w.reputation = 3; me.inventory.gold = 0;
+  for (const m of ADV.Courtship.richestMen(world)) {
+    if (m !== h && !m.isPlayer) ADV.Rel.setPartners(m, ['taken']);
+  }
+  ADV.Courtship.invalidate(world);
   ADV.Courtship.tick(world, g.rng, () => {}, false);
-  ok(h.partnerId !== w.id, 'a low-reputation woman is turned down');
-  ok(ADV.Courtship.onCooldown(world, w.id, h.id) || h.partnerId, 'and cools for three quests');
+  ok(!ADV.Rel.isPartner(h, w), 'a low-reputation woman is turned down');
+  ok(ADV.Courtship.onCooldown(world, w.id, h.id), 'and cools for three quests');
 })();
 
 (function () {
