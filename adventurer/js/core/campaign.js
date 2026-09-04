@@ -261,7 +261,7 @@ Campaign.buildQuest = function (game, n) {
   const q = {
     id: 'cq_' + f.id + '_' + n, campaign: true, factionId: f.id, n, name: src.name, brief: src.brief,
     tier: src.tier, track: 'campaign', factionAlignment: f.alignment,
-    payout: n === 5 ? C().QUEST_TIERS.boss.partyPay : tierPay[src.tier],
+    payout: Math.max(C().CAMPAIGN_MIN_PAY || 500, n === 5 ? C().QUEST_TIERS.boss.partyPay : tierPay[src.tier]),
     enemyLevels: C().QUEST_TIERS[src.tier].enemyLevels,
     encounters: src.enc.map((e, i) => ({ enemyTypeIds: [], boss: !!e.boss, mini: !!e.mini, campaign: true })),
     cEnc: src.enc, rival: !!src.rival, rivalDies: !!src.rivalDies, bossAlly: !!src.bossAlly, branch: !!src.branch, isBoss: n === 5,
@@ -323,7 +323,7 @@ Campaign.repeatables = function (game) {
       for (let e = 0; e < 3; e++) enc.push({ types: [rng.pick(types), rng.pick(types), rng.pick(types)] });
       s.repeatables.push({ id: 'rep_' + f.id + '_' + i + '_' + game.world.questClock, campaign: true, factionRepeatable: true, factionId: f.id,
         n: 0, name: f.short + ' contract', tier, track: 'campaign', factionAlignment: f.alignment,
-        payout: C().QUEST_TIERS[tier].partyPay, enemyLevels: C().QUEST_TIERS[tier].enemyLevels,
+        payout: Math.max(C().CAMPAIGN_MIN_PAY || 500, C().QUEST_TIERS[tier].partyPay), enemyLevels: C().QUEST_TIERS[tier].enemyLevels,
         encounters: enc.map(() => ({ enemyTypeIds: [], campaign: true })), cEnc: enc });
     }
   }

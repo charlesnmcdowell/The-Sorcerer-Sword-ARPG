@@ -288,7 +288,7 @@ C2.buildQuest = function (game, fid, n) {
     id: 'c2_' + fid + '_' + n, campaign: true, campaign2: true, factionId: fid, n,
     name: src.name, brief: src.brief, tier: src.tier, track: 'campaign',
     factionAlignment: f.alignment === 'neutral' ? 'neutral' : f.alignment,
-    payout: n === 5 ? T.boss.partyPay : T[src.tier].partyPay,
+    payout: Math.max(C().CAMPAIGN_MIN_PAY || 500, n === 5 ? T.boss.partyPay : T[src.tier].partyPay),
     enemyLevels: T[src.tier].enemyLevels,
     encounters: src.enc.map(e => ({ enemyTypeIds: [], boss: !!e.boss, mini: !!e.mini, campaign: true })),
     cEnc: src.enc, rival: !!src.rival, rivalDies: !!src.rivalDies, bossAlly: !!src.bossAlly, isBoss: n === 5,

@@ -83,3 +83,48 @@ for (const [arch, kit] of Object.entries(KITS)) {
   }
   console.log(`${arch.padEnd(9)} | ${String(wins).padStart(2)}/20  | ${wins ? Math.round(hpSum / wins * 100) + '%' : '-'}`);
 }
+
+// Survival gold tax: meals + shelter against the same purse that buys skills.
+(function () {
+  const T1 = ADV.DATA.CONST.QUEST_TIERS[1].soloPay;
+  const T2 = ADV.DATA.CONST.QUEST_TIERS[2].soloPay;
+  const meal = 5;
+  const goldAt = (n, pay) => n * pay - n * meal;
+  console.log('\n-- survival gold vs shelter (T1 solo, 5g meals) --');
+  console.log('  Q5  net', goldAt(5, T1), ' inn 100  leftover', goldAt(5, T1) - 100);
+  console.log('  Q10 net', goldAt(10, T1), ' inn+cottage 300  leftover', goldAt(10, T1) - 300);
+  console.log('  Q15 net', goldAt(15, T1), ' full ladder 650  leftover', goldAt(15, T1) - 650);
+  if (goldAt(5, T1) < 100) console.log('  CONCERN: T1 opening cannot afford the inn');
+  if (goldAt(15, T1) < 650) console.log('  CONCERN: T1-only cannot settle (brick) by quest 15 — need T2 or party pay');
+
+  ADV.Save.setBackend({ _m: {}, getItem(k) { return this._m[k] || null; }, setItem(k, v) { this._m[k] = v; }, removeItem(k) { delete this._m[k]; } });
+  const eatGame = ADV.Game.newGame({ seed: 21, name: 'Eat', sex: 'f', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const ep = ADV.Game.player(eatGame);
+  for (let i = 0; i < 40; i++) {
+    ep.inventory.gold += i < 5 ? T1 : T2;
+    ADV.Character.eat(ep, 'bread');
+    ADV.Survival.onQuestResolved(eatGame);
+    const next = ADV.Housing.list().find(h => ADV.Housing.rank(h.id) === ADV.Housing.rank(ep.homeId) + 1);
+    if (next && ep.inventory.gold >= next.cost) ADV.Housing.buy(eatGame, next.id);
+  }
+  const eatDead = !!eatGame.pendingDeath || !ep.alive;
+  const settled = ADV.Housing.rank(ep.homeId) >= ADV.Housing.rank('brick');
+  console.log('  eat+shelter 40q: alive=' + (!eatDead) + ' home=' + ep.homeId + ' gold=' + ep.inventory.gold + ' sick=' + !!ADV.Survival.state(ep).sick);
+  if (eatDead) console.log('  CONCERN: the eat-and-shelter path died — design is too tight');
+  if (!settled) console.log('  CONCERN: eat+shelter did not reach brick in 40 quests');
+
+  const starveGame = ADV.Game.newGame({ seed: 22, name: 'Starve', sex: 'm', portraitSlot: 1, portraitSeed: 2, startingSkills: ['cleave', 'mend', 'triage'] });
+  const sp = ADV.Game.player(starveGame);
+  let starveAt = 0;
+  for (let i = 0; i < 10; i++) {
+    const r = ADV.Survival.onQuestResolved(starveGame);
+    if (r.died) { starveAt = i + 1; break; }
+  }
+  console.log('  starve path died at quest', starveAt || 'never');
+  if (!starveAt) console.log('  CONCERN: hunger death is not reachable');
+
+  const npc = eatGame.world.characters.find(c => !c.isPlayer && c.alive);
+  npc.survival = { hunger: 4, questsSinceShelter: 9, sick: true, sickStacks: 4 };
+  if (ADV.Survival.statMult(npc) !== 1) console.log('  CONCERN: NPCs are affected by hunger');
+  console.log('  NPC statMult at four stacks:', ADV.Survival.statMult(npc));
+})();

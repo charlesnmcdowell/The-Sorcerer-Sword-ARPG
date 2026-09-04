@@ -21,7 +21,7 @@ ADV.DATA.PROMPTS = {
   firstCarriedDamage:  'You only heal when you return to town.',
   firstNonCombat:      'Not every encounter has to be a fight.',
   firstPartyQuest:     'You control only yourself — the others decide for themselves.',
-  firstSkillAuto:      'Turn AUTO on and that skill keeps hitting the weakest target until you stop it.',
+  firstSkillAuto:      'Turn AUTO on as many skills as you want. Combat walks them in order, weakest target each time.',
   firstHome:           'A roof of your own changes the town behind the menus, and a brick house, a mansion, or a castle will hold two, three, or five spouses without anyone being left.',
   firstIntentIcon:     'Their portraits show what they plan to do before you act.',
   firstAffordableSet:  'A full set makes all your matching skills stronger.',
@@ -62,5 +62,11 @@ ADV.DATA.PROMPTS = {
   firstAvenger:        'They have every skill you have, and more besides.',
   firstDeathReincarnation: 'Generations have passed; your skills remain, but everyone you knew is gone.',
   firstDeathNepotism:  'You play as your child now, and everyone your parent knew is still out there.',
+  firstHunger:         'You came back Hungry — a quarter of your strength is gone, and four nights without a meal will kill you.',
+  firstShelterWarning: 'Two more nights on this roof and you will be Sick; Sick stacks with Hungry, and a spouse will not stay.',
+  firstSickness:       'You slept rough too long — you are Sick, and anyone who married you has left.',
+  firstSicknessJilt:   'They left because you could not house them; you may hate them for it, or you may not.',
+  firstInsuranceOffer: 'Fifty gold now, five hundred to the survivor if you or your spouse dies, and the policy burns when it pays.',
+  firstMealCure:       'One meal and the hunger is gone — it does not linger.',
 };
 })();

@@ -175,7 +175,7 @@ ADV.DATA.CAMPAIGN_DIALOGUE = {
      "t": "[calm] I'm Ossian Vane. I run the Gaping Maw. Every job, every name, every one of us."
     },
     {
-     "t": "[flatly] I look at new people myself. Wren already has an opinion. She is usually right. That is why I will not hear it first."
+     "t": "[flatly] I look at new people myself. Wren already has an opinion. He is usually right. That is why I will not hear it first."
     },
     {
      "t": "[calm] Go take a job. Come back after. I will tell you what I saw. That is the only test you get from me."

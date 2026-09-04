@@ -39,6 +39,7 @@ Save.saveGame = function (game) {
     playerId: w.playerId, metIds: w.metIds,
     parties: w.parties, campaignWorld: w.campaignWorld || null, mawContracts: w.mawContracts || [], pendingRaises: w.pendingRaises || [], hiroId: w.hiroId || null,
     sharedQuests: w.sharedQuests || {}, pendingProposals: w.pendingProposals || [], cooldowns: w.cooldowns || {},
+    lastPlayerHelpAt: w.lastPlayerHelpAt, lastPlayerProposalAt: w.lastPlayerProposalAt, lastRivalAt: w.lastRivalAt,
     board: game.board, life: game.life, campaign: game.campaign || null, campaign2: game.campaign2 || null, tutorial: game.tutorial || null,
     campaignProgress: w.campaignProgress || [],
   });
@@ -74,8 +75,20 @@ Save.loadGame = function () {
     playerId: ws.playerId, metIds: ws.metIds || [],
     campaignWorld: ws.campaignWorld || null, campaignProgress: ws.campaignProgress || [], mawContracts: ws.mawContracts || [], pendingRaises: ws.pendingRaises || [], hiroId: ws.hiroId || null,
     sharedQuests: ws.sharedQuests || {}, pendingProposals: ws.pendingProposals || [], cooldowns: ws.cooldowns || {},
+    lastPlayerHelpAt: ws.lastPlayerHelpAt != null ? ws.lastPlayerHelpAt : -99,
+    lastPlayerProposalAt: ws.lastPlayerProposalAt != null ? ws.lastPlayerProposalAt : -99,
+    lastRivalAt: ws.lastRivalAt != null ? ws.lastRivalAt : -99,
   };
-  return { world, board: ws.board || null, life: ws.life || 1, meta: Save.loadMeta(), campaign: ws.campaign || null, campaign2: ws.campaign2 || null, tutorial: ws.tutorial || null };
+  const loaded = { world, board: ws.board || null, life: ws.life || 1, meta: Save.loadMeta(), campaign: ws.campaign || null, campaign2: ws.campaign2 || null, tutorial: ws.tutorial || null };
+  if (ADV.Survival) {
+    for (const c of characters) {
+      if (c && c.isPlayer) ADV.Survival.state(c);
+    }
+  }
+  if (ADV.Party && ADV.Party.repairWorld) ADV.Party.repairWorld(world);
+  else if (ADV.Party && ADV.Party.syncIds) ADV.Party.syncIds(world);
+  if (ADV.World && ADV.World.pruneStrangerContacts) ADV.World.pruneStrangerContacts(world);
+  return loaded;
 };
 
 Save.hasSave = function () { return !!get('adv:world'); };

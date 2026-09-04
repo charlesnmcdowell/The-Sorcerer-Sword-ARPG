@@ -111,6 +111,7 @@ const equippedIds = (ch) => ch.perks.concat(ch.actives).map(e => e.skillId).sort
   const g = ADV.Game.newGame({ seed: 41, name: 'Patriarch', sex: 'm', portraitSlot: 1, portraitSeed: 5, startingSkills: ['cleave', 'sunder', 'momentum'] });
   const world = g.world;
   const dadP = ADV.Game.player(g);
+  dadP.homeId = 'brick';
   const momN = world.characters.find(c => c.sex === 'f' && !c.isPlayer);
   ADV.Rel.move(world, dadP.id, momN.id, 60, 'romance');
   ADV.Rel.move(world, momN.id, dadP.id, 60, 'romance');
@@ -121,6 +122,7 @@ const equippedIds = (ch) => ch.perks.concat(ch.actives).map(e => e.skillId).sort
     const s = ADV.Game.startQuest(g, q, {});
     if (!s.ok) break;
     g.quest.encIdx = q.encounters.length; g.quest.readyToComplete = true;
+    dadP.meal = { id: 'bread', name: 'Bread', bonus: { hp: 4 } };
     ADV.Game.completeQuest(g);
   }
   ok((momN.dependents || []).length > 0, 'child conceived with NPC mother');

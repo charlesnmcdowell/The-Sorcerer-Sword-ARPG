@@ -13,6 +13,8 @@ function contract(game) {
   const q = ADV.Quests.make(game.rng, 1, 'solo', 'neutral');
   q.encounters = [{ enemyTypeIds: ['bandit'], boss: false }];
   const p = ADV.Game.player(game); p.stats = { hp: 900, atk: 40, def: 30, spd: 20 };
+  p.homeId = 'brick';
+  p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 8 } };
   ADV.Game.startQuest(game, q, {});
   while (!game.quest.readyToComplete && !game.quest.over) {
     ADV.Game.currentEncounter(game); const st = ADV.Game.startCombat(game, false);

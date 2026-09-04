@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spell FX contact sheet</title>
+<style>
+  html, body { margin: 0; background: #0b0a08; color: #e8dfc8; font: 13px Consolas, monospace; }
+  #bar { padding: 8px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  select, button { background: #211d18; color: #e8dfc8; border: 1px solid #3a332a; padding: 4px 8px; }
+  #meta { color: #a89a7c; }
+  #game { display: flex; justify-content: center; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <label>skill <select id="skill"></select></label>
+  <label>tier <select id="tier">
+    <option>basic</option>
+    <option>intermediate</option>
+    <option>advanced</option>
+  </select></label>
+  <button id="play">Play</button>
+  <button id="all">Play all</button>
+  <span id="meta"></span>
+</div>
+<div id="game"></div>
+<script src="../lib/phaser.min.js"></script>
+<script src="../js/ui/theme.js"></script>
+<script src="../js/ui/vfx.js"></script>
+<script src="../js/ui/spell_fx.js"></script>
+<script>
+const LANE_X = { a: { front: 520, mid: 396, back: 272 }, b: { front: 760, mid: 884, back: 1008 } };
+const SLOT_Y = [170, 330, 490];
+
+class Sheet extends Phaser.Scene {
+  constructor() { super('Sheet'); }
+  create() {
+    this.cameras.main.setBackgroundColor(0x171512);
+    const g = this.add.graphics();
+    g.lineStyle(1, 0x3a332a, 0.8);
+    for (const side of ['a', 'b']) for (const lane of ['front', 'mid', 'back'])
+      g.strokeRect(LANE_X[side][lane] - 62, 130, 124, 484);
+    this.srcImg = this.add.rectangle(LANE_X.a.front, SLOT_Y[1], 56, 72, 0x4a6f8a).setDepth(10);
+    this.tgtImg = this.add.rectangle(LANE_X.b.front, SLOT_Y[1], 56, 72, 0xa8352c).setDepth(10);
+    this.laneImgs = SLOT_Y.map((y, i) => this.add.rectangle(LANE_X.b.front, y, 40, 52, 0x6a4a38, i === 1 ? 0 : 0.55).setDepth(8));
+    this.src = { x: this.srcImg.x, y: this.srcImg.y, img: this.srcImg, u: { side: 'a', lane: 'front', statuses: [] } };
+    this.tgt = { x: this.tgtImg.x, y: this.tgtImg.y, img: this.tgtImg, u: { side: 'b', lane: 'front', statuses: [] } };
+    this.unitViews = new Map();
+    this.unitViews.set('a', this.src);
+    SLOT_Y.forEach((y, i) => {
+      const v = { x: LANE_X.b.front, y, img: this.laneImgs[i], u: { side: 'b', lane: 'front', statuses: [] } };
+      if (i === 1) { v.img = this.tgtImg; v.x = this.tgt.x; v.y = this.tgt.y; this.tgt = v; }
+      this.unitViews.set('b' + i, v);
+    });
+    this.add.text(LANE_X.a.front, 118, 'src', { fontSize: '12px', color: '#a89a7c' }).setOrigin(0.5);
+    this.add.text(LANE_X.b.front, 118, 'tgt / lane', { fontSize: '12px', color: '#a89a7c' }).setOrigin(0.5);
+    this.label = this.add.text(640, 40, '', { fontFamily: 'Georgia', fontSize: '22px', color: '#d4a94e' }).setOrigin(0.5).setDepth(600);
+    this.count = this.add.text(20, 720, '', { fontSize: '12px', color: '#6b6151' }).setDepth(600);
+    this.events.on('update', () => {
+      this.count.setText('children: ' + this.children.list.length);
+    });
+    window.__sheet = this;
+  }
+  play(skillId, tier) {
+    this.srcImg.setAlpha(1);
+    this.tgtImg.setAlpha(1);
+    this.srcImg.x = LANE_X.a.front; this.srcImg.y = SLOT_Y[1];
+    this.src.x = this.srcImg.x; this.src.y = this.srcImg.y;
+    this.tgtImg.x = LANE_X.b.front; this.tgtImg.y = SLOT_Y[1];
+    this.tgt.x = this.tgtImg.x; this.tgt.y = this.tgtImg.y;
+    try { if (this.srcImg.clearTint) this.srcImg.clearTint(); } catch (e) {}
+    try { if (this.tgtImg.clearTint) this.tgtImg.clearTint(); } catch (e) {}
+    this.label.setText(skillId + '  ·  ' + tier);
+    const n0 = this.children.list.length;
+    const wait = ADV.SpellFX.play(this, {
+      skillId, tier, src: this.src, tgt: this.tgt, dir: 1,
+    });
+    return wait;
+  }
+}
+
+const game = new Phaser.Game({
+  type: Phaser.AUTO, width: 1280, height: 760, parent: 'game',
+  scene: [Sheet], backgroundColor: '#171512',
+});
+
+const skillSel = document.getElementById('skill');
+const tierSel = document.getElementById('tier');
+const meta = document.getElementById('meta');
+function fill() {
+  const ids = ADV.SpellFX.ids();
+  skillSel.innerHTML = ids.map(id => '<option>' + id + '</option>').join('');
+  meta.textContent = ids.length + ' skills × 3 tiers = ' + (ids.length * 3);
+}
+setTimeout(fill, 200);
+
+document.getElementById('play').onclick = () => {
+  if (window.__sheet) window.__sheet.play(skillSel.value, tierSel.value);
+};
+let walking = false;
+document.getElementById('all').onclick = async () => {
+  if (walking || !window.__sheet) return;
+  walking = true;
+  const ids = ADV.SpellFX.ids();
+  const tiers = ['basic', 'intermediate', 'advanced'];
+  for (const id of ids) {
+    skillSel.value = id;
+    for (const t of tiers) {
+      tierSel.value = t;
+      const wait = window.__sheet.play(id, t);
+      await new Promise(r => setTimeout(r, Math.max(420, (wait || 260) + 200)));
+    }
+  }
+  walking = false;
+  meta.textContent = 'walk done. children ' + window.__sheet.children.list.length;
+};
+</script>
+</body>
+</html>

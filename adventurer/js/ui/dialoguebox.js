@@ -34,6 +34,17 @@ const DialogueBox = {
     const key = ADV.Portraits.key(scene, speaker);
     const img = scene.add.image(88, y + bh / 2, key).setDisplaySize(96, 122).setDepth(902);
     if (ADV.Portraits.animate) ADV.Portraits.animate(scene, img, speaker, key);
+    if (ADV.Portraits.express && game && speaker && !speaker.isMonster) {
+      let mood = 'neutral';
+      if (speaker.isPlayer && ADV.Survival) {
+        const sv = ADV.Survival.state(speaker);
+        mood = sv.sick ? 'hurt' : (sv.hunger ? 'sad' : 'neutral');
+      } else if (ADV.Rel) {
+        const tier = ADV.Rel.tierBetween(game.world, speaker.id, game.world.playerId);
+        mood = (tier === 'romantic' || tier === 'friendly') ? 'happy' : (tier === 'hatred' ? 'angry' : 'neutral');
+      }
+      ADV.Portraits.express(scene, img, speaker, key, mood);
+    }
     const frame = scene.add.graphics().setDepth(903);
     frame.lineStyle(2, T().c.panelEdge, 1);
     frame.strokeRect(40, y + bh / 2 - 61, 96, 122);

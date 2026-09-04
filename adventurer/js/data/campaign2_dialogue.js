@@ -17,10 +17,10 @@ ADV.DATA.CAMPAIGN2_DIALOGUE = {
 bell: {
   obaasan: {
     offer: [
-      L('[calm] Buy some paper. Take your time choosing it. People who leave a shop empty-handed are the ones who get remembered.'),
-      L('[flatly] I sell paper and I pass jobs for a clan of killers called the Hollow Bell. I have done the second thing for sixty years.'),
-      L('[thoughtful] You were on the north road eight days ago. You left three alive who saw your face and you have not been arrested, so somebody was careless and it was not you.'),
-      L('[calm] Come and work for us, {target}. We take contracts from every side and we never explain ourselves to any of them.'),
+      L('[calm] Come in. The cheap paper is on the left. The work I want to talk about is behind the counter.'),
+      L('[flatly] I have kept this shop for sixty years. I also keep the Hollow Bell. We take contracts from anyone who pays, and we keep every name.'),
+      L('[thoughtful] You finish jobs and you walk back into town. That is rarer than people think, and it is why I asked for you.'),
+      L('[calm] Come and work for us, {target}. Do the jobs I hand you. Do not ask who paid.'),
     ],
     tutorial: [
       L('[calm] Your work comes from me now. Come to the shop. Do not take jobs off the town board while you are ours.'),
@@ -28,7 +28,7 @@ bell: {
       L('[quietly] Watch our people fight. You cannot buy what they do — you have to see it done, and then it is yours.'),
       L('[calm] Finish all five and you keep a full set of our gear. Everything you saw stays with you as well.'),
     ],
-    decline: [L('[flatly] Then buy the paper anyway. I am here every day and I have outlived better refusals than yours.')],
+    decline: [L('[flatly] Then take a sheet on your way out. I will still be here when you change your mind.')],
     debrief1: [
       L('[impressed] The scribe has stopped writing and he is still breathing. That is harder than killing him and worth more.'),
       L('[calm] The Paper-Keeper works for me. I sent him to find out whether you would check. You did not, and now you will.'),
@@ -48,9 +48,9 @@ bell: {
       L('[quietly] Kaede wants you upstairs. She has known his name for twenty years and she has never once said it out loud.'),
     ],
     why: [
-      L('[tired] People think the old woman in the paper shop is a cover. She is not. I do sell paper. I am good at it.'),
-      L('[quietly] I have never killed anyone. I have sent four hundred people out to kill, and I sleep through the night.'),
-      L('[calm] That is the trade. Not the knife — the sleeping. You will learn it too, and you will not notice the day you did.'),
+      L('[tired] They think the paper is a front. It is not. People need it. I sell it, and I am good at it.'),
+      L('[quietly] I have never held a knife. I have sent four hundred people out with one, and I sleep through the night.'),
+      L('[calm] That is the work. Not the killing. Coming back, and sleeping after. You will learn it, and you will not notice the day you did.'),
     ],
   },
   suzume: {

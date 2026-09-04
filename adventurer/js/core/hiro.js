@@ -81,7 +81,14 @@ Hiro.fillParty = function (world, rng, party) {
   const free = () => ADV.World.adults(world).filter(c => !c.isPlayer && !c.registryId && !c.partyId && c.status === 'normal' && !c.isUndead && !c.isConscript && c.hospitalizedQuestsLeft <= 0);
   let guard = 0;
   while (ADV.Party.roster(world, party).length < want && guard++ < 40) {
-    const cands = free().filter(c => !ADV.Party.hatredConflict(world, party, c.id)).sort((a, b) => b.reputation - a.reputation);
+    const need = !ADV.Party.hasSupport(world, party);
+    const cands = free().filter(c => !ADV.Party.hatredConflict(world, party, c.id)).sort((a, b) => {
+      if (need) {
+        const sa = ADV.Party.isSupport(a) ? 1 : 0, sb = ADV.Party.isSupport(b) ? 1 : 0;
+        if (sb !== sa) return sb - sa;
+      }
+      return b.reputation - a.reputation;
+    });
     if (!cands.length) break;
     const c = cands[guard % cands.length];
     const r = ADV.Party.offerWage(world, rng, party, c, Hiro.RULES.wage);

@@ -69,6 +69,14 @@ Game.load = function () {
     campaign: data.campaign || (ADV.Campaign ? ADV.Campaign.fresh() : null),
     campaign2: data.campaign2 || (ADV.Campaign2 ? ADV.Campaign2.fresh() : null), tutorial: data.tutorial || { step: 'done' } };
   if (!game.board) game.board = ADV.Quests.generateBoard(world, rng);
+  if (ADV.Party && ADV.Party.repairWorld) ADV.Party.repairWorld(world);
+  // One-shot: compensate a live save hit by the party-id / wage bugs. Tests
+  // run in Node and never take this branch.
+  if (typeof window !== 'undefined' && player.inventory && !game.meta.grantGold1000) {
+    player.inventory.gold = (player.inventory.gold || 0) + 1000;
+    game.meta.grantGold1000 = true;
+    ADV.Save.saveGame(game);
+  }
   return game;
 };
 
@@ -159,9 +167,17 @@ Game.leaderPick = function (game) {
   let pool = game.board.filter(q => q.track === 'party' && q.payout > payroll);
   if (!pool.length) pool = game.board.filter(q => q.track === 'party');
   if (!pool.length) return null;
-  pool.sort((a, b) => a.tier === b.tier ? a.payout - b.payout : (a.isBoss ? 9 : a.tier) - (b.isBoss ? 9 : b.tier));
   // the guided first party quest is a canned easy road job, not a 3–5 pack
   if (game.tutorial && game.tutorial.step === 'partyQuest') return ADV.Quests.makeTutorialParty();
+  const lean = ADV.Party.alignment(game.world, party);
+  if (lean === 'law' || lean === 'criminal') {
+    const opposite = lean === 'law' ? 'criminal' : 'law';
+    const keep = pool.filter(q => q.factionAlignment !== opposite);
+    if (keep.length) pool = keep;
+    const preferred = pool.filter(q => q.factionAlignment === lean);
+    if (preferred.length) pool = preferred;
+  }
+  pool.sort((a, b) => a.tier === b.tier ? a.payout - b.payout : (a.isBoss ? 9 : a.tier) - (b.isBoss ? 9 : b.tier));
   const per = leader ? leader.personality : { caution: 50, greed: 50, aggression: 50 };
   const bold = (per.aggression + per.greed) / 2 - per.caution;   // -100..100
   const idx = Math.max(0, Math.min(pool.length - 1, Math.round((pool.length - 1) * (0.5 + bold / 200))));
@@ -212,7 +228,8 @@ Game.departureInfo = function (game, quest) {
 // Stay home: no quest, world advances anyway (§7). Home is safe — no ambush.
 Game.stayHome = function (game) {
   const p = Game.player(game);
-  ADV.Character.digest(p);
+  if (ADV.Survival) ADV.Survival.onQuestResolved(game);
+  else ADV.Character.digest(p);
   agePlayerChildren(game);
   tickPlayerPregnancy(game);
   ADV.World.tick(game.world, game.rng, { playerQuested: false });
@@ -220,6 +237,85 @@ Game.stayHome = function (game) {
   game.board = ADV.Quests.generateBoard(game.world, game.rng);
   ADV.Save.saveGame(game);
   return { ok: true };
+};
+
+// ---- rival companies (at most one outing every PLAYER_CONTACT_GAP) ----------
+Game.rivalAlignment = function (quest) {
+  if (quest && quest.factionAlignment === 'criminal') return 'law';
+  if (quest && quest.factionAlignment === 'law') return 'criminal';
+  return 'law';
+};
+Game.shouldMeetRival = function (game, quest) {
+  if (!quest || quest.campaign) return false;
+  if (game.tutorial && game.tutorial.step && game.tutorial.step !== 'done') return false;
+  const p = Game.player(game);
+  const outings = (p.questsCompleted || 0) + (p.questsFailed || 0);
+  if (outings < (C().PLAYER_CONTACT_GAP || 2)) return false;
+  return ADV.World.playerContactReady(game.world, 'lastRivalAt');
+};
+Game.pickRivalParty = function (game, quest) {
+  const world = game.world;
+  const p = Game.player(game);
+  const mine = ADV.Party.of(world, p);
+  const want = Game.rivalAlignment(quest);
+  const others = (world.parties || []).filter(x => x !== mine && ADV.Party.leader(world, x) && ADV.Party.leader(world, x).alive);
+  const aligned = others.filter(x => ADV.Party.alignment && ADV.Party.alignment(world, x) === want);
+  const pool = aligned.length ? aligned : others;
+  return pool.length ? game.rng.pick(pool) : null;
+};
+Game.attachRival = function (game, quest) {
+  if (!Game.shouldMeetRival(game, quest)) return null;
+  const party = Game.pickRivalParty(game, quest);
+  if (!party) return null;
+  const leader = ADV.Party.leader(game.world, party);
+  if (!leader) return null;
+  return { partyId: party.id, alignment: Game.rivalAlignment(quest), leaderId: leader.id, resolved: false };
+};
+Game.rivalAIChoice = function (leader) {
+  const per = (leader && leader.personality) || {};
+  const a = per.aggression || 50, c = per.caution || 50, g = per.greed || 50;
+  if (a >= c && a >= 55) return 'fight';
+  if (c >= g && c >= 55) return 'flee';
+  if (g >= 55) return 'surrender';
+  return a > c ? 'fight' : 'flee';
+};
+Game.applyRivalDecision = function (game, playerChoice) {
+  const q = game.quest;
+  const rival = q && q.rival;
+  if (!rival) return { outcome: 'none' };
+  const world = game.world;
+  const rParty = world.parties.find(p => p.id === rival.partyId);
+  const rLeader = rParty ? ADV.Party.leader(world, rParty) : ADV.World.byId(world, rival.leaderId);
+  const rivalChoice = Game.rivalAIChoice(rLeader || { personality: { caution: 60 } });
+  rival.playerChoice = playerChoice;
+  rival.rivalChoice = rivalChoice;
+  rival.resolved = true;
+  q.rivalResolved = true;
+  if (playerChoice === 'flee') {
+    q.failed = true; q.fled = true; q.over = true;
+    ADV.World.feed(world, 'The company turned from the other party and left the contract.', []);
+    return { outcome: 'playerFlee' };
+  }
+  if (playerChoice === 'surrender') {
+    q.failed = true; q.surrendered = true; q.over = true;
+    ADV.World.feed(world, 'The contract was yielded to the other company.', []);
+    return { outcome: 'playerSurrender' };
+  }
+  q.rivalPending = true;
+  q.rivalFight = false;
+  ADV.World.feed(world, (rLeader ? rLeader.name : 'The other company') + "'s party will be waiting when the contract is done.", rLeader ? [rLeader.id] : []);
+  return { outcome: 'fight' };
+};
+Game.maybeStartRivalFinale = function (game) {
+  const q = game.quest;
+  if (!q || q.over || q.failed || q.playerDead) return false;
+  if (!q.rivalPending || q.rivalCombatDone) return false;
+  if (!(q.readyToComplete || q.encIdx >= q.quest.encounters.length)) return false;
+  q.readyToComplete = false;
+  q.rivalFight = true;
+  q.enemies = null;
+  q.verbs = null;
+  return true;
 };
 
 // Begin a quest run. depositGold: how much carried gold to vault first.
@@ -251,13 +347,34 @@ Game.startQuest = function (game, quest, opts) {
   for (const ch of roster) { ch.combatHp = ADV.Character.maxHp(ch); ch.wasDowned = false; ch.hasFled = false; }
   game.quest.partnerAlong = roster.some(c => ADV.Rel.isPartner(p, c));
   if (quest.campaign) game.quest.departureBeats = ADV.Campaign.departureBeats(game, quest);
+  const rival = Game.attachRival(game, quest);
+  if (rival) {
+    game.quest.rival = rival;
+    game.quest.rivalPending = true;
+    game.quest.rivalResolved = true;
+    ADV.World.markPlayerContact(game.world, 'lastRivalAt');
+  }
   return { ok: true, quest: game.quest };
 };
 
 // Current encounter: spawn enemies + verb options.
 Game.currentEncounter = function (game) {
   const q = game.quest;
-  if (!q || q.over || q.readyToComplete || q.encIdx >= q.quest.encounters.length) return null;
+  if (!q || q.over || q.playerDead) return null;
+  if (q.rivalFight && !q.rivalCombatDone) {
+    if (!q.enemies) {
+      const world = game.world;
+      const rParty = q.rival && (world.parties || []).find(p => p.id === q.rival.partyId);
+      const roster = rParty ? ADV.Party.roster(world, rParty) : [];
+      q.enemies = roster.filter(c => c && c.alive && !c.isPlayer);
+      q.verbs = [{ verb: 'fight' }];
+    }
+    return {
+      encIdx: q.quest.encounters.length, total: q.quest.encounters.length + 1,
+      enemies: q.enemies, verbs: q.verbs, boss: false, revealed: false, openerBeats: [], rival: true,
+    };
+  }
+  if (q.readyToComplete || q.encIdx >= q.quest.encounters.length) return null;
   if (!q.enemies) {
     q.enemies = q.quest.campaign ? ADV.Campaign.spawnEncounter(game, q.quest, q.encIdx)
       : ADV.Quests.spawnEncounter(game.rng, q.quest, q.encIdx);
@@ -506,6 +623,28 @@ Game.finishCombat = function (game) {
   ADV.Combat.exportHp(st);
   processMercies(game, st);
   const won = st.winner === 'a';
+  if (q.rivalFight) {
+    q.combat = null;
+    q.enemies = null;
+    q.verbs = null;
+    q.rivalFight = false;
+    q.rivalPending = false;
+    q.rivalCombatDone = true;
+    if (won) {
+      const newly = ADV.Combat.registerWitnesses(st);
+      q.witnessedNew.push(...newly);
+      const rParty = (game.world.parties || []).find(x => q.rival && x.id === q.rival.partyId);
+      Game.wipeParty(game.world, rParty, p.id);
+      if (p.combatHp <= 0 || p.wasDowned) p.combatHp = Math.max(1, p.combatHp);
+      q.readyToComplete = true;
+      return { won: true, playerDead: q.playerDead };
+    }
+    if (st.leaderFled || st.leaderFell) Game.resolveLeaderFall(game, st);
+    else if (p.hasFled) { q.failed = true; q.fled = true; q.over = true; }
+    else if (st.units.find(u => u.ch === p && u.downed)) { q.playerDead = true; q.over = true; }
+    else { q.failed = true; q.over = true; }
+    return { won: false, playerDead: q.playerDead };
+  }
   if (won) {
     // survivors witness (downed-but-alive counts — their side won, so they live, §3)
     const newly = ADV.Combat.registerWitnesses(st);
@@ -596,7 +735,8 @@ Game.completeQuest = function (game) {
   }
 
   // the meal was for this quest (request: food lasts one quest)
-  ADV.Character.digest(p);
+  if (ADV.Survival) ADV.Survival.onQuestResolved(game);
+  else ADV.Character.digest(p);
 
   // the god line pays on a halving scale and counts its own clears (§7)
   if (!q.failed && !q.playerDead && q.quest.godLine && ADV.Campaign2) {

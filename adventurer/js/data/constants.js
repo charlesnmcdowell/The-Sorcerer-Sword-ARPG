@@ -94,6 +94,9 @@ ADV.DATA.CONST = {
     hazard2: { partyPay: 300, enemyLevels: [12, 18], tier: 2 },
     hazard3: { partyPay: 600, enemyLevels: [19, 24], tier: 3 },
   },
+  // Faction-hall jobs must clear a real payroll. Tier-1 party pay is 100g and
+  // locked leaders out of the Maw's first contract.
+  CAMPAIGN_MIN_PAY: 500,
   SOLO_ENCOUNTERS: [2, 3],  SOLO_ENEMIES: [1, 2],
   PARTY_ENCOUNTERS: [3, 4], PARTY_ENEMIES: [3, 5],
 
@@ -103,8 +106,10 @@ ADV.DATA.CONST = {
     tuitionPerChildPerQuest: 20,
     hirelingWage: 30,          // starting wage; negotiated before hire
     typicalWage: 30,           // leader offer default
-    wageAcceptMin: 30, wageAcceptMax: 100,
-    wageRaiseStep: 10,         // a raise asks this much more, once per stay
+    wageAcceptMin: 30, wageAcceptMax: 100, // leaders still offer NPCs 30–100
+    wageApplyMax: 200,         // player apply ceiling; reputation opens the range
+    wageRaiseMax: 300,         // after hire, raises can climb to this
+    wageRaiseStep: 10,         // default raise jump if you do not name one
     gearSet: 800,
     tutorIntermediate: 300,    // trainer lifts an active to Intermediate
     tutorAdvanced: 600,        // ... or to Advanced
@@ -151,6 +156,7 @@ ADV.DATA.CONST = {
   SHARED_STREAK_TARGET: 3,
 
   // ---- Misc systems ------------------------------------------------------
+  PLAYER_CONTACT_GAP: 2,          // quests that must pass between player-facing asks / rescues / rival teams
   RESCUE_EXPIRES_IN: 2,           // world ticks before a rescue offer lapses
   ASSASSINATION_PER_RETURN: 1,    // queue rule: at most one attempt per quest return
   THEFT_REL_PENALTY: -20,

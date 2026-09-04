@@ -557,6 +557,18 @@ const SET_LOOK = {
   green_eyed_armour: { wardrobe: 'samurai', color: '#4a5a38', headwear: 'helm' },
   privateers_kit:    { wardrobe: 'pirate',  color: '#3a2a22', headwear: 'cap' },
   kings_uniform:     { wardrobe: 'navy',    color: '#2a3a52' },
+  // Single-class: silhouette first, then colour. Cross-class mixes two recipes.
+  plate:             { wardrobe: 'armor',   color: '#6a7080', headwear: 'helm', cloak: true },
+  duelist:           { wardrobe: 'suit',    color: '#4a3a32' },
+  leathers:          { wardrobe: 'ninja',   color: '#3a3228', extras: 'mask' },
+  adept:             { wardrobe: 'robe',    color: '#2a3850' },
+  wildhide:          { wardrobe: 'hide',    color: '#5a4030' },
+  hunter:            { wardrobe: 'hiking',  color: '#3a4a28', headwear: 'cap' },
+  street:            { wardrobe: 'hiking',  color: '#4a3830', extras: 'mask' },
+  oath:              { wardrobe: 'armor',   color: '#5a5a48', cloak: true },
+  chantry:           { wardrobe: 'robe',    color: '#4a4a38' },
+  greenward:         { wardrobe: 'hide',    color: '#3a4a32', headwear: 'cap', cloak: true },
+  shadowweave:       { wardrobe: 'ninja',   color: '#2a2438', headwear: 'hood', cloak: true },
 };
 
 function applySetLook(rec, setId) {
@@ -566,6 +578,7 @@ function applySetLook(rec, setId) {
   rec.wardrobeColor = L.color;
   if (L.headwear) rec.headwear = L.headwear;
   if (L.cloak) rec.cloak = true;
+  if (L.extras) rec.extras = typeof L.extras === 'function' ? L.extras : drawExtras(L.extras, L.color);
   return rec;
 }
 
@@ -724,8 +737,11 @@ const Portraits = {
     cacheKeys.add(key);
     if (!META[key]) {
       const lidHex = rec && rec.skin ? shade(rec.skin[0], 0.97) : null;
+      const hairHex = rec && rec.hairColor ? rec.hairColor : null;
       META[key] = { eyeY: EYE_Y, eyeDX: 14, monster: !!ch.isMonster,
-        lid: lidHex ? parseInt(lidHex.slice(1), 16) : null };
+        lid: lidHex ? parseInt(lidHex.slice(1), 16) : null,
+        hair: hairHex ? parseInt(hairHex.slice(1), 16) : null,
+        browY: EYE_Y - 12, mouthY: EYE_Y + 30 };
     }
     return key;
   },
@@ -771,6 +787,70 @@ const Portraits = {
     // scenes destroy portraits constantly (panel switches, scene restarts); clean
     // up with the image so no tween or timer outlives it
     try { img.once('destroy', stop); } catch (e) {}
+    return stop;
+  },
+
+  // Brow + mouth overlay. Neutral draws nothing. Depth sits above the blink
+  // lids (depth+1) so a blink still covers the eyes and never fights the face.
+  express(scene, img, ch, key, mood) {
+    if (!scene || !img || !img.scene) return () => {};
+    mood = mood || 'neutral';
+    if (img.__expressStop) {
+      try { img.__expressStop(); } catch (e) {}
+      img.__expressStop = null;
+    }
+    img.__expressMood = mood;
+    if (mood === 'neutral' || (ch && ch.isMonster)) {
+      const noop = () => { img.__expressMood = 'neutral'; img.__expressStop = null; };
+      img.__expressStop = noop;
+      try { img.once('destroy', noop); } catch (e) {}
+      return noop;
+    }
+    const meta = (key && META[key]) || { eyeY: EYE_Y, eyeDX: 14 };
+    const g = scene.add.graphics().setDepth((img.depth || 0) + 3);
+    const paint = () => {
+      if (!img.scene) return;
+      g.clear();
+      const w = img.displayWidth, h = img.displayHeight;
+      const ey = img.y - h / 2 + h * ((meta.eyeY || EYE_Y) / H);
+      const dx = w * ((meta.eyeDX || 14) / W);
+      const browY = ey - h * (12 / H);
+      const mouthY = ey + h * (30 / H);
+      const browCol = meta.hair != null ? meta.hair : (meta.lid != null ? meta.lid : 0x2a1c12);
+      const mouthCol = meta.lid != null ? meta.lid : 0x6a4030;
+      const lw = Math.max(2, w * (2.6 / W));
+      g.lineStyle(lw, browCol, 0.95);
+      const brow = (sgn, y0, y1) => {
+        g.beginPath();
+        g.moveTo(img.x + sgn * (dx - w * (8 / W)), y0);
+        g.lineTo(img.x + sgn * (dx + w * (8 / W)), y1);
+        g.strokePath();
+      };
+      const mouth = (curve) => {
+        g.lineStyle(lw, mouthCol, 0.95);
+        g.beginPath();
+        g.moveTo(img.x - w * (8 / W), mouthY);
+        g.lineTo(img.x, mouthY + curve);
+        g.lineTo(img.x + w * (8 / W), mouthY);
+        g.strokePath();
+      };
+      if (mood === 'happy') { brow(-1, browY + 1, browY - 1); brow(1, browY + 1, browY - 1); mouth(h * (4 / H)); }
+      else if (mood === 'sad') { brow(-1, browY - 3, browY + 2); brow(1, browY - 3, browY + 2); mouth(-h * (4 / H)); }
+      else if (mood === 'angry') { brow(-1, browY - 4, browY + 2); brow(1, browY - 4, browY + 2); mouth(-h * (1 / H)); }
+      else if (mood === 'afraid') { brow(-1, browY + 2, browY - 4); brow(1, browY + 2, browY - 4); mouth(-h * (3 / H)); }
+      else if (mood === 'hurt') { brow(-1, browY - 3, browY + 1); brow(1, browY + 1, browY - 2); mouth(-h * (2 / H)); }
+    };
+    paint();
+    const tick = () => { if (img.scene) paint(); };
+    scene.events.on('update', tick);
+    const stop = () => {
+      try { scene.events.off('update', tick); } catch (e) {}
+      try { g.destroy(); } catch (e) {}
+      img.__expressMood = null;
+      img.__expressStop = null;
+    };
+    try { img.once('destroy', stop); } catch (e) {}
+    img.__expressStop = stop;
     return stop;
   },
 

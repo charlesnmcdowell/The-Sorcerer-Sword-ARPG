@@ -90,14 +90,19 @@ Court.wouldAsk = function (world, from, to) {
   if (ADV.Rel.isPartner(from, to)) return false;
   if (ADV.Housing && (!ADV.Housing.canTakeSpouse(from) || !ADV.Housing.canTakeSpouse(to))) return false;
   if (from.hiroNpc) return false;                                  // Hiro never asks
+  // The player is only asked by people who have ridden a contract with them.
+  if (to && to.isPlayer && Court.shared(world, from.id, to.id) < 1) return false;
   if (from.sex === 'm') return Court.shared(world, from.id, to.id) >= C().COURT.maleProposeAfter;
   return Court.richestMen(world).includes(to);   // women ask only the wealthy
 };
 
 function queueProposal(world, fromId) {
   world.pendingProposals = world.pendingProposals || [];
+  if (world.pendingProposals.length) return;
   if (world.pendingProposals.some(p => p.fromId === fromId)) return;
+  if (ADV.World && ADV.World.playerContactReady && !ADV.World.playerContactReady(world, 'lastPlayerProposalAt')) return;
   world.pendingProposals.push({ fromId, at: world.questClock });
+  if (ADV.World && ADV.World.markPlayerContact) ADV.World.markPlayerContact(world, 'lastPlayerProposalAt');
 }
 
 function freeSlot(ch) {

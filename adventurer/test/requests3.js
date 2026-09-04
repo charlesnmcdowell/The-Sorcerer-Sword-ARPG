@@ -145,19 +145,19 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Courtship.tick(world, g.rng, () => {}, false);
   const single = world.characters.filter(c => c.alive && c.sex === 'f' && !c.isPlayer && !c.partnerId && !ADV.Rel.hates(world, c.id, me.id));
   ok(single.every(w => ADV.Rel.score(world, w.id, me.id) >= C.REL.FRIENDLY_MIN), 'single women are Friendly to the richest man without a quest');
-  ok((world.pendingProposals || []).length >= 1, 'and one of them asks him');
+  eq((world.pendingProposals || []).length, 0, 'strangers do not ask him');
+  const suitor = single[0];
+  ok(suitor, 'a single woman exists');
+  ADV.Courtship.recordShared(world, [suitor.id, me.id]);
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  ok((world.pendingProposals || []).some(p => p.fromId === suitor.id), 'after a shared quest she asks him');
   const asker = ADV.World.byId(world, world.pendingProposals[0].fromId);
   ADV.Courtship.decline(world, me, asker);
   eq(ADV.Rel.score(world, asker.id, me.id), 0, 'declined: she drops to Neutral');
   ADV.Courtship.tick(world, g.rng, () => {}, false);
   eq(ADV.Rel.score(world, asker.id, me.id), 0, 'and stays there while the cooldown runs');
-  world.questClock += 3;
-  ADV.Courtship.tick(world, g.rng, () => {}, false);
-  ok(ADV.Rel.score(world, asker.id, me.id) >= C.REL.FRIENDLY_MIN, 'three quests later the rich man is Friendly again');
-  // a poor man: neutral until two shared quests
+  // Reserve the poor-man couple before leftover town pairing spends the last singles.
   for (const m of ADV.Courtship.richestMen(world)) if (!m.isPlayer) ADV.Rel.setPartners(m, ['taken']);
-  // Player slot full so leftover town pairing / "holding for the rich man"
-  // cannot steal the woman before the poor man asks.
   ADV.Rel.setPartners(me, ['busy']);
   ADV.Courtship.invalidate(world);
   const poor = world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !rich.includes(c) && !ADV.Rel.partnerIds(c).length) || world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && !ADV.Rel.partnerIds(c).length);
@@ -167,6 +167,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
     if (c === poor || c === her || c.isPlayer || !c.alive) continue;
     ADV.Rel.setPartners(c, ['taken']);
   }
+  world.questClock += 3;
+  ok(ADV.Rel.score(world, asker.id, me.id) >= C.REL.FRIENDLY_MIN, 'three quests later the rich man is Friendly again');
   // Clock 0 keeps leftover town pairing off so the first shared quest
   // can be scored without them marrying early.
   world.questClock = 0;
@@ -212,13 +214,13 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
   ok(ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'auto flag sticks on the skill');
   ADV.Combat.setSkillAuto(healer, 'mend', true, false);
-  ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'Mend takes over as the auto skill');
-  ok(!ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'only one auto skill at a time');
-  ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
+  ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'Mend can be auto at the same time');
+  ok(ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'Fire Bolt stays auto when Mend is added');
   const ready = ADV.Combat.autoReadyAction(st, uh);
-  eq(ready && ready.action.skillId, 'fire_bolt', 'auto-ready repeats Fire Bolt');
+  eq(ready && ready.action.skillId, 'fire_bolt', 'auto-ready starts with Fire Bolt');
   eq(ready && ready.tgt.ch, e1, 'auto-ready aims at the weakest enemy');
-  ADV.Combat.setSkillAuto(healer, 'mend', true, false);
+  const ready2 = ADV.Combat.autoReadyAction(st, uh);
+  eq(ready2 && ready2.action.skillId, 'mend', 'the next auto swing is Mend');
   ADV.SkillSys.forget(healer, 'mend');
   ADV.SkillSys.learn(healer, 'mend', { free: true });
   ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'auto survives forget and relearn');

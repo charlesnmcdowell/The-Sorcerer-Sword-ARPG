@@ -414,7 +414,11 @@ Combat.skillNeedsAuto = function (ch, skillId, offensiveMode) {
 };
 
 Combat.clearAutoFlags = function (ch) {
+  if (!ch) return;
   ch.autoAttack = false;
+  ch.autoRepeat = null;
+  ch.autoOrder = [];
+  ch.autoIdx = 0;
   for (const e of (ch.actives || []).concat(ch.perks || [])) {
     if (e.auto || e.autoOff) {
       e.auto = false;
@@ -424,48 +428,59 @@ Combat.clearAutoFlags = function (ch) {
   }
 };
 
-// One repeating skill at a time. Older saves only have per-skill flags —
-// pick the first one so combat can keep firing without a click.
+function sameAuto(a, skillId, off) {
+  return a && a.skillId === skillId && !!a.off === !!off;
+}
+
+// Queue of auto skills, oldest first. Older saves only have a single
+// autoRepeat / per-skill flag — fold those in so combat still fires.
+Combat.autoList = function (ch) {
+  if (!ch) return [];
+  let stored = (ch.autoOrder || []).filter(x => x && x.skillId);
+  if (!stored.length) {
+    if (ch.autoRepeat && ch.autoRepeat.skillId) stored.push({ skillId: ch.autoRepeat.skillId, off: !!ch.autoRepeat.off });
+    if (ch.autoAttack && !stored.some(x => sameAuto(x, 'basic_attack', false))) stored.push({ skillId: 'basic_attack', off: false });
+    for (const e of ch.actives || []) {
+      if (e.autoOff && !stored.some(x => sameAuto(x, e.skillId, true))) stored.push({ skillId: e.skillId, off: true });
+      else if (e.auto && !stored.some(x => sameAuto(x, e.skillId, false))) stored.push({ skillId: e.skillId, off: false });
+    }
+    ch.autoOrder = stored;
+  }
+  const list = stored.filter(x => x.skillId === 'basic_attack' || Sys().entryFor(ch, x.skillId));
+  ch.autoAttack = list.some(x => sameAuto(x, 'basic_attack', false));
+  ch.autoRepeat = list[0] || null;
+  return list;
+};
+
 Combat.ensureAutoRepeat = function (ch) {
-  if (!ch) return null;
-  if (ch.autoRepeat && ch.autoRepeat.skillId) return ch.autoRepeat;
-  if (ch.autoAttack) {
-    ch.autoRepeat = { skillId: 'basic_attack', off: false };
-    return ch.autoRepeat;
-  }
-  for (const e of ch.actives || []) {
-    if (e.autoOff) { ch.autoRepeat = { skillId: e.skillId, off: true }; return ch.autoRepeat; }
-    if (e.auto) { ch.autoRepeat = { skillId: e.skillId, off: false }; return ch.autoRepeat; }
-  }
-  ch.autoRepeat = null;
-  return null;
+  const list = Combat.autoList(ch);
+  return list[0] || null;
 };
 
 Combat.skillAutoOn = function (ch, skillId, offensiveMode) {
-  const r = Combat.ensureAutoRepeat(ch);
-  return !!(r && r.skillId === skillId && !!r.off === !!offensiveMode);
+  return Combat.autoList(ch).some(x => sameAuto(x, skillId, offensiveMode));
 };
 
 Combat.setSkillAuto = function (ch, skillId, on, offensiveMode) {
-  Combat.clearAutoFlags(ch);
-  if (!on) { ch.autoRepeat = null; return; }
-  ch.autoRepeat = { skillId, off: !!offensiveMode };
-  if (skillId === 'basic_attack') { ch.autoAttack = true; return; }
+  Combat.autoList(ch);
+  const list = ch.autoOrder || (ch.autoOrder = []);
+  const off = !!offensiveMode;
+  const i = list.findIndex(x => sameAuto(x, skillId, off));
+  if (on && i < 0) list.push({ skillId, off });
+  if (!on && i >= 0) list.splice(i, 1);
+  const live = Combat.autoList(ch);
+  ch.autoIdx = live.length ? ((ch.autoIdx || 0) % live.length) : 0;
+  if (skillId === 'basic_attack') return;
   const e = Sys().entryFor(ch, skillId);
   if (!e) return;
-  if (offensiveMode) e.autoOff = true;
-  else e.auto = true;
+  e.auto = list.some(x => sameAuto(x, skillId, false));
+  e.autoOff = list.some(x => sameAuto(x, skillId, true));
   Sys().storeProgress(ch, e);
 };
 
-// Ready-to-fire player auto: the repeating skill plus the weakest valid target.
-Combat.autoReadyAction = function (st, u) {
-  const r = Combat.ensureAutoRepeat(u.ch);
+function autoUsable(st, u, r) {
   if (!r) return null;
-  if (r.skillId !== 'basic_attack' && !Sys().entryFor(u.ch, r.skillId)) {
-    u.ch.autoRepeat = null;
-    return null;
-  }
+  if (r.skillId !== 'basic_attack' && !Sys().entryFor(u.ch, r.skillId)) return null;
   const seal = u.statuses.find(x => x.kind === 'sealed');
   if (seal && r.skillId !== 'basic_attack') {
     const m = manifestFor(u, r.skillId);
@@ -479,6 +494,21 @@ Combat.autoReadyAction = function (st, u) {
     action: { skillId: r.skillId, off: !!r.off, isAttack: r.skillId === 'basic_attack', pool },
     tgt,
   };
+}
+
+// Ready-to-fire player auto: the next skill in the rotation that has a target.
+Combat.autoReadyAction = function (st, u) {
+  const list = Combat.autoList(u.ch);
+  if (!list.length) return null;
+  const n = list.length;
+  const start = ((u.ch.autoIdx || 0) % n + n) % n;
+  for (let k = 0; k < n; k++) {
+    const ready = autoUsable(st, u, list[(start + k) % n]);
+    if (!ready) continue;
+    u.ch.autoIdx = (start + k + 1) % n;
+    return ready;
+  }
+  return null;
 };
 
 // True if the unit can spend the turn on a skill or a basic attack. Smoke and

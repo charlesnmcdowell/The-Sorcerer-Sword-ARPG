@@ -12,8 +12,17 @@ const mem = memBackend;
 function strong(p) {
   p.stats = { hp: 1600, atk: 60, def: 35, spd: 22 };
   for (const e of p.perks.concat(p.actives)) e.level = 40;
+  p.homeId = 'brick';
+  p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 8 } };
+}
+function keepFed(game) {
+  const p = ADV.Game.player(game);
+  if (!p) return;
+  p.homeId = 'brick';
+  p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 8 } };
 }
 function runQuest(game, quest) {
+  keepFed(game);
   const r = ADV.Game.startQuest(game, quest, {});
   if (!r.ok) throw new Error('startQuest: ' + r.error);
   const log = { beats: [], banter: [], reinforced: false, exits: 0 };

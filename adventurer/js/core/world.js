@@ -18,6 +18,7 @@ World.create = function (seed) {
     pendingPopulation: [], orphans: [], divineOffers: [],
     pendingHeroInvites: [], pendingPlayerJilt: null,
     playerId: null, metIds: [],
+    lastPlayerHelpAt: -99, lastPlayerProposalAt: -99, lastRivalAt: -99,
     genRng: rng.seed,
   };
   // Starting population (request 15): a diverse roster — healers and tanks on
@@ -41,9 +42,11 @@ function seedEmployerParties(world, rng) {
     const p = ADV.Party.create(world, leader.id);
     p.employerParty = true;
     leader.inventory.gold += 120; // leaders start with working capital
-    const pool = sorted.filter(c => !c.partyId && c !== leader);
     const want = rng.int(1, 2);
-    for (const m of pool.slice(0, want)) {
+    for (let i = 0; i < want; i++) {
+      const open = sorted.filter(c => !c.partyId && c !== leader);
+      const m = ADV.Party.pickMember(rng, open, !ADV.Party.hasSupport(world, p));
+      if (!m) break;
       p.memberIds.push(m.id);
       p.wages[m.id] = rng.int(C().GOLD.wageAcceptMin, 45);
       m.partyId = p.id; m.leaderId = leader.id; m.wage = p.wages[m.id];
@@ -79,11 +82,33 @@ World.adults = function (world) {
   return world.characters.filter(c => c.alive && !c.isMonster);
 };
 
+// Player-facing mail only from people who have ridden a contract with them.
+World.rodeWithPlayer = function (world, npc) {
+  if (!world || !npc || npc.isPlayer || !world.playerId) return false;
+  return !!(ADV.Courtship && ADV.Courtship.shared(world, npc.id, world.playerId) >= 1);
+};
+World.playerContactReady = function (world, key) {
+  const last = world && world[key];
+  if (last == null || last < 0) return true;
+  return (world.questClock - last) >= (C().PLAYER_CONTACT_GAP || 2);
+};
+World.markPlayerContact = function (world, key) {
+  if (world) world[key] = world.questClock;
+};
+World.pruneStrangerContacts = function (world) {
+  if (!world) return;
+  const keep = (id) => World.rodeWithPlayer(world, World.byId(world, id));
+  world.pendingRescues = (world.pendingRescues || []).filter(r => keep(r.targetId));
+  world.pendingProposals = (world.pendingProposals || []).filter(p => keep(p.fromId));
+  world.pendingHeroInvites = (world.pendingHeroInvites || []).filter(i => keep(i.heroId));
+};
+
 // ==================== THE TICK ====================
 // Advances when the player quests or stays home (§6). One call = one unit.
 World.tick = function (world, rng, opts) {
   opts = opts || {};
   world.questClock++;
+  World.pruneStrangerContacts(world);
   const feed = World.feeder(world);
   const pop = World.adults(world).filter(c => !c.isPlayer).length;
   const lowPop = pop + 1 < C().POP_LOW;
@@ -109,6 +134,9 @@ World.tick = function (world, rng, opts) {
     const roll = rng.float() * 100;
     const power = 25 + skill * 2 + gearBonus + partyBonus + npc.personality.caution / 10;
     let deathChance = npc.personality.aggression / 800 + 0.012;
+    if (party && ADV.Party.hasSupport(world, party)) {
+      deathChance *= party.leaderId === npc.id ? 0.4 : 0.65;
+    }
     if (lowPop) deathChance *= 0.3; // suppress lethality below the population floor (§6)
     if (roll < power) {
       npc.questsCompleted++; npc.reputation = Math.min(20, npc.reputation + 1);
@@ -280,26 +308,40 @@ World.tick = function (world, rng, opts) {
 // Failed-quest danger state (§6): a friendly NPC botches badly and sends a
 // help request instead of dying outright.
 function maybeOfferRescue(world, rng, npc, attackerId, kind) {
-  if (world.pendingRescues.some(r => r.targetId === npc.id)) return;
+  world.pendingRescues = world.pendingRescues || [];
+  if (world.pendingRescues.length) return;
+  if ((world.pendingHeroInvites || []).length) return;
+  if (!World.playerContactReady(world, 'lastPlayerHelpAt')) return;
+  if (!World.rodeWithPlayer(world, npc)) return;
   if (Rel().score(world, npc.id, world.playerId) < C().REL.FRIENDLY_MIN) return;
   world.pendingRescues.push({
     targetId: npc.id, attackerId: attackerId || null,
     expiresAtQuest: world.questClock + C().RESCUE_EXPIRES_IN,
     kind: kind || 'danger',
   });
+  World.markPlayerContact(world, 'lastPlayerHelpAt');
   World.feed(world, `${npc.name} is in trouble and asking for your help.`, [npc.id]);
 }
 
 // ---------------------------------------------------------------- shopping
 function npcShopping(world, rng, npc, feed) {
   // Gear set first — the single largest sink (§10)
-  if (!npc.equippedSet && npc.inventory.gold >= C().GOLD.gearSet && rng.chance(0.6)) {
+  if (!npc.equippedSet && rng.chance(0.6)) {
     const inc = npc.archetypeInclination[0];
-    const setId = Object.keys(ADV.DATA.GEAR_SETS).find(k => ADV.DATA.GEAR_SETS[k].archetypes.includes(inc)) || 'warrior';
-    npc.inventory.gold -= C().GOLD.gearSet;
-    npc.equippedSet = setId;
-    if (world.metIds.includes(npc.id)) feed(`${npc.name} bought a ${ADV.DATA.GEAR_SETS[setId].name}.`, [npc.id]);
-    return;
+    const keys = Object.keys(ADV.DATA.GEAR_SETS).filter(k => {
+      const s = ADV.DATA.GEAR_SETS[k];
+      return s && !s.campaign && (s.archetypes || []).includes(inc);
+    });
+    const singles = keys.filter(k => ADV.DATA.GEAR_SETS[k].archetypes.length === 1);
+    const setId = singles[0] || keys[0] || 'warrior';
+    const set = ADV.DATA.GEAR_SETS[setId];
+    const cost = (set && set.cost) || C().GOLD.gearSet;
+    if (npc.inventory.gold >= cost) {
+      npc.inventory.gold -= cost;
+      npc.equippedSet = setId;
+      if (world.metIds.includes(npc.id)) feed(`${npc.name} bought a ${set.name}.`, [npc.id]);
+      return;
+    }
   }
   // Witnessed skills are free; otherwise buy along inclination (§3/§6)
   if (rng.chance(0.4)) {
@@ -376,7 +418,7 @@ function foundEmployerParty(world, rng, feed, freeFn) {
   p.employerParty = true;
   const hirePool = freeFn().filter(c => c !== leader && !ADV.Party.hatredConflict(world, p, c.id));
   if (hirePool.length) {
-    const first = rng.pick(hirePool);
+    const first = ADV.Party.pickMember(rng, hirePool, !ADV.Party.isSupport(leader));
     const w = rng.int(C().GOLD.wageAcceptMin, 40);
     p.memberIds.push(first.id); p.wages[first.id] = w;
     first.partyId = p.id; first.leaderId = leader.id; first.wage = w;
@@ -419,10 +461,12 @@ function partyDynamics(world, rng, feed) {
       }
     }
     // NPC-led parties grow when the leader has the purse for it (Hiro keeps one seat open)
-    if (npcLed && ADV.Party.roster(world, p).length < (ADV.Hiro ? ADV.Hiro.growthCap(p) : C().PARTY_MAX) && rng.chance(0.3)) {
+    const needsSupport = !ADV.Party.hasSupport(world, p);
+    const hireOdds = needsSupport ? 0.85 : 0.3;
+    if (npcLed && ADV.Party.roster(world, p).length < (ADV.Hiro ? ADV.Hiro.growthCap(p) : C().PARTY_MAX) && rng.chance(hireOdds)) {
       const cand = free().filter(c => !ADV.Party.hatredConflict(world, p, c.id));
       if (cand.length) {
-        const c = rng.pick(cand);
+        const c = ADV.Party.pickMember(rng, cand, needsSupport);
         const wage = rng.int(C().GOLD.wageAcceptMin, 45);
         if (leader.inventory.gold >= wage * 2) {
           p.memberIds.push(c.id); p.wages[c.id] = wage; c.partyId = p.id; c.leaderId = leader.id; c.wage = wage;
@@ -496,12 +540,14 @@ function npcAssassinations(world, rng, feed, lowPop) {
       const target = ADV.World.byId(world, e.toId);
       if (!target || !target.alive || target.isPlayer) continue; // attempts on the player queue at quest end
       if (!rng.chance(0.06 + attacker.personality.aggression / 500)) continue;
-      // Friendly-with-player targets send a help request instead of resolving (§6)
-      if (world.metIds.includes(target.id) &&
+      // Friends who have ridden with the player send a help request instead of resolving (§6)
+      if (World.rodeWithPlayer(world, target) &&
           Rel().score(world, target.id, world.playerId) >= C().REL.FRIENDLY_MIN) {
-        if (!world.pendingRescues.some(r => r.targetId === target.id)) {
+        if (!(world.pendingRescues || []).length && !(world.pendingHeroInvites || []).length &&
+            World.playerContactReady(world, 'lastPlayerHelpAt')) {
           world.pendingRescues.push({ targetId: target.id, attackerId: attacker.id,
             expiresAtQuest: world.questClock + C().RESCUE_EXPIRES_IN, kind: 'assassination' });
+          World.markPlayerContact(world, 'lastPlayerHelpAt');
           feed(`${target.name} is in danger — ${attacker.name} is coming for ${target.sex === 'f' ? 'her' : 'him'}.`, [target.id, attacker.id]);
         }
         continue;
@@ -613,6 +659,7 @@ function checkHeroInviteWindow(world, hero, feed) {
   }
 }
 World.checkHeroInviteWindow = checkHeroInviteWindow;
+World.tryOfferRescue = maybeOfferRescue;
 
 ADV.World = World;
 })();

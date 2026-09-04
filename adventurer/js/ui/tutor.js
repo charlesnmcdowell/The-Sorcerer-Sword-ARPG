@@ -1,6 +1,6 @@
 // Guided first hour (request): name → menu tour → an easy solo contract →
 // gold & the trainer → the vault → joining a party (declined once, then hired
-// at a fixed 45g) → the leader's quest → free play. State is game.tutorial,
+// at the wage you named) → the leader's quest → free play. State is game.tutorial,
 // saved with the world; later lives and Hiro skip it.
 (function () {
 'use strict';
@@ -12,9 +12,11 @@ const TUTORIAL_WAGE = 45;
 
 const TOUR = [
   ['board',    'Quest Board',     'Contracts are posted here. Solo work pays less; party work pays full. The contract IS the difficulty — nothing scales to you.'],
-  ['store',    'Store',           'Gear sets floor your skills at level 10. Food gives a small edge for one quest. Insurance pays your spouse. The Maw takes contracts on people.'],
+  ['store',    'Grocer',          'Eat before every contract. Skip a meal and you come back Hungry; four Hungry nights kill you. One meal wipes the stack.'],
+  ['blacksmith','Blacksmith',     'A set floors matching skills at Intermediate. One set at a time; sell the one you wear for what you paid.'],
+  ['insurance','Insurance',       'Fifty gold now. If you or your spouse dies, the survivor is paid five hundred, and the policy is gone.'],
   ['trainer',  'Trainer',         'Every skill lives here. Your first three were free; witnessed skills are free; the rest cost gold. Tutoring lifts a skill a whole tier for gold.'],
-  ['apply',    'Apply for Party', 'Hire on with an existing party for a wage. The leader picks the contracts and keeps the take. You go where they go.'],
+  ['apply',    'Apply for Party', 'Hire on with an existing party. Name your wage first — reputation opens 30g to 200g. The leader picks the contracts and keeps the take.'],
   ['create',   'Create Party',    'With 100g you can lead your own: hire people, set wages, take the whole payout — and owe payroll win or lose.'],
   ['roster',   'Guild Roster',    'Everyone in town: what they run, who they ride with, what they think of you.'],
   ['rel',      'Relationships',   'Regard moves with shared quests, money and how you treat people. Friendly opens romance; Hatred opens knives.'],
@@ -33,6 +35,7 @@ Tutor.set = function (game, step) { Tutor.state(game).step = step; ADV.Save.save
 Tutor.allowed = function (game, id) {
   const step = Tutor.step(game);
   if (step === 'done') return true;
+  if (id === 'settings') return true;
   return (ALLOWED[step] || []).includes(id);
 };
 // Which contracts may be taken right now
@@ -166,20 +169,21 @@ Tutor.panel = function (scene, game, id, r) {
     Tutor.callout(scene, { x: r.x + 24, y: r.y + 84, w: r.w - 48, h: 120 }, 'Safe keeping', 'This is your vault. Gold here survives your death and passes to your heirs. Before every quest you choose what to leave behind. When you marry, the two of you share one — you may draw your share once per stay.', { onNext: () => { s.step = 'party'; ADV.Save.saveGame(game); scene.buildMenu(); Tutor.town(scene, game); }, label: 'Understood' });
   }
   if (s.step === 'party' && id === 'apply') {
-    Tutor.callout(scene, { x: r.x + 24, y: r.y + 92, w: r.w - 240, h: 46 }, s.declined ? 'Try another' : 'Ask to join', s.declined
+    Tutor.callout(scene, { x: r.x + 24, y: r.y + 84, w: r.w - 48, h: 80 }, s.declined ? 'Try another' : 'Ask to join', s.declined
       ? 'Turned away — that happens; reputation and what your sheet fills decide it. Ask the next party.'
-      : `Pick a party and ask. If they take you, the wage is fixed at ${TUTORIAL_WAGE}g a quest for now — once you have quit this party you can name your own price when you join the next, within what a leader can afford.`, { pass: true, hint: '↑ click a party' });
+      : 'Set your asking wage, then pick a party. Reputation opens 30g to 200g; a high ask is harder to land. After you hire on you can keep asking for raises, up to 300g.', { pass: true, hint: '↑ set a wage, then click a party' });
   }
 };
 
 // The scripted application during the tutorial: first ask fails, second succeeds.
-Tutor.application = function (game, party) {
+Tutor.application = function (game, party, ask) {
   const s = Tutor.state(game);
   if (s.step !== 'party') return null;
   if (!s.declined) { s.declined = true; ADV.Save.saveGame(game); return { accepted: false }; }
   const world = game.world;
   const cap = ADV.Party.maxAffordableWage(world, party, game.board);
-  return { accepted: true, wage: Math.max(C().GOLD.wageAcceptMin, Math.min(TUTORIAL_WAGE, cap)) };
+  const named = ask != null ? ask : TUTORIAL_WAGE;
+  return { accepted: true, wage: Math.max(C().GOLD.wageAcceptMin, Math.min(named, cap || C().GOLD.wageAcceptMin)) };
 };
 Tutor.onHired = function (game) { const s = Tutor.state(game); if (s.step === 'party') { s.step = 'partyQuest'; ADV.Save.saveGame(game); } };
 

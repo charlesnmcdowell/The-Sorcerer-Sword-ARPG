@@ -205,10 +205,14 @@ Divine.sendHeroHelpRequests = function (world, hero, target, feedPush) {
   const pid = world.playerId;
   if (hero.isPlayer) return;
   if (target.id === pid) return; // if the recipient is the target, no request (§3a)
+  if (ADV.World && ADV.World.rodeWithPlayer && !ADV.World.rodeWithPlayer(world, hero)) return;
+  if ((world.pendingRescues || []).length || (world.pendingHeroInvites || []).length) return;
+  if (ADV.World && ADV.World.playerContactReady && !ADV.World.playerContactReady(world, 'lastPlayerHelpAt')) return;
   const score = Rel().score(world, hero.id, pid);
   if (score > 0 || hero.partnerId === pid) {
     world.pendingHeroInvites = world.pendingHeroInvites || [];
     world.pendingHeroInvites.push({ heroId: hero.id, targetId: target.id, expiresAtQuest: world.questClock + C().RESCUE_EXPIRES_IN });
+    if (ADV.World && ADV.World.markPlayerContact) ADV.World.markPlayerContact(world, 'lastPlayerHelpAt');
     if (feedPush) feedPush(`${hero.name} asks for your help against ${target.name}.`, [hero.id, target.id]);
   }
 };

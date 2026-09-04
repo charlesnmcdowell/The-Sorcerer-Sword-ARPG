@@ -288,7 +288,7 @@ They are fixtures. The world moves; they stand still and talk about it.
 
 The new character re-qualifies from scratch under the rules above: an aligned contract brings the matching recruiter, declining brings the Antler, and the Antler's single advertisement fires again for the new life.
 
-**A player who ran the Maw last life is not remembered.** Vane does not know them. Wren Sallow introduces herself as though for the first time, because for this character she is.
+**A player who ran the Maw last life is not remembered.** Vane does not know them. Wren Sallow introduces himself as though for the first time, because for this character he is.
 
 **This is how a player sees the other two campaigns** — faction exclusivity is per life (§7), so death is the mechanism by which the second and third factions become reachable at all.
 

@@ -54,7 +54,7 @@ Character.base = function (o) {
     stats: { hp: 100, atk: 10, def: 10, spd: 10 },
     bonusStats: { hp: 0, atk: 0, def: 0, spd: 0 },  // nepotism title + Hero + Finisher only
     perks: [], actives: [],                 // [{skillId, level, uses, auto?, autoOff?}]
-    autoAttack: false, autoRepeat: null,    // one repeating combat skill at a time
+    autoAttack: false, autoRepeat: null, autoOrder: [], autoIdx: 0,
     perkCap: C().PLAYER_PERK_SLOTS, activeCap: C().PLAYER_ACTIVE_SLOTS,
     journal: {}, skillLevels: {}, freeSkillsUsed: 0,
     equipped: [], equippedSet: null,
@@ -94,6 +94,8 @@ Character.effStat = function (ch, key) {
   if (ch.status === 'hero' && ch.heroPowerMult > 0 && ch.grantsHeld) v = Math.round(v * ch.heroPowerMult);
   if (ch.status === 'villain' && ch.heroPowerMult > 0) v = Math.round(v * ch.heroPowerMult);
   if (ch.isUndead) v = Math.round(v * C().UNDEAD_STAT_MULT);
+  const m = ADV.Survival ? ADV.Survival.statMult(ch) : 1;
+  if (m !== 1) v = Math.max(0, Math.round(v * m));
   return v;
 };
 
@@ -145,7 +147,23 @@ function rollVector(rng, personalityName) {
 Character.seedNPC = function (rng, world, opts) {
   opts = opts || {};
   const sex = opts.sex || rng.pick(['m', 'f']);
-  const used = new Set(world ? world.characters.filter(c => c.alive).map(c => c.name) : []);
+  const used = new Set();
+  if (world) {
+    for (const c of world.characters) {
+      if (!c.alive || !c.name) continue;
+      used.add(c.name);
+      used.add(c.name.split(/\s+/)[0]);
+    }
+  }
+  if (ADV.DATA.CAMPAIGN_CHARS) {
+    const skip = /^(the|master|lord|captain|admiral|quartermaster|boatswain|lieutenant|adept)$/i;
+    for (const def of Object.values(ADV.DATA.CAMPAIGN_CHARS)) {
+      for (const part of String(def.name || '').split(/\s+/)) {
+        const w = part.replace(/[^A-Za-z'-]/g, '');
+        if (w && !skip.test(w)) used.add(w);
+      }
+    }
+  }
   const pool = ADV.DATA.NAMES[sex].filter(n => !used.has(n));
   const name = opts.name || (pool.length ? rng.pick(pool) : rng.pick(ADV.DATA.NAMES[sex]) + ' ' + rng.int(2, 99));
   const pers = pickPersonality(rng, sex);
@@ -189,7 +207,8 @@ Character.eat = function (ch, foodId) {
   if (ch.inventory.gold < f.cost) return { ok: false, error: 'not enough gold' };
   ch.inventory.gold -= f.cost;
   ch.meal = { id: f.id, name: f.name, bonus: Object.assign({}, f.bonus) };
-  return { ok: true, meal: ch.meal };
+  const cured = ADV.Survival ? ADV.Survival.eatCures(ch) : false;
+  return { ok: true, meal: ch.meal, cured: !!cured };
 };
 Character.digest = function (ch) { if (ch.meal) ch.meal = null; };
 

@@ -442,6 +442,18 @@ ADV.DATA.GEAR_SETS = {
   ranger:  { name: 'Ranger Set',  archetypes: ['ranger', 'rogue'], cost: 800 },
   mage:    { name: 'Mage Set',    archetypes: ['mage', 'druid'],   cost: 800 },
   healer:  { name: 'Healer Set',  archetypes: ['healer'],          cost: 800 },
+  // Single-class: cheaper, one silhouette. Cross-class: you pay for breadth.
+  plate:      { name: 'Plate Harness',   archetypes: ['tank'],            cost: 400 },
+  duelist:    { name: "Duelist's Kit",   archetypes: ['fighter'],         cost: 400 },
+  leathers:   { name: 'Night Leathers',  archetypes: ['rogue'],           cost: 400 },
+  adept:      { name: 'Adept Robes',     archetypes: ['mage'],            cost: 400 },
+  wildhide:   { name: 'Wildhide',        archetypes: ['druid'],           cost: 400 },
+  hunter:     { name: "Hunter's Rig",    archetypes: ['ranger'],          cost: 400 },
+  street:     { name: 'Street Steel',    archetypes: ['fighter', 'rogue'], cost: 600 },
+  oath:       { name: 'Oath Plate',      archetypes: ['tank', 'healer'],   cost: 600 },
+  chantry:    { name: 'Chantry Robes',   archetypes: ['mage', 'healer'],   cost: 600 },
+  greenward:  { name: 'Greenward Kit',   archetypes: ['ranger', 'druid'],  cost: 600 },
+  shadowweave:{ name: 'Shadowweave',     archetypes: ['rogue', 'mage'],    cost: 600 },
 };
 
 // Trainer-listed pool: the 31 (perks + actives), excludes universal/unique.

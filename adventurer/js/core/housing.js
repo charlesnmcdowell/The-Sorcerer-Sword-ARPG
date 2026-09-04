@@ -58,6 +58,7 @@ Housing.buy = function (game, homeId) {
   p.inventory.gold -= next.cost;
   p.homeId = next.id;
   ADV.World.feed(game.world, `${p.name} took ${next.name === 'Castle' ? 'the castle' : next.name}.`, [p.id]);
+  if (ADV.Survival) ADV.Survival.onMovedUp(p);
   return { ok: true, home: next, first: cur.id === 'camp' };
 };
 

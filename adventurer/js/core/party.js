@@ -9,19 +9,101 @@ const Party = {};
 let PID = 1;
 Party.resetIds = function (n) { PID = n || 1; };
 
+// After a save load the in-memory counter is 1 again. Walk existing ids so
+// a new company never reuses p1 and looks like the outfit you just left.
+Party.syncIds = function (world) {
+  let max = 0;
+  for (const p of (world && world.parties) || []) {
+    const n = parseInt(String(p.id || '').replace(/^p/i, ''), 10);
+    if (n > max) max = n;
+  }
+  if (max >= PID) PID = max + 1;
+};
+
+Party.allocId = function (world) {
+  Party.syncIds(world);
+  const used = new Set(((world && world.parties) || []).map(p => p.id));
+  while (used.has('p' + PID)) PID++;
+  return 'p' + (PID++);
+};
+
+// Fix saves that reused p1 after a reload: unique ids, one company per person.
+Party.repairWorld = function (world) {
+  if (!world || !world.parties) return;
+  const seen = new Set();
+  for (const p of world.parties) {
+    if (!p.id || seen.has(p.id)) p.id = Party.allocId(world);
+    seen.add(p.id);
+    const lead = ADV.World.byId(world, p.leaderId);
+    if (lead) { lead.partyId = p.id; lead.leaderId = null; }
+    for (const id of p.memberIds || []) {
+      const ch = ADV.World.byId(world, id);
+      if (!ch || ch.id === p.leaderId) continue;
+      ch.partyId = p.id;
+      ch.leaderId = p.leaderId;
+    }
+  }
+  for (const ch of world.characters || []) {
+    if (!ch) continue;
+    const on = world.parties.filter(p => Party.serves(p, ch.id));
+    if (!on.length) {
+      if (ch.partyId || ch.leaderId) { ch.partyId = null; ch.leaderId = null; }
+      continue;
+    }
+    const keep = on.find(p => p.leaderId === ch.id) || on[on.length - 1];
+    ch.partyId = keep.id;
+    ch.leaderId = keep.leaderId === ch.id ? null : keep.leaderId;
+    for (const p of on) {
+      if (p === keep) continue;
+      const i = (p.memberIds || []).indexOf(ch.id);
+      if (i >= 0) { p.memberIds.splice(i, 1); delete p.wages[ch.id]; }
+    }
+  }
+  Party.syncIds(world);
+};
+
 // world.parties: [{id, leaderId, memberIds:[], wages:{memberId:gold}, employerParty:bool}]
 
+Party.serves = function (p, chId) {
+  return !!(p && chId && (p.leaderId === chId || (p.memberIds && p.memberIds.indexOf(chId) >= 0)));
+};
+
 Party.create = function (world, leaderId) {
-  const p = { id: 'p' + (PID++), leaderId, memberIds: [], wages: {} };
-  world.parties.push(p);
+  Party.syncIds(world);
   const leader = ADV.World.byId(world, leaderId);
-  if (leader) leader.partyId = p.id;
+  const held = leader && Party.of(world, leader);
+  if (held && held.leaderId === leaderId) return held;
+  if (held) Party.removeMember(world, held, leaderId);
+  const p = { id: Party.allocId(world), leaderId, memberIds: [], wages: {} };
+  world.parties.push(p);
+  if (leader) { leader.partyId = p.id; leader.leaderId = null; }
   return p;
 };
 
 Party.of = function (world, ch) {
-  if (!ch || !ch.partyId) return null;
-  return world.parties.find(p => p.id === ch.partyId) || null;
+  if (!ch || !world) return null;
+  const list = world.parties || [];
+  if (ch.partyId) {
+    const hits = list.filter(p => p.id === ch.partyId && Party.serves(p, ch.id));
+    if (hits.length) return hits[hits.length - 1];
+  }
+  return list.find(p => Party.serves(p, ch.id)) || null;
+};
+
+// What contracts this company prefers: the leader's leaning, or their
+// standing if one side has already claimed them.
+Party.alignment = function (world, p) {
+  const l = p && Party.leader(world, p);
+  if (!l) return 'neutral';
+  const fs = l.factionStanding || {};
+  const crim = fs.criminal || 0, law = fs.law || 0;
+  if (crim >= 30 && crim > law + 10) return 'criminal';
+  if (law >= 30 && law > crim + 10) return 'law';
+  return l.factionLeaning === 'criminal' || l.factionLeaning === 'law' ? l.factionLeaning : 'neutral';
+};
+
+Party.alignmentLabel = function (align) {
+  return align === 'law' ? 'lawful' : (align === 'criminal' ? 'criminal' : 'neutral');
 };
 
 Party.members = function (world, p) {
@@ -35,6 +117,23 @@ Party.leader = function (world, p) {
 Party.roster = function (world, p) {
   const l = Party.leader(world, p);
   return [l].concat(Party.members(world, p)).filter(c => c && c.alive);
+};
+
+// A healer or tank on the roster is what keeps NPC companies alive.
+Party.isSupport = function (ch) {
+  const inc = (ch && ch.archetypeInclination) || [];
+  return inc.indexOf('healer') >= 0 || inc.indexOf('tank') >= 0;
+};
+Party.hasSupport = function (world, p) {
+  return Party.roster(world, p).some(Party.isSupport);
+};
+Party.pickMember = function (rng, pool, preferSupport) {
+  if (!pool || !pool.length) return null;
+  if (preferSupport) {
+    const sup = pool.filter(Party.isSupport);
+    if (sup.length && rng.chance(0.92)) return rng.pick(sup);
+  }
+  return rng.pick(pool);
 };
 
 // No two characters at Hatred serve together (§5) — every direction.
@@ -67,30 +166,53 @@ Party.clampWage = function (n) {
   return Math.max(C().GOLD.wageAcceptMin, Math.min(C().GOLD.wageAcceptMax, n | 0));
 };
 
-// After hire: one raise ask per stay. Reputation, not the slider, decides it.
+// Player apply ceiling: 30g at reputation −20, 200g at +20, linear between.
+Party.applyAskMax = function (ch) {
+  const min = C().GOLD.wageAcceptMin;
+  const max = C().GOLD.wageApplyMax || 200;
+  const rep = Math.max(-20, Math.min(20, (ch && ch.reputation) || 0));
+  return min + Math.round((max - min) * (rep + 20) / 40);
+};
+
+Party.clampApplyWage = function (ch, n) {
+  return Math.max(C().GOLD.wageAcceptMin, Math.min(Party.applyAskMax(ch), n | 0));
+};
+
+Party.clampRaiseWage = function (n) {
+  return Math.max(C().GOLD.wageAcceptMin, Math.min(C().GOLD.wageRaiseMax || 300, n | 0));
+};
+
+// After hire: one named raise per stay. Reputation decides whether they pay it.
 Party.raiseChance = function (ch, cur, ask) {
-  const rep = ch.reputation || 0;
-  let p0 = 0.22 + Math.max(-20, Math.min(20, rep)) * 0.028;
-  if ((ask - cur) > (C().GOLD.wageRaiseStep || 10)) p0 -= 0.08;
-  if (ask >= 80) p0 -= 0.08;
+  const rep = Math.max(-20, Math.min(20, ch.reputation || 0));
+  let p0 = 0.22 + rep * 0.028;
+  const step = C().GOLD.wageRaiseStep || 10;
+  if ((ask - cur) > step) p0 -= 0.08;
+  const raiseMax = C().GOLD.wageRaiseMax || 300;
+  const height = (ask - C().GOLD.wageAcceptMin) / Math.max(1, raiseMax - C().GOLD.wageAcceptMin);
+  if (height > 0.5) p0 -= 0.10;
+  if (ask >= raiseMax) p0 -= 0.08;
   return Math.max(0.08, Math.min(0.9, p0));
 };
 
-Party.requestRaise = function (world, rng, ch) {
+Party.requestRaise = function (world, rng, ch, ask) {
   const p = Party.of(world, ch);
   if (!p || p.leaderId === ch.id) return { ok: false, error: 'you do not serve' };
   const cur = p.wages[ch.id] || ch.wage || C().GOLD.hirelingWage;
-  const max = C().GOLD.wageAcceptMax;
+  const max = C().GOLD.wageRaiseMax || 300;
   if (cur >= max) return { ok: false, error: 'already at the cap' };
   if (ch.raiseAskedAt != null && ch.raiseAskedAt >= (world.questClock | 0)) return { ok: false, error: 'already asked this stay' };
-  const ask = Math.min(max, cur + (C().GOLD.wageRaiseStep || 10));
+  const step = C().GOLD.wageRaiseStep || 10;
+  const want = ask != null ? (ask | 0) : (cur + step);
+  const next = Math.max(cur + 5, Math.min(max, want));
+  if (next <= cur) return { ok: false, error: 'already at the cap' };
   ch.raiseAskedAt = world.questClock | 0;
-  if (!rng.chance(Party.raiseChance(ch, cur, ask))) {
-    return { ok: true, accepted: false, wage: cur, ask, from: cur };
+  if (!rng.chance(Party.raiseChance(ch, cur, next))) {
+    return { ok: true, accepted: false, wage: cur, ask: next, from: cur };
   }
-  p.wages[ch.id] = ask;
-  ch.wage = ask;
-  return { ok: true, accepted: true, wage: ask, from: cur };
+  p.wages[ch.id] = next;
+  ch.wage = next;
+  return { ok: true, accepted: true, wage: next, from: cur };
 };
 
 Party.offerWage = function (world, rng, p, candidate, wage) {
@@ -175,9 +297,18 @@ Party.removeMember = function (world, p, chId) {
 Party.disband = function (world, p) {
   for (const id of p.memberIds.slice()) Party.removeMember(world, p, id);
   const l = Party.leader(world, p);
-  if (l) l.partyId = null;
+  if (l) { l.partyId = null; l.leaderId = null; }
   const i = world.parties.indexOf(p);
   if (i >= 0) world.parties.splice(i, 1);
+};
+
+// Player-led fold: everyone walks, the founding purse comes back.
+Party.foldByLeader = function (world, ch) {
+  const p = Party.of(world, ch);
+  if (!p || p.leaderId !== ch.id) return { ok: false, error: 'you do not lead' };
+  Party.disband(world, p);
+  if (ch.inventory) ch.inventory.gold = (ch.inventory.gold || 0) + C().GOLD.partyStartupCapital;
+  return { ok: true };
 };
 
 // If a relationship degrades to Hatred during employment, the pairing dissolves (§5).

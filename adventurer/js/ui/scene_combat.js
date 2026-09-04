@@ -61,6 +61,7 @@ class CombatScene extends Phaser.Scene {
 
     this.turnStrip = T().text(this, W / 2, 32, '', { size: 13, ox: 0.5, color: T().css.inkDim });
     this.roundText = T().text(this, 60, 32, '', { size: 15, display: true, color: T().css.gold });
+    this.paintEnemyHoldToggle();
     this.banner = T().text(this, W / 2, 80, this.mode === 'ambush' ? 'AMBUSHED — at your worst, as intended' :
       this.mode === 'rescue' ? 'You took a side.' :
       this.mode === 'assassination' ? 'Only one side walks away.' :
@@ -83,6 +84,7 @@ class CombatScene extends Phaser.Scene {
     if (u.ch.isUndead) { img.setTint(0x88bb99); img.__baseTint = 0x88bb99; }
     else if (u.lane === 'back') { img.setTint(0xb0a898); img.__baseTint = 0xb0a898; }
     if (ADV.Portraits.animate) ADV.Portraits.animate(this, img, u.ch, key);
+    if (ADV.Portraits.express) ADV.Portraits.express(this, img, u.ch, key, this.combatMood(u));
     const frame = this.add.graphics();
     const isPlayer = !!u.ch.isPlayer;
     frame.lineStyle(2, isPlayer ? T().c.gold : u.side === 'a' ? T().c.green : T().c.blood, 0.9);
@@ -98,8 +100,23 @@ class CombatScene extends Phaser.Scene {
     return view;
   }
 
+  combatMood(u) {
+    if (!u || !u.ch || u.ch.isMonster || u.dead || u.chp <= 0) return 'neutral';
+    const pct = u.maxHp ? u.chp / u.maxHp : 1;
+    if (pct < 0.25) return 'afraid';
+    if (pct < 0.55) return 'hurt';
+    const st = this.st();
+    const turn = st && ADV.Combat.currentTurn ? ADV.Combat.currentTurn(st) : null;
+    if (turn && turn.unit && turn.unit.uid === u.uid) return 'angry';
+    return 'neutral';
+  }
+
   redrawUnit(v) {
     const u = v.u;
+    if (ADV.Portraits.express && v.img) {
+      const mood = this.combatMood(u);
+      if (v.img.__expressMood !== mood) ADV.Portraits.express(this, v.img, u.ch, v.img.texture && v.img.texture.key, mood);
+    }
     v.hpBar.clear();
     const w = v.img.displayWidth;
     const pct = Math.max(0, u.chp / u.maxHp);
@@ -133,6 +150,10 @@ class CombatScene extends Phaser.Scene {
         v.pips.strokeCircle(start + i * 12, pipY, 4);
       });
     }
+    if (u.downed || u.fled) { if (ADV.SpellFX) ADV.SpellFX.clearStatus(v); }
+    else if (ADV.SpellFX) ADV.SpellFX.syncStatus(this, v);
+    if (u.stealth && !u.downed && !u.fled) { v._fxStealthed = true; if (v.img.alpha > 0.5) v.img.setAlpha(0.4); }
+    else if (v._fxStealthed && !u.downed && !u.fled) { v._fxStealthed = false; v.img.setAlpha(1); }
     if (u.downed) { ADV.VFX.desaturate(v.img); v.intent.setText(''); v.frame.setAlpha(0.4); v.name.setAlpha(0.5); }
     if (u.fled) { v.img.setAlpha(0.2); v.intent.setText('fled'); }
   }
@@ -185,11 +206,14 @@ class CombatScene extends Phaser.Scene {
         if (this.queuePlayerAuto(t.unit)) return;
         this.showActionBar(t.unit);
       } else {
-        this.time.delayedCall(160, () => {
+        const go = () => {
+          if (this.ended) return;
           ADV.Combat.aiTakeTurn(st, t.unit);
           ADV.Combat.advance(st);
           this.loop();
-        });
+        };
+        if (ADV.Prefs && ADV.Prefs.pauseEnemy()) this.showEnemyHold(t.unit, go);
+        else this.time.delayedCall(160, go);
       }
     });
   }
@@ -295,6 +319,9 @@ class CombatScene extends Phaser.Scene {
         const lbl = T().text(this, src.x, src.y - 78, e.name, { size: 12, ox: 0.5, color: T().css.gold })
           .setDepth(600).setAlpha(0.95);
         this.tweens.add({ targets: lbl, y: lbl.y - 16, alpha: 0, delay: 350, duration: 400, onComplete: () => lbl.destroy() });
+        if (ADV.SpellFX && ADV.SpellFX.has(e.skillId, e.tier)) {
+          return ADV.SpellFX.play(this, { skillId: e.skillId, tier: e.tier, src, tgt, dir, name: e.name });
+        }
         if (tgt && tgt.u.side !== src.u.side) {
           if (V.isProjectile(e.skillId)) V.projectile(this, src.x, src.y, tgt.x, tgt.y, V.skillColor(e.skillId));
           else { V.lunge(this, src.img, dir); V.slashArc(this, tgt.x, tgt.y, V.skillColor(e.skillId)); }
@@ -307,6 +334,11 @@ class CombatScene extends Phaser.Scene {
         if (!v) return 10;
         const color = e.tag === 'reflect' ? '#d4a94e' : e.tag === 'retaliation' ? '#9a70c0' : e.tag === 'dot' ? '#83b56b' : '#f4eee0';
         V.damageNumber(this, v.x + (Math.random() * 20 - 10), v.y - 30, e.dmg, color);
+        if (e.tag === 'dot' && ADV.SpellFX) {
+          ADV.SpellFX.tick(this, v, e);
+          this.redrawUnit(v);
+          return 140;
+        }
         V.recoil(this, v.img, v.u.side === 'a' ? 1 : -1);
         V.tintFlash(this, v.img, 0xff6655);
         this.redrawUnit(v);
@@ -383,9 +415,7 @@ class CombatScene extends Phaser.Scene {
       this.autoTimer = this.time.delayedCall(360, () => {
         this.autoTimer = null;
         if (this.ended) return;
-        const again = ADV.Combat.autoReadyAction(this.st(), u);
-        if (again) { this.commitAction(u, again.action, again.tgt); return; }
-        this.commitHold(u);
+        this.commitAction(u, ready.action, ready.tgt);
       });
       return true;
     }
@@ -402,16 +432,53 @@ class CombatScene extends Phaser.Scene {
     return true;
   }
 
+  autoRotationLabel(u) {
+    const list = ADV.Combat.autoList(u.ch);
+    return list.map(r => this.autoSkillName(u, { skillId: r.skillId, off: r.off, isAttack: r.skillId === 'basic_attack' })).join(' → ') || 'none';
+  }
+
+  paintEnemyHoldToggle() {
+    const W = T().W;
+    if (this._enemyHoldBtn) {
+      try { this._enemyHoldBtn.destroy(); } catch (e) {}
+      this._enemyHoldBtn = null;
+    }
+    const on = !!(ADV.Prefs && ADV.Prefs.pauseEnemy());
+    const b = T().button(this, W - 210, 20, 170, 36, on ? 'Enemy turn: hold' : 'Enemy turn: auto', () => {
+      ADV.Prefs.setPauseEnemy(!on);
+      this.paintEnemyHoldToggle();
+    }, { size: 12, fill: on ? 0x2a3a22 : undefined, color: on ? T().css.gold : T().css.inkDim, edge: on ? T().c.gold : undefined });
+    this._enemyHoldBtn = { destroy() { b.destroy(); } };
+  }
+
+  showEnemyHold(u, go) {
+    this.clearActionBar();
+    const W = T().W, H = T().H;
+    const keep = o => { this.actionObjs.push(o); return o; };
+    const intent = (u.planned && u.planned.label) || 'act';
+    keep(T().panel(this, 40, H - 110, W - 80, 96));
+    keep(T().text(this, 56, H - 88, (u.ch.name || 'Enemy') + ' is about to ' + intent, { size: 16, color: T().css.gold }));
+    keep(T().text(this, 56, H - 62, 'Enemy auto is off. Continue when you have read the field.', { size: 12, color: T().css.inkDim, wrap: W - 280 }));
+    const goBtn = T().button(this, W - 360, H - 86, 140, 60, 'Continue', go, { size: 15, color: T().css.gold });
+    const play = T().button(this, W - 200, H - 86, 140, 60, 'Auto enemy', () => {
+      ADV.Prefs.setPauseEnemy(false);
+      this.paintEnemyHoldToggle();
+      go();
+    }, { size: 13, sub: 'let them play' });
+    for (const b of [goBtn, play]) { keep(b.g); keep(b.txt); if (b.sub) keep(b.sub); keep(b.zone); }
+  }
+
   showAutoStrip(u, ready) {
     this.clearActionBar();
     const W = T().W, H = T().H;
     const keep = o => { this.actionObjs.push(o); return o; };
     const name = this.autoSkillName(u, ready.action);
+    const rot = this.autoRotationLabel(u);
     keep(T().panel(this, 40, H - 110, W - 80, 96));
     keep(T().text(this, 56, H - 88, 'AUTO · ' + name, { size: 16, color: T().css.green }));
-    keep(T().text(this, 56, H - 62, 'Keeps using this skill on the weakest target. Stop to choose again.', { size: 12, color: T().css.inkDim }));
+    keep(T().text(this, 56, H - 62, 'Rotation: ' + rot + '. Weakest target each swing.', { size: 12, color: T().css.inkDim, wrap: W - 280 }));
     const stop = T().button(this, W - 200, H - 86, 140, 60, 'STOP', () => {
-      ADV.Combat.setSkillAuto(u.ch, ready.action.skillId, false, ready.action.off);
+      ADV.Combat.clearAutoFlags(u.ch);
       ADV.Save.saveGame(this.game_);
       this.showActionBar(u);
     }, { size: 15, color: T().css.gold, sub: 'end auto' });
@@ -425,9 +492,8 @@ class CombatScene extends Phaser.Scene {
     keep(T().panel(this, 40, H - 110, W - 80, 96));
     keep(T().text(this, 56, H - 88, 'AUTO · waiting', { size: 16, color: T().css.green }));
     keep(T().text(this, 56, H - 62, 'No target right now (smoke, stealth, or out of reach). Auto will swing when one appears.', { size: 12, color: T().css.inkDim }));
-    const r = ADV.Combat.ensureAutoRepeat(u.ch);
     const stop = T().button(this, W - 200, H - 86, 140, 60, 'STOP', () => {
-      if (r) ADV.Combat.setSkillAuto(u.ch, r.skillId, false, r.off);
+      ADV.Combat.clearAutoFlags(u.ch);
       ADV.Save.saveGame(this.game_);
       this.showActionBar(u);
     }, { size: 15, color: T().css.gold, sub: 'end auto' });
@@ -499,10 +565,10 @@ class CombatScene extends Phaser.Scene {
         ADV.Tooltip.attach(this, ab.zone, () => {
           const heal = !a.off && ADV.DATA.SKILLS[a.skillId] && ADV.DATA.SKILLS[a.skillId].heal;
           return on
-            ? 'Auto is repeating this skill each turn. Stop it from the bar, or tap AUTO off.'
+            ? 'This skill is in the auto rotation. Tap AUTO off to drop it; the others keep going.'
             : (heal
-              ? 'Auto: keep casting this heal on whoever has the least health, including you.'
-              : 'Auto: keep using this skill on the enemy with the least health.');
+              ? 'Add this heal to the auto rotation. Combat walks your auto skills in order.'
+              : 'Add this skill to the auto rotation. Combat walks them in order, weakest target.');
         });
         x += 48;
       }

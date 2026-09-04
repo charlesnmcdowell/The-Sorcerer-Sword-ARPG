@@ -47,8 +47,8 @@ Object.assign(ADV.DATA.GEAR_SETS, {
 const CH = {};
 function chr(o) { CH[o.id] = o; }
 // The Gaping Maw
-chr({ id: 'wren', name: 'Wren Sallow', faction: 'maw', role: 'recruiter', sex: 'f', fights: false,
-  portrait: { skin: 'tan', hair: 'bun', wardrobe: 'hiking', color: '#5a4a3a' } });
+chr({ id: 'wren', name: 'Wren Sallow', faction: 'maw', role: 'recruiter', sex: 'm', fights: false,
+  portrait: { skin: 'tan', hair: 'fringe', wardrobe: 'hiking', color: '#5a4a3a' } });
 chr({ id: 'kite', name: 'Kite', faction: 'maw', role: 'rival', sex: 'f', campaignExit: true,
   perks: ['opportunist', 'carrion_sense'], actives: ['backstab', 'vanishing_strike', 'ghoststep', 'marked_for_the_knife', 'smoke_bomb'],
   level: 18, portrait: { skin: 'brown', hair: 'sidecut', wardrobe: 'ninja', color: '#2a2d36' },

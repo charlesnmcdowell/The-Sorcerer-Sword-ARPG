@@ -59,6 +59,11 @@ class TownScene extends Phaser.Scene {
     const key = ADV.Portraits.key(this, p);
     const pimg = add(this.add.image(x + w / 2, y + 92, key).setDisplaySize(140, 168));
     if (ADV.Portraits.animate) ADV.Portraits.animate(this, pimg, p, key);
+    if (ADV.Portraits.express) {
+      const sv = ADV.Survival ? ADV.Survival.state(p) : null;
+      const mood = sv && sv.sick ? 'hurt' : (sv && sv.hunger) ? 'sad' : 'neutral';
+      ADV.Portraits.express(this, pimg, p, key, mood);
+    }
     const fg = add(this.add.graphics());
     fg.lineStyle(2, T().c.gold, 0.7); fg.strokeRect(x + w / 2 - 70, y + 8, 140, 168);
     add(T().text(this, x + w / 2, y + 186, p.name, { size: 19, display: true, ox: 0.5, color: T().css.gold, bold: true }));
@@ -86,6 +91,12 @@ class TownScene extends Phaser.Scene {
     yy += 20;
     add(T().text(this, x + 16, yy, p.equippedSet ? `Set: ${ADV.DATA.GEAR_SETS[p.equippedSet].name}` : 'No gear set', { size: 13, color: p.equippedSet ? T().css.green : T().css.inkFaint }));
     if (p.meal) { yy += 20; add(T().text(this, x + 16, yy, `Fed: ${p.meal.name} (${Object.entries(p.meal.bonus).map(([k, v]) => '+' + v + ' ' + k.toUpperCase()).join(', ')})`, { size: 12, color: T().css.green, wrap: w - 32 })); }
+    if (ADV.Survival) {
+      for (const wln of ADV.Survival.warnings(this.game_)) {
+        yy += 18;
+        add(T().text(this, x + 16, yy, wln.text, { size: 11, color: T().css.blood, wrap: w - 32 }));
+      }
+    }
     yy += 28;
     add(T().text(this, x + 16, yy, `Perks (${p.perks.filter(e => !ADV.DATA.SKILLS[e.skillId].noSlot).length}/${ADV.SkillSys.capFor(p, 'perk')})`, { size: 13, color: T().css.inkDim }));
     yy += 20;
@@ -166,9 +177,12 @@ class TownScene extends Phaser.Scene {
             ? ADV.Campaign2.faction(ADV.Campaign2.joined(this.game_)[0]).short
             : 'Allegiances']]
         : []),
-      ['store', 'Store'],
+      ['store', 'Grocer'],
+      ['blacksmith', 'Blacksmith'],
       ['home', 'Home'],
       ['trainer', 'Trainer'],
+      ['insurance', 'Insurance'],
+      ['maw', 'The Maw'],
       ['apply', 'Apply for Party'],
       ['create', 'Create Party', stage === 'leader' ? null : (p.inventory.gold < C().GOLD.partyStartupCapital ? `${C().GOLD.partyStartupCapital}g` : null)],
       ['roster', 'Guild Roster'],
@@ -178,6 +192,7 @@ class TownScene extends Phaser.Scene {
       ['faction', 'Faction Status'],
       ['journal', 'Skill Journal'],
       ['codex', 'Codex'],
+      ['settings', 'Settings'],
     ];
     const listTop = y + 46;
     const listH = T().H - 32 - listTop - 52;
@@ -229,9 +244,10 @@ class TownScene extends Phaser.Scene {
     const r = this.contentRect();
     this.keep(T().panel(this, r.x, r.y, r.w, r.h, { alpha: T().chromeAlpha }));
     const P = ADV.Panels;
-    const panel = { board: P.questBoard, store: P.store, trainer: P.trainer, apply: P.applyParty,
+    const panel = { board: P.questBoard, store: P.store, grocer: P.grocer, blacksmith: P.blacksmith,
+       insurance: P.insurance, maw: P.maw, trainer: P.trainer, apply: P.applyParty,
        create: P.createParty, roster: P.roster, graveyard: P.graveyard, rel: P.relationships,
-       faction: P.factions, journal: P.journal, codex: P.codex, campaign: P.campaign,
+       faction: P.factions, journal: P.journal, codex: P.codex, settings: P.settings, campaign: P.campaign,
        campaign2: P.campaign2, vault: P.vault, home: P.home }[id];
     if (panel) panel(this, r);
     if (ADV.Tutor && ADV.Tutor.active(this.game_)) ADV.Tutor.panel(this, this.game_, id, r);
@@ -337,6 +353,13 @@ class TownScene extends Phaser.Scene {
     if (this.game_.pendingChildNaming) this.noticeQueue.unshift({ kind: 'nameChild', child: this.game_.pendingChildNaming });
     if (this.game_.childJustSelfSufficient) { this.game_.childJustSelfSufficient = false; this.promptOnce('childSelfSufficient'); }
     if (ADV.Rel.hatredEdgeCount(w, p.id) > 0) this.promptOnce('firstHatred');
+    if (ADV.Survival) {
+      const s = ADV.Survival.state(p);
+      if (s.hunger > 0) this.promptOnce('firstHunger');
+      if (ADV.Survival.shelterDeadline(p) <= 2) this.promptOnce('firstShelterWarning');
+      if (s.sick) this.promptOnce('firstSickness');
+      if (w.pendingPlayerJilt && s.sick) this.promptOnce('firstSicknessJilt');
+    }
   }
 
   nextNotice() {

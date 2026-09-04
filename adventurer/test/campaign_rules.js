@@ -222,14 +222,22 @@ const mem = memBackend;
 })();
 
 (function () {
-  console.log('\n-- wages 30–100 and reputation raises --');
+  console.log('\n-- wages: apply 30–200 by reputation, raises to 300 --');
   const G = ADV.DATA.CONST.GOLD;
   eq(G.hirelingWage, 30, 'wages start at 30');
   eq(G.typicalWage, 30, 'offers start at 30');
   eq(G.wageAcceptMin, 30, 'floor is 30');
-  eq(G.wageAcceptMax, 100, 'cap is 100');
+  eq(G.wageAcceptMax, 100, 'leaders still offer NPCs 30–100');
+  eq(G.wageApplyMax, 200, 'apply ceiling is 200');
+  eq(G.wageRaiseMax, 300, 'raise ceiling is 300');
   eq(ADV.Party.clampWage(20), 30, 'offers below 30 snap up');
-  eq(ADV.Party.clampWage(200), 100, 'offers above 100 snap down');
+  eq(ADV.Party.clampWage(200), 100, 'leader offers above 100 snap down');
+  eq(ADV.Party.applyAskMax({ reputation: -20 }), 30, 'unknown names can only ask the floor');
+  eq(ADV.Party.applyAskMax({ reputation: 0 }), 115, 'a new name opens 115g');
+  eq(ADV.Party.applyAskMax({ reputation: 20 }), 200, 'fame opens 200g');
+  eq(ADV.Party.clampApplyWage({ reputation: 0 }, 200), 115, 'apply asks snap to reputation');
+  eq(ADV.Party.clampApplyWage({ reputation: 20 }, 10), 30, 'apply floor is 30');
+  eq(ADV.Party.clampRaiseWage(400), 300, 'raises snap to 300');
   ADV.Save.setBackend(mem());
   const g = ADV.Game.newGame({ seed: 3, name: 'Hire', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
   const world = g.world;
@@ -248,6 +256,153 @@ const mem = memBackend;
   ok(ADV.Party.raiseChance(p, 40, 50) < ADV.Party.raiseChance({ reputation: 20 }, 40, 50), 'reputation moves the odds');
   const no = ADV.Party.requestRaise(world, { chance: () => false }, p);
   ok(no.ok && !no.accepted && p.wage === 40, 'a refused raise leaves the wage');
+  world.questClock++;
+  const named = ADV.Party.requestRaise(world, { chance: () => true }, p, 70);
+  ok(named.ok && named.accepted && named.wage === 70, 'you can name the next raise');
+  world.questClock++;
+  party.wages[p.id] = 300; p.wage = 300;
+  const top = ADV.Party.requestRaise(world, { chance: () => true }, p, 310);
+  eq(top.ok, false, '300g is the raise ceiling');
+})();
+
+(function () {
+  console.log('\n-- quit then found a party, even after id counter resets --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 8, name: 'Found', sex: 'f', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const old = world.parties[0];
+  ok(old, 'an employer exists');
+  old.memberIds.push(p.id); old.wages[p.id] = 30;
+  p.partyId = old.id; p.leaderId = old.leaderId; p.wage = 30;
+  ADV.Party.removeMember(world, old, p.id);
+  eq(p.partyId, null, 'quit clears the party');
+  ok(!old.memberIds.includes(p.id), 'the old roster does not keep them');
+  ADV.Party.resetIds(1);
+  p.inventory.gold = 100;
+  const before = world.parties.length;
+  const mine = ADV.Party.create(world, p.id);
+  ok(mine && mine.leaderId === p.id, 'they lead the new company');
+  ok(mine !== old, 'it is not the company they quit');
+  ok(mine.id !== old.id, 'the new company has its own id');
+  eq(world.parties.length, before + 1, 'a new company was recorded');
+  eq(ADV.Party.of(world, p), mine, 'Party.of finds the company they lead');
+  eq(ADV.Game.careerStage(g), 'leader', 'career stage is leader');
+  const fold = ADV.Party.foldByLeader(world, p);
+  ok(fold.ok, 'they can disband');
+  eq(p.inventory.gold, 200, 'the founding purse comes back');
+  eq(ADV.Party.of(world, p), null, 'they are free after the fold');
+})();
+
+(function () {
+  console.log('\n-- repair a save that reused p1 --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 9, name: 'Fix', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const old = world.parties[0];
+  const ghost = { id: old.id, leaderId: p.id, memberIds: [], wages: {} };
+  world.parties.push(ghost);
+  p.partyId = old.id; p.leaderId = null; p.wage = 0;
+  ADV.Party.repairWorld(world);
+  const mine = ADV.Party.of(world, p);
+  ok(mine && mine.leaderId === p.id, 'repair keeps the company they lead');
+  ok(mine.id !== old.id, 'the ghost no longer shares the old id');
+  ok(!old.memberIds.includes(p.id), 'they are not still on the old roster');
+})();
+
+(function () {
+  console.log('\n-- party alignment is visible and leaders keep to it --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 11, name: 'Align', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const party = world.parties[0];
+  const leader = ADV.Party.leader(world, party);
+  leader.factionLeaning = 'law';
+  leader.factionStanding = { law: 0, criminal: 0, neutral: 0 };
+  eq(ADV.Party.alignment(world, party), 'law', 'a lawful leader reads lawful');
+  eq(ADV.Party.alignmentLabel('law'), 'lawful', 'law labels as lawful');
+  eq(ADV.Party.alignmentLabel('criminal'), 'criminal', 'criminal labels as criminal');
+  party.memberIds.push(p.id); party.wages[p.id] = 30;
+  p.partyId = party.id; p.leaderId = leader.id; p.wage = 30;
+  g.tutorial = { step: 'done' };
+  g.board = [
+    { id: 'c1', track: 'party', tier: 1, payout: 200, factionAlignment: 'criminal', isBoss: false },
+    { id: 'l1', track: 'party', tier: 1, payout: 180, factionAlignment: 'law', isBoss: false },
+    { id: 'n1', track: 'party', tier: 1, payout: 190, factionAlignment: 'neutral', isBoss: false },
+  ];
+  const pick = ADV.Game.leaderPick(g);
+  eq(pick && pick.factionAlignment, 'law', 'a lawful leader takes a lawful contract');
+  leader.factionLeaning = 'criminal';
+  const crim = ADV.Game.leaderPick(g);
+  eq(crim && crim.factionAlignment, 'criminal', 'a criminal leader takes a criminal contract');
+})();
+
+(function () {
+  console.log('\n-- contacts: shared quests and a 2-quest gap --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 19, name: 'Gap', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const stranger = world.characters.find(c => c.alive && !c.isPlayer && c.sex === 'f');
+  ok(stranger, 'a stranger exists');
+  ok(!ADV.World.rodeWithPlayer(world, stranger), 'a random has not ridden with you');
+  world.pendingRescues = [{ targetId: stranger.id, kind: 'failed', expiresAtQuest: 99 }];
+  world.pendingProposals = [{ fromId: stranger.id, at: 0 }];
+  ADV.World.pruneStrangerContacts(world);
+  eq((world.pendingRescues || []).length, 0, 'a stranger rescue is dropped');
+  eq((world.pendingProposals || []).length, 0, 'a stranger proposal is dropped');
+  ADV.Courtship.recordShared(world, [stranger.id, p.id]);
+  ok(ADV.World.rodeWithPlayer(world, stranger), 'a shared contract makes them known');
+  ADV.Rel.move(world, stranger.id, p.id, 80, 'quest', { set: true });
+  ADV.World.tryOfferRescue(world, g.rng, stranger, null, 'failed');
+  eq((world.pendingRescues || []).length, 1, 'a friend in trouble can ask');
+  const other = world.characters.find(c => c.alive && !c.isPlayer && c !== stranger);
+  ADV.Courtship.recordShared(world, [other.id, p.id]);
+  ADV.Rel.move(world, other.id, p.id, 80, 'quest', { set: true });
+  ADV.World.tryOfferRescue(world, g.rng, other, null, 'failed');
+  eq((world.pendingRescues || []).length, 1, 'only one help request at a time');
+  world.pendingRescues = [];
+  ADV.World.tryOfferRescue(world, g.rng, other, null, 'failed');
+  eq((world.pendingRescues || []).length, 0, 'help waits at least two quests');
+  world.questClock += 2;
+  ADV.World.tryOfferRescue(world, g.rng, other, null, 'failed');
+  eq((world.pendingRescues || []).length, 1, 'after two quests another friend can ask');
+
+  const g2 = ADV.Game.newGame({ seed: 23, name: 'Rival', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  g2.tutorial = { step: 'done' };
+  const me = ADV.Game.player(g2);
+  const job = (g2.board || []).find(q => !q.campaign && q.track === 'solo') || { track: 'solo', encounters: [{}, {}], factionAlignment: 'neutral', payout: 80 };
+  if (!job.encounters) job.encounters = [{}, {}];
+  me.questsCompleted = 0; me.questsFailed = 0;
+  ok(!ADV.Game.shouldMeetRival(g2, job), 'the first outings have no rival company');
+  me.questsCompleted = 2;
+  ok(ADV.Game.shouldMeetRival(g2, job), 'after two contracts a rival company can appear');
+  const started = ADV.Game.startQuest(g2, job, {});
+  ok(started.ok && started.quest.rival, 'that outing meets another company');
+  ok(!ADV.Game.shouldMeetRival(g2, job), 'the next outing is too soon for another rival');
+  g2.world.questClock += 2;
+  ok(ADV.Game.shouldMeetRival(g2, job), 'two quests later a rival can appear again');
+  ok(!ADV.Game.shouldMeetRival(g2, Object.assign({}, job, { campaign: true })), 'campaign jobs skip the intercept');
+})();
+
+(function () {
+  console.log('\n-- campaign faction jobs pay enough for a party --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 44, name: 'MawPay', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const p = ADV.Game.player(g);
+  ADV.Campaign.accept(g, 'maw');
+  const q1 = ADV.Campaign.buildQuest(g, 1);
+  ok(q1.payout >= 500, 'the Maw\'s first contract pays at least 500g');
+  const party = ADV.Party.create(g.world, p.id);
+  const hire = g.world.characters.find(c => c.alive && !c.isPlayer && !c.partyId);
+  party.memberIds.push(hire.id); party.wages[hire.id] = 200; hire.partyId = party.id; hire.leaderId = p.id;
+  ok(ADV.Game.contractCoversPayroll(g, q1), 'that covers a 200g hire');
+  const started = ADV.Game.startQuest(g, q1, {});
+  ok(started.ok, 'a party can take the first Maw job');
+  const q5 = ADV.Campaign.buildQuest(g, 5);
+  ok(q5.payout >= 500, 'the finale still pays at least 500g');
 })();
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

@@ -9,57 +9,86 @@ const Panels = ADV.Panels = ADV.Panels || {};
 
 const header = (scene, r, title, sub) => ADV.UI.header(scene, r, title, sub);
 
+function wageStepper(scene, x, y, onDelta) {
+  let bx = x;
+  for (const [d, lbl] of [[-10, '−10'], [-5, '−5'], [5, '+5'], [10, '+10']]) {
+    ADV.UI.keepBtn(scene, T().button(scene, bx, y, 48, 34, lbl, () => onDelta(d), { size: 13 }));
+    bx += 54;
+  }
+}
+
 // ============================================================== APPLY FOR PARTY
 Panels.applyParty = function (scene, r) {
   const game = scene.g();
   const world = game.world;
   const p = scene.player();
   const tut = ADV.Tutor && ADV.Tutor.step(game) === 'party';
-  header(scene, r, 'Apply for Party', 'Name your wage before they hire you — 30g to start, 100g at most. Once you ride with them, raises wait on reputation.');
+  const applyMin = C().GOLD.wageAcceptMin;
+  const applyMax = ADV.Party.applyAskMax(p);
+  const raiseMax = C().GOLD.wageRaiseMax || 300;
+  header(scene, r, 'Apply for Party', 'Name a wage before they hire you. Reputation opens the range; raises come after you sign.');
   const myParty = ADV.Party.of(world, p);
   const isLeader = !!(myParty && myParty.leaderId === p.id);
-  const canAsk = !myParty && !tut;
+  const canAsk = !myParty;
   let listTop = r.y + 88;
   if (canAsk) {
-    scene.askWage = ADV.Party.clampWage(scene.askWage || ADV.Party.hirelingWageFor(p));
-    scene.keep(T().text(scene, r.x + 24, r.y + 108, `Your asking wage: ${scene.askWage}g a quest`, { size: 14, color: T().css.gold }));
-    ADV.UI.keepBtn(scene, T().button(scene, r.x + 320, r.y + 100, 40, 32, '−', () => { scene.askWage = ADV.Party.clampWage(scene.askWage - 5); scene.openPanel('apply'); }, { size: 14 }));
-    ADV.UI.keepBtn(scene, T().button(scene, r.x + 366, r.y + 100, 40, 32, '+', () => { scene.askWage = ADV.Party.clampWage(scene.askWage + 5); scene.openPanel('apply'); }, { size: 14 }));
-    scene.keep(T().text(scene, r.x + 24, r.y + 140, 'Negotiate before you sign. After that, raises depend on reputation.', { size: 12, italic: true, color: T().css.inkFaint, wrap: r.w - 48 }));
-    listTop = r.y + 168;
+    const seed = tut && ADV.Tutor && ADV.Tutor.wage ? ADV.Tutor.wage() : ADV.Party.hirelingWageFor(p);
+    if (scene.askWage == null) scene.askWage = seed;
+    scene.askWage = ADV.Party.clampApplyWage(p, scene.askWage);
+    scene.keep(T().text(scene, r.x + 24, r.y + 96, `Ask ${scene.askWage}g a quest`, { size: 16, color: T().css.gold }));
+    wageStepper(scene, r.x + r.w - 248, r.y + 88, d => {
+      scene.askWage = ADV.Party.clampApplyWage(p, scene.askWage + d);
+      scene.openPanel('apply');
+    });
+    scene.keep(T().text(scene, r.x + 24, r.y + 132, `Your reputation opens ${applyMin}–${applyMax}g. A high ask is harder to land; after you sign, raises can climb to ${raiseMax}g.`, { size: 12, italic: true, color: T().css.inkFaint, wrap: r.w - 48 }));
+    listTop = r.y + 172;
+  } else if (myParty && !isLeader) {
+    const cur = p.wage || C().GOLD.hirelingWage;
+    const leader = ADV.Party.leader(world, myParty);
+    const asked = p.raiseAskedAt != null && p.raiseAskedAt >= (world.questClock | 0);
+    const atCap = cur >= raiseMax;
+    if (scene.raiseAsk == null || scene.raiseAsk <= cur) scene.raiseAsk = Math.min(raiseMax, cur + (C().GOLD.wageRaiseStep || 10));
+    scene.raiseAsk = Math.max(cur + 5, Math.min(raiseMax, scene.raiseAsk | 0));
+    scene.keep(T().text(scene, r.x + 24, r.y + 96, `You ride with ${leader ? leader.name : 'a party'} for ${cur}g a quest.`, { size: 15 }));
+    if (!atCap) {
+      scene.keep(T().text(scene, r.x + 24, r.y + 124, `Ask a raise to ${scene.raiseAsk}g`, { size: 16, color: T().css.gold }));
+      wageStepper(scene, r.x + r.w - 248, r.y + 116, d => {
+        scene.raiseAsk = Math.max(cur + 5, Math.min(raiseMax, (scene.raiseAsk | 0) + d));
+        scene.openPanel('apply');
+      });
+      ADV.UI.keepBtn(scene, T().button(scene, r.x + 24, r.y + 158, 260, 36, asked ? 'Raise asked this stay' : `Ask for ${scene.raiseAsk}g`, () => {
+        if (asked) { ADV.Notices.toast(scene, 'You already asked this stay. Ride a quest first.'); return; }
+        const res = ADV.Party.requestRaise(world, game.rng, p, scene.raiseAsk);
+        if (!res.ok) { ADV.Notices.toast(scene, res.error); return; }
+        ADV.Notices.toast(scene, res.accepted
+          ? `${leader ? leader.name : 'They'} agreed. ${res.wage}g a quest now.`
+          : `${leader ? leader.name : 'They'} refused. Reputation talks.`);
+        if (res.accepted) scene.raiseAsk = Math.min(raiseMax, res.wage + (C().GOLD.wageRaiseStep || 10));
+        ADV.Save.saveGame(game);
+        scene.refreshAll(); scene.openPanel('apply');
+      }, { size: 14, disabled: asked }));
+    } else {
+      scene.keep(T().text(scene, r.x + 24, r.y + 124, `You are at the ${raiseMax}g ceiling.`, { size: 13, italic: true, color: T().css.inkFaint }));
+    }
+    listTop = r.y + 204;
   }
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: listTop, w: r.w - 16, h: r.y + r.h - listTop - 8 });
   let y = listTop + 4;
   if (myParty) {
     const leader = ADV.Party.leader(world, myParty);
-    scroll.add(T().text(scene, r.x + 24, y, isLeader ? 'You lead your own party.' : `You ride with ${leader ? leader.name : 'a party'} for ${p.wage || C().GOLD.hirelingWage}g a quest.`, { size: 15 }));
-    y += 30;
-    if (!isLeader) {
-      const cur = p.wage || C().GOLD.hirelingWage;
-      const next = Math.min(C().GOLD.wageAcceptMax, cur + (C().GOLD.wageRaiseStep || 10));
-      const asked = p.raiseAskedAt != null && p.raiseAskedAt >= (world.questClock | 0);
-      const atCap = cur >= C().GOLD.wageAcceptMax;
-      if (!atCap) {
-        scroll.addBtn(T().button(scene, r.x + 24, y, 260, 38, asked ? 'Raise asked this stay' : `Ask for a raise (${next}g)`, () => {
-          if (asked) { ADV.Notices.toast(scene, 'You already asked this stay. Ride a quest first.'); return; }
-          const res = ADV.Party.requestRaise(world, game.rng, p);
-          if (!res.ok) { ADV.Notices.toast(scene, res.error); return; }
-          ADV.Notices.toast(scene, res.accepted
-            ? `${leader ? leader.name : 'They'} agreed. ${res.wage}g a quest now.`
-            : `${leader ? leader.name : 'They'} refused. Reputation talks.`);
-          ADV.Save.saveGame(game);
-          scene.refreshAll(); scene.openPanel('apply');
-        }, { size: 14, disabled: asked }));
-        y += 46;
-      }
-      scroll.addBtn(T().button(scene, r.x + 24, y, 200, 38, 'Quit the party', () => {
-        ADV.Party.removeMember(world, myParty, p.id);
-        ADV.Save.saveGame(game);
-        scene.refreshAll(); scene.openPanel('apply');
-      }, { size: 14 }));
+    if (isLeader) {
+      scroll.add(T().text(scene, r.x + 24, y, 'You lead your own party.', { size: 15 }));
+      y += 30;
+      scroll.addBtn(T().button(scene, r.x + 24, y, 280, 38, `Disband — ${C().GOLD.partyStartupCapital}g back`, () => Panels.foldParty(scene), { size: 14 }));
       y += 50;
     } else {
-      scroll.addBtn(T().button(scene, r.x + 24, y, 280, 38, `Disband — ${C().GOLD.partyStartupCapital}g back`, () => Panels.foldParty(scene), { size: 14 }));
+      scroll.addBtn(T().button(scene, r.x + 24, y, 200, 38, 'Quit the party', () => {
+        ADV.Party.removeMember(world, myParty, p.id);
+        p.raiseAskedAt = null;
+        ADV.Save.saveGame(game);
+        scene.buildMenu();
+        scene.refreshAll(); scene.openPanel('apply');
+      }, { size: 14 }));
       y += 50;
     }
   }
@@ -71,23 +100,30 @@ Panels.applyParty = function (scene, r) {
     const members = ADV.Party.members(world, party);
     const odds = ADV.Party.applicationOdds(world, party, p);
     const cap = ADV.Party.maxAffordableWage(world, party, game.board);
-    const ask = tut ? ADV.Tutor.wage() : (scene.askWage || ADV.Party.hirelingWageFor(p));
+    const ask = ADV.Party.clampApplyWage(p, scene.askWage != null ? scene.askWage
+      : (p.wage || (tut && ADV.Tutor ? ADV.Tutor.wage() : ADV.Party.hirelingWageFor(p))));
     // a high ask costs odds; an ask past the purse is refused outright
     let finalOdds = odds.odds;
-    if (!tut && finalOdds > 0) finalOdds = ask > cap ? 0 : Math.max(0.05, finalOdds * (1 - Math.max(0, ask - C().GOLD.hirelingWage) / (C().GOLD.wageAcceptMax - C().GOLD.hirelingWage)));
+    const askFloor = C().GOLD.hirelingWage;
+    const askCeil = Math.max(askFloor + 1, applyMax);
+    if (!tut && finalOdds > 0) finalOdds = ask > cap ? 0 : Math.max(0.05, finalOdds * (1 - Math.max(0, ask - askFloor) / (askCeil - askFloor)));
     const archs = new Set();
     for (const m of [leader].concat(members)) for (const e of m.actives) {
       const sk = ADV.DATA.SKILLS[e.skillId];
       if (sk && sk.archetype) archs.add(sk.archetype);
     }
-    const sub = `${members.length + 1}/${C().PARTY_MAX} · runs ${[...archs].join(', ') || 'nothing'} · odds ${finalOdds ? Math.round(finalOdds * 100) + '%' : '—'}${odds.why === 'hatred' ? ' (bad blood)' : ''}${!tut && ask > cap ? ` · can pay at most ${cap}g` : ''}`;
-    scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 240, 46, `${leader.name}'s party`, () => {
+    const align = ADV.Party.alignment(world, party);
+    const alignLabel = ADV.Party.alignmentLabel(align);
+    const bond = Panels.hireBond(world, p, leader);
+    const alignColor = bond ? bond.color : ({ law: T().css.blue, criminal: T().css.purple, neutral: T().css.green }[align] || T().css.inkDim);
+    const sub = `${alignLabel}${bond ? ' · ' + bond.label : ''} · ${members.length + 1}/${C().PARTY_MAX} · runs ${[...archs].join(', ') || 'nothing'} · odds ${finalOdds ? Math.round(finalOdds * 100) + '%' : '—'}${odds.why === 'hatred' ? ' (bad blood)' : ''}${!tut && ask > cap ? ` · can pay at most ${cap}g` : ''}`;
+    scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 240, 46, `${leader.name}'s party — ${alignLabel}`, () => {
       if (isLeader) { ADV.Notices.toast(scene, 'You already have a party.'); return; }
       if (ADV.Party.roster(world, party).length >= C().PARTY_MAX) { ADV.Notices.toast(scene, 'They are full.'); return; }
       const askNow = () => {
         let accepted, wage = ask;
-        const scripted = ADV.Tutor ? ADV.Tutor.application(game, party) : null;
-        if (scripted) { accepted = scripted.accepted; if (scripted.wage) wage = scripted.wage; }
+        const scripted = ADV.Tutor ? ADV.Tutor.application(game, party, ask) : null;
+        if (scripted) { accepted = scripted.accepted; if (scripted.wage != null) wage = scripted.wage; }
         else {
           if (odds.odds <= 0) { scene.promptOnce('firstBlockedHire'); ADV.Notices.toast(scene, 'They will not have you.'); return; }
           if (ask > cap) { ADV.Notices.toast(scene, `${leader.name} cannot pay that. ${cap}g at most.`); return; }
@@ -97,7 +133,7 @@ Panels.applyParty = function (scene, r) {
           if (accepted) {
             const cur = ADV.Party.of(world, p);
             if (cur && cur.leaderId !== p.id) ADV.Party.removeMember(world, cur, p.id);
-            wage = ADV.Party.clampWage(wage);
+            wage = ADV.Party.clampApplyWage(p, wage);
             party.memberIds.push(p.id); party.wages[p.id] = wage;
             p.partyId = party.id; p.leaderId = leader.id; p.wage = wage;
             ADV.World.met(world, leader.id);
@@ -122,7 +158,7 @@ Panels.applyParty = function (scene, r) {
         return;
       }
       askNow();
-    }, { size: 15, display: true, sub, subColor: finalOdds > 0.5 ? T().css.green : T().css.inkDim }));
+    }, { size: 15, display: true, sub, subColor: alignColor }));
     y += 56;
   }
   scroll.extend(y);
@@ -144,9 +180,12 @@ Panels.createParty = function (scene, r) {
     if (party) { scroll.add(T().text(scene, r.x + 24, y, 'You already serve in someone else\'s party.', { size: 14 })); return; }
     scroll.addBtn(T().button(scene, r.x + 24, y, 280, 44, `Found a party — ${C().GOLD.partyStartupCapital}g`, () => {
       if (p.inventory.gold < C().GOLD.partyStartupCapital) { ADV.Notices.toast(scene, 'Not enough capital.'); return; }
-      p.inventory.gold -= C().GOLD.partyStartupCapital;
-      ADV.Party.create(world, p.id);
+      const before = world.parties.length;
+      const founded = ADV.Party.create(world, p.id);
+      if (!founded || founded.leaderId !== p.id) { ADV.Notices.toast(scene, 'The guild would not record the company.'); return; }
+      if (world.parties.length > before) p.inventory.gold -= C().GOLD.partyStartupCapital;
       ADV.Save.saveGame(game);
+      scene.buildMenu();
       scene.refreshAll(); scene.openPanel('create');
     }, { size: 15, display: true, disabled: p.inventory.gold < C().GOLD.partyStartupCapital }));
     return;
@@ -181,11 +220,13 @@ Panels.createParty = function (scene, r) {
     const blocked = ADV.Party.hatredConflict(world, party, cand.id);
     const skills = cand.actives.slice(0, 3).map(e => ADV.DATA.SKILLS[e.skillId].name).join(', ');
     const knowsForbidden = ['conscript', 'necromancy'].some(id => ADV.SkillSys.knows(cand, id));
-    const sub = `${skills}${knowsForbidden ? ' · knows forbidden arts' : ''}${blocked ? ' · WILL NOT SERVE' : ''}`;
+    const bond = Panels.hireBond(world, p, cand);
+    const sub = `${skills}${bond ? ' · ' + bond.label : ''}${knowsForbidden ? ' · knows forbidden arts' : ''}${blocked ? ' · WILL NOT SERVE' : ''}`;
     scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 240, 44, `${cand.name} (rank ${cand.rank})`, () => {
       if (blocked) { scene.promptOnce('firstBlockedHire'); ADV.Notices.toast(scene, 'Bad blood. No wage fixes it.'); return; }
+      if (bond) ADV.Notices.toast(scene, `${cand.name} is ${bond.label}.`);
       Panels.wageDialog(scene, party, cand);
-    }, { size: 14, sub, subColor: blocked ? T().css.blood : knowsForbidden ? T().css.purple : T().css.inkDim, disabled: members.length + 1 >= C().PARTY_MAX }));
+    }, { size: 14, sub, subColor: blocked ? T().css.blood : (bond ? bond.color : (knowsForbidden ? T().css.purple : T().css.inkDim)), disabled: members.length + 1 >= C().PARTY_MAX }));
     y += 52;
   }
   scroll.extend(y);
@@ -208,30 +249,47 @@ Panels.foldParty = function (scene) {
     });
 };
 
+Panels.hireBond = function (world, p, c) {
+  if (!p || !c) return null;
+  if (ADV.Rel.isPartner(p, c)) {
+    return { kind: 'partner', label: c.sex === 'f' ? 'your wife' : 'your husband', color: T().css.purple };
+  }
+  const theirs = ADV.Rel.tierBetween(world, c.id, p.id);
+  const yours = ADV.Rel.tierBetween(world, p.id, c.id);
+  if (theirs === 'romantic' || yours === 'romantic') return { kind: 'romantic', label: 'in a romance with you', color: T().css.purple };
+  if (ADV.Courtship && ADV.Courtship.wants(world, c, p) && ADV.Courtship.shared(world, c.id, p.id) >= 1) return { kind: 'courting', label: 'has their eye on you', color: T().css.purple };
+  if (theirs === 'friendly' || yours === 'friendly') return { kind: 'friendly', label: 'friendly with you', color: T().css.green };
+  return null;
+};
+
 Panels.wageDialog = function (scene, party, cand) {
   const game = scene.g();
+  const bond = Panels.hireBond(game.world, scene.player(), cand);
   let wage = C().GOLD.typicalWage;
   ADV.Notices.custom(scene, (keep, D, close) => {
     const W = T().W;
-    keep(T().text(scene, W / 2, 260, `Offer ${cand.name} a wage`, { size: 20, display: true, ox: 0.5, color: T().css.gold }).setDepth(D));
-    const amount = keep(T().text(scene, W / 2, 310, '', { size: 28, display: true, ox: 0.5 }).setDepth(D));
+    keep(T().text(scene, W / 2, 240, `Offer ${cand.name} a wage`, { size: 20, display: true, ox: 0.5, color: T().css.gold }).setDepth(D));
+    if (bond) keep(T().text(scene, W / 2, 268, bond.label, { size: 14, ox: 0.5, color: bond.color }).setDepth(D));
+    const rowY = bond ? 312 : 296;
+    const amount = keep(T().text(scene, W / 2, rowY, '', { size: 28, display: true, ox: 0.5 }).setDepth(D));
     const render = () => amount.setText(wage + 'g / quest');
     render();
     for (const [dx, lbl, d] of [[-180, '−5', -5], [-100, '−1', -1], [60, '+1', 1], [140, '+5', 5]]) {
-      ADV.UI.modalBtn(keep, D, T().button(scene, W / 2 + dx, 296, 56, 30, lbl, () => { wage = ADV.Party.clampWage(wage + d); render(); }, { size: 13 }));
+      ADV.UI.modalBtn(keep, D, T().button(scene, W / 2 + dx, rowY, 56, 30, lbl, () => { wage = ADV.Party.clampWage(wage + d); render(); }, { size: 13 }));
     }
-    const go = T().button(scene, W / 2 - 190, 360, 180, 40, 'Make the offer', () => {
+    const go = T().button(scene, W / 2 - 190, rowY + 52, 180, 40, 'Make the offer', () => {
       close();
       const r = ADV.Party.offerWage(game.world, game.rng, party, cand, wage);
       scene.speak(cand, r.ok ? ADV.DialogueBox.bandFor(game, cand) : 'general', {}, () => {
-        ADV.Notices.toast(scene, r.ok ? `${cand.name} signs on at ${wage}g.` :
-          r.why === 'declined' ? 'They pass. Pride or greed — hard to say.' : 'They cannot: ' + r.why);
+        ADV.Notices.toast(scene, r.ok
+          ? `${cand.name} signs on at ${wage}g.${bond ? ' They are ' + bond.label + '.' : ''}`
+          : r.why === 'declined' ? 'They pass. Pride or greed — hard to say.' : 'They cannot: ' + r.why);
         if (r.ok) ADV.World.met(game.world, cand.id);
         ADV.Save.saveGame(game);
         scene.refreshAll(); scene.openPanel('create');
       });
     }, { size: 14, bold: true });
-    const no = T().button(scene, W / 2 + 10, 360, 180, 40, 'Never mind', close, { size: 14 });
+    const no = T().button(scene, W / 2 + 10, rowY + 52, 180, 40, 'Never mind', close, { size: 14 });
     for (const b of [go, no]) ADV.UI.modalBtn(keep, D, b);
   });
 };
@@ -268,7 +326,7 @@ Panels.rosterLine = function (world, p, c, ctx) {
 
   // 3. romantic with the player
   if (ctx.tier === 'romantic') return 'yours';
-  if (ADV.Courtship && ADV.Courtship.wants(world, c, p) && !R.isPartner(c, p)) return 'has their eye on you';
+  if (ADV.Courtship && ADV.Courtship.wants(world, c, p) && !R.isPartner(c, p) && ADV.Courtship.shared(world, c.id, p.id) >= 1) return 'has their eye on you';
 
   // 4. courting or married to another NPC
   const spouses = (ctx.spouses || []).filter(s => s && s.id !== p.id);
@@ -550,7 +608,7 @@ Panels.vault = function (scene, r) {
     }, { size: 13 }));
     y += 42;
   }
-  scroll.add(T().text(scene, r.x + 24, y, v.insuranceActive ? 'Insurance: active — the survivor is paid if either of you dies.' : 'Insurance: none (the store sells it).', { size: 12, color: v.insuranceActive ? T().css.green : T().css.inkFaint }));
+  scroll.add(T().text(scene, r.x + 24, y, v.insuranceActive ? 'Insurance: active — the survivor is paid if either of you dies.' : 'Insurance: none (the Insurance desk sells it).', { size: 12, color: v.insuranceActive ? T().css.green : T().css.inkFaint }));
   scroll.extend(y + 24);
 };
 
@@ -760,7 +818,8 @@ function toastBoxSize(scene, text, maxW) {
 Notices._paintToast = function (scene, text) {
   const st = msgState(scene);
   const a = toastAnchor(scene);
-  const box = toastBoxSize(scene, text, Notices.TOAST_MAX_W);
+  const scale = (ADV.Prefs && ADV.Prefs.textScale()) || 1;
+  const box = toastBoxSize(scene, text, Math.round(Notices.TOAST_MAX_W * Math.max(1, scale)));
   const padX = 14, padY = 10;
   const bw = box.w + padX * 2, bh = box.h + padY * 2;
   const cx = a.ox === 1 ? a.x - bw / 2 : a.x + bw / 2;

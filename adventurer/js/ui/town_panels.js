@@ -145,6 +145,17 @@ Panels.departure = function (scene, q) {
   const insured = v && v.insuranceActive;
   tx(W / 2 - 240, yy, insured ? 'Insurance is active.' : 'No insurance on this life.', { size: 12, color: insured ? T().css.green : T().css.inkFaint });
   if (p.meal) { yy += 22; tx(W / 2 - 240, yy, `Fed: ${p.meal.name} — the bonus lasts this quest.`, { size: 12, color: T().css.green }); }
+  if (ADV.Survival) {
+    const sv = ADV.Survival.state(p);
+    const sickNext = !sv.sick && ADV.Survival.shelterDeadline(p) <= 1;
+    if (sickNext || sv.sick) {
+      yy += 22;
+      tx(W / 2 - 240, yy, sv.sick
+        ? 'You are already Sick — another night on this roof stacks it.'
+        : 'This contract is the last night on this roof. Come back Sick, and a spouse will not stay.',
+        { size: 12, color: T().css.blood, wrap: 480 });
+    }
+  }
 
   const finish = () => {
     objs.forEach(o => { try { o.destroy(); } catch (e) {} });
@@ -165,25 +176,37 @@ Panels.departure = function (scene, q) {
 };
 
 // ============================================================== STORE
-Panels.store = function (scene, r) {
-  scene.storeTab = scene.storeTab || 'food';
-  header(scene, r, 'Store', scene.storeTab === 'food'
-    ? 'Food is cheap and honest: eat before a contract and the bonus rides along for that one quest. One meal at a time.'
-    : 'Gear sets floor matching skills at level 10. One set at a time — sell the one you wear for its full price. Insurance pays the survivor if either of you dies.');
-  let tx = r.x + 24;
-  for (const t of [['food', 'Food'], ['gear', 'Gear']]) {
-    const active = scene.storeTab === t[0];
-    keepBtn(scene, T().button(scene, tx, r.y + 96, 150, 30, t[1], () => { scene.storeTab = t[0]; scene.openPanel('store'); }, { size: 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
-    tx += 158;
-  }
-  if (scene.storeTab === 'food') Panels.storeFood(scene, r); else Panels.storeGear(scene, r);
+// The old Store is four doors now. Panels.store stays as the Grocer alias so
+// openPanel('store') and the tutorial's 'store' tour stop keep working.
+Panels.grocer = function (scene, r) {
+  header(scene, r, 'Grocer', 'Eat before a contract or you come back Hungry. Hungry takes a quarter of your strength each time; four nights and it kills you. One meal wipes the stack.');
+  Panels.storeFood(scene, r);
+};
+Panels.store = function (scene, r) { return Panels.grocer(scene, r); };
+
+Panels.blacksmith = function (scene, r) {
+  header(scene, r, 'Blacksmith', 'A set floors matching skills at Intermediate. One set at a time — sell the one you wear for what you paid.');
+  Panels.storeGear(scene, r);
+};
+
+Panels.insurance = function (scene, r) {
+  header(scene, r, 'Insurance', 'Fifty gold now. If you or your spouse dies, the survivor is paid five hundred, and the policy burns when it pays.');
+  scene.promptOnce('firstInsuranceOffer');
+  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 100, w: r.w - 16, h: r.h - 108 });
+  Panels.storeInsurance(scene, r, r.y + 108, scroll);
+};
+
+Panels.maw = function (scene, r) {
+  header(scene, r, 'The Maw', 'A name and a purse. They collect on the next quest. Fail, and the target knows who paid.');
+  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 100, w: r.w - 16, h: r.h - 108 });
+  Panels.assassinsDesk(scene, r, r.y + 108, scroll);
 };
 
 Panels.storeFood = function (scene, r) {
   const game = scene.g();
   const p = scene.player();
-  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 136, w: r.w - 16, h: r.h - 144 });
-  let y = r.y + 140;
+  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 100, w: r.w - 16, h: r.h - 108 });
+  let y = r.y + 104;
   if (p.meal) { scroll.add(T().text(scene, r.x + 24, y, `You have eaten: ${p.meal.name}. Buying another replaces it.`, { size: 13, color: T().css.green })); y += 26; }
   const cw = Math.floor((r.w - 56) / 2);
   let col = 0, colY = [y, y];
@@ -193,7 +216,8 @@ Panels.storeFood = function (scene, r) {
     const b = T().button(scene, x, colY[col], cw, 46, `${f.name} — ${f.cost}g`, () => {
       const res = ADV.Character.eat(p, f.id);
       if (!res.ok) { ADV.Notices.toast(scene, res.error === 'not enough gold' ? 'You cannot afford it.' : res.error); return; }
-      ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store');
+      if (res.cured) scene.promptOnce('firstMealCure');
+      ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel(scene.currentPanel || 'grocer');
     }, { size: 14, sub: `${bonus} for one quest · ${f.blurb}`, subColor: p.meal && p.meal.id === f.id ? T().css.green : T().css.inkDim, disabled: p.inventory.gold < f.cost, display: true });
     scroll.addBtn(b);
     colY[col] += 54;
@@ -206,8 +230,8 @@ Panels.storeGear = function (scene, r) {
   const game = scene.g();
   const p = scene.player();
   const world = game.world;
-  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 136, w: r.w - 16, h: r.h - 144 });
-  let y = r.y + 140;
+  const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: r.y + 100, w: r.w - 16, h: r.h - 108 });
+  let y = r.y + 104;
   const spouse = p.partnerId ? ADV.World.byId(world, p.partnerId) : null;
   for (const [id, set] of Object.entries(ADV.DATA.GEAR_SETS)) {
     if (set.campaign) continue;   // faction sets are issued by their halls, never sold
@@ -217,7 +241,7 @@ Panels.storeGear = function (scene, r) {
       return sk && sk.archetype && set.archetypes.includes(sk.archetype) && e.level < C().GEAR_SET_FLOOR_LEVEL;
     }).map(e => ADV.DATA.SKILLS[e.skillId].name);
     const owned = p.equippedSet === id;
-    const sub = owned ? 'worn now' : p.equippedSet ? 'sell your current set first — one set at a time' : affected.length ? 'would raise: ' + affected.join(', ') : 'raises nothing you carry — 800g wasted';
+    const sub = owned ? 'worn now' : p.equippedSet ? 'sell your current set first — one set at a time' : affected.length ? 'would raise: ' + affected.join(', ') : 'raises nothing you carry — ' + set.cost + 'g wasted';
     const b = T().button(scene, r.x + 24, y, r.w - 320, 46, `${set.name} — ${set.cost}g`, () => {
       if (owned || p.equippedSet) return;
       if (p.inventory.gold < set.cost) { ADV.Notices.toast(scene, 'You cannot afford it.'); return; }
@@ -225,7 +249,7 @@ Panels.storeGear = function (scene, r) {
       p.equippedSet = id;
       ADV.Save.saveGame(game);
       scene.promptOnce('firstAffordableSet');
-      scene.refreshAll(); scene.openPanel('store');
+      scene.refreshAll(); scene.openPanel(scene.currentPanel || 'blacksmith');
     }, { size: 15, sub, subColor: affected.length && !owned && !p.equippedSet ? T().css.green : T().css.inkFaint, disabled: owned || !!p.equippedSet, display: true });
     scroll.addBtn(b);
     // the spouse shops with their own purse (request 10)
@@ -234,34 +258,41 @@ Panels.storeGear = function (scene, r) {
         if (spouse.inventory.gold < set.cost) { ADV.Notices.toast(scene, `${spouse.name} cannot afford it.`); return; }
         spouse.inventory.gold -= set.cost; spouse.equippedSet = id;
         ADV.World.feed(world, `${spouse.name} bought a ${set.name}.`, [spouse.id]);
-        ADV.Save.saveGame(game); scene.openPanel('store');
+        ADV.Save.saveGame(game); scene.openPanel(scene.currentPanel || 'blacksmith');
       }, { size: 12, disabled: spouse.inventory.gold < set.cost, color: T().css.purple }));
     }
     y += 52;
   }
   if (p.equippedSet) {
     const cur = ADV.DATA.GEAR_SETS[p.equippedSet];
-    scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 320, 40, `Sell the ${cur.name} — ${C().GOLD.gearSet}g back`, () => {
-      ADV.Notices.confirm(scene, 'Sell ' + cur.name + '?', `You get ${C().GOLD.gearSet}g and lose the level-${cur.floor || C().GEAR_SET_FLOOR_LEVEL} floor it gave your skills.`, 'Sell it', () => {
-        p.equippedSet = null; p.inventory.gold += C().GOLD.gearSet;
-        ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store');
+    const back = (cur && cur.cost) || C().GOLD.gearSet;
+    scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 320, 40, `Sell the ${cur.name} — ${back}g back`, () => {
+      ADV.Notices.confirm(scene, 'Sell ' + cur.name + '?', `You get ${back}g and lose the level-${cur.floor || C().GEAR_SET_FLOOR_LEVEL} floor it gave your skills.`, 'Sell it', () => {
+        p.equippedSet = null; p.inventory.gold += back;
+        ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel(scene.currentPanel || 'blacksmith');
       });
     }, { size: 14, color: T().css.gold }));
     y += 48;
   }
   if (spouse && spouse.alive && spouse.equippedSet) { scroll.add(T().text(scene, r.x + 24, y, `${spouse.name} wears the ${ADV.DATA.GEAR_SETS[spouse.equippedSet].name}.`, { size: 12, italic: true, color: T().css.inkDim })); y += 24; }
-  y += 6;
+  scroll.extend(y + 24);
+};
+
+// Insurance desk — cut out of the old Store gear tab, not rewritten.
+Panels.storeInsurance = function (scene, r, y, scroll) {
+  const game = scene.g();
+  const p = scene.player();
+  const put = scroll || { add: o => scene.keep(o), addBtn: b => keepBtn(scene, b), extend: () => {} };
   const v = ADV.Vault.of(game.world, p);
   const insured = v && v.insuranceActive;
-  const bi = T().button(scene, r.x + 24, y, r.w - 320, 44,
+  const bi = T().button(scene, r.x + 24, y, r.w - 48, 44,
     insured ? 'Insurance active' : `Insurance premium — ${C().GOLD.insurancePremium}g`, () => {
       if (insured) return;
-      if (ADV.Vault.payPremium(game.world, p)) { ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel('store'); }
+      if (ADV.Vault.payPremium(game.world, p)) { ADV.Save.saveGame(game); scene.refreshAll(); scene.openPanel(scene.currentPanel || 'insurance'); }
       else ADV.Notices.toast(scene, 'You cannot afford the premium.');
     }, { size: 15, disabled: insured, sub: `pays ${C().GOLD.insurancePayout}g to the survivor if you or your spouse dies`, display: true });
-  scroll.addBtn(bi);
-  y += 56;
-  Panels.assassinsDesk(scene, r, y, scroll);
+  put.addBtn(bi);
+  put.extend(y + 56);
 };
 
 // The Maw takes contracts on anyone (request): 100g per point of the
@@ -285,7 +316,7 @@ Panels.assassinsDesk = function (scene, r, y, scroll) {
       ADV.Notices.confirm(scene, 'Send the Maw after ' + c.name + '?', `${fee}g, paid now. They attempt it on the world clock; if it fails, ${c.name} will know who paid.`, 'Pay them', () => {
         ADV.Game.hireAssassins(game, c.id);
         ADV.Notices.toast(scene, 'A knife has been bought.');
-        scene.refreshAll(); scene.openPanel('store');
+        scene.refreshAll(); scene.openPanel(scene.currentPanel || 'maw');
       }, T().css.blood);
     }, { size: 12, disabled: has, sub: has ? 'contract out' : `rep ${c.reputation} · ${ADV.Rel.tierBetween(world, c.id, p.id)}`, subColor: T().css.inkFaint }));
     y += 40;
@@ -500,6 +531,35 @@ Panels.codex = function (scene, r) {
   keepBtn(scene, b);
 };
 
+// ============================================================== SETTINGS
+Panels.settings = function (scene, r) {
+  header(scene, r, 'Settings', 'These stay in this browser. A new life keeps them.');
+  const scale = (ADV.Prefs && ADV.Prefs.textScale()) || 1;
+  const pause = !!(ADV.Prefs && ADV.Prefs.pauseEnemy());
+  let y = r.y + 96;
+  scene.keep(T().text(scene, r.x + 24, y, 'Text and notifications', { size: 16, color: T().css.gold })); y += 28;
+  scene.keep(T().text(scene, r.x + 24, y, 'Larger type for menus, toasts, and combat labels.', { size: 13, color: T().css.inkDim, wrap: r.w - 48 })); y += 36;
+  const scales = [[1, 'Normal'], [1.2, 'Large'], [1.35, 'Larger']];
+  let x = r.x + 24;
+  for (const [n, lbl] of scales) {
+    const on = Math.abs(scale - n) < 0.05;
+    ADV.UI.keepBtn(scene, T().button(scene, x, y, 120, 40, lbl, () => {
+      ADV.Prefs.setTextScale(n);
+      scene.buildMenu();
+      scene.buildCharacterPanel();
+      scene.openPanel('settings');
+    }, { size: 14, fill: on ? 0x2a3a22 : undefined, color: on ? T().css.green : T().css.ink, edge: on ? T().c.green : undefined }));
+    x += 132;
+  }
+  y += 64;
+  scene.keep(T().text(scene, r.x + 24, y, 'Enemy turns', { size: 16, color: T().css.gold })); y += 28;
+  scene.keep(T().text(scene, r.x + 24, y, 'When on, each enemy waits for you before they act — auto does not rush their turn.', { size: 13, color: T().css.inkDim, wrap: r.w - 48 })); y += 40;
+  ADV.UI.keepBtn(scene, T().button(scene, r.x + 24, y, 280, 42, pause ? 'Pause enemy turns — on' : 'Pause enemy turns — off', () => {
+    ADV.Prefs.setPauseEnemy(!pause);
+    scene.openPanel('settings');
+  }, { size: 14, fill: pause ? 0x2a3a22 : undefined, color: pause ? T().css.green : T().css.ink, edge: pause ? T().c.green : undefined }));
+};
+
 // ============================================================== FACTIONS
 Panels.factions = function (scene, r) {
   const p = scene.player();
@@ -531,9 +591,15 @@ Panels.home = function (scene, r) {
     const owned = cur.id === h.id;
     const worse = ADV.Housing.rank(h.id) < ADV.Housing.rank(cur.id);
     const can = !owned && !worse && h.cost > 0 && p.inventory.gold >= h.cost;
-    const sub = owned ? 'where you live'
+    let sub = owned ? 'where you live'
       : (worse ? 'you have moved on'
         : (h.cost ? h.cost + 'g' + (h.spouses > 1 ? ' · ' + h.spouses + ' spouses' : '') : 'the roadside'));
+    if (ADV.Survival && !worse) {
+      const left = ADV.Survival.shelterDeadline(p);
+      if (owned && left !== Infinity) sub += ' · ' + (left === 1 ? '1 night left before sickness' : left + ' nights left before sickness');
+      else if (owned && left === Infinity) sub += ' · the clock ended here';
+      else if (!owned && h.cost > 0) sub += ' · buying this starts the clock over';
+    }
     const label = h.name;
     scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 56, 52, label, () => {
       if (!can) return;

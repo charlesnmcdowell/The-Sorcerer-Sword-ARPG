@@ -38,14 +38,16 @@ const T = {
 
   text(scene, x, y, str, opts) {
     opts = opts || {};
+    const scale = (ADV.Prefs && ADV.Prefs.textScale()) || 1;
+    const size = Math.round((opts.size || 15) * (opts.noscale ? 1 : scale));
     return scene.add.text(x, y, str, {
       fontFamily: opts.display ? T.font.display : T.font.body,
-      fontSize: (opts.size || 15) + 'px',
+      fontSize: size + 'px',
       color: opts.color || T.css.ink,
       fontStyle: opts.bold ? 'bold' : (opts.italic ? 'italic' : 'normal'),
       align: opts.align || 'left',
       wordWrap: opts.wrap ? { width: opts.wrap } : undefined,
-      lineSpacing: 4,
+      lineSpacing: Math.round(4 * (opts.noscale ? 1 : scale)),
     }).setOrigin(opts.ox != null ? opts.ox : 0, opts.oy != null ? opts.oy : 0);
   },
 

@@ -1,6 +1,6 @@
 // Browser run of the guided first hour: creation (name required, sexes
 // labelled) → tour → first solo contract → trainer → vault → party (declined,
-// then hired at 45g) → the leader's contract → free play. Also the store's
+// then hired at the named wage) → the leader's contract → free play. Also the store's
 // Food tab.
 'use strict';
 const { chromium } = require('playwright');
@@ -122,7 +122,7 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
   await clickText('Town', '^Understood$'); await page.waitForTimeout(300);
   await clickText('Town', '^Apply for Party$'); await page.waitForTimeout(500);
   t = await sceneTexts('Town');
-  ok(/Ask to join/.test(t) && /45g/.test(t), 'party callout explains the fixed 45g wage');
+  ok(/Ask to join/.test(t) && /30g/.test(t) && /200g/.test(t), 'party callout explains wage negotiation');
   await page.screenshot({ path: SHOT('t08_party') });
   const partyBtn = async () => page.evaluate(() => { const sc = window.__game.scene.getScene('Town'); const tt = sc.contentObjs.filter(o => o.text && /'s party$/.test(o.text))[0]; return tt ? { x: tt.x, y: tt.y } : null; });
   let pb = await partyBtn(); await click(pb.x, pb.y); await page.waitForTimeout(500);
@@ -134,7 +134,7 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
   pb = await partyBtn(); await click(pb.x, pb.y); await page.waitForTimeout(500);
   await click(640, 690); await click(640, 690); await page.waitForTimeout(600);
   st = await page.evaluate(() => { const game = window.__game.scene.getScene('Town').registry.get('game'); return { step: game.tutorial.step, wage: ADV.Game.player(game).wage, stage: ADV.Game.careerStage(game) }; });
-  ok(st.step === 'partyQuest' && st.stage === 'hireling' && st.wage > 0 && st.wage <= 45, 'hired at the tutorial wage: ' + st.wage);
+  ok(st.step === 'partyQuest' && st.stage === 'hireling' && st.wage > 0, 'hired at the named wage: ' + st.wage);
   await page.screenshot({ path: SHOT('t09_hired') });
   await clickText('Town', '^Quest Board$'); await page.waitForTimeout(500);
   t = await sceneTexts('Town');

@@ -321,16 +321,19 @@
   ]
  },
  "js/core/death.js": {
-  "lines": 283,
+  "lines": 358,
   "symbols": [
    "Death.applyMeta",
+   "Death.childLabel",
+   "Death.composeObituary",
    "Death.equipCarriedSkills",
    "Death.extractMeta",
    "Death.feed",
    "Death.finalize",
    "Death.graves",
    "Death.makeSuccessor",
-   "Death.routePlayerDeath"
+   "Death.routePlayerDeath",
+   "Death.skillNames"
   ]
  },
  "js/core/divine.js": {
@@ -407,7 +410,7 @@
   ]
  },
  "js/core/hiro.js": {
-  "lines": 100,
+  "lines": 107,
   "symbols": [
    "Hiro.acceptsProposal",
    "Hiro.fillParty",
@@ -434,7 +437,7 @@
   ]
  },
  "js/core/party.js": {
-  "lines": 300,
+  "lines": 317,
   "symbols": [
    "Party.applicationOdds",
    "Party.battleRoster",
@@ -445,14 +448,17 @@
    "Party.enforceHatred",
    "Party.followerRoom",
    "Party.followers",
+   "Party.hasSupport",
    "Party.hatredConflict",
    "Party.hirelingWageFor",
+   "Party.isSupport",
    "Party.leader",
    "Party.maxAffordableWage",
    "Party.members",
    "Party.of",
    "Party.offerWage",
    "Party.payroll",
+   "Party.pickMember",
    "Party.raiseChance",
    "Party.regularMembers",
    "Party.removeMember",
@@ -605,7 +611,7 @@
   ]
  },
  "js/core/world.js": {
-  "lines": 619,
+  "lines": 626,
   "symbols": [
    "World.adults",
    "World.byId",
@@ -631,7 +637,7 @@
   ]
  },
  "js/ui/battle_art.js": {
-  "lines": 360,
+  "lines": 479,
   "symbols": [
    "BA.groundFor",
    "BA.has",
@@ -694,9 +700,10 @@
   ]
  },
  "js/ui/cutscenes.js": {
-  "lines": 277,
+  "lines": 290,
   "symbols": [
    "Cut.funeral",
+   "Cut.grave",
    "Cut.rideHome",
    "armSkip",
    "busy",
@@ -717,22 +724,29 @@
   ]
  },
  "js/ui/home_art.js": {
-  "lines": 271,
+  "lines": 367,
   "symbols": [
    "HousingArt.paint",
+   "HousingArt.weatherKind",
    "brick",
    "camp",
    "castle",
    "celestial",
    "cottage",
    "duskSun",
+   "flickerLamps",
    "hill",
    "horse",
    "inn",
    "litWindow",
    "mansion",
    "moon",
+   "paintCrowd",
+   "paintLife",
+   "paintRain",
+   "paintSnow",
    "sky",
+   "smokeStacks",
    "stars",
    "sun",
    "tree"
@@ -768,13 +782,16 @@
   ]
  },
  "js/ui/portraits.js": {
-  "lines": 692,
+  "lines": 786,
   "symbols": [
    "animate",
+   "applySetLook",
+   "applyVeteran",
    "chinYOf",
    "creationKey",
    "drawBust",
    "drawExtras",
+   "drawHeadwear",
    "drawMonster",
    "drawNeck",
    "drawWardrobe",
@@ -801,7 +818,7 @@
   ]
  },
  "js/ui/scene_combat.js": {
-  "lines": 620,
+  "lines": 651,
   "symbols": [
    "animateEvent",
    "autoSkillName",
@@ -848,7 +865,7 @@
   ]
  },
  "js/ui/scene_death.js": {
-  "lines": 202,
+  "lines": 194,
   "symbols": [
    "constructor",
    "create",
@@ -869,7 +886,7 @@
   ]
  },
  "js/ui/scene_town.js": {
-  "lines": 496,
+  "lines": 501,
   "symbols": [
    "applyChromeHidden",
    "armChromeFailsafe",
@@ -897,6 +914,71 @@
    "speak"
   ]
  },
+ "js/ui/spell_fx.js": {
+  "lines": 726,
+  "symbols": [
+   "aimedShot",
+   "alliesOf",
+   "backstabFx",
+   "basicAtk",
+   "beastShape",
+   "bloodPact",
+   "boom",
+   "cleanseFx",
+   "clearStatus",
+   "cleaveFx",
+   "counterFx",
+   "emberLash",
+   "finisherFx",
+   "fireBolt",
+   "foes",
+   "frostTouch",
+   "godAura",
+   "has",
+   "idleBleed",
+   "idleBurn",
+   "idleFrozen",
+   "idleGuard",
+   "idlePoison",
+   "idleRoot",
+   "idleShock",
+   "idleTaunt",
+   "idleWard",
+   "ids",
+   "katanaFx",
+   "kill",
+   "killMark",
+   "laneOf",
+   "mendFx",
+   "play",
+   "raiseFx",
+   "regenFx",
+   "residue",
+   "rimeGrasp",
+   "shieldWall",
+   "smokeBomb",
+   "snareFx",
+   "sparkFx",
+   "sunderFx",
+   "sx",
+   "sy",
+   "syncStatus",
+   "tauntFx",
+   "thornSkin",
+   "tick",
+   "tierChain",
+   "tp",
+   "triageFx",
+   "trueRest",
+   "twoOf",
+   "tx",
+   "ty",
+   "venomFang",
+   "waitOf",
+   "wardFx",
+   "witherTouch"
+  ]
+ },
  "js/ui/theme.js": {
   "lines": 122,
   "symbols": [
@@ -921,7 +1003,7 @@
   ]
  },
  "js/ui/town_panels.js": {
-  "lines": 527,
+  "lines": 557,
   "symbols": [
    "Panels.assassinsDesk",
    "Panels.codex",
@@ -941,7 +1023,7 @@
   ]
  },
  "js/ui/town_panels2.js": {
-  "lines": 1035,
+  "lines": 1069,
   "symbols": [
    "Notices._paintToast",
    "Notices.block",
@@ -1014,26 +1096,45 @@
   ]
  },
  "js/ui/vfx.js": {
-  "lines": 112,
+  "lines": 257,
   "symbols": [
    "VFX.aura",
+   "VFX.beam",
+   "VFX.bolt",
    "VFX.burst",
    "VFX.camShake",
+   "VFX.cloud",
    "VFX.damageNumber",
    "VFX.desaturate",
    "VFX.driftPulse",
+   "VFX.drip",
+   "VFX.elementColor",
    "VFX.flashOverlay",
+   "VFX.frostSpikes",
+   "VFX.groundCrack",
    "VFX.healSparkle",
+   "VFX.hitStop",
    "VFX.isProjectile",
+   "VFX.laneWave",
    "VFX.lunge",
+   "VFX.motes",
+   "VFX.plume",
    "VFX.projectile",
    "VFX.recoil",
+   "VFX.ring",
    "VFX.scalePunch",
+   "VFX.screenSweep",
    "VFX.shake",
+   "VFX.shards",
+   "VFX.shockwave",
    "VFX.skillColor",
    "VFX.slashArc",
+   "VFX.spray",
+   "VFX.stab",
+   "VFX.sweep",
    "VFX.tintFlash",
-   "VFX.zoomPunch"
+   "VFX.zoomPunch",
+   "kill"
   ]
  }
 }

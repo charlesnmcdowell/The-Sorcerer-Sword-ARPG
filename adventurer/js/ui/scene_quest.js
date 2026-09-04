@@ -18,7 +18,11 @@ class QuestScene extends Phaser.Scene {
 
     const q = game.quest;
     if (q.playerDead) { this.scene.start('Death'); return; }
-    if (q.readyToComplete || q.over || q.encIdx >= q.quest.encounters.length) { this.completeFlow(); return; }
+    if (ADV.Game.maybeStartRivalFinale && ADV.Game.maybeStartRivalFinale(game)) {
+      const finale = ADV.Game.currentEncounter(game);
+      if (finale) { this.buildEncounter(finale); return; }
+    }
+    if (q.readyToComplete || q.over || (q.encIdx >= q.quest.encounters.length && !q.rivalFight)) { this.completeFlow(); return; }
 
     const enc = ADV.Game.currentEncounter(game);
     if (!enc) { this.completeFlow(); return; }
@@ -42,7 +46,9 @@ class QuestScene extends Phaser.Scene {
     g.lineStyle(3, tint, 0.5); g.strokeRect(20, 20, W - 40, H - 40);
 
     T().text(this, W / 2, 60, q.quest.name, { size: 26, display: true, ox: 0.5, color: T().css.gold });
-    T().text(this, W / 2, 96, `Encounter ${enc.encIdx + 1} of ${enc.total} · ${q.quest.factionAlignment} country`, { size: 14, ox: 0.5, color: T().css.inkDim });
+    T().text(this, W / 2, 96, enc.rival
+      ? 'Another company wants the same contract'
+      : `Encounter ${enc.encIdx + 1} of ${enc.total} · ${q.quest.factionAlignment} country`, { size: 14, ox: 0.5, color: enc.rival ? T().css.gold : T().css.inkDim });
     const p = ADV.Game.player(game);
     T().text(this, W / 2, 120, `Your health: ${p.combatHp}/${ADV.Character.maxHp(p)} — you only heal back in town.`, { size: 13, ox: 0.5, color: p.combatHp < ADV.Character.maxHp(p) * 0.4 ? T().css.blood : T().css.inkDim });
     if (p.combatHp < ADV.Character.maxHp(p)) {

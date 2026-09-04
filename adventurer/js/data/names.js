@@ -13,7 +13,7 @@ ADV.DATA.NAMES = {
   f: ['Mira', 'Ysolde', 'Sera', 'Anwen', 'Brienne', 'Catrin', 'Delia', 'Elspeth',
       'Fiora', 'Gwen', 'Halia', 'Iris', 'Jessa', 'Kara', 'Liora', 'Maren',
       'Nessa', 'Odile', 'Petra', 'Quinn', 'Rhoswen', 'Sable', 'Tamsin', 'Una',
-      'Vesna', 'Wren', 'Xena', 'Yara', 'Zora', 'Adela', 'Beatrix', 'Celia',
+      'Vesna', 'Maeve', 'Xena', 'Yara', 'Zora', 'Adela', 'Beatrix', 'Celia',
       'Dagny', 'Esme', 'Freya', 'Greta', 'Hesper', 'Ingrid', 'Juno', 'Katla'],
 };
 })();

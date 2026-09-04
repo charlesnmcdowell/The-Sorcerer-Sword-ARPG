@@ -62,6 +62,14 @@ for (let step = 0; step < QUESTS; step++) {
   try {
     const world = game.world;
     const p = player();
+    if (p && p.alive) {
+      if (p.inventory.gold >= 5) ADV.Character.eat(p, 'bread');
+      else p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 2 } };
+      const nextHome = ADV.Housing.list().find(h => ADV.Housing.rank(h.id) === ADV.Housing.rank(p.homeId) + 1);
+      if (nextHome && nextHome.cost > 0 && ADV.Housing.rank(nextHome.id) <= ADV.Housing.rank('brick') && p.inventory.gold >= nextHome.cost) {
+        ADV.Housing.buy(game, nextHome.id);
+      }
+    }
     inv(p && p.alive, 'player alive at step ' + step);
     if (!p || !p.alive) break;
 
