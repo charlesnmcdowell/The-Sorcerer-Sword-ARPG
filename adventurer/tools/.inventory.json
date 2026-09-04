@@ -1,0 +1,1039 @@
+{
+ "js/data/campaign2_data.js": {
+  "lines": 333,
+  "symbols": [
+   "chr",
+   "en",
+   "mb"
+  ]
+ },
+ "js/data/campaign2_dialogue.js": {
+  "lines": 472,
+  "symbols": [
+   "ADV.DATA.campaign2VoiceText"
+  ]
+ },
+ "js/data/campaign2_skills.js": {
+  "lines": 356,
+  "symbols": [
+   "def",
+   "tiers"
+  ]
+ },
+ "js/data/campaign_data.js": {
+  "lines": 188,
+  "symbols": [
+   "chr",
+   "en",
+   "mb"
+  ]
+ },
+ "js/data/campaign_dialogue.js": {
+  "lines": 742,
+  "symbols": [
+   "ADV.DATA.campaignVoiceText"
+  ]
+ },
+ "js/data/campaign_skills.js": {
+  "lines": 373,
+  "symbols": [
+   "def",
+   "tiers"
+  ]
+ },
+ "js/data/constants.js": {
+  "lines": 186,
+  "symbols": []
+ },
+ "js/data/dialogue.js": {
+  "lines": 1169,
+  "symbols": []
+ },
+ "js/data/dialogue2.js": {
+  "lines": 565,
+  "symbols": [
+   "p"
+  ]
+ },
+ "js/data/dialogue_hiro.js": {
+  "lines": 35,
+  "symbols": []
+ },
+ "js/data/enemies.js": {
+  "lines": 102,
+  "symbols": []
+ },
+ "js/data/names.js": {
+  "lines": 20,
+  "symbols": []
+ },
+ "js/data/registry.js": {
+  "lines": 34,
+  "symbols": []
+ },
+ "js/data/skills.js": {
+  "lines": 453,
+  "symbols": [
+   "def"
+  ]
+ },
+ "js/data/tutorial.js": {
+  "lines": 67,
+  "symbols": []
+ },
+ "js/core/campaign.js": {
+  "lines": 487,
+  "symbols": [
+   "Campaign.accept",
+   "Campaign.actor",
+   "Campaign.affects",
+   "Campaign.afterBossBeats",
+   "Campaign.allies",
+   "Campaign.alliesFor",
+   "Campaign.antlerAvailable",
+   "Campaign.banter",
+   "Campaign.bossId",
+   "Campaign.buildQuest",
+   "Campaign.chooseSide",
+   "Campaign.complete",
+   "Campaign.considerOffers",
+   "Campaign.currentOffer",
+   "Campaign.debugJump",
+   "Campaign.decline",
+   "Campaign.departureBeats",
+   "Campaign.eligibleFor",
+   "Campaign.ensureActors",
+   "Campaign.faction",
+   "Campaign.finalOpener",
+   "Campaign.fresh",
+   "Campaign.hallView",
+   "Campaign.levelRate",
+   "Campaign.lines",
+   "Campaign.makeActor",
+   "Campaign.menuVisible",
+   "Campaign.onCampaignQuestDone",
+   "Campaign.onContractComplete",
+   "Campaign.pushBeat",
+   "Campaign.questStatus",
+   "Campaign.reissue",
+   "Campaign.repeatables",
+   "Campaign.reset",
+   "Campaign.rivalDeathSequence",
+   "Campaign.skillPurchasable",
+   "Campaign.spawnEncounter",
+   "Campaign.spawnEnemy",
+   "Campaign.state",
+   "Campaign.takeBeats",
+   "Campaign.titleLifts",
+   "Campaign.titleName",
+   "setTitle"
+  ]
+ },
+ "js/core/campaign2.js": {
+  "lines": 575,
+  "symbols": [
+   "C2.accept",
+   "C2.actor",
+   "C2.afterBossBeats",
+   "C2.alignmentAllows",
+   "C2.alignmentOf",
+   "C2.alliesFor",
+   "C2.applySkin",
+   "C2.banter",
+   "C2.bossId",
+   "C2.buildQuest",
+   "C2.complete",
+   "C2.considerOffers",
+   "C2.consumed",
+   "C2.currentOffer",
+   "C2.debugJump",
+   "C2.decline",
+   "C2.departureBeats",
+   "C2.eligibleFor",
+   "C2.ensureActors",
+   "C2.faction",
+   "C2.finalOpener",
+   "C2.fresh",
+   "C2.freshMember",
+   "C2.godRaise",
+   "C2.hallView",
+   "C2.isC2",
+   "C2.joined",
+   "C2.lines",
+   "C2.markConsumed",
+   "C2.member",
+   "C2.menuVisible",
+   "C2.offerOrder",
+   "C2.onContractComplete",
+   "C2.onInherit",
+   "C2.onQuestDone",
+   "C2.onReincarnate",
+   "C2.progressRow",
+   "C2.pushBeat",
+   "C2.questStatus",
+   "C2.reissue",
+   "C2.rivalDeathSequence",
+   "C2.setTitle",
+   "C2.skillPurchasable",
+   "C2.spawnEncounter",
+   "C2.spawnEnemy",
+   "C2.state",
+   "C2.takeBeats",
+   "C2.titleNames",
+   "C2.writeProgress",
+   "applyLock"
+  ]
+ },
+ "js/core/character.js": {
+  "lines": 353,
+  "symbols": [
+   "Character.applyLegacy",
+   "Character.applyNonOrganic",
+   "Character.base",
+   "Character.digest",
+   "Character.eat",
+   "Character.effStat",
+   "Character.enemyDef",
+   "Character.isOrganic",
+   "Character.legacyBonus",
+   "Character.makeDependent",
+   "Character.makeEnemy",
+   "Character.makePlayer",
+   "Character.makeRegistry",
+   "Character.matureChild",
+   "Character.maxHp",
+   "Character.peekNextId",
+   "Character.resetIds",
+   "Character.rollStats",
+   "Character.seedNPC",
+   "Character.voiceTagFor",
+   "pickPersonality",
+   "rollVector"
+  ]
+ },
+ "js/core/combat.js": {
+  "lines": 1627,
+  "symbols": [
+   "Combat.act",
+   "Combat.advance",
+   "Combat.applyPostVictoryRecovery",
+   "Combat.applySurvivalGrowth",
+   "Combat.autoReadyAction",
+   "Combat.clearAutoFlags",
+   "Combat.create",
+   "Combat.currentTurn",
+   "Combat.ensureAutoRepeat",
+   "Combat.exportHp",
+   "Combat.grantTurn",
+   "Combat.hasLegalCombatAction",
+   "Combat.lowestHealth",
+   "Combat.moveLane",
+   "Combat.pullForward",
+   "Combat.registerWitnesses",
+   "Combat.setSkillAuto",
+   "Combat.skillAutoOn",
+   "Combat.skillNeedsAuto",
+   "Combat.spawnReinforcement",
+   "Combat.validTargets",
+   "addExposed",
+   "addStatus",
+   "applyRawDamage",
+   "buildTurnQueue",
+   "canHealOther",
+   "canMelee",
+   "canWard",
+   "checkEnd",
+   "computeDamage",
+   "dealDamage",
+   "doBribe",
+   "doFlee",
+   "endRoundTicks",
+   "ev",
+   "findGuard",
+   "finishAction",
+   "healUnit",
+   "isImmovable",
+   "laneClosed",
+   "laneUnits",
+   "layoutSide",
+   "livingUnits",
+   "mainArchetype",
+   "makeUnit",
+   "manifestFor",
+   "noteLeaderOut",
+   "onUnitDown",
+   "perkVal",
+   "recordSighting",
+   "removeStatus",
+   "startRound"
+  ]
+ },
+ "js/core/combat_ai.js": {
+  "lines": 151,
+  "symbols": [
+   "Combat.aiTakeTurn",
+   "avoidLookism",
+   "chooseAction",
+   "ev",
+   "planAction"
+  ]
+ },
+ "js/core/combat_effects.js": {
+  "lines": 89,
+  "symbols": [
+   "E.companyMedic",
+   "E.contractMark",
+   "E.dispel",
+   "E.ghoststep",
+   "E.lastBreath",
+   "E.mark",
+   "E.paidInFull",
+   "E.share",
+   "E.unseenGuard",
+   "E.venomDraw"
+  ]
+ },
+ "js/core/courtship.js": {
+  "lines": 206,
+  "symbols": [
+   "Court.cooldown",
+   "Court.decline",
+   "Court.floorApplies",
+   "Court.invalidate",
+   "Court.key",
+   "Court.onCooldown",
+   "Court.recordShared",
+   "Court.richestMen",
+   "Court.shared",
+   "Court.tick",
+   "Court.wants",
+   "Court.wealthRank",
+   "Court.wouldAsk",
+   "announcePair",
+   "bloodRelated",
+   "eligible",
+   "freeSlot",
+   "hasLookism",
+   "holdingForPlayer",
+   "npcTownEligible",
+   "pairNpcs",
+   "queueProposal"
+  ]
+ },
+ "js/core/death.js": {
+  "lines": 283,
+  "symbols": [
+   "Death.applyMeta",
+   "Death.equipCarriedSkills",
+   "Death.extractMeta",
+   "Death.feed",
+   "Death.finalize",
+   "Death.graves",
+   "Death.makeSuccessor",
+   "Death.routePlayerDeath"
+  ]
+ },
+ "js/core/divine.js": {
+  "lines": 320,
+  "symbols": [
+   "Divine.acceptDivineQuest",
+   "Divine.assignHeroes",
+   "Divine.checkTriggers",
+   "Divine.heroEligible",
+   "Divine.killCharacter",
+   "Divine.mark",
+   "Divine.onHeroDefeated",
+   "Divine.onHeroKilled",
+   "Divine.onTargetDead",
+   "Divine.releaseConscript",
+   "Divine.resolveDefeated",
+   "Divine.revokeGrants",
+   "Divine.sendHeroHelpRequests",
+   "Divine.spare",
+   "Divine.tickFollowers",
+   "Divine.vendettaKill",
+   "tierIdx"
+  ]
+ },
+ "js/core/game.js": {
+  "lines": 1015,
+  "symbols": [
+   "Game.acceptRescue",
+   "Game.assassinFee",
+   "Game.autoRaiseFallen",
+   "Game.beginAssassination",
+   "Game.bribeOffer",
+   "Game.careerStage",
+   "Game.completeQuest",
+   "Game.continueAfterDeath",
+   "Game.contractCoversPayroll",
+   "Game.currentEncounter",
+   "Game.deadPlayerRecord",
+   "Game.departureInfo",
+   "Game.finishAmbush",
+   "Game.finishAssassination",
+   "Game.finishCombat",
+   "Game.finishRescue",
+   "Game.funeralBand",
+   "Game.hireAssassins",
+   "Game.leaderPick",
+   "Game.load",
+   "Game.makeQuestThrall",
+   "Game.necroCaster",
+   "Game.newGame",
+   "Game.onPlayerDeath",
+   "Game.partyRoster",
+   "Game.pendingAmbush",
+   "Game.player",
+   "Game.prompt",
+   "Game.refuseRescue",
+   "Game.releaseQuestThralls",
+   "Game.resolveDefeatedNamed",
+   "Game.resolveLeaderFall",
+   "Game.restoreQuestThralls",
+   "Game.startAmbush",
+   "Game.startCombat",
+   "Game.startQuest",
+   "Game.stayHome",
+   "Game.tryVerb",
+   "Game.wipeParty",
+   "Game.youngDependents",
+   "agePlayerChildren",
+   "applyQuestFailure",
+   "applyQuestSuccess",
+   "applyWageOpinion",
+   "processMercies",
+   "tickPlayerPregnancy"
+  ]
+ },
+ "js/core/hiro.js": {
+  "lines": 100,
+  "symbols": [
+   "Hiro.acceptsProposal",
+   "Hiro.fillParty",
+   "Hiro.foundParty",
+   "Hiro.growthCap",
+   "Hiro.isHiro",
+   "Hiro.maybeArrive",
+   "Hiro.npc",
+   "Hiro.resurrect",
+   "Hiro.rngFor"
+  ]
+ },
+ "js/core/housing.js": {
+  "lines": 66,
+  "symbols": [
+   "Housing.buy",
+   "Housing.byId",
+   "Housing.canTakeSpouse",
+   "Housing.list",
+   "Housing.of",
+   "Housing.rank",
+   "Housing.spouseCap",
+   "Housing.timeOfDay"
+  ]
+ },
+ "js/core/party.js": {
+  "lines": 300,
+  "symbols": [
+   "Party.applicationOdds",
+   "Party.battleRoster",
+   "Party.clampWage",
+   "Party.companyCap",
+   "Party.create",
+   "Party.disband",
+   "Party.enforceHatred",
+   "Party.followerRoom",
+   "Party.followers",
+   "Party.hatredConflict",
+   "Party.hirelingWageFor",
+   "Party.leader",
+   "Party.maxAffordableWage",
+   "Party.members",
+   "Party.of",
+   "Party.offerWage",
+   "Party.payroll",
+   "Party.raiseChance",
+   "Party.regularMembers",
+   "Party.removeMember",
+   "Party.requestRaise",
+   "Party.resetIds",
+   "Party.roster",
+   "Party.succession"
+  ]
+ },
+ "js/core/quests.js": {
+  "lines": 379,
+  "symbols": [
+   "Quests.applyFactionShift",
+   "Quests.attemptBypass",
+   "Quests.availableVerbs",
+   "Quests.generateBoard",
+   "Quests.godPayout",
+   "Quests.make",
+   "Quests.makeGodQuest",
+   "Quests.makeHazard",
+   "Quests.makeTutorialParty",
+   "Quests.makeWarBoard",
+   "Quests.makeWarQuest",
+   "Quests.payout",
+   "Quests.resetIds",
+   "Quests.spawnEncounter",
+   "avgSkillLevel"
+  ]
+ },
+ "js/core/relationships.js": {
+  "lines": 319,
+  "symbols": [
+   "Rel.addPartner",
+   "Rel.canRomance",
+   "Rel.commit",
+   "Rel.get",
+   "Rel.hatersOf",
+   "Rel.hates",
+   "Rel.hatredBlocked",
+   "Rel.hatredEdgeCount",
+   "Rel.isPartner",
+   "Rel.jilt",
+   "Rel.move",
+   "Rel.partnerIds",
+   "Rel.propagate",
+   "Rel.rawScore",
+   "Rel.removePartner",
+   "Rel.score",
+   "Rel.setPartners",
+   "Rel.socialRate",
+   "Rel.tickEnvy",
+   "Rel.tier",
+   "Rel.tierBetween",
+   "Rel.warmth",
+   "enforceSlots",
+   "jealousWomenFor",
+   "playerId"
+  ]
+ },
+ "js/core/rng.js": {
+  "lines": 44,
+  "symbols": [
+   "chance",
+   "constructor",
+   "float",
+   "fork",
+   "hashStr",
+   "int",
+   "mulberry32",
+   "pick",
+   "shuffle"
+  ]
+ },
+ "js/core/save.js": {
+  "lines": 89,
+  "symbols": [
+   "Save.hasSave",
+   "Save.loadGame",
+   "Save.loadMeta",
+   "Save.reset",
+   "Save.saveGame",
+   "Save.saveMeta",
+   "Save.setBackend",
+   "backend",
+   "get",
+   "put"
+  ]
+ },
+ "js/core/skillsys.js": {
+  "lines": 249,
+  "symbols": [
+   "SkillSys.atCapacity",
+   "SkillSys.capFor",
+   "SkillSys.effectiveLevel",
+   "SkillSys.ensureJournal",
+   "SkillSys.entryFor",
+   "SkillSys.forget",
+   "SkillSys.freeSkillsRemaining",
+   "SkillSys.gearFloor",
+   "SkillSys.isWitnessed",
+   "SkillSys.journalState",
+   "SkillSys.knows",
+   "SkillSys.learn",
+   "SkillSys.manifest",
+   "SkillSys.purchasable",
+   "SkillSys.recordUse",
+   "SkillSys.slotExempt",
+   "SkillSys.slotList",
+   "SkillSys.storeProgress",
+   "SkillSys.tierFor",
+   "SkillSys.tierForLevel",
+   "SkillSys.trainerCost",
+   "SkillSys.tutor",
+   "SkillSys.tutorOffers",
+   "SkillSys.witness"
+  ]
+ },
+ "js/core/util.js": {
+  "lines": 71,
+  "symbols": [
+   "cap",
+   "clamp",
+   "lineNeeds",
+   "renderLine",
+   "speak",
+   "speakEx"
+  ]
+ },
+ "js/core/vault.js": {
+  "lines": 235,
+  "symbols": [
+   "Vault.approvalChance",
+   "Vault.create",
+   "Vault.deposit",
+   "Vault.eldestHeir",
+   "Vault.ensureOwn",
+   "Vault.of",
+   "Vault.onBreakup",
+   "Vault.onCommit",
+   "Vault.onDeath",
+   "Vault.onQuestResolved",
+   "Vault.partnerState",
+   "Vault.payPremium",
+   "Vault.requestWithdrawal",
+   "Vault.resetIds",
+   "Vault.resolvePending",
+   "Vault.wealthOf",
+   "Vault.withdrawalCap",
+   "Vault.withdrawnThisStay"
+  ]
+ },
+ "js/core/world.js": {
+  "lines": 619,
+  "symbols": [
+   "World.adults",
+   "World.byId",
+   "World.create",
+   "World.feed",
+   "World.feeder",
+   "World.met",
+   "World.tick",
+   "checkHeroInviteWindow",
+   "foundEmployerParty",
+   "livingNpcParties",
+   "maybeOfferRescue",
+   "maybeTheft",
+   "npcAssassinations",
+   "npcCourtship",
+   "npcHeroHunts",
+   "npcShopping",
+   "partyDynamics",
+   "resolveRescueAbstract",
+   "seedEmployerParties",
+   "sweepDeadParties",
+   "tickChildren"
+  ]
+ },
+ "js/ui/battle_art.js": {
+  "lines": 360,
+  "symbols": [
+   "BA.groundFor",
+   "BA.has",
+   "BA.ids",
+   "BA.paint",
+   "BA.phaseFor",
+   "bamboo",
+   "banner",
+   "brazier",
+   "crate",
+   "fog",
+   "gravestone",
+   "hill",
+   "mast",
+   "phaseMul",
+   "pillar",
+   "ridge",
+   "rigging",
+   "road",
+   "rubble",
+   "shade",
+   "tent",
+   "throne",
+   "torch",
+   "tree",
+   "wall",
+   "water"
+  ]
+ },
+ "js/ui/campaign2_ui.js": {
+  "lines": 316,
+  "symbols": [
+   "Panels.campaign2",
+   "UI2.arrival",
+   "UI2.debugRow",
+   "UI2.endCard",
+   "UI2.godClosing",
+   "UI2.godOpener",
+   "UI2.offer",
+   "UI2.playBeats",
+   "UI2.questNote",
+   "UI2.standingList"
+  ]
+ },
+ "js/ui/campaign_ui.js": {
+  "lines": 275,
+  "symbols": [
+   "CampaignUI.arrival",
+   "CampaignUI.branchChoice",
+   "CampaignUI.debugRow",
+   "CampaignUI.endCard",
+   "CampaignUI.fill",
+   "CampaignUI.offer",
+   "CampaignUI.playBeat",
+   "CampaignUI.playBeats",
+   "CampaignUI.speaker",
+   "CampaignUI.supportAsk",
+   "CampaignUI.villainReveal",
+   "Panels.campaign"
+  ]
+ },
+ "js/ui/cutscenes.js": {
+  "lines": 277,
+  "symbols": [
+   "Cut.funeral",
+   "Cut.rideHome",
+   "armSkip",
+   "busy",
+   "card",
+   "closeOut",
+   "livingRoster",
+   "shortName",
+   "stage"
+  ]
+ },
+ "js/ui/dialoguebox.js": {
+  "lines": 102,
+  "symbols": [
+   "bandFor",
+   "ctxFor",
+   "show",
+   "showText"
+  ]
+ },
+ "js/ui/home_art.js": {
+  "lines": 271,
+  "symbols": [
+   "HousingArt.paint",
+   "brick",
+   "camp",
+   "castle",
+   "celestial",
+   "cottage",
+   "duskSun",
+   "hill",
+   "horse",
+   "inn",
+   "litWindow",
+   "mansion",
+   "moon",
+   "sky",
+   "stars",
+   "sun",
+   "tree"
+  ]
+ },
+ "js/ui/music.js": {
+  "lines": 315,
+  "symbols": [
+   "bumpGen",
+   "button",
+   "endRun",
+   "halt",
+   "haltAll",
+   "init",
+   "killEl",
+   "leaveHome",
+   "nextTrack",
+   "pauseEl",
+   "pauseHome",
+   "pauseOthers",
+   "play",
+   "playEl",
+   "resumeCurrent",
+   "rotate",
+   "speakCampaign",
+   "speakFile",
+   "start",
+   "startNamed",
+   "startRun",
+   "stopVoice",
+   "toggleMute",
+   "watch"
+  ]
+ },
+ "js/ui/portraits.js": {
+  "lines": 692,
+  "symbols": [
+   "animate",
+   "chinYOf",
+   "creationKey",
+   "drawBust",
+   "drawExtras",
+   "drawMonster",
+   "drawNeck",
+   "drawWardrobe",
+   "hairBack",
+   "hairFront",
+   "hiroKey",
+   "key",
+   "recipeCampaign",
+   "recipeNPC",
+   "recipePlayer",
+   "rngFor",
+   "shade",
+   "slotTag"
+  ]
+ },
+ "js/ui/scene_boot.js": {
+  "lines": 97,
+  "symbols": [
+   "confirmNew",
+   "constructor",
+   "create",
+   "msg",
+   "startCards"
+  ]
+ },
+ "js/ui/scene_combat.js": {
+  "lines": 620,
+  "symbols": [
+   "animateEvent",
+   "autoSkillName",
+   "beginTargeting",
+   "clearActionBar",
+   "commitAction",
+   "commitHold",
+   "constructor",
+   "create",
+   "drainEvents",
+   "finish",
+   "init",
+   "loop",
+   "makeUnitView",
+   "namedChoices",
+   "queuePlayerAuto",
+   "redrawUnit",
+   "refreshIntents",
+   "refreshStrip",
+   "showActionBar",
+   "showAutoStrip",
+   "showAutoWaitStrip",
+   "st",
+   "toggleSkillAuto",
+   "updateReserveCounters",
+   "view"
+  ]
+ },
+ "js/ui/scene_creation.js": {
+  "lines": 274,
+  "symbols": [
+   "begin",
+   "buildHiro",
+   "buildPhase1",
+   "buildPhase2",
+   "constructor",
+   "create",
+   "drawNextButton",
+   "drawSkillButtons",
+   "init",
+   "refresh",
+   "rollStats",
+   "toggleSkill"
+  ]
+ },
+ "js/ui/scene_death.js": {
+  "lines": 202,
+  "symbols": [
+   "constructor",
+   "create",
+   "obituaryFor",
+   "playWake",
+   "showSummary"
+  ]
+ },
+ "js/ui/scene_quest.js": {
+  "lines": 215,
+  "symbols": [
+   "ambushIntro",
+   "buildEncounter",
+   "chooseVerb",
+   "completeFlow",
+   "constructor",
+   "create"
+  ]
+ },
+ "js/ui/scene_town.js": {
+  "lines": 496,
+  "symbols": [
+   "applyChromeHidden",
+   "armChromeFailsafe",
+   "buildCharacterPanel",
+   "buildMenu",
+   "chromeObjs",
+   "clearChromeFailsafe",
+   "clearContent",
+   "constructor",
+   "contentRect",
+   "create",
+   "fadeChromeIn",
+   "g",
+   "hideChrome",
+   "keep",
+   "nextNotice",
+   "openPanel",
+   "pendingCount",
+   "playEmbark",
+   "player",
+   "promptOnce",
+   "queueArrivalNotices",
+   "refreshAll",
+   "showChrome",
+   "speak"
+  ]
+ },
+ "js/ui/theme.js": {
+  "lines": 122,
+  "symbols": [
+   "bar",
+   "button",
+   "hexToCss",
+   "panel",
+   "relColor",
+   "text"
+  ]
+ },
+ "js/ui/tooltip.js": {
+  "lines": 360,
+  "symbols": [
+   "Tooltip.attachZone",
+   "attach",
+   "describe",
+   "hide",
+   "move",
+   "paramLines",
+   "show"
+  ]
+ },
+ "js/ui/town_panels.js": {
+  "lines": 527,
+  "symbols": [
+   "Panels.assassinsDesk",
+   "Panels.codex",
+   "Panels.departure",
+   "Panels.factions",
+   "Panels.forgetDialog",
+   "Panels.forgetToLearn",
+   "Panels.home",
+   "Panels.journal",
+   "Panels.learnDialog",
+   "Panels.questBoard",
+   "Panels.store",
+   "Panels.storeFood",
+   "Panels.storeGear",
+   "Panels.trainer",
+   "questRow"
+  ]
+ },
+ "js/ui/town_panels2.js": {
+  "lines": 1035,
+  "symbols": [
+   "Notices._paintToast",
+   "Notices.block",
+   "Notices.confirm",
+   "Notices.custom",
+   "Notices.dismissToast",
+   "Notices.divine",
+   "Notices.flush",
+   "Notices.heroInvite",
+   "Notices.jilt",
+   "Notices.leaderDeath",
+   "Notices.nameChild",
+   "Notices.pickOne",
+   "Notices.proposal",
+   "Notices.raise",
+   "Notices.rescue",
+   "Notices.toast",
+   "Notices.unblock",
+   "Notices.withdrawal",
+   "Panels.applyParty",
+   "Panels.createParty",
+   "Panels.digestFeed",
+   "Panels.feedKind",
+   "Panels.foldParty",
+   "Panels.graveyard",
+   "Panels.personDialog",
+   "Panels.relationships",
+   "Panels.roster",
+   "Panels.rosterLine",
+   "Panels.vault",
+   "Panels.wageDialog",
+   "msgState",
+   "toastAnchor",
+   "toastBoxSize"
+  ]
+ },
+ "js/ui/tutor.js": {
+  "lines": 199,
+  "symbols": [
+   "Tutor.active",
+   "Tutor.allowed",
+   "Tutor.application",
+   "Tutor.callout",
+   "Tutor.clear",
+   "Tutor.finalWords",
+   "Tutor.fresh",
+   "Tutor.onHired",
+   "Tutor.onQuestDone",
+   "Tutor.panel",
+   "Tutor.questAllowed",
+   "Tutor.set",
+   "Tutor.state",
+   "Tutor.step",
+   "Tutor.town",
+   "Tutor.wage"
+  ]
+ },
+ "js/ui/uikit.js": {
+  "lines": 276,
+  "symbols": [
+   "allText",
+   "header",
+   "keepBtn",
+   "modalBtn",
+   "modalText",
+   "scrollArea",
+   "walk",
+   "walkDisplay",
+   "worldRect"
+  ]
+ },
+ "js/ui/vfx.js": {
+  "lines": 112,
+  "symbols": [
+   "VFX.aura",
+   "VFX.burst",
+   "VFX.camShake",
+   "VFX.damageNumber",
+   "VFX.desaturate",
+   "VFX.driftPulse",
+   "VFX.flashOverlay",
+   "VFX.healSparkle",
+   "VFX.isProjectile",
+   "VFX.lunge",
+   "VFX.projectile",
+   "VFX.recoil",
+   "VFX.scalePunch",
+   "VFX.shake",
+   "VFX.skillColor",
+   "VFX.slashArc",
+   "VFX.tintFlash",
+   "VFX.zoomPunch"
+  ]
+ }
+}

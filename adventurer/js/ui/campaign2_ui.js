@@ -146,7 +146,8 @@ Panels.campaign2 = function (scene, r) {
   const bossId = C2().bossId(game, pick);
   const bossCh = ADV.CampaignUI.speaker(game, bossId);
   const key = ADV.Portraits.key(scene, bossCh);
-  scene.keep(scene.add.image(r.x + r.w - 92, r.y + 132, key).setDisplaySize(110, 140));
+  const bimg = scene.keep(scene.add.image(r.x + r.w - 92, r.y + 132, key).setDisplaySize(110, 140));
+  if (ADV.Portraits.animate) ADV.Portraits.animate(scene, bimg, bossCh, key);
   const fg = scene.keep(scene.add.graphics()); fg.lineStyle(2, T().c.gold, 0.7); fg.strokeRect(r.x + r.w - 147, r.y + 62, 110, 140);
   scene.keep(T().text(scene, r.x + r.w - 92, r.y + 210, v.boss.name, { size: 12, ox: 0.5, color: T().css.gold }));
   scene.keep(T().text(scene, r.x + r.w - 92, r.y + 226, v.boss.epithet || 'runs the hall', { size: 11, ox: 0.5, italic: true, color: T().css.inkDim }));

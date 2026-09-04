@@ -60,7 +60,7 @@ SkillSys.manifest = function (ch, entry) {
 SkillSys.ensureJournal = function (ch) { if (!ch.journal) ch.journal = {}; return ch.journal; };
 
 // Record a sighting. Advanced sightings reveal the root and make the BASIC learnable free.
-SkillSys.witness = function (ch, skillId, tierSeen) {
+SkillSys.witness = function (ch, skillId, tierSeen, from) {
   const sk = SK()[skillId];
   if (!sk || sk.universal || sk.unique) return null; // unique tier is never witnessable (§14)
   if (sk.kind === 'perk') return null;               // perks are gold-only, never witnessed (§13d-2)
@@ -70,6 +70,7 @@ SkillSys.witness = function (ch, skillId, tierSeen) {
   e.witnessed = true;
   e.eligible = true;
   if (order[tierSeen] > order[e.sawTier || 'basic']) e.sawTier = tierSeen;
+  if (from && !e.from) e.from = from;   // who showed you — shown in the journal
   return e;
 };
 

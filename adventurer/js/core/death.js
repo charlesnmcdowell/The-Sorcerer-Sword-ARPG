@@ -7,6 +7,80 @@ const Death = {};
 
 // Finalize any character's permanent death. killerId may be null.
 // cause: 'killed'|'quest'|'decayed'|'assassinated'
+Death.skillNames = function (ch) {
+  const names = [];
+  for (const e of (ch.perks || []).concat(ch.actives || [])) {
+    const sk = ADV.DATA.SKILLS[e.skillId];
+    if (!sk || sk.noSlot || sk.universal) continue;
+    names.push(sk.name);
+  }
+  return names;
+};
+
+Death.childLabel = function (d) {
+  if (d && d.name) return d.name;
+  return d && d.sex === 'f' ? 'a daughter' : 'a son';
+};
+
+// Snapshot for the graveyard before family links are cleared.
+Death.composeObituary = function (world, ch, killerId, cause) {
+  const killer = killerId ? ADV.World.byId(world, killerId) : null;
+  const pids = ADV.Rel && ADV.Rel.partnerIds ? ADV.Rel.partnerIds(ch) : (ch.partnerId ? [ch.partnerId] : []);
+  const spouses = [];
+  for (const pid of pids) {
+    const partner = ADV.World.byId(world, pid);
+    if (partner && partner.alive) spouses.push(partner.name);
+  }
+  const children = [];
+  const seen = {};
+  const addKid = (name) => { if (name && !seen[name]) { seen[name] = true; children.push(name); } };
+  for (const id of (ch.childIds || [])) {
+    const kid = ADV.World.byId(world, id);
+    if (kid && kid.alive) addKid(kid.name);
+  }
+  const youngSurvive = (d) => ch.sex !== 'f' || (d && d.age >= C().CHILD_SELF_SUFFICIENT);
+  for (const d of (ch.dependents || [])) if (youngSurvive(d)) addKid(Death.childLabel(d));
+  if (ch.sex === 'm') {
+    for (const pid of pids) {
+      const partner = ADV.World.byId(world, pid);
+      if (!partner) continue;
+      for (const d of (partner.dependents || [])) {
+        if (d.fatherId === ch.id && d.age >= 0) addKid(Death.childLabel(d));
+      }
+    }
+  }
+  const party = ADV.Party.of(world, ch);
+  const lead = party ? ADV.Party.leader(world, party) : null;
+  let station = 'a free adventurer';
+  if (party && lead) {
+    station = lead.id === ch.id ? 'a party lead' : ('of ' + lead.name + "'s company");
+  }
+  let death;
+  if (cause === 'killed') death = killer ? 'They fell to ' + killer.name + '.' : 'They were slain in the field.';
+  else if (cause === 'quest') death = 'They did not return from a contract.';
+  else if (cause === 'decayed') death = 'What was raised of them came undone.';
+  else if (cause === 'assassinated') death = killer ? 'They were murdered by ' + killer.name + '.' : 'They were murdered.';
+  else death = 'They died.';
+  const life = ch.name + ' was rank ' + (ch.rank || 1) + ', ' + station + '. ' + death;
+  let family = 'They left no household.';
+  if (spouses.length && children.length) {
+    family = 'Survived by ' + spouses.join(', ') + ', and ' + children.join(', ') + '.';
+  } else if (spouses.length) {
+    family = 'Survived by ' + spouses.join(', ') + '.';
+  } else if (children.length) {
+    family = 'Survived by ' + children.join(', ') + '.';
+  }
+  return {
+    name: ch.name,
+    title: ch.title || ch.epithet || null,
+    rank: ch.rank || 1,
+    skills: Death.skillNames(ch),
+    text: life + ' ' + family,
+    spouses, children, cause,
+    deadAtQuest: world.questClock,
+  };
+};
+
 Death.graves = function (world) {
   return world.characters.filter(c => !c.alive && !c.isMonster && !c.isPlayer)
     .sort((a, b) => (b.deadAtQuest || 0) - (a.deadAtQuest || 0));
@@ -20,6 +94,7 @@ Death.finalize = function (world, ch, killerId, cause) {
   }
   ch.alive = false;
   ch.deadAtQuest = world.questClock;
+  ch.obituary = Death.composeObituary(world, ch, killerId, cause);
   const killer = killerId ? ADV.World.byId(world, killerId) : null;
 
   // Carried items & gold go to the killer (§7/§10)
@@ -32,6 +107,13 @@ Death.finalize = function (world, ch, killerId, cause) {
   // Nobody holds a relationship slot for the dead: outbound feelings toward
   // them are released so the living slot frees up (the player's own edges are
   // unbounded, but an heir's predecessor becomes an ordinary NPC).
+  if (ADV.Rel && ADV.Rel.tierBetween) {
+    ch.mournerIds = world.characters
+      .filter(c => c.alive && c.id !== ch.id)
+      .map(c => ({ id: c.id, tier: ADV.Rel.tierBetween(world, c.id, ch.id) }))
+      .filter(x => x.tier === 'romantic' || x.tier === 'friendly')
+      .slice(0, 6);
+  }
   world.edges = world.edges.filter(e => e.toId !== ch.id);
 
   const widowIds = ADV.Rel ? ADV.Rel.partnerIds(ch).slice() : (ch.partnerId ? [ch.partnerId] : []);

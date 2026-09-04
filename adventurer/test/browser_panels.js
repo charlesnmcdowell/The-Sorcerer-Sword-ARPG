@@ -6,7 +6,8 @@ const SHOT = (n) => '/tmp/shots/' + n + '.png';
 
 (async () => {
   fs.mkdirSync('/tmp/shots', { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox','--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows'] });
+  const args = ['--no-sandbox','--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows'];
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args }).catch(() => chromium.launch({ args }));
   const page = await browser.newPage({ viewport: { width: 1340, height: 820 } });
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('favicon')) errors.push(m.text()); });

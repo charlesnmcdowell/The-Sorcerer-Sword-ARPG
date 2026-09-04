@@ -78,13 +78,21 @@ function questRow(scene, r, q, y, enabled, note, scroll) {
   const label = `${q.name}`;
   let extra = null;
   if (ADV.Campaign2UI) { try { extra = ADV.Campaign2UI.questNote(scene.g(), q); } catch (e) { extra = null; } }
-  const sub = `${tierLabel} · ${q.encounters.length} enc · ${q.payout}g · ${q.factionAlignment}${note ? ' · ' + note : ''}${extra ? ' · ' + extra : ''}`;
+  const sub = `${tierLabel} · ${q.encounters.length} enc · ${q.payout}g · ${q.factionAlignment}${note ? ' · ' + note : ''}`;
   const mk = scroll ? (b) => scroll.addBtn(b) : (b) => keepBtn(scene, b);
-  const btn = mk(T().button(scene, r.x + 24, y, r.w - 48, 42, label, () => {
+  const btnW = r.w - 48;
+  const btn = mk(T().button(scene, r.x + 24, y, btnW, 42, label, () => {
     if (!enabled) return;
     Panels.departure(scene, q);
   }, { size: 13, disabled: !enabled, sub, subColor: fColor, display: true }));
-  return { y: y + 48, btn };
+  let nextY = y + 48;
+  if (extra) {
+    const noteTxt = T().text(scene, r.x + 28, y + 44, extra, { size: 11, wrap: btnW - 8, color: T().css.gold });
+    if (scroll) scroll.add(noteTxt); else scene.keep(noteTxt);
+    const lines = Math.max(1, Math.ceil(extra.length / Math.max(1, Math.floor((btnW - 8) / 6.4))));
+    nextY = y + 48 + lines * 15 + 4;
+  }
+  return { y: nextY, btn };
 }
 
 // Departure confirmation (§8): the carry-vs-vault decision at the moment of risk.
@@ -289,9 +297,11 @@ Panels.assassinsDesk = function (scene, r, y, scroll) {
 Panels.trainer = function (scene, r) {
   const game = scene.g();
   const p = scene.player();
-  header(scene, r, 'Trainer', `First ${C().FREE_STARTING_SKILLS} are free. Witnessed skills are free. The rest cost ${C().GOLD.skillUnwitnessed}g. Click a known active to buy tutoring: ${C().GOLD.tutorIntermediate}g to Intermediate, ${C().GOLD.tutorAdvanced}g to Advanced.`);
-  // tabs (campaign §13): the core pool, then one tab per faction whose skills
-  // this character can see — witnessed, faction perks, or unlocked outright
+  header(scene, r, 'Trainer', null);
+  scene.keep(T().text(scene, r.x + 24, r.y + 50,
+    `First ${C().FREE_STARTING_SKILLS} are free. Witnessed skills are free. The rest cost ${C().GOLD.skillUnwitnessed}g. Click a known active to buy tutoring: ${C().GOLD.tutorIntermediate}g to Intermediate, ${C().GOLD.tutorAdvanced}g to Advanced.`,
+    { size: 13, color: T().css.inkDim, wrap: r.w - 48 }));
+  // tabs sit below the wrapped blurb so "600g to Advanced" is never under Core
   const tabs = [{ id: 'core', label: 'Core' }];
   for (const fid of ['maw', 'antler', 'varenholm', 'bell', 'green', 'tally', 'navy']) {
     const f = ADV.DATA.FACTIONS[fid];
@@ -303,19 +313,38 @@ Panels.trainer = function (scene, r) {
   scene.trainerTab = tabs.some(t => t.id === scene.trainerTab) ? scene.trainerTab : 'core';
   let tx = r.x + 24;
   const tabW = tabs.length > 5 ? 112 : 150;
+  const tabY = r.y + 96;
   for (const t of tabs) {
     const active = scene.trainerTab === t.id;
-    keepBtn(scene, T().button(scene, tx, r.y + 78, tabW, 30, t.label, () => { scene.trainerTab = t.id; scene.openPanel('trainer'); },
+    keepBtn(scene, T().button(scene, tx, tabY, tabW, 30, t.label, () => { scene.trainerTab = t.id; scene.openPanel('trainer'); },
       { size: tabs.length > 5 ? 11 : 12, fill: active ? 0x3a3020 : undefined, color: active ? T().css.gold : T().css.inkDim }));
     tx += tabW + 8;
   }
-  const gridTop = r.y + 118;
+  const gridTop = r.y + 136;
   const scroll = ADV.UI.scrollArea(scene, { x: r.x + 8, y: gridTop, w: r.w - 16, h: r.y + r.h - gridTop - 8 });
   const cw3 = Math.floor((r.w - 64) / 3);
   const cols = [r.x + 24, r.x + 32 + cw3, r.x + 40 + cw3 * 2];
   let col = 0, colY = [gridTop + 4, gridTop + 4, gridTop + 4];
+  const ARCH_ORDER = ['fighter', 'tank', 'rogue', 'ranger', 'mage', 'druid', 'healer'];
+  const ARCH_LABEL = { fighter: 'Fighter', tank: 'Tank', rogue: 'Rogue', ranger: 'Ranger', mage: 'Mage', druid: 'Druid', healer: 'Healer', other: 'Other' };
   const pool = ADV.DATA.TRAINER_POOL.filter(id => { const sk = ADV.DATA.SKILLS[id]; return scene.trainerTab === 'core' ? !sk.faction : sk.faction === scene.trainerTab; });
+  const grouped = [];
+  const buckets = {};
   for (const id of pool) {
+    const arch = ADV.DATA.SKILLS[id].archetype || 'other';
+    if (!buckets[arch]) { buckets[arch] = []; grouped.push(arch); }
+    buckets[arch].push(id);
+  }
+  grouped.sort((a, b) => {
+    const ia = ARCH_ORDER.indexOf(a), ib = ARCH_ORDER.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  for (const arch of grouped) {
+    const rowY = Math.max(...colY);
+    scroll.add(T().text(scene, r.x + 24, rowY + 6, ARCH_LABEL[arch] || arch, { size: 12, color: T().css.gold }));
+    colY = [rowY + 26, rowY + 26, rowY + 26];
+    col = 0;
+    for (const id of buckets[arch]) {
     const sk = ADV.DATA.SKILLS[id];
     const known = ADV.SkillSys.knows(p, id);
     const cost = ADV.SkillSys.trainerCost(p, id);
@@ -326,18 +355,27 @@ Panels.trainer = function (scene, r) {
     if (known) { sub = 'known'; subColor = T().css.green; }
     else if (locked) { sub = sk.kind === 'perk' ? 'join the faction' : 'witness it in their campaign'; subColor = T().css.inkFaint; }
     else if (sk.forbidden) { sub = sk.warning; subColor = T().css.blood; }
-    else if (cost === 0) { sub = state === 'Witnessed' || state === 'Eligible' ? 'witnessed — free' : 'free'; subColor = T().css.gold; }
+    else if (cost === 0) {
+      const seen = state === 'Witnessed' || state === 'Eligible';
+      const je = (p.journal && p.journal[id]) || {};
+      sub = seen ? (je.from ? 'seen in battle · ' + je.from : 'seen in battle — free') : 'free';
+      subColor = T().css.gold;
+    }
     else sub = cost + 'g';
+    // a witnessed skill wears a gold border: you took a hit for this one
+    const witnessedFree = !known && !locked && cost === 0 && (state === 'Witnessed' || state === 'Eligible');
     const x = cols[col];
     const b = T().button(scene, x, colY[col], cw3 - 6, 40, label, () => {
       if (known) { Panels.forgetDialog(scene, id); return; }
       if (locked) { ADV.Notices.toast(scene, sub); return; }
       Panels.learnDialog(scene, id, cost);
-    }, { size: 12, sub, subColor, fill: known ? 0x232a20 : undefined, disabled: locked });
+    }, { size: 12, sub, subColor, fill: known ? 0x232a20 : witnessedFree ? 0x2e2718 : undefined,
+         edge: witnessedFree ? T().c.gold : undefined, disabled: locked });
     ADV.Tooltip.attach(scene, b.zone, () => ADV.SkillInfo.describe(p, id));
     scroll.addBtn(b);
     colY[col] += 46;
     col = colY.indexOf(Math.min(...colY));
+    }
   }
   scroll.extend(Math.max(...colY));
 };
@@ -422,7 +460,8 @@ Panels.journal = function (scene, r) {
     let line = `${sk.name}`;
     if (je.sawTier && je.sawTier !== 'basic') line = `${sk.tiers[je.sawTier].name} → ${sk.name} (root)`;
     scroll.add(T().text(scene, cols[col], colY[col], line, { size: 14 }));
-    scroll.add(T().text(scene, cols[col], colY[col] + 17, `${st}${lvl ? ' · L' + lvl : ''}`, { size: 11, color: states[st] }));
+    const seenFrom = je.from ? ' · seen at ' + je.from : '';
+    scroll.add(T().text(scene, cols[col], colY[col] + 17, `${st}${lvl ? ' · L' + lvl : ''}${seenFrom}`, { size: 11, color: states[st] }));
     scroll.add(ADV.Tooltip.attachZone(scene, cols[col], colY[col], Math.floor(r.w / 2) - 40, 36, () => ADV.SkillInfo.describe(p, id)));
     colY[col] += 42;
     col = colY[0] <= colY[1] ? 0 : 1;

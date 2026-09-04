@@ -57,7 +57,8 @@ class TownScene extends Phaser.Scene {
     const add = (o) => { this.charObjs.push(o); return o; };
     add(T().panel(this, x, y, w, h, { alpha: T().chromeAlpha }));
     const key = ADV.Portraits.key(this, p);
-    add(this.add.image(x + w / 2, y + 92, key).setDisplaySize(140, 168));
+    const pimg = add(this.add.image(x + w / 2, y + 92, key).setDisplaySize(140, 168));
+    if (ADV.Portraits.animate) ADV.Portraits.animate(this, pimg, p, key);
     const fg = add(this.add.graphics());
     fg.lineStyle(2, T().c.gold, 0.7); fg.strokeRect(x + w / 2 - 70, y + 8, 140, 168);
     add(T().text(this, x + w / 2, y + 186, p.name, { size: 19, display: true, ox: 0.5, color: T().css.gold, bold: true }));
@@ -67,9 +68,14 @@ class TownScene extends Phaser.Scene {
     const stage = ADV.Game.careerStage(this.game_);
     const wr = p.sex === 'm' && ADV.Courtship ? ADV.Courtship.wealthRank(this.game_.world, p) : 0;
     const gender = p.sex === 'f' ? 'woman' : 'man';
-    add(T().text(this, x + w / 2, y + (titleLine ? 226 : 210), `${gender} · ${stage} · rank ${p.rank} · rep ${p.reputation}${wr ? ' · wealth #' + wr : ''}`, { size: 12, ox: 0.5, color: wr && wr <= C().COURT.wealthTop ? T().css.gold : T().css.inkDim, wrap: w - 20, align: 'center' }));
+    let infoY = y + (titleLine ? 226 : 210);
+    add(T().text(this, x + w / 2, infoY, `${gender} · ${stage} · rank ${p.rank} · rep ${p.reputation}`, { size: 12, ox: 0.5, color: T().css.inkDim, wrap: w - 20, align: 'center' }));
+    if (wr) {
+      infoY += 16;
+      add(T().text(this, x + w / 2, infoY, 'wealth #' + wr, { size: 12, ox: 0.5, color: wr <= C().COURT.wealthTop ? T().css.gold : T().css.inkDim }));
+    }
 
-    let yy = y + 246;
+    let yy = infoY + 22;
     const S = (k) => ADV.Character.effStat(p, k);
     add(T().text(this, x + 16, yy, `HP ${S('hp')}   ATK ${S('atk')}   DEF ${S('def')}   SPD ${S('spd')}`, { size: 13 }));
     yy += 24;

@@ -237,6 +237,108 @@ Panels.wageDialog = function (scene, party, cand) {
 };
 
 // ============================================================== GUILD ROSTER + FEED
+// One human fact per roster row, by priority. Everything here is already in the
+// simulation — it has simply never reached the screen.
+Panels.rosterLine = function (world, p, c, ctx) {
+  const R = ADV.Rel;
+  const name = (x) => (x && x.name) || 'someone';
+  const first = (x) => name(x).split(' ')[0];
+  const kinWord = (dead) => {
+    if (!dead) return 'kin';
+    if (c.motherId === dead.id) return 'mother';
+    if (c.fatherId === dead.id) return 'father';
+    if ((c.childIds || []).includes(dead.id)) return dead.sex === 'f' ? 'daughter' : 'son';
+    const sib = (c.motherId && c.motherId === dead.motherId) || (c.fatherId && c.fatherId === dead.fatherId);
+    if (sib) return dead.sex === 'f' ? 'sister' : 'brother';
+    if ((c.exIds || []).includes(dead.id)) return dead.sex === 'f' ? 'wife' : 'husband';
+    return 'kin';
+  };
+
+  if (!c.alive) return 'dead — the roster keeps the name';
+  if (c.isUndead) return 'raised, and still answering';
+  if (c.isConscript) return 'bound to service, and counting the quests';
+  if (c.hospitalizedQuestsLeft > 0) return `laid up for ${c.hospitalizedQuestsLeft} more ${c.hospitalizedQuestsLeft === 1 ? 'quest' : 'quests'}`;
+
+  // 1. money between this person and the player
+  if (c.partyId && c.leaderId === p.id && c.wage) return `you owe them ${c.wage}g a quest`;
+  if (p.partyId && p.leaderId === c.id && p.wage) return `owes you ${p.wage}g a quest`;
+
+  // 2. hatred toward the player
+  if (ctx.tier === 'hatred') return 'has not forgiven you';
+
+  // 3. romantic with the player
+  if (ctx.tier === 'romantic') return 'yours';
+  if (ADV.Courtship && ADV.Courtship.wants(world, c, p) && !R.isPartner(c, p)) return 'has their eye on you';
+
+  // 4. courting or married to another NPC
+  const spouses = (ctx.spouses || []).filter(s => s && s.id !== p.id);
+  if (spouses.length) {
+    const who = spouses.map(first).join(' and ');
+    const kids = ctx.kids || 0;
+    const pick = (ADV.hashStr ? ADV.hashStr(c.id) : (c.id || 0)) >>> 0;
+    if (kids) {
+      const k = `${kids} ${kids === 1 ? 'child' : 'children'}`;
+      return [`married to ${who} · ${k} at home`,
+              `${k} with ${who}`,
+              `keeps a house with ${who} and ${k}`][pick % 3];
+    }
+    return [`married to ${who}`,
+            `keeps a house with ${who}`,
+            `${who} waits up for them`][pick % 3];
+  }
+  if (ADV.Courtship) {
+    const crush = ADV.World.adults(world).find(o => o.id !== c.id && o.id !== p.id && !o.isPlayer && ADV.Courtship.wants(world, c, o) && !R.isPartner(c, o));
+    if (crush) return `courting ${first(crush)}`;
+  }
+
+  // 5. recently bereaved
+  if (ADV.Death && ADV.Death.graves) {
+    const recent = ADV.Death.graves(world).filter(g => ((world.questClock || 0) - (g.deadAtQuest || 0)) <= 8);
+    const lost = recent.find(g =>
+      c.motherId === g.id || c.fatherId === g.id || (c.childIds || []).includes(g.id) ||
+      (c.exIds || []).includes(g.id) ||
+      ((c.motherId && c.motherId === g.motherId) || (c.fatherId && c.fatherId === g.fatherId)));
+    if (lost) return `lost a ${kinWord(lost)} on the road`;
+  }
+
+  // 6. in a party
+  if (c.partyId) {
+    const lead = c.leaderId ? ADV.World.byId(world, c.leaderId) : null;
+    if (lead && lead.id === p.id) return `rides with you${c.wage ? ` for ${c.wage}g` : ''}`;
+    if (lead) return `rides with ${first(lead)}`;
+    const mates = ADV.World.adults(world).filter(x => x.partyId === c.partyId && x.id !== c.id);
+    return mates.length ? `rides with ${first(mates[0])}'s company` : 'signed to a company';
+  }
+
+  // 7. ambition
+  const per = c.personality || {};
+  if ((per.pride || 0) > 75) return 'wants a company of their own';
+
+  if (c.status === 'hero') return 'the guild calls them a hero, and means it';
+  if (c.status === 'villain') return 'gone bad, and everyone knows';
+  if (c.pregnantBy) {
+    const f = ADV.World.byId(world, c.pregnantBy);
+    return f ? `carrying ${first(f)}'s child` : 'expecting';
+  }
+  if ((c.childIds || []).length && !spouses.length) return 'raising a child alone';
+  if (c.jiltCount > 0) return c.jiltCount > 1 ? 'has left more than one at the door' : 'left someone at the door';
+  if (c.badActor) return 'people are careful around them';
+  const haters = R.hatersOf ? R.hatersOf(world, c.id) : [];
+  if (haters.length) {
+    const h = ADV.World.byId(world, haters[0].fromId || haters[0]);
+    if (h && h.id !== p.id) return `${first(h)} cannot stand them`;
+  }
+  if (ctx.tier === 'friendly') return 'would ride with you again';
+  if ((per.greed || 0) > 78) return 'works for coin and says so';
+  if ((per.caution || 0) > 78) return 'picks their contracts carefully';
+  if ((per.aggression || 0) > 78) return 'looking for a fight';
+  if ((per.loyalty || 0) > 78) return 'sticks with whoever hired them';
+  if (c.reputation >= 10) return 'a name people know';
+  if (c.reputation <= -10) return 'a name people avoid';
+  if (c.questsCompleted === 0) return 'has never taken a contract';
+  return null;
+};
+
 Panels.roster = function (scene, r) {
   const game = scene.g();
   const world = game.world;
@@ -266,25 +368,102 @@ Panels.roster = function (scene, r) {
       ? ` · with ${spouses.map(s => s.name).join(', ')}${kids ? ` · ${kids} ${kids === 1 ? 'child' : 'children'}` : ''}`
       : '';
     const label = `${c.name}${c.title ? ' · ' + c.title : ''}`;
-    const sub = `rank ${c.rank} · ${trend} · ${status}${family} · ${skills}`;
+    // A roster of fifteen rows reading "rank 1 · steady · active" is a
+    // spreadsheet. The simulation already knows who owes whom, who is courting
+    // whom and who has not forgiven you — so lead with the human fact and let
+    // the stat line be the footnote.
+    const human = Panels.rosterLine(world, p, c, { tier, spouses, kids, status });
+    const sub = human || `rank ${c.rank} · ${trend} · ${status}${family} · ${skills}`;
     left.addBtn(T().button(scene, r.x + 16, y, half - 24, 42, label, () => {
       ADV.World.met(world, c.id);
       Panels.personDialog(scene, c);
     }, { size: 13, sub, subColor: T().relColor(tier), color: c.status === 'hero' ? T().css.gold : c.status === 'villain' ? T().css.blood : T().css.ink }));
-    y += 48;
+    // the stats stay, one step quieter, under the human line
+    // the button is 42 tall and renders the human line inside it; the stat line
+    // sits BELOW the button, not on top of its subtitle
+    if (human) left.add(T().text(scene, r.x + 22, y + 44, `rank ${c.rank} · ${trend} · ${status} · ${skills}`,
+      { size: 10, color: T().css.inkFaint, wrap: half - 44 }));
+    y += human ? 66 : 48;
   }
   left.extend(y);
   // event feed (§6): the emotional engine
   const fx = r.x + half + 4;
   scene.keep(T().text(scene, fx, r.y + 60, 'WHAT HAPPENED WHILE YOU WERE OUT', { size: 12, color: T().css.inkDim }));
   let fy = r.y + 84;
-  const feed = world.eventFeed.slice(-40).reverse();
+  const feed = Panels.digestFeed(world, world.eventFeed.slice(-60)).reverse();
   if (!feed.length) right.add(T().text(scene, fx, fy, 'Nothing yet. The world is holding its breath.', { size: 12, italic: true, color: T().css.inkFaint }));
   for (const ev of feed) {
-    right.add(T().text(scene, fx, fy, `q${ev.questClock} · ${ev.text}`, { size: 12, wrap: r.w - half - 28, color: T().css.ink }));
-    fy += Math.max(20, Math.ceil(ev.text.length / 46) * 17 + 6);
+    const st = Panels.FEED_STYLE[ev.kind] || Panels.FEED_STYLE.other;
+    // a death should not read like someone buying boots
+    right.add(T().text(scene, fx + 10, fy, `q${ev.questClock} · ${ev.text}`,
+      { size: st.size, wrap: r.w - half - 38, color: ev.known === false ? T().css.inkFaint : st.color, italic: ev.known === false, bold: !!st.bold }));
+    const dot = scene.add.graphics();
+    dot.fillStyle(st.dot, ev.known === false ? 0.35 : 0.95);
+    dot.fillCircle(fx + 3, fy + 7, ev.kind === 'death' ? 3.5 : 2.5);
+    right.add(dot);
+    const wrapW = r.w - half - 38;
+    const cw = st.size * (st.bold ? 0.62 : 0.54);
+    const perLine = Math.max(1, Math.floor(wrapW / cw));
+    fy += Math.ceil((ev.text.length + 8) / perLine) * (st.size + 7) + 8;
   }
   right.extend(fy);
+};
+
+// ---- event feed: hierarchy and collapsing ---------------------------------
+// Eight world ticks produce ~68 entries, overwhelmingly births and comings-of-age.
+// Rendered flat they are a grey wall. Classify them, weight the ones that matter,
+// and fold runs of the boring kind into a single line.
+Panels.FEED_STYLE = {
+  death:    { color: T().css.blood,  dot: 0xa8352c, size: 13, bold: true },
+  violence: { color: T().css.blood,  dot: 0xd8574a, size: 12 },
+  danger:   { color: T().css.gold,   dot: 0xd4a94e, size: 12, bold: true },
+  romance:  { color: T().css.gold,   dot: 0xd4a94e, size: 12 },
+  birth:    { color: T().css.inkDim, dot: 0x5d8a4a, size: 11 },
+  comeOfAge:{ color: T().css.inkDim, dot: 0x5d8a4a, size: 11 },
+  company:  { color: T().css.blue,   dot: 0x4a6f8a, size: 12 },
+  grudge:   { color: T().css.purple, dot: 0x6a4a8a, size: 12 },
+  wealth:   { color: T().css.inkDim, dot: 0x8a6f36, size: 11 },
+  other:    { color: T().css.ink,    dot: 0x6b6151, size: 12 },
+};
+
+Panels.feedKind = function (text) {
+  const t = String(text || '');
+  if (/did not return|was found in an alley|is dead|has died|buried/i.test(t)) return 'death';
+  if (/killed|ended (him|her|them)|ambush|assassinat/i.test(t)) return 'violence';
+  if (/in danger|coming for/i.test(t)) return 'danger';
+  if (/married|are together|proposed|jilted|left .* at the (door|altar)/i.test(t)) return 'romance';
+  if (/had a child|was born/i.test(t)) return 'birth';
+  if (/come of age/i.test(t)) return 'comeOfAge';
+  if (/has come to hate|cannot stand|blames|turned on/i.test(t)) return 'grudge';
+  if (/hired|quit|started a party|company|party of/i.test(t)) return 'company';
+  if (/bought|sold|paid|gold|vault/i.test(t)) return 'wealth';
+  return 'other';
+};
+
+// Fold consecutive runs of the same low-value kind — but never fold a line about
+// someone the player has actually met.
+Panels.digestFeed = function (world, entries) {
+  const FOLDABLE = { birth: 'children were born in the quarter', comeOfAge: 'young ones came of age and joined the roster' };
+  const out = [];
+  let run = null;
+  const flush = () => {
+    if (!run) return;
+    if (run.items.length >= 3) {
+      out.push({ questClock: run.items[run.items.length - 1].questClock, kind: run.kind,
+        known: false, text: `${run.items.length} ${FOLDABLE[run.kind]}.` });
+    } else out.push(...run.items);
+    run = null;
+  };
+  for (const e of entries) {
+    const kind = Panels.feedKind(e.text);
+    const ev = Object.assign({}, e, { kind });
+    const foldable = FOLDABLE[kind] && ev.known === false;
+    if (!foldable) { flush(); out.push(ev); continue; }
+    if (run && run.kind === kind) run.items.push(ev);
+    else { flush(); run = { kind, items: [ev] }; }
+  }
+  flush();
+  return out;
 };
 
 // ============================================================== GRAVEYARD
@@ -301,7 +480,8 @@ Panels.graveyard = function (scene, r) {
     return;
   }
   for (const c of graves) {
-    const ob = c.obituary || ADV.Death.composeObituary(world, c, null, 'quest');
+    const raw = c.obituary || (ADV.Death.composeObituary && ADV.Death.composeObituary(world, c, null, 'quest'));
+    const ob = raw && typeof raw === 'object' ? raw : { name: c.name, title: c.title || c.epithet || null, rank: c.rank || 1, skills: [], spouses: [], children: [], text: typeof raw === 'string' ? raw : '', deadAtQuest: c.deadAtQuest };
     const label = `${ob.name}${ob.title ? ' · ' + ob.title : ''}`;
     const skills = (ob.skills && ob.skills.length) ? ob.skills.join(', ') : 'no recorded skills';
     const family = [];
@@ -398,10 +578,15 @@ Panels.relationships = function (scene, r) {
     const shared = ADV.Courtship.shared(world, p.id, c.id);
     const rank = c.sex === 'm' ? ADV.Courtship.wealthRank(world, c) : 0;
     const gender = c.sex === 'f' ? 'woman' : 'man';
-    const sub = `${gender} · ${isPartner ? 'your partner' : tier} · their regard ${row.inn} · yours ${row.out} · ${shared} quest${shared === 1 ? '' : 's'} together${rank ? ' · wealth #' + rank : ''}`;
+    const sub = `${gender} · ${isPartner ? 'your partner' : tier} · their regard ${row.inn} · yours ${row.out} · ${shared} quest${shared === 1 ? '' : 's'} together`;
     scroll.addBtn(T().button(scene, r.x + 24, y, r.w - 320, 44, c.name + (c.title ? ' · ' + c.title : ''), () => {
       Panels.personDialog(scene, c);
     }, { size: 14, sub, subColor: T().relColor(isPartner ? 'romantic' : tier) }));
+    if (rank) {
+      scroll.add(T().text(scene, r.x + r.w - 300, y + 14, 'wealth #' + rank, {
+        size: 12, color: rank <= C().COURT.wealthTop ? T().css.gold : T().css.inkDim,
+      }));
+    }
     y += 50;
   }
   if (!rows.length) scroll.add(T().text(scene, r.x + 24, y, 'You know nobody yet. Quest beside people, and they will remember it.', { size: 14, italic: true, color: T().css.inkFaint }));

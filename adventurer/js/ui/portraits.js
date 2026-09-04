@@ -138,6 +138,17 @@ function drawBust(ctx, o) {
   ctx.quadraticCurveTo(cx, EYE_Y + 30 + o.mouth, cx + 8, EYE_Y + 30);
   ctx.stroke();
 
+  // veteran marks — a scar past a few contracts, greying at rank
+  if ((o.quests || 0) >= 6 || (o.rank || 1) >= 3) {
+    const side = ((o.quests || 0) + (o.rank || 0)) % 2 ? 1 : -1;
+    ctx.strokeStyle = shade(skin, 0.52);
+    ctx.lineWidth = 1.7;
+    ctx.beginPath();
+    ctx.moveTo(cx + side * 16, EYE_Y + 1);
+    ctx.lineTo(cx + side * 26, EYE_Y + 20);
+    ctx.stroke();
+  }
+
   // hair front
   ctx.fillStyle = o.hairColor;
   hairFront(ctx, o, cx, headW);
@@ -151,6 +162,7 @@ function drawBust(ctx, o) {
     ctx.globalAlpha = 1;
   }
   if (o.extras) o.extras(ctx, cx, o);
+  drawHeadwear(ctx, o, cx);
 }
 
 // hair silhouettes — the primary differentiator (§1a)
@@ -303,6 +315,12 @@ function drawWardrobe(ctx, o, cx) {
     for (const s of [-1, 1]) { // pauldrons
       ctx.beginPath(); ctx.ellipse(cx + s * 52, y0 + 12, 26, 18, s * 0.2, 0, Math.PI * 2); ctx.fill();
     }
+    // high collar — reads as a cutout even at thumbnail size
+    ctx.fillStyle = shade(col, 0.75);
+    ctx.beginPath();
+    ctx.moveTo(cx - 18, y0 - 6); ctx.lineTo(cx - 22, y0 + 22);
+    ctx.lineTo(cx + 22, y0 + 22); ctx.lineTo(cx + 18, y0 - 6);
+    ctx.closePath(); ctx.fill();
     ctx.strokeStyle = shade(col, 1.6); ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(cx - 30, y0 + 26); ctx.quadraticCurveTo(cx, y0 + 34, cx + 30, y0 + 26); ctx.stroke();
     if (kind === 'samurai') { // katana at the shoulder (§14a)
@@ -364,6 +382,45 @@ function drawWardrobe(ctx, o, cx) {
     }
     ctx.strokeStyle = '#d4a94e'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(cx - 22, y0 + 4); ctx.quadraticCurveTo(cx, y0 + 10, cx + 22, y0 + 4); ctx.stroke();
+  }
+  if (o.cloak) {
+    ctx.fillStyle = shade(col, 0.55);
+    ctx.beginPath();
+    ctx.moveTo(cx - 70, y0 + 8);
+    ctx.quadraticCurveTo(cx - 88, y0 + 40, cx - 82, H);
+    ctx.lineTo(cx - 40, H);
+    ctx.quadraticCurveTo(cx - 48, y0 + 30, cx - 28, y0 + 4);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx + 70, y0 + 8);
+    ctx.quadraticCurveTo(cx + 88, y0 + 40, cx + 82, H);
+    ctx.lineTo(cx + 40, H);
+    ctx.quadraticCurveTo(cx + 48, y0 + 30, cx + 28, y0 + 4);
+    ctx.closePath(); ctx.fill();
+  }
+}
+
+function drawHeadwear(ctx, o, cx) {
+  const kind = o.headwear;
+  const col = o.wardrobeColor || '#3a4150';
+  if (kind === 'helm') {
+    ctx.fillStyle = shade(col, 1.15);
+    ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 18, 40, 36, 0, Math.PI, 0); ctx.fill();
+    ctx.fillRect(cx - 40, EYE_Y - 22, 80, 18);
+    ctx.fillStyle = shade(col, 0.7);
+    ctx.fillRect(cx - 36, EYE_Y - 8, 72, 10);
+    ctx.fillStyle = shade(col, 1.35);
+    ctx.fillRect(cx - 4, EYE_Y - 52, 8, 34);
+  } else if (kind === 'cap') {
+    ctx.fillStyle = shade(col, 0.85);
+    ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 28, 36, 16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shade(col, 0.65);
+    ctx.beginPath(); ctx.ellipse(cx + 6, EYE_Y - 18, 44, 8, 0.08, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'hood' && o.hairStyle !== 'hood') {
+    const hc = col;
+    ctx.fillStyle = shade(hc, 0.85);
+    ctx.beginPath(); ctx.ellipse(cx, EYE_Y - 12, 42, 52, 0, Math.PI, 0); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx - 42, EYE_Y - 10); ctx.quadraticCurveTo(cx, EYE_Y - 70, cx + 42, EYE_Y - 10); ctx.fill();
   }
 }
 
@@ -483,7 +540,42 @@ function recipeNPC(sex, seed) {
     eyes: r.pick(['#4a3520', '#2f4a2a', '#2a3a55', '#4a2a20', '#3a3a3a']),
     jaw: sex === 'f' ? 0 : r.int(0, 3), brow: r.int(0, 3), mouth: r.int(-1, 3), fringe: r.int(-8, 8),
     beard: sex === 'm' && r.chance(0.4),
+    headwear: r.int(0, 7) === 0 ? r.pick(['helm', 'cap', 'hood']) : null,
+    cloak: r.int(0, 5) === 0,
   };
+}
+
+const SET_LOOK = {
+  warrior:           { wardrobe: 'armor',   color: '#5a5f6e', headwear: 'helm' },
+  ranger:            { wardrobe: 'hiking',  color: '#3a4a32', headwear: 'cap', cloak: true },
+  mage:              { wardrobe: 'robe',    color: '#3a3644', cloak: true },
+  healer:            { wardrobe: 'robe',    color: '#4a5a48' },
+  assassins_gear:    { wardrobe: 'ninja',   color: '#2a2d36', headwear: 'hood' },
+  mercenarys_gear:   { wardrobe: 'armor',   color: '#6a5a48', headwear: 'helm' },
+  battle_mages_gear: { wardrobe: 'robe',    color: '#4a3a5a', cloak: true },
+  shinobi_gear:      { wardrobe: 'ninja',   color: '#1a1c22', headwear: 'hood' },
+  green_eyed_armour: { wardrobe: 'samurai', color: '#4a5a38', headwear: 'helm' },
+  privateers_kit:    { wardrobe: 'pirate',  color: '#3a2a22', headwear: 'cap' },
+  kings_uniform:     { wardrobe: 'navy',    color: '#2a3a52' },
+};
+
+function applySetLook(rec, setId) {
+  const L = SET_LOOK[setId];
+  if (!L || !rec) return rec;
+  rec.wardrobe = L.wardrobe;
+  rec.wardrobeColor = L.color;
+  if (L.headwear) rec.headwear = L.headwear;
+  if (L.cloak) rec.cloak = true;
+  return rec;
+}
+
+function applyVeteran(rec, ch) {
+  if (!rec || !ch) return rec;
+  rec.rank = ch.rank || 1;
+  rec.quests = ch.questsCompleted || 0;
+  if (rec.rank >= 5 && rec.sex === 'm') rec.jaw = Math.min(3, (rec.jaw || 0) + 1);
+  if (rec.rank >= 4 && rec.hairColor) rec.hairColor = shade(rec.hairColor, 1.55);
+  return rec;
 }
 
 // Campaign characters (campaign doc §6a): fixed looks from their data recipe.
@@ -588,6 +680,9 @@ function drawMonster(ctx, typeId, tint) {
 
 // ---- public API -------------------------------------------------------------
 const cacheKeys = new Set();
+// Blinking repaints over the bust rather than regenerating the texture, so the
+// eye geometry and skin tone of each portrait are kept beside its cache key.
+const META = {};
 
 const Portraits = {
   W, H,
@@ -601,30 +696,84 @@ const Portraits = {
     let key;
     const TYPE_TINTS = { marsh_stalker: '#2a4a2a', ember_cultist: '#7a3a1a', frost_hag: '#2a4a6a', gravewarden: '#3a3a26' };
     const typeTint = ch.isMonster && TYPE_TINTS[ch.enemyTypeId];
-    if (ch.portraitId && ch.isMonster) key = 'pm_' + ch.portraitId + (ch.boss ? '_boss' : '') + (ch.isUndead ? '_risen' : '') + (typeTint ? '_' + ch.enemyTypeId : '');
-    else if (ch.portraitKind === 'campaign') key = 'pc_' + ch.portraitId;
-    else if (ch.portraitId) key = 'pr_' + ch.portraitId;            // registry (Hiro)
-    else if (ch.portraitKind === 'player') key = 'pp_' + ch.portraitSlot + '_' + ch.sex + '_' + (ch.portraitSeed % 1000);
-    else key = 'pn_' + ch.sex + '_' + ch.portraitSeed + '_v2';
+    const setBit = ch.equippedSet ? '_s' + ch.equippedSet : '';
+    const vetBit = '_r' + (ch.rank || 1) + 'q' + (ch.questsCompleted || 0);
+    if (ch.portraitId && ch.isMonster) key = 'pm6_' + ch.portraitId + (ch.boss ? '_boss' : '') + (ch.isUndead ? '_risen' : '') + (typeTint ? '_' + ch.enemyTypeId : '');
+    else if (ch.portraitKind === 'campaign') key = 'pc5_' + ch.portraitId + setBit + vetBit;
+    else if (ch.portraitId) key = 'pr5_' + ch.portraitId + setBit + vetBit;
+    else if (ch.portraitKind === 'player') key = 'pp5_' + ch.portraitSlot + '_' + ch.sex + '_' + (ch.portraitSeed % 1000) + setBit + vetBit;
+    else key = 'pn6_' + ch.sex + '_' + ch.portraitSeed + setBit + vetBit;
     if (cacheKeys.has(key) && scene.textures.exists(key)) return key;
+    let rec = null;
     const tex = scene.textures.createCanvas(key, W, H);
     const ctx = tex.getContext();
     if (ch.isMonster) {
       const bossTints = { bandit: '#7a3a2a', hedge_mage: '#5a2a6a', dire_wolf: '#3a1f1f', plated_sentinel: '#7a6a2a', grave_acolyte: '#2a4a3a' };
       drawMonster(ctx, ch.portraitId, ch.isUndead ? '#2a3a3a' : ch.boss ? bossTints[ch.portraitId] : (typeTint || null));
-    } else if (ch.portraitKind === 'campaign') {
-      drawBust(ctx, recipeCampaign(ch.portraitId));
-    } else if (ch.portraitId === 'hiro') {
-      drawBust(ctx, HIRO_RECIPE);
-    } else if (ch.portraitKind === 'player') {
-      drawBust(ctx, recipePlayer(ch.portraitSlot || 1, ch.sex, ch.portraitSeed));
     } else {
-      drawBust(ctx, recipeNPC(ch.sex, ch.portraitSeed));
+      // keep the recipe: the blink needs this character's own skin tone
+      if (ch.portraitKind === 'campaign') rec = recipeCampaign(ch.portraitId);
+      else if (ch.portraitId === 'hiro') rec = Object.assign({}, HIRO_RECIPE);
+      else if (ch.portraitKind === 'player') rec = recipePlayer(ch.portraitSlot || 1, ch.sex, ch.portraitSeed);
+      else rec = recipeNPC(ch.sex, ch.portraitSeed);
+      if (ch.equippedSet) applySetLook(rec, ch.equippedSet);
+      applyVeteran(rec, ch);
+      drawBust(ctx, rec);
     }
     tex.refresh();
     cacheKeys.add(key);
+    if (!META[key]) {
+      const lidHex = rec && rec.skin ? shade(rec.skin[0], 0.97) : null;
+      META[key] = { eyeY: EYE_Y, eyeDX: 14, monster: !!ch.isMonster,
+        lid: lidHex ? parseInt(lidHex.slice(1), 16) : null };
+    }
     return key;
   },
+  // Idle life. A bust that breathes and blinks reads as a person; the same bust
+  // held perfectly still reads as a placeholder. Two tweens, no new textures.
+  // Call after placing the image; returns a stop() for scenes that tear down.
+  animate(scene, img, ch, key) {
+    if (!scene || !img || !img.scene) return () => {};
+    const meta = (key && META[key]) || { eyeY: EYE_Y, eyeDX: 14, monster: !!(ch && ch.isMonster) };
+    const seed = Math.abs(((ch && (ch.portraitSeed || 0)) | 0) + ((ch && ch.name) ? ch.name.length : 0));
+    const y0 = img.y;
+    // breathe — offset per character so a row of them never marches in step
+    const bob = scene.tweens.add({
+      targets: img, y: y0 - 2, duration: 2200 + (seed % 900),
+      delay: seed % 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+    if (meta.monster) return () => { try { bob.remove(); } catch (e) {} };
+
+    // blink: two lids painted over the eye line, in the portrait's own skin tone
+    const lids = [];
+    const drawLids = () => {
+      const w = img.displayWidth, h = img.displayHeight;
+      const ey = img.y - h / 2 + h * (meta.eyeY / H);
+      const dx = w * (meta.eyeDX / W);
+      for (const sgn of [-1, 1]) {
+        const g = scene.add.graphics().setDepth((img.depth || 0) + 1);
+        lids.push(g);
+        g.fillStyle(meta.lid != null ? meta.lid : 0x8a5c3a, 1);
+        g.fillEllipse(img.x + sgn * dx, ey, w * (17 / W), h * (12 / H));
+      }
+    };
+    const clearLids = () => { for (const g of lids.splice(0)) { try { g.destroy(); } catch (e) {} } };
+    let timer = null;
+    const schedule = () => {
+      timer = scene.time.delayedCall(2600 + Math.random() * 4200, () => {
+        if (!img.scene) return;
+        drawLids();
+        scene.time.delayedCall(95, () => { clearLids(); if (img.scene) schedule(); });
+      });
+    };
+    schedule();
+    const stop = () => { try { bob.remove(); } catch (e) {} if (timer) { try { timer.remove(false); } catch (e) {} } clearLids(); };
+    // scenes destroy portraits constantly (panel switches, scene restarts); clean
+    // up with the image so no tween or timer outlives it
+    try { img.once('destroy', stop); } catch (e) {}
+    return stop;
+  },
+
   // For the creation screen grid
   creationKey(scene, slot, sex) {
     return Portraits.key(scene, { portraitKind: 'player', portraitSlot: slot, sex, portraitSeed: slot * 7919 + (sex === 'f' ? 13 : 29) });

@@ -9,7 +9,8 @@ const SHOT = (n) => path.join('/tmp/shots', n + '.png');
 
 (async () => {
   fs.mkdirSync('/tmp/shots', { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling'] });
+  const args = ['--no-sandbox', '--autoplay-policy=no-user-gesture-required', '--disable-background-timer-throttling'];
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args }).catch(() => chromium.launch({ args }));
   const page = await browser.newPage({ viewport: { width: 1340, height: 820 } });
   const errors = [];
   page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));

@@ -96,6 +96,27 @@ function card(scene, st, c, x0, y0, opts) {
   return cont;
 }
 
+// A grave: mound, headstone and the one warm light. Drawn here rather than in
+// two places — scene_death.js stages the same tableau at a different scale.
+// (x, y) is the ground line the mound sits on.
+Cut.grave = function (scene, o) {
+  o = o || {};
+  const x = o.x == null ? T().W / 2 : o.x;
+  const y = o.y == null ? 566 : o.y;
+  const s = o.scale || 1;
+  const g = scene.add.graphics().setDepth(o.depth == null ? DEPTH - 1 : o.depth);
+  g.fillStyle(0x241f19, 1); g.fillEllipse(x, y, 210 * s, 46 * s);
+  g.fillStyle(0x2f2a22, 1); g.fillEllipse(x, y - 6 * s, 190 * s, 36 * s);
+  g.fillStyle(0x4a4a52, 1); g.fillRoundedRect(x - 26 * s, y - 96 * s, 52 * s, 78 * s, 6);
+  g.fillStyle(0x5a5a64, 1); g.fillRoundedRect(x - 22 * s, y - 92 * s, 44 * s, 40 * s, 5);
+  g.fillStyle(0x1a1814, 1);
+  g.fillRect(x - 3 * s, y - 80 * s, 6 * s, 22 * s);
+  g.fillRect(x - 12 * s, y - 72 * s, 24 * s, 6 * s);
+  g.fillStyle(0xd4a94e, 0.15); g.fillCircle(x + 100 * s, y - 26 * s, 48 * s);
+  g.fillStyle(0xd4a94e, 0.85); g.fillCircle(x + 100 * s, y - 26 * s, 7 * s);
+  return g;
+};
+
 function livingRoster(game) {
   let roster = [];
   try { roster = ADV.Game.partyRoster(game).filter(c => c && c.alive !== false); } catch (e) { roster = []; }
@@ -184,15 +205,7 @@ Cut.funeral = function (scene, rec, done) {
   });
   const W = st.W;
 
-  // A grave: mound, headstone, and a lantern that is the only warm thing here.
-  const g = st.keep(scene.add.graphics().setDepth(DEPTH - 1));
-  g.fillStyle(0x241f19, 1); g.fillEllipse(W / 2, 566, 210, 46);
-  g.fillStyle(0x2f2a22, 1); g.fillEllipse(W / 2, 560, 190, 36);
-  g.fillStyle(0x4a4a52, 1); g.fillRoundedRect(W / 2 - 26, 470, 52, 78, 6);
-  g.fillStyle(0x5a5a64, 1); g.fillRoundedRect(W / 2 - 22, 474, 44, 40, 5);
-  g.fillStyle(0x1a1814, 1); g.fillRect(W / 2 - 3, 486, 6, 22); g.fillRect(W / 2 - 12, 494, 24, 6);
-  g.fillStyle(0xd4a94e, 0.16); g.fillCircle(W / 2 + 96, 540, 46);
-  g.fillStyle(0xd4a94e, 0.85); g.fillCircle(W / 2 + 96, 540, 7);
+  st.keep(Cut.grave(scene, { x: W / 2, y: 566, scale: 1 }));
 
   // Same march grammar as embark: they enter from the left and settle at the stone.
   const n = Math.max(1, mourners.length);

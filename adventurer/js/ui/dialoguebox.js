@@ -33,6 +33,7 @@ const DialogueBox = {
     // portrait
     const key = ADV.Portraits.key(scene, speaker);
     const img = scene.add.image(88, y + bh / 2, key).setDisplaySize(96, 122).setDepth(902);
+    if (ADV.Portraits.animate) ADV.Portraits.animate(scene, img, speaker, key);
     const frame = scene.add.graphics().setDepth(903);
     frame.lineStyle(2, T().c.panelEdge, 1);
     frame.strokeRect(40, y + bh / 2 - 61, 96, 122);

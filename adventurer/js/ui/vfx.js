@@ -106,6 +106,10 @@ VFX.skillColor = function (skillId) {
 VFX.isProjectile = function (skillId) {
   return ['fire_bolt', 'frost_touch', 'aimed_shot', 'snare', 'blood_pact'].includes(skillId);
 };
+VFX.hitStop = function (scene, ms) {
+  try { scene.tweens.pauseAll(); } catch (e) {}
+  scene.time.delayedCall(ms || 60, () => { try { scene.tweens.resumeAll(); } catch (e) {} });
+};
 
 ADV.VFX = VFX;
 })();

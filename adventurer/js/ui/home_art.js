@@ -82,20 +82,30 @@ const SKY = {
 };
 
 const HousingArt = {};
+HousingArt.weatherKind = function (clock) {
+  const n = ((((clock | 0) * 17 + 5) % 10) + 10) % 10;
+  if (n < 2) return 'rain';
+  if (n === 2) return 'snow';
+  return 'clear';
+};
+
 HousingArt.paint = function (scene, homeId) {
   if (scene.homeArt) { try { scene.homeArt.destroy(); } catch (e) {} }
+  if (scene.homeLife) { try { scene.homeLife.destroy(true); } catch (e) {} scene.homeLife = null; }
   const g = scene.add.graphics().setDepth(-10);
   scene.homeArt = g;
   const W = T().W, H = T().H;
   const id = homeId || 'camp';
   const clock = (scene.game_ && scene.game_.world && scene.game_.world.questClock) || 0;
   const phase = ADV.Housing.timeOfDay(clock);
-  if (id === 'inn') return inn(g, W, H, phase);
-  if (id === 'cottage') return cottage(g, W, H, phase);
-  if (id === 'brick') return brick(g, W, H, phase);
-  if (id === 'mansion') return mansion(g, W, H, phase);
-  if (id === 'castle') return castle(g, W, H, phase);
-  return camp(g, W, H, phase);
+  if (id === 'inn') inn(g, W, H, phase);
+  else if (id === 'cottage') cottage(g, W, H, phase);
+  else if (id === 'brick') brick(g, W, H, phase);
+  else if (id === 'mansion') mansion(g, W, H, phase);
+  else if (id === 'castle') castle(g, W, H, phase);
+  else camp(g, W, H, phase);
+  paintLife(scene, id, phase, clock);
+  return g;
 };
 
 function camp(g, W, H, phase) {
@@ -264,6 +274,92 @@ function castle(g, W, H, phase) {
     litWindow(g, x, y, 28, 40, phase);
   }
   g.fillStyle(0x2a2a34, 1); g.fillRect(200, 540, 840, 24);
+}
+
+function paintLife(scene, id, phase, clock) {
+  const life = scene.add.container(0, 0).setDepth(-9);
+  scene.homeLife = life;
+  if (id !== 'inn') {
+    const weather = HousingArt.weatherKind(clock);
+    if (weather === 'rain') paintRain(scene, life);
+    if (weather === 'snow') paintSnow(scene, life);
+    paintCrowd(scene, life, clock);
+  }
+  smokeStacks(scene, life, id);
+  flickerLamps(scene, life, id, phase);
+}
+
+function paintRain(scene, life) {
+  const g = scene.add.graphics();
+  g.lineStyle(1, 0x9ab0c0, 0.45);
+  for (let i = 0; i < 70; i++) {
+    const x = (i * 47) % 1320 - 20, y = (i * 31) % 760;
+    g.lineBetween(x, y, x + 8, y + 22);
+  }
+  life.add(g);
+  scene.tweens.add({ targets: g, y: 28, duration: 380, repeat: -1, onRepeat: () => { g.y = 0; } });
+}
+
+function paintSnow(scene, life) {
+  const flakes = [];
+  for (let i = 0; i < 36; i++) {
+    const c = scene.add.circle((i * 83) % 1280, (i * 47) % 760, i % 3 === 0 ? 2.2 : 1.4, 0xf4eee0, 0.7);
+    flakes.push(c);
+    life.add(c);
+    scene.tweens.add({
+      targets: c, y: c.y + 90, x: c.x + ((i % 2) ? 18 : -14),
+      duration: 2400 + (i % 7) * 200, repeat: -1, yoyo: false,
+      onRepeat: () => { c.y = -10; },
+    });
+  }
+}
+
+function smokeStacks(scene, life, id) {
+  const stacks = {
+    cottage: [[718, 188]], brick: [[800, 160]], mansion: [[409, 200], [829, 200]],
+    castle: [[274, 80], [926, 70]], camp: [[720, 560]],
+  }[id] || [];
+  stacks.forEach(([x, y], si) => {
+    for (let i = 0; i < 3; i++) {
+      const puff = scene.add.circle(x, y, 7 + i * 2, 0xc8c4b8, 0.22);
+      life.add(puff);
+      scene.tweens.add({
+        targets: puff, y: y - 70 - i * 8, x: x + (si ? -10 : 12) + i * 4, alpha: 0, scale: 1.8,
+        duration: 1800 + i * 220, delay: i * 280, repeat: -1,
+        onRepeat: () => { puff.y = y; puff.x = x; puff.alpha = 0.22; puff.scale = 1; },
+      });
+    }
+  });
+}
+
+function flickerLamps(scene, life, id, phase) {
+  if (phase === 'day') return;
+  const lamps = {
+    camp: [[720, 582, 16]], cottage: [[638, 450, 7]], brick: [[325, 490, 9], [915, 490, 9]],
+    inn: [[640, 200, 18]], castle: [[620, 470, 14]],
+  }[id] || [];
+  lamps.forEach(([x, y, r]) => {
+    const glow = scene.add.circle(x, y, r, 0xd4a94e, phase === 'night' ? 0.55 : 0.35);
+    life.add(glow);
+    scene.tweens.add({
+      targets: glow, alpha: { from: glow.alpha, to: glow.alpha * 0.45 },
+      duration: 180 + Math.random() * 120, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+  });
+}
+
+function paintCrowd(scene, life, clock) {
+  const g = scene.add.graphics();
+  const n = 4 + (clock % 3);
+  for (let i = 0; i < n; i++) {
+    const x = 180 + ((i * 197 + clock * 13) % 900);
+    const y = 548 + (i % 3) * 6;
+    const h = 22 + (i % 4) * 3;
+    g.fillStyle(0x12110e, 0.55);
+    g.fillEllipse(x, y - h, 7, 6);
+    g.fillRect(x - 6, y - h + 4, 12, h);
+  }
+  life.add(g);
 }
 
 ADV.HousingArt = HousingArt;

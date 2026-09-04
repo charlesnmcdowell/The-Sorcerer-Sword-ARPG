@@ -31,7 +31,12 @@ class CombatScene extends Phaser.Scene {
     this.actionObjs = [];
     this.autoTimer = null;
     const W = T().W, H = T().H;
-    this.add.rectangle(W / 2, H / 2, W, H, 0x121110);
+    // A roadside mugging and a drowned king used to share one flat rectangle.
+    if (ADV.BattleArt) {
+      ADV.BattleArt.paint(this, ADV.BattleArt.groundFor(this.game_, this.mode), ADV.BattleArt.phaseFor(this.game_));
+    } else {
+      this.add.rectangle(W / 2, H / 2, W, H, 0x121110);
+    }
     const st = this.st();
     if (!st) { this.scene.start('Town'); return; }
     // music: bosses, ambushes and divine business get the heavy themes;
@@ -40,7 +45,8 @@ class CombatScene extends Phaser.Scene {
     ADV.Music.play(heavy ? 'boss' : 'combat');
     // battlefield ground
     const g = this.add.graphics();
-    g.fillStyle(0x1a1815, 1); g.fillRect(40, 120, W - 80, 500);
+    // translucent so the ground reads at the edges without costing lane clarity
+    g.fillStyle(0x1a1815, ADV.BattleArt ? 0.72 : 1); g.fillRect(40, 120, W - 80, 500);
     g.lineStyle(1, T().c.panelEdge, 0.6);
     for (const side of ['a', 'b']) for (const lane of ['front', 'mid', 'back']) {
       g.strokeRect(LANE_X[side][lane] - 62, 130, 124, 484);
@@ -72,8 +78,11 @@ class CombatScene extends Phaser.Scene {
   makeUnitView(u) {
     const x = LANE_X[u.side][u.lane], y = SLOT_Y[u.slot] || SLOT_Y[0];
     const key = ADV.Portraits.key(this, u.ch);
-    const img = this.add.image(x, y, key).setDisplaySize(u.ch.boss ? 112 : 92, u.ch.boss ? 142 : 116);
+    const laneScale = u.lane === 'back' ? 0.9 : u.lane === 'mid' ? 0.95 : 1;
+    const img = this.add.image(x, y, key).setDisplaySize((u.ch.boss ? 112 : 92) * laneScale, (u.ch.boss ? 142 : 116) * laneScale);
     if (u.ch.isUndead) { img.setTint(0x88bb99); img.__baseTint = 0x88bb99; }
+    else if (u.lane === 'back') { img.setTint(0xb0a898); img.__baseTint = 0xb0a898; }
+    if (ADV.Portraits.animate) ADV.Portraits.animate(this, img, u.ch, key);
     const frame = this.add.graphics();
     const isPlayer = !!u.ch.isPlayer;
     frame.lineStyle(2, isPlayer ? T().c.gold : u.side === 'a' ? T().c.green : T().c.blood, 0.9);
@@ -82,7 +91,8 @@ class CombatScene extends Phaser.Scene {
     const hpBar = this.add.graphics();
     const intent = T().text(this, x, y - img.displayHeight / 2 - 18, '', { size: 10, ox: 0.5, color: T().css.blue, wrap: 130, align: 'center' });
     const status = T().text(this, x, y + img.displayHeight / 2 + 33, '', { size: 9, ox: 0.5, color: T().css.purple });
-    const view = { u, img, frame, name, hpBar, intent, status, x, y };
+    const pips = this.add.graphics();
+    const view = { u, img, frame, name, hpBar, intent, status, pips, x, y };
     this.unitViews.set(u.uid, view);
     this.redrawUnit(view);
     return view;
@@ -102,14 +112,27 @@ class CombatScene extends Phaser.Scene {
       const tp = Math.min(1, u.tempHp / u.maxHp);
       v.hpBar.fillStyle(T().c.tempHp, 1); v.hpBar.fillRect(v.x - w / 2, by + 8, w * tp, 3);
     }
-    const marks = [];
-    for (const s of u.statuses) {
-      const glyph = { burn: '🔥', bleed: '🩸', poison: '☠', hot: '✚', thorns: '🌿', guard: '🛡', ward: '◈', atkBuff: '↑', aura: '✦', healcut: '✂', frozen: '❄', shocked: '⚡', sealed: '🔒', purified: '✨', iceArmor: '🧊' }[s.kind];
-      if (glyph) marks.push(glyph);
+    const PIP = {
+      burn: 0xd8574a, bleed: 0xa8352c, poison: 0x5d8a4a, hot: 0x83b56b, thorns: 0x4a6a38,
+      guard: 0xd4a94e, ward: 0x6fa0bf, atkBuff: 0xd4a94e, aura: 0x9a70c0, healcut: 0xa8352c,
+      frozen: 0x6fc0e8, shocked: 0xd4a94e, sealed: 0x6a4a8a, purified: 0xf4eee0, iceArmor: 0x6fa0bf,
+    };
+    const colors = [];
+    for (const s of u.statuses) if (PIP[s.kind]) colors.push(PIP[s.kind]);
+    if (u.evade > 0) colors.push(0xa89a7c);
+    if (u.marksBy.length) colors.push(0x9a70c0);
+    v.status.setText('');
+    if (v.pips) {
+      v.pips.clear();
+      const pipY = v.y + v.img.displayHeight / 2 + 36;
+      const start = v.x - (Math.max(0, colors.length - 1) * 6);
+      colors.forEach((c, i) => {
+        v.pips.fillStyle(c, 1);
+        v.pips.fillCircle(start + i * 12, pipY, 4);
+        v.pips.lineStyle(1, 0x000000, 0.55);
+        v.pips.strokeCircle(start + i * 12, pipY, 4);
+      });
     }
-    if (u.evade > 0) marks.push('◌');
-    if (u.marksBy.length) marks.push('⚑');
-    v.status.setText(marks.join(' '));
     if (u.downed) { ADV.VFX.desaturate(v.img); v.intent.setText(''); v.frame.setAlpha(0.4); v.name.setAlpha(0.5); }
     if (u.fled) { v.img.setAlpha(0.2); v.intent.setText('fled'); }
   }
@@ -220,6 +243,36 @@ class CombatScene extends Phaser.Scene {
         const idx = lines.indexOf(line) + 1;
         return (next) => { if (ADV.Music) ADV.Music.speakCampaign(v.u.ch.campaignId, 'exit', idx); ADV.DialogueBox.showText(this, this.game_, v.u.ch, line, next); };
       }
+      case 'witness': {
+        // The hook of the whole game: you learn by being shown. Hold the frame,
+        // ring the teacher in gold, and say it plainly.
+        const sk = ADV.DATA.SKILLS[e.skillId];
+        const tv = e.uid ? this.view(e.uid) : null;
+        const label = (sk && sk.name) || e.skillId;
+        return (next) => {
+          if (tv) {
+            V.tintFlash(this, tv.img, 0xd4a94e);
+            const ring = this.add.rectangle(tv.x, tv.y, tv.img.displayWidth + 14, tv.img.displayHeight + 14)
+              .setStrokeStyle(3, T().c.gold, 1).setFillStyle(0, 0).setDepth(560);
+            this.tweens.add({ targets: ring, scaleX: 1.25, scaleY: 1.25, alpha: 0, duration: 620,
+              onComplete: () => ring.destroy() });
+          }
+          const W = T().W, H = T().H;
+          const band = this.add.rectangle(W / 2, H / 2 - 40, W, 92, 0x0c0a08, 0.72).setDepth(700).setAlpha(0);
+          const big = T().text(this, W / 2, H / 2 - 58, label,
+            { size: 30, display: true, ox: 0.5, oy: 0.5, color: T().css.gold }).setDepth(701).setAlpha(0);
+          const sub = T().text(this, W / 2, H / 2 - 22, 'You have seen this.',
+            { size: 15, ox: 0.5, oy: 0.5, italic: true, color: T().css.ink }).setDepth(701).setAlpha(0);
+          const parts = [band, big, sub];
+          // hit-stop: hold everything for a beat so the moment registers
+          this.tweens.add({ targets: parts, alpha: 1, duration: 90 });
+          V.camShake(this, 0.004);
+          this.time.delayedCall(900, () => {
+            this.tweens.add({ targets: parts, alpha: 0, duration: 260,
+              onComplete: () => { parts.forEach(o => { try { o.destroy(); } catch (err) {} }); next(); } });
+          });
+        };
+      }
       case 'skip': {
         if (v) V.damageNumber(this, v.x, v.y - 30, e.reason === 'frozen' ? 'frozen!' : 'bound!', '#6fc0e8');
         return 200;
@@ -257,7 +310,9 @@ class CombatScene extends Phaser.Scene {
         V.recoil(this, v.img, v.u.side === 'a' ? 1 : -1);
         V.tintFlash(this, v.img, 0xff6655);
         this.redrawUnit(v);
-        return 150;
+        const heavy = e.tag !== 'dot' && e.dmg >= Math.max(12, (v.u.maxHp || 40) * 0.18);
+        if (heavy && V.hitStop) V.hitStop(this, 60);
+        return heavy ? 210 : 150;
       }
       case 'heal': { if (v) { V.healSparkle(this, v.x, v.y); V.damageNumber(this, v.x, v.y - 20, '+' + e.amount, '#83b56b'); this.redrawUnit(v); } return 140; }
       case 'down': {

@@ -1065,6 +1065,11 @@ Combat.act = function (st, u, action) {
   recordSighting(st, u, skillId, m.tier);
 
   ev(st, { t: 'use', uid: u.uid, skillId, tier: m.tier, name: off ? d.offensive.name : d.name, target: tgt.uid, offensive: !!off });
+  // flush any first-sighting the player just got, so the beat lands after the blow
+  if (st.__witnessPending && st.__witnessPending.length) {
+    for (const w of st.__witnessPending) ev(st, { t: 'witness', skillId: w.skillId, tier: w.tier, from: w.from, uid: w.uid });
+    st.__witnessPending = null;
+  }
 
   // Countersign: a lane holding an interrupt negates the next enemy skill aimed at it
   if (skillId !== 'basic_attack' && tgt.side !== u.side) {
@@ -1513,10 +1518,24 @@ function doFlee(st, u) {
 function recordSighting(st, user, skillId, tier) {
   const sk = SK()[skillId];
   if (!sk || sk.universal || sk.unique) return;
+  const teacher = (user && user.ch && user.ch.name) || '';
   for (const u of st.units) {
     if (u === user || u.reserved) continue;
     if (!u.witnessedHere.some(w => w.skillId === skillId && w.tier === tier)) {
-      u.witnessedHere.push({ skillId, tier });
+      u.witnessedHere.push({ skillId, tier, from: teacher });
+      // The player learns by being shown. That moment is the whole hook, so it
+      // gets announced live instead of being banked silently until the fight
+      // ends — the UI drains this right after the 'use' beat.
+      if (u.ch && u.ch.isPlayer && !ADV.SkillSys.isWitnessed(u.ch, skillId)) {
+        st.__witnessShown = st.__witnessShown || 0;
+        if (st.__witnessShown < 2) {
+          st.__witnessPending = st.__witnessPending || [];
+          if (!st.__witnessPending.some(w => w.skillId === skillId)) {
+            st.__witnessShown++;
+            st.__witnessPending.push({ skillId, tier, from: teacher, uid: user.uid });
+          }
+        }
+      }
     }
   }
 }
@@ -1531,7 +1550,7 @@ Combat.registerWitnesses = function (st) {
     if (u.downed && !u.survivor) { /* downed units survive if their side didn't wipe — handled by caller flag */ }
     for (const w of u.witnessedHere) {
       const before = ADV.SkillSys.isWitnessed(u.ch, w.skillId);
-      ADV.SkillSys.witness(u.ch, w.skillId, w.tier);
+      ADV.SkillSys.witness(u.ch, w.skillId, w.tier, w.from);
       if (!before && u.ch.isPlayer) out.push(w);
     }
   }

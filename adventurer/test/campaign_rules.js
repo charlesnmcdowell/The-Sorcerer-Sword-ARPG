@@ -163,6 +163,30 @@ const mem = memBackend;
 })();
 
 (function () {
+  console.log('\n-- graveyard obituaries --');
+  ADV.Save.setBackend(mem());
+  const g = ADV.Game.newGame({ seed: 51, name: 'Pat', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
+  const world = g.world;
+  const p = ADV.Game.player(g);
+  const spouse = world.characters.find(c => c.sex === 'f' && !c.isPlayer && c.alive);
+  ADV.Rel.commit(world, p.id, spouse.id);
+  const child = ADV.Character.makeDependent(g.rng, world, spouse, p.id);
+  child.name = 'Ryn'; child.age = 8;
+  spouse.dependents.push(child);
+  spouse.childIds.push(child.id); p.childIds.push(child.id);
+  give(spouse, 'mend', 4);
+  ADV.Death.finalize(world, spouse, p.id, 'killed');
+  const ob = spouse.obituary;
+  ok(ob && ob.text, 'finalize stores a composed obituary');
+  ok(ob.skills.indexOf('Mend') >= 0, 'skills are listed');
+  ok(ob.spouses.indexOf(p.name) >= 0, 'surviving spouse is named');
+  ok(ob.children.indexOf('Ryn') >= 0, 'surviving child is named');
+  ok(/fell to/.test(ob.text) && /Ryn/.test(ob.text), 'the eulogy names the killer and the child');
+  const rebuilt = ADV.Death.composeObituary(world, spouse, null, 'quest');
+  ok(rebuilt && rebuilt.name === spouse.name, 'the graveyard can compose a stone for an old grave');
+})();
+
+(function () {
   console.log('\n-- jilt a second spouse --');
   ADV.Save.setBackend(mem());
   const g = ADV.Game.newGame({ seed: 9, name: 'Pat', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['cleave', 'mend', 'triage'] });
