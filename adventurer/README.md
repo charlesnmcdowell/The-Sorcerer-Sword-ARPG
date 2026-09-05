@@ -241,8 +241,8 @@ line, antagonist speaks). The boss fights beside you on quest 5. The Quiet
 raises Risen mid-fight (`st.spawnQueue`).
 
 **The Antler branch (§5c).** Quest 5 opens with Crane's briefing and a choice.
-Side with Crane: Holloway (a real hero with grants) dies, the party becomes
-Villains, the villain reveal card plays on return. Side with Holloway: Crane
+Side with Crane: Hargrave (a real hero with grants) dies, the party becomes
+Villains, the villain reveal card plays on return. Side with Hargrave: Crane
 dies, `world.campaignWorld.antlerFirstHorn` flips to Holloway for the rest of
 the world, and he runs the hall.
 
@@ -414,14 +414,14 @@ untouched — `test/campaign_flow.js` still passes unchanged. New files:
 - **20 new personalities (§8)** — M21-M30, F21-F30, 320 lines, taking the
   roster to 60 and the library to 960. Every line is unique across all 60
   (`test/run_tests.js` asserts it) and every band has an unconditional line.
-- Admiral Vane-Kessler is deliberately one character in two chairs: the Red
+- Admiral Kessler is deliberately one character in two chairs: the Red
   Tally's antagonist and the Admiralty's boss, so 15 people fill 16 roles.
   Jiro is undead and immune to True Rest — nothing animates him.
 
 **Voices.** All 24 ids from §0a are cast in `tools/voice_casting.json` (52 → 89
 entries): the 20 personalities, the 15 campaign characters, and the two gods.
 The personality/character voice sharing is the doc's own (§8: M30 Unquiet is
-deliberately Jiro's voice, F30 Bereaved is Kira's). `tools/gen_voices.py` used
+deliberately Jiro's voice, F30 Bereaved is Tomoe's). `tools/gen_voices.py` used
 to regex `ADV.DATA.DIALOGUE` out of `dialogue.js`, which silently skipped every
 personality declared elsewhere — Hiro, and now all twenty new ones; it loads the
 whole library through the harness instead. **548 clips remain to be generated**
