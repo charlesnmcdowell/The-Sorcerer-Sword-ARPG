@@ -38,7 +38,8 @@ function memBackend() {
 // The harness must load the same data/core files, in the same order, as index.html.
 function checkScriptOrder() {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const tags = [...html.matchAll(/<script src="(js\/(?:data|core)\/[^"]+)"><\/script>/g)].map(m => m[1]);
+  // Cache-busting query strings (?v=...) are not part of the path.
+  const tags = [...html.matchAll(/<script src="(js\/(?:data|core)\/[^"?]+)(?:\?[^"]*)?"><\/script>/g)].map(m => m[1]);
   const missing = tags.filter(t => !FILES.includes(t)).concat(FILES.filter(f => !tags.includes(f)));
   return { ok: !missing.length && tags.join() === FILES.join(), missing, order: tags.join() === FILES.join() };
 }

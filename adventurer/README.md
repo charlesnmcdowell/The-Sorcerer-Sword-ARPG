@@ -472,3 +472,43 @@ to a Villain; the two lawful factions do not acknowledge each other in dialogue.
   entirely by the `metIds` gate, which made the NPC relationship system look
   broken — a 60-tick soak produces 30 marriages and 47 births, none of which
   used to be visible.
+
+## Mobile pass (landscape-only)
+
+The game targets **landscape phones**; portrait shows a full-screen rotate
+prompt (`#rotate` in `index.html`, toggled by the resize handler — iOS ignores
+the Screen Orientation lock API, so the overlay is the reliable route).
+
+- **Viewport.** `viewport-fit=cover`, `user-scalable=no`, body `position:fixed`
+  with `overflow:hidden`, `overscroll-behavior:none`, `touch-action:none`,
+  `#game` at `100dvh`. The resize handler in `index.html` re-measures the
+  viewport in a short burst (0/60/200/450/900 ms) on `resize`,
+  `orientationchange`, `visualViewport.resize`, `pageshow` and
+  `visibilitychange`, because iOS Safari's toolbar moves *after* the resize
+  event. Phaser stays on `Scale.FIT` + `CENTER_BOTH`; `#game` must not also
+  flex-centre the canvas or the offset doubles.
+- **Text fields are DOM.** Canvas text never opens a phone keyboard, so every
+  typed field is a real `<input>` overlaid on the canvas via
+  `ADV.UI.textField(scene, {x, y, w, h, ...})` (`js/ui/uikit.js`). Fields are
+  declared in game-space coordinates and re-projected on every re-fit
+  (`ADV.UI.repositionFields`), never render under 16 CSS px (iOS zooms below
+  that), stop keydown propagation so Phaser never double-types, commit on
+  Return, and are destroyed with their scene. Three sites: creation name,
+  title password, the child-naming notice.
+- **Touch.** `T.button` pads its hit zone 4 px a side on touch devices. Skill
+  tooltips (`ADV.Tooltip.attach`) show for 3.5 s on tap where there is no
+  hover; the creation skill description updates on tap too. The tutorial
+  callout button is 146×44.
+- **Suite.** `node test/browser_mobile.js` (`npm run test:mobile`) drives
+  iPhone 15 / 15 Pro Max / Pixel 7 emulation in Chromium: fill, centring,
+  rotation, URL-bar and background re-fit, first-tap keyboard focus, 16 px
+  minimum, Return-commits, state write-through, no horizontal scroll, a
+  touch-target audit (44×44 CSS px, 20 px edge margin) and a static
+  hover-only audit. Emulation is not Safari: rotation on a real iPhone, the
+  real keyboard height, and audio-after-first-tap still need a hand test.
+
+**Known finding.** On an iPhone 15 the 1280-wide grid renders at ×0.45, so
+almost every control lands under 44 CSS px (hub menu items, skill rows,
+combat bar). The padded zones help near-misses; the real fix is a layout pass
+that gives phone-critical controls ≥ 96 game px of height, or a narrower
+design grid on phones.
