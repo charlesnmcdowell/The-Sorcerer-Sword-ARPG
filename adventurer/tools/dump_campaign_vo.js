@@ -35,13 +35,32 @@ for (const [fid, chars] of Object.entries(ADV.DATA.CAMPAIGN2_DIALOGUE || {})) {
     }
   }
 }
+function godSpoken(line) {
+  return String(line && line.t || line)
+    .replace(/,\s*\{target\}/g, '').replace(/\{target\}[.!?]\s*/g, '').replace(/\{target\},?\s*/g, '')
+    .replace(/\s+([,.!?])/g, '$1').replace(/^\s+/, '');
+}
 // The god line belongs to no faction (§7): its cutscenes carry no tokens.
 for (const [who, lines] of Object.entries(ADV.DATA.GOD_LINE_DIALOGUE || {})) {
   out[who] = out[who] || {};
-  out[who].open = lines.map(l => String(l.t || l)
-    .replace(/,\s*\{target\}/g, '').replace(/\{target\}[.!?]\s*/g, '').replace(/\{target\},?\s*/g, '')
-    .replace(/\s+([,.!?])/g, '$1').replace(/^\s+/, ''));
+  out[who].open = lines.map(godSpoken);
   n += lines.length;
+}
+for (const [who, lines] of Object.entries(ADV.DATA.GOD_LINE_SMITE || {})) {
+  out[who] = out[who] || {};
+  out[who].smite = lines.map(godSpoken);
+  n += lines.length;
+}
+for (const [who, lines] of Object.entries(ADV.DATA.GOD_LINE_HATRED || {})) {
+  out[who] = out[who] || {};
+  out[who].hatred = lines.map(godSpoken);
+  n += lines.length;
+}
+for (const pack of Object.values(ADV.DATA.FACTION_WAR_DIALOGUE || {})) {
+  if (!pack || !pack.who) continue;
+  out[pack.who] = out[pack.who] || {};
+  if (pack.open) { out[pack.who].waropen = pack.open.map(l => godSpoken(l)); n += pack.open.length; }
+  if (pack.boss) { out[pack.who].warboss = pack.boss.map(l => godSpoken(l)); n += pack.boss.length; }
 }
 // The player's name must never be spoken: no unfilled token may survive.
 // (Fixed campaign names are the author's to voice — they never change.)
