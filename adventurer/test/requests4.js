@@ -51,6 +51,30 @@ console.log('\n-- Conscript: joins roster, travel, and party list --');
   }
 }
 
+console.log('\n-- Conscript / raise take the whole beaten field --');
+{
+  const g = newGame(24, ['cleave', 'mend', 'conscript']);
+  const p = ADV.Game.player(g);
+  ADV.SkillSys.entryFor(p, 'conscript').level = 25;
+  const foes = ADV.World.adults(g.world).filter(c => !c.isPlayer && c.status === 'normal').slice(0, 3);
+  eq(foes.length, 3, 'three guild NPCs to bind');
+  const bound = ADV.Game.resolveDefeatedNamedAll(g, foes, 'conscript');
+  eq(bound.length, 3, 'one conscript choice binds all three');
+  ok(foes.every(c => c.isConscript && c.conscriptorId === p.id), 'each beaten foe is in service');
+}
+
+{
+  const g = newGame(25, ['cleave', 'mend', 'necromancy']);
+  const p = ADV.Game.player(g);
+  ADV.SkillSys.entryFor(p, 'necromancy').level = 25;
+  const foes = ADV.World.adults(g.world).filter(c => !c.isPlayer && c.status === 'normal').slice(0, 3);
+  g.quest = { thralls: [], quest: { encounters: [{}, {}] }, encIdx: 0 };
+  const risen = ADV.Game.resolveDefeatedNamedAll(g, foes, 'necromancy');
+  eq(risen.length, 3, 'one raise choice raises all three');
+  ok(foes.every(c => c.isUndead && c.isQuestThrall), 'each beaten foe is a quest thrall');
+  eq((g.quest.thralls || []).length, 3, 'all three stay for the rest of this contract');
+}
+
 console.log('\n-- Necromancy: stronger risen, gone at quest end --');
 {
   const g = newGame(22, ['cleave', 'mend', 'necromancy']);
@@ -105,6 +129,79 @@ console.log('\n-- NPC hero/villain floor and smite --');
   ok(unit(st, thin).chp === unit(st, thin).maxHp, 'the weaker foe is not the smite target');
   ok(!ADV.Combat.tryNpcSmite(st, uv), 'smite is once per battle');
   ok(!ADV.Combat.tryNpcSmite(st, unit(st, player)), 'the player never gets the NPC smite');
+}
+
+console.log('\n-- 800g sets, armor slots, septic, venom fang, smoke --');
+{
+  const ch = mk({ name: 'Set' });
+  give(ch, 'cleave', 1);
+  give(ch, 'sunder', 12);
+  ch.equippedSet = 'warrior';
+  eq(ADV.SkillSys.manifest(ch, ch.actives.find(e => e.skillId === 'cleave')).tier, 'intermediate', '800g set floors a basic matching skill to Intermediate');
+  eq(ADV.SkillSys.manifest(ch, ch.actives.find(e => e.skillId === 'sunder')).tier, 'advanced', '800g set advances an Intermediate matching skill to Advanced');
+  ch.equippedSet = 'duelist';
+  eq(ADV.SkillSys.manifest(ch, ch.actives.find(e => e.skillId === 'sunder')).tier, 'intermediate', '400g set does not advance an Intermediate skill');
+}
+
+{
+  const ch = mk({ name: 'Slots' });
+  give(ch, 'mend', 1);
+  give(ch, 'fire_bolt', 1);
+  give(ch, 'frost_touch', 1);
+  give(ch, 'spark', 1);
+  ok(ADV.SkillSys.atCapacity(ch, 'active'), 'four unmatched actives fill the cap');
+  ch.equippedSet = 'warrior';
+  const learned = ADV.SkillSys.learn(ch, 'cleave');
+  ok(learned.ok, 'a matching armor skill learns past the active cap');
+  ok(ADV.SkillSys.inArmorSlot(ch, 'cleave'), 'cleave sits in the armor slot');
+  eq(ADV.SkillSys.slottedCount(ch, 'active'), 4, 'armor skills do not count toward the cap');
+}
+
+{
+  const ch = mk({ name: 'Septic' });
+  give(ch, 'septic_sanguine', 1);
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.25, 'basic septic is +25% bleed/poison');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 0.5, 'basic septic heals 50% of those ticks');
+  ch.perks[0].level = 10;
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.5, 'intermediate septic is +50%');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 1, 'intermediate septic heals 100% of those ticks');
+  ch.perks[0].level = 25;
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 2, 'advanced septic doubles bleed/poison');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 2, 'advanced septic heals 200% of those ticks');
+}
+
+{
+  const a = mk({ name: 'Fang', stats: { hp: 400, atk: 10, def: 0, spd: 10 } });
+  give(a, 'venom_fang', 1);
+  const b = mk({ name: 'Full', stats: { hp: 400, atk: 4, def: 0, spd: 5 } });
+  const st = fight(a, b, 3);
+  const ua = unit(st, a), ub = unit(st, b);
+  const before = ub.chp;
+  ADV.Combat.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ub.uid });
+  const fang = before - ub.chp;
+  const c = mk({ name: 'Stab', stats: { hp: 400, atk: 10, def: 0, spd: 10 } });
+  give(c, 'backstab', 1);
+  const d = mk({ name: 'Mark', stats: { hp: 400, atk: 4, def: 0, spd: 5 } });
+  const st2 = fight(c, d, 3);
+  const uc = unit(st2, c), ud = unit(st2, d);
+  const before2 = ud.chp;
+  ADV.Combat.act(st2, uc, { kind: 'skill', skillId: 'backstab', targetUid: ud.uid });
+  const stab = before2 - ud.chp;
+  ok(Math.abs(fang - Math.round(stab * 0.8)) <= 2, 'Venom Fang on full HP is 80% of a Backstab');
+}
+
+{
+  const a = mk({ name: 'Smoke', stats: { hp: 200, atk: 10, def: 4, spd: 12 } });
+  give(a, 'smoke_bomb', 1);
+  give(a, 'backstab', 1);
+  const b = mk({ name: 'Foe', stats: { hp: 200, atk: 6, def: 2, spd: 8 } });
+  const st = fight(a, b, 4);
+  const ua = unit(st, a), ub = unit(st, b);
+  const res = ADV.Combat.act(st, ua, { kind: 'skill', skillId: 'smoke_bomb', targetUid: ua.uid });
+  ok(res.ok && res.refund, 'Smoke Bomb is a free action');
+  ok(ua.stealth, 'Smoke Bomb still grants stealth');
+  const res2 = ADV.Combat.act(st, ua, { kind: 'skill', skillId: 'backstab', targetUid: ub.uid });
+  ok(res2.ok && !res2.refund, 'another skill can follow Smoke Bomb on the same turn');
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

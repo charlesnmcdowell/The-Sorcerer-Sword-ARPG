@@ -1,4 +1,4 @@
-// The 31-skill pool (§3a) + universal moves + unique-tier registry skills.
+// The core skill pool (§3a) + universal moves + unique-tier registry skills.
 // One entry, three manifestations by level. Enemies, NPCs and the player all
 // draw from this identical pool. Handlers live in js/core/combat.js keyed by id.
 (function () {
@@ -92,14 +92,22 @@ def({ id: 'taunt', name: 'Taunt', kind: 'active', archetype: 'tank',
     intermediate: { name: 'Provoke',   marks: 2, markRounds: 3 },
     advanced:     { name: 'Challenge', marks: 'lane', markRounds: 4 },
   } });
+def({ id: 'stand_fast', name: 'Stand Fast', kind: 'active', archetype: 'tank',
+  power: 0, target: 'self', reach: 'any', selfRevive: true,
+  desc: 'When you fall, you stand back up. Once per battle at first; more charges and a fuller return as the skill grows.',
+  tiers: {
+    basic:        { name: 'Stand Fast',  reviveHp: 0.25, reviveUses: 1 },
+    intermediate: { name: 'Rise Again',  reviveHp: 0.50, reviveUses: 2 },
+    advanced:     { name: 'Undying',     reviveHp: 0.80, reviveUses: 3 },
+  } });
 
 // ============ ROGUE ============
 def({ id: 'opportunist', name: 'Opportunist', kind: 'perk', archetype: 'rogue',
-  desc: 'Bonus damage to wounded targets.',
+  desc: 'When a foe is below half health, every wound you deal — strikes, bleed, and poison — hits for an extra 10% of their max HP.',
   tiers: {
-    basic:        { name: 'Opportunist',  executeThreshold: 0.30, bonusMult: 1.5 },
-    intermediate: { name: 'Opportunist+', executeThreshold: 0.50, bonusMult: 1.5 },
-    advanced:     { name: 'Predator',     executeThreshold: 0.50, bonusMult: 1.5, killRefundsAction: true, fleeBonus: 0.35 },
+    basic:        { name: 'Opportunist',  executeThreshold: 0.50, bonusHpPct: 0.10 },
+    intermediate: { name: 'Opportunist+', executeThreshold: 0.50, bonusHpPct: 0.10 },
+    advanced:     { name: 'Predator',     executeThreshold: 0.50, bonusHpPct: 0.10, killRefundsAction: true, fleeBonus: 0.35 },
   } });
 def({ id: 'arena_champion', name: 'Arena Champion', kind: 'perk', archetype: 'fighter', survivalHp: 20,
   desc: 'Every enemy you put down restores half your health, stacks +10% damage for the battle, and taunts every enemy onto you for 2 rounds. Every battle you walk out of adds 20 max HP, permanently.',
@@ -109,11 +117,11 @@ def({ id: 'arena_champion', name: 'Arena Champion', kind: 'perk', archetype: 'fi
     advanced:     { name: 'Crowd Favourite', killHealPct: 0.5, stackPct: 0.10, tauntRounds: 2 },
   } });
 def({ id: 'septic_sanguine', name: 'Septic Sanguine', kind: 'perk', archetype: 'rogue',
-  desc: 'Your bleeds and poisons bite 35% harder, every tick of them feeds you, and they leap to everyone within two rows of the first victim.',
+  desc: 'Your bleeds and poisons hit harder and feed you, and they leap to everyone within two rows of the first victim. Advanced doubles the ticks and triples the feast; Intermediate and Basic are half of the tier above.',
   tiers: {
-    basic:        { name: 'Septic Sanguine', dotMult: 1.35, dotLeech: 0.5 },
-    intermediate: { name: 'Septic Sanguine', dotMult: 1.35, dotLeech: 0.5 },
-    advanced:     { name: 'Blood Culture',   dotMult: 1.35, dotLeech: 0.5 },
+    basic:        { name: 'Septic Sanguine', dotMult: 1.25, dotLeech: 0.5 },
+    intermediate: { name: 'Septic Sanguine+', dotMult: 1.5, dotLeech: 1.0 },
+    advanced:     { name: 'Blood Culture',   dotMult: 2.0, dotLeech: 2.0 },
   } });
 def({ id: 'lookism', name: 'Lookism', kind: 'perk', archetype: null,
   desc: 'A face that opens doors: hired for 10g over your price, your hires take 10g under theirs, the opposite sex starts out Friendly, the ones you leave stay Friendly, and enemies would rather hit anyone but you.',
@@ -131,12 +139,20 @@ def({ id: 'backstab', name: 'Backstab', kind: 'active', archetype: 'rogue',
     advanced:     { name: 'Assassinate', executeBelow: 0.25 },
   } });
 def({ id: 'smoke_bomb', name: 'Smoke Bomb', kind: 'active', archetype: 'rogue',
-  power: 0, target: 'self', reach: 'any',
-  desc: 'Evade the next attack and slip into stealth — the way back to another Backstab.',
+  power: 0, target: 'self', reach: 'any', freeAction: true,
+  desc: 'A free action: evade, slip into stealth, and still take your turn — the way back to another Backstab.',
   tiers: {
     basic:        { name: 'Smoke Bomb', evadeNext: 1, stealthOnUse: true, stealthRounds: 2 },
     intermediate: { name: 'Vanish', untargetableRounds: 2, stealthOnUse: true, stealthRounds: 2 },
     advanced:     { name: 'Shadowstep', untargetableRounds: 3, freeStrike: true, stealthOnUse: true, stealthRounds: 3 },
+  } });
+def({ id: 'shadow_rise', name: 'Shadow Rise', kind: 'active', archetype: 'rogue',
+  power: 0, target: 'self', reach: 'any', selfRevive: true,
+  desc: 'Death is a vanishing act. You come back thin, unseen, and hard to hit. Advanced can pull the same trick twice.',
+  tiers: {
+    basic:        { name: 'Shadow Rise', reviveHp: 0.05, reviveUses: 1, reviveStealthRounds: 2, reviveEvade: 2 },
+    intermediate: { name: 'Fade Back',   reviveHp: 0.25, reviveUses: 1, reviveStealthRounds: 3, reviveEvade: 3 },
+    advanced:     { name: 'Cheat Death', reviveHp: 0.50, reviveUses: 2, reviveStealthRounds: 3, reviveEvade: 3 },
   } });
 
 // ============ RANGER ============
@@ -188,6 +204,14 @@ def({ id: 'sunder', name: 'Sunder', kind: 'active', archetype: 'fighter',
     intermediate: { name: 'Rend', defStrip: 12, status: { bleed: { power: 0.6, rounds: 3, stacks: true } } },
     advanced:     { name: 'Shatter', defStripAll: true },
   } });
+def({ id: 'defiant_stand', name: 'Defiant Stand', kind: 'active', archetype: 'fighter',
+  power: 0, target: 'self', reach: 'any', selfRevive: true,
+  desc: 'You refuse the ground. You rise with 15% less health than a tank would, but double damage for two turns and an extra action.',
+  tiers: {
+    basic:        { name: 'Defiant Stand', reviveHp: 0.2125, reviveUses: 1, reviveAtkMult: 2, reviveBuffRounds: 2, grantSelfTurn: 1 },
+    intermediate: { name: 'Deathwish',     reviveHp: 0.425,  reviveUses: 2, reviveAtkMult: 2, reviveBuffRounds: 2, grantSelfTurn: 1 },
+    advanced:     { name: 'Blood Rise',    reviveHp: 0.68,   reviveUses: 3, reviveAtkMult: 2, reviveBuffRounds: 2, grantSelfTurn: 1 },
+  } });
 
 // ============ DRUID / SHAPESHIFTER ============
 def({ id: 'wild_form', name: 'Wild Form', kind: 'perk', archetype: 'druid',
@@ -212,6 +236,14 @@ def({ id: 'beast_shape', name: 'Beast Shape', kind: 'active', archetype: 'druid'
     basic:        { name: 'Beast Shape', atkMult: 1.5, rounds: 3 },
     intermediate: { name: 'Greater Beast', atkMult: 1.5, rounds: 3, lifeSteal: 0.3 },
     advanced:     { name: 'Primal Form', atkMult: 1.5, rounds: 3, lifeSteal: 0.3, splashAdjacent: true },
+  } });
+def({ id: 'grove_raise', name: 'Grove Rise', kind: 'active', archetype: 'druid',
+  power: 0, target: 'ally', reach: 'any', heal: true, revive: true, oncePerBattle: true,
+  desc: 'Calls fallen allies back through the green. Restores 15% less health than a healer\'s Raise, but each risen body wears a two-hit ward.',
+  tiers: {
+    basic:        { name: 'Grove Rise',        reviveHp: 0.2125, reviveCount: 1, shieldHits: 2 },
+    intermediate: { name: 'Grove Call',        reviveHp: 0.425,  reviveCount: 2, shieldHits: 2 },
+    advanced:     { name: 'Wild Resurrection', reviveHp: 0.68,   reviveCount: 3, shieldHits: 2 },
   } });
 
 // ============ HEALING — each with an offensive mode ============
@@ -265,7 +297,15 @@ def({ id: 'triage', name: 'Triage', kind: 'active', archetype: 'healer',
   tiers: {
     basic:        { name: 'Triage' },
     intermediate: { name: 'Field Surgery', fullHealBelow: 0.25, target: 'party' },
-    advanced:     { name: 'Resurrection', revive: true, oncePerBattle: true, target: 'party', fullHealBelow: 0.25 },
+    advanced:     { name: 'Mass Triage', fullHealBelow: 0.35, target: 'party', power: 1.8 },
+  } });
+def({ id: 'raise', name: 'Raise', kind: 'active', archetype: 'healer',
+  power: 0, target: 'ally', reach: 'any', heal: true, revive: true, oncePerBattle: true,
+  desc: 'Lifts fallen allies. One body at a quarter of their health; more souls, and a fuller return, as the working deepens.',
+  tiers: {
+    basic:        { name: 'Raise',         reviveHp: 0.25, reviveCount: 1 },
+    intermediate: { name: 'Mass Raise',    reviveHp: 0.50, reviveCount: 2 },
+    advanced:     { name: 'Resurrection',  reviveHp: 0.80, reviveCount: 3 },
   } });
 def({ id: 'blood_pact', name: 'Blood Pact', kind: 'active', archetype: 'healer',
   power: 2.5, target: 'enemy', reach: 'any', dualHeal: true,
@@ -280,7 +320,7 @@ def({ id: 'blood_pact', name: 'Blood Pact', kind: 'active', archetype: 'healer',
 def({ id: 'conscript', name: 'Conscript', kind: 'active', archetype: null, forbidden: true,
   power: 0, target: 'postVictory', reach: 'any',
   warning: 'This skill will cost you. Not today.',
-  desc: 'Take a defeated named opponent into your service.',
+  desc: 'Take every defeated named opponent into your service.',
   tiers: {
     basic:        { name: 'Conscript',   duration: 3, cap: 2 },
     intermediate: { name: 'Conscript+',  duration: 4, cap: 3 },
@@ -289,7 +329,7 @@ def({ id: 'conscript', name: 'Conscript', kind: 'active', archetype: null, forbi
 def({ id: 'necromancy', name: 'Necromancy', kind: 'active', archetype: null, forbidden: true,
   power: 0, target: 'postVictory', reach: 'any',
   warning: 'This skill will cost you. Not today.',
-  desc: 'Raise the fallen to fight the rest of this contract. They crumble when the quest ends — they do not walk to the next one.',
+  desc: 'Raise every fallen foe to fight the rest of this contract. They crumble when the quest ends — they do not walk to the next one.',
   tiers: {
     basic:        { name: 'Necromancy',    cap: 1, risenPower: 1.5 },
     intermediate: { name: 'Necromancy+',   cap: 2, risenPower: 2.0 },
@@ -398,8 +438,8 @@ ADV.DATA.SKILLS = S;
 // Skill sets by archetype for seeding / trainer grouping
 // ---- Debuff kit (request 14): the four things the new contracts throw at you
 def({ id: 'venom_fang', name: 'Venom Fang', kind: 'active', archetype: 'rogue',
-  power: 1.6, reach: 'front', target: 'enemy', melee: true,
-  desc: 'A shallow, dirty cut: Poison and Bleed in one stab, both stacking with every bite.',
+  power: 1.6, reach: 'front', target: 'enemy', melee: true, fullHpBackstabPct: 0.8,
+  desc: 'A shallow, dirty cut: Poison and Bleed in one stab, both stacking. Against a target at full health it hits like most of a Backstab.',
   tiers: {
     basic:        { name: 'Venom Fang',  status: { poison: { power: 0.6, rounds: 3, stacks: true }, bleed: { power: 0.6, rounds: 3, stacks: true } } },
     intermediate: { name: 'Black Fang',  status: { poison: { power: 0.8, rounds: 3, stacks: true }, bleed: { power: 0.8, rounds: 3, stacks: true } } },
@@ -432,20 +472,21 @@ def({ id: 'wither_touch', name: 'Wither Touch', kind: 'active', archetype: 'drui
 
 ADV.DATA.ARCHETYPE_SKILLS = {
   mage:    { perk: 'arcane_focus', actives: ['fire_bolt', 'frost_touch', 'spark'] },
-  tank:    { perk: 'bulwark',      actives: ['shield_wall', 'taunt'] },
-  rogue:   { perk: 'opportunist',  actives: ['backstab', 'smoke_bomb'] },
+  tank:    { perk: 'bulwark',      actives: ['shield_wall', 'taunt', 'stand_fast'] },
+  rogue:   { perk: 'opportunist',  actives: ['backstab', 'smoke_bomb', 'shadow_rise'] },
   ranger:  { perk: 'marksman',     actives: ['aimed_shot', 'snare'] },
-  fighter: { perk: 'momentum',     actives: ['cleave', 'sunder'] },
-  druid:   { perk: 'wild_form',    actives: ['thorn_skin', 'beast_shape'] },
-  healer:  { perk: 'devoted',      actives: ['mend', 'cleanse', 'regenerate', 'guardian_ward', 'triage', 'blood_pact'] },
+  fighter: { perk: 'momentum',     actives: ['cleave', 'sunder', 'defiant_stand'] },
+  druid:   { perk: 'wild_form',    actives: ['thorn_skin', 'beast_shape', 'grove_raise'] },
+  healer:  { perk: 'devoted',      actives: ['mend', 'cleanse', 'regenerate', 'guardian_ward', 'triage', 'blood_pact', 'raise'] },
 };
 
 // Gear sets (§10) — floor matching-archetype skills at level 10.
+// 800g sets also advance those skills one manifestation tier.
 ADV.DATA.GEAR_SETS = {
-  warrior: { name: 'Warrior Set', archetypes: ['tank', 'fighter'], cost: 800 },
-  ranger:  { name: 'Ranger Set',  archetypes: ['ranger', 'rogue'], cost: 800 },
-  mage:    { name: 'Mage Set',    archetypes: ['mage', 'druid'],   cost: 800 },
-  healer:  { name: 'Healer Set',  archetypes: ['healer'],          cost: 800 },
+  warrior: { name: 'Warrior Set', archetypes: ['tank', 'fighter'], cost: 800, advanceTier: true },
+  ranger:  { name: 'Ranger Set',  archetypes: ['ranger', 'rogue'], cost: 800, advanceTier: true },
+  mage:    { name: 'Mage Set',    archetypes: ['mage', 'druid'],   cost: 800, advanceTier: true },
+  healer:  { name: 'Healer Set',  archetypes: ['healer'],          cost: 800, advanceTier: true },
   // Single-class: cheaper, one silhouette. Cross-class: you pay for breadth.
   plate:      { name: 'Plate Harness',   archetypes: ['tank'],            cost: 400 },
   duelist:    { name: "Duelist's Kit",   archetypes: ['fighter'],         cost: 400 },
