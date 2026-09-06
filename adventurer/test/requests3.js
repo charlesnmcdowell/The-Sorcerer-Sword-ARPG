@@ -210,7 +210,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const foe = ADV.Combat.lowestHealth(ADV.Combat.validTargets(st, uh, 'fire_bolt', false));
   eq(foe && foe.ch, e1, 'offensive auto picks the lowest-health enemy');
   ok(ADV.Combat.skillNeedsAuto(healer, 'fire_bolt', false), 'Fire Bolt offers auto');
-  ok(!ADV.Combat.skillNeedsAuto(healer, 'smoke_bomb', false), 'self-only skills skip auto');
+  ok(ADV.Combat.skillNeedsAuto(healer, 'smoke_bomb', false), 'self-only skills can be set to auto');
   ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
   ok(ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'auto flag sticks on the skill');
   ADV.Combat.setSkillAuto(healer, 'mend', true, false);
