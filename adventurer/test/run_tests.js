@@ -242,6 +242,48 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   eq(ADV.Rel.score(world, man.id, woman.id), -100, 'jilted partner drops to -100 permanently');
 })();
 
+(function () {
+  console.log('\n-- Vault unshares on death or a jilt with no replacement --');
+  const world = ADV.World.create(778);
+  const man = world.characters.find(c => c.sex === 'm');
+  const woman = world.characters.find(c => c.sex === 'f');
+  man.inventory.gold = 400;
+  ADV.Rel.move(world, woman.id, man.id, 60, 'romance');
+  ADV.Rel.move(world, man.id, woman.id, 60, 'romance');
+  ADV.Rel.commit(world, man.id, woman.id);
+  const v = ADV.Vault.of(world, woman);
+  ok(v && v.sharedWithId === man.id, 'married vault is shared');
+  ADV.Rel.jilt(world, woman, man);
+  eq(v.sharedWithId, null, 'jilt with no new husband clears the share');
+  eq(man.vaultId, null, 'jilted man has no vault pointer');
+  ok(!ADV.Vault.of(world, man), 'jilted man cannot open her vault');
+  eq(ADV.Vault.withdrawalCap(world, v, woman).state, 'own', 'she draws as the sole holder');
+
+  const world2 = ADV.World.create(779);
+  const hus = world2.characters.find(c => c.sex === 'm');
+  const wife = world2.characters.find(c => c.sex === 'f');
+  hus.inventory.gold = 300;
+  ADV.Rel.move(world2, wife.id, hus.id, 60, 'romance');
+  ADV.Rel.move(world2, hus.id, wife.id, 60, 'romance');
+  ADV.Rel.commit(world2, hus.id, wife.id);
+  ADV.Death.finalize(world2, hus, null, 'quest');
+  const wv = ADV.Vault.of(world2, wife);
+  ok(wv && !ADV.Vault.livingShare(world2, wv), 'widow\'s vault is no longer shared');
+  eq(ADV.Vault.withdrawalCap(world2, wv, wife).state, 'own', 'widow draws without a cap');
+  ok(!ADV.Vault.of(world2, hus), 'dead husband has no vault access');
+
+  const world3 = ADV.World.create(780);
+  const h3 = world3.characters.find(c => c.sex === 'm');
+  const w3 = world3.characters.find(c => c.sex === 'f');
+  h3.inventory.gold = 250;
+  ADV.Rel.move(world3, w3.id, h3.id, 60, 'romance');
+  ADV.Rel.move(world3, h3.id, w3.id, 60, 'romance');
+  ADV.Rel.commit(world3, h3.id, w3.id);
+  ADV.Death.finalize(world3, w3, null, 'quest');
+  ok(!ADV.Vault.of(world3, h3), 'widower loses access to her vault');
+  ok(!h3.vaultId, 'widower vault pointer is cleared');
+})();
+
 // ============================================================ forbidden & divine
 (function () {
   console.log('\n-- Conscription & Divine Intervention (§3a) --');
