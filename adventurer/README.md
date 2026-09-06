@@ -512,3 +512,74 @@ almost every control lands under 44 CSS px (hub menu items, skill rows,
 combat bar). The padded zones help near-misses; the real fix is a layout pass
 that gives phone-critical controls ≥ 96 game px of height, or a narrower
 design grid on phones.
+
+## Expression pass (EXPRESSION_PROMPT.md)
+
+Faces now react. Everything is an overlay painted from `META[key]` anchors over
+the one cached bust per look — no texture per mood.
+
+- **Palette (Part A).** `Portraits.MOODS` — 16 moods as geometry (brows as
+  3-point curves per side, lid openness, mouth curve/openness/side, accent) with
+  an intensity 0–1: neutral, content, happy, laughing, tender, sad, grief,
+  angry, furious, disgust, smug, afraid, surprised, pain, resolve, dazed.
+  `Portraits.express(scene, img, ch, key, mood, intensity)`; the old 5-mood
+  callers still work (`hurt` is not a mood any more — use `pain`).
+- **Monster rigs (Part D).** Wolf: ears flatten/forward, squint, snarl over the
+  fangs. Sentinel: visor lights change size, brightness and colour (red when
+  furious, one out when in pain, flicker when dazed). Human-frame enemies use
+  the human rig; the `isMonster` exclusion is gone.
+- **Standing mood (Part C).** `Portraits.moodFor(game, ch, context, {unit, st,
+  facingUndead, cleanse})` is the one chooser: combat state (dazed for
+  Frozen/Shock/undead/conscript; <25% HP → afraid, or **resolve** for bosses,
+  villains, heroes, survival-perk holders and the Severe/Disciplined/Composed
+  personalities, furious for bosses; <55% a held wince; my turn → angry;
+  taunted → furious; stealth → smug), then survival, then the last two ticks
+  of the feed (bereaved → grief, jilted → sad, married/birth → happy, fired/
+  robbed → angry), then relationship to the player (romantic → tender,
+  friendly → content, hatred → angry by magnitude; campaign rival → smug,
+  antagonist → furious/smug), then a resting bias per personality
+  (`PERSONALITY_BIAS`, all 61 filled in). `Portraits.stand(...)` wraps it.
+  Wired into the dialogue box, combat, the hub card, hall bosses, cutscenes,
+  the death screen, the quest-departure enemy preview and the Guild Roster
+  (which now draws a face beside every name; strangers are greyed and blank).
+- **Reactions (Part B).** `Portraits.react(scene, img, ch, key, mood, {ms,
+  intensity})` — queued transients at depth +4 with ease in/out. Combat: pain
+  on every hit scaled by damage (heavy hits also recoil the head and leave a
+  wound streak), surprised→pain on a crit/execute, content on a heal (tender
+  between kin), smug/laughing for the attacker on heavy hits and kills, afraid
+  on allies when one falls (grief for kin), furious when taunted, afraid when
+  fleeing, surprised across the ambushed side and when a Risen stands up.
+  Dialogue: the raw line's `[delivery]` tags map through `TAG_MOODS` (every
+  tag in the data is covered or in `TAG_IGNORE`; `test/expressions.js` fails
+  if a new one appears). `DialogueBox.showText` takes `{ raw }` for this.
+- **Presence (Part E).** `look()` gaze (actor → target, everyone → actor,
+  speaker → player, saccades at rest, ≥90 px only); `lipFlap()` from the VO
+  clip's amplitude via WebAudio with a word-count fallback, composed under the
+  mood's mouth; `motion()` nod/shake/tilt/recoil/slump; `skinState()` pale,
+  flush, poisoned, frozen rim, burning flicker, wound; a 6% camera punch on
+  crits (throttled 1.5 s). Hair shear on impact was not built.
+- **Drawing (Part F).** Almond eye whites, gradient iris with limbal ring and
+  specular, lower-lid line and lash flick; three-mark nose; two-tone lips with
+  philtrum and corner dots; cheekbone plane, jaw shadow onto the neck, brow-
+  ridge shadow, hair rim light; seeded hair strands and fringe shadow;
+  freckles on 30% of seeds, undertone shifts; crow's-feet at rank 6+.
+- **Body and costume (Part G).** `drawBody` paints a skin torso first: women
+  get narrower shoulders, collarbones and a natural bust contour under the
+  garment; men get lean/broad/heavy builds (trapezius, deltoid, pectoral
+  shading; rank-4+ fighters fill out). `PATTERNS` holds 12 costume recipes
+  (plate, leather_plate, lamellar, shinobi, pirate, navy, robe, ranger, hide,
+  dress, duelist, street) and every `SET_LOOK` entry is pattern + {base, trim,
+  metal} palette + flags (centre ridge, sun emblem, clan knot, pistol, gorget,
+  stole, pendant) — 24 sets, 24 costumes, same costume on both sexes.
+  Campaign-2 enemies wear their faction's kit (`FACTION_SET`) with their skin
+  tint as the base colour, so the three skins per type are real palette swaps;
+  a "plated_sentinel" portrait on a *human* faction enemy is a human in heavy
+  kit, not the construct. New headwear: `kabuto`.
+- **Tests.** `node test/expressions.js` (49 headless checks: palette shape,
+  baselines for all 61 personalities, tag coverage, `moodFor` matrix, gear-set
+  coverage) and `node test/browser_expressions.js` (16: roster moods, no
+  listener leak over 20 panel cycles, [laughs] reaction, enemy moods and rigs in
+  a live fight, pain reaction lifecycle, overlay paint cost, contact sheets).
+  `npm run sheets` writes /tmp/shots/sheet_*.png (moods × 2 sizes, wolf +
+  sentinel + faction enemies, creation grid, all sets × 2 sexes, greyscale
+  silhouette row) — look at them after any change to portraits.js.

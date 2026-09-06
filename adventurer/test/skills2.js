@@ -254,5 +254,53 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   ok(!blocked2.ok, 'intermediate Mend blocked under Root Field');
 })();
 
+(function () {
+  console.log('\n-- auto rotation skips a skill that cannot fire --');
+  const healer = mkCh({ isPlayer: true }); give(healer, 'mend', 1); give(healer, 'fire_bolt', 1);
+  const ally = mkCh({ name: 'Ally' });
+  const e1 = mkCh({ name: 'Hurt' }); const e2 = mkCh({ name: 'Healthy' });
+  const st = fight([healer, ally], [e1, e2], 41);
+  const uh = unit(st, healer), ua = unit(st, ally), u1 = unit(st, e1);
+  u1.chp = 40; ua.chp = ua.maxHp; uh.chp = uh.maxHp;
+  ADV.Combat.setSkillAuto(healer, 'mend', true, false);
+  ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
+  ok(ADV.Combat.skillAutoOn(healer, 'mend', false) && ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'both skills stay in the rotation');
+  const ready = ADV.Combat.autoReadyAction(st, uh);
+  eq(ready && ready.action.skillId, 'fire_bolt', 'full-party Mend is skipped; Fire Bolt fires instead');
+  eq(ready && ready.tgt.ch, e1, 'the fallback aims at the weakest enemy');
+  ua.chp = 20;
+  healer.autoIdx = 0;
+  const readyHeal = ADV.Combat.autoReadyAction(st, uh);
+  eq(readyHeal && readyHeal.action.skillId, 'mend', 'Mend is used once someone is actually hurt');
+})();
+
+(function () {
+  console.log('\n-- Venom Fang applies poison and bleed --');
+  const rogue = mkCh({ stats: { hp: 100, atk: 14, def: 8, spd: 14 } }); give(rogue, 'venom_fang', 1);
+  const foe = mkCh({ name: 'Mark', stats: { hp: 200, atk: 8, def: 6, spd: 8 } });
+  const st = fight(rogue, foe, 51);
+  const ur = unit(st, rogue), uf = unit(st, foe);
+  ADV.Combat.act(st, ur, { kind: 'skill', skillId: 'venom_fang', targetUid: uf.uid });
+  ok(uf.statuses.some(x => x.kind === 'poison'), 'Venom Fang poisons');
+  ok(uf.statuses.some(x => x.kind === 'bleed'), 'Venom Fang also bleeds');
+})();
+
+(function () {
+  console.log('\n-- poison hops to the next living foe --');
+  const hero = mkCh({ isPlayer: true, stats: { hp: 200, atk: 18, def: 8, spd: 14 } });
+  give(hero, 'venom_fang', 1);
+  const a = mkCh({ name: 'First', stats: { hp: 80, atk: 6, def: 8, spd: 8 } });
+  const b = mkCh({ name: 'Next', stats: { hp: 80, atk: 6, def: 2, spd: 8 } });
+  const st = fight(hero, [a, b], 61);
+  const uh = unit(st, hero), ua = unit(st, a), ub = unit(st, b);
+  ADV.Combat.act(st, uh, { kind: 'skill', skillId: 'venom_fang', targetUid: ua.uid });
+  ok(ua.statuses.some(x => x.kind === 'poison'), 'the first foe is poisoned');
+  ua.chp = 1;
+  ADV.Combat.act(st, uh, { kind: 'attack', targetUid: ua.uid });
+  ok(ua.downed, 'the poisoned foe dies');
+  ok(ub.statuses.some(x => x.kind === 'poison'), 'the poison lands on the next living foe');
+  ok(st.events.some(e => e.t === 'poisonHop' && e.from === ua.uid && e.to === ub.uid), 'the hop is logged');
+})();
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

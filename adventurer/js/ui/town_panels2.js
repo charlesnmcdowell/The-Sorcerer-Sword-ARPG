@@ -433,15 +433,24 @@ Panels.roster = function (scene, r) {
     // the stat line be the footnote.
     const human = Panels.rosterLine(world, p, c, { tier, spouses, kids, status });
     const sub = human || `rank ${c.rank} · ${trend} · ${status}${family} · ${skills}`;
-    left.addBtn(T().button(scene, r.x + 16, y, half - 24, 42, label, () => {
+    // a face beside every name, wearing what the simulation knows about them
+    // (expression pass): the roster stops being a spreadsheet of identical rows
+    if (c.alive) {
+      const pk = ADV.Portraits.key(scene, c);
+      const pimg = scene.add.image(r.x + 36, y + 21, pk).setDisplaySize(34, 43);
+      if (!known) pimg.setTint(0x777777);
+      left.add(pimg);
+      if (known && ADV.Portraits.stand) ADV.Portraits.stand(scene, pimg, game, c, pk, 'roster');
+    }
+    left.addBtn(T().button(scene, r.x + 58, y, half - 66, 42, label, () => {
       ADV.World.met(world, c.id);
       Panels.personDialog(scene, c);
     }, { size: 13, sub, subColor: T().relColor(tier), color: c.status === 'hero' ? T().css.gold : c.status === 'villain' ? T().css.blood : T().css.ink }));
     // the stats stay, one step quieter, under the human line
     // the button is 42 tall and renders the human line inside it; the stat line
     // sits BELOW the button, not on top of its subtitle
-    if (human) left.add(T().text(scene, r.x + 22, y + 44, `rank ${c.rank} · ${trend} · ${status} · ${skills}`,
-      { size: 10, color: T().css.inkFaint, wrap: half - 44 }));
+    if (human) left.add(T().text(scene, r.x + 64, y + 44, `rank ${c.rank} · ${trend} · ${status} · ${skills}`,
+      { size: 10, color: T().css.inkFaint, wrap: half - 86 }));
     y += human ? 66 : 48;
   }
   left.extend(y);
