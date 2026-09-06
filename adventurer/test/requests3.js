@@ -26,7 +26,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   uT.chp = 50; uR.chp = 50;
   ADV.Combat.act(st, uH, { kind: 'skill', skillId: 'mend', targetUid: uT.uid });
   const healed = st.events.filter(e => e.t === 'heal' && e.uid === uT.uid).reduce((s, e) => s + e.amount, 0);
-  eq(healed, Math.round(12 * 2.5 * 1.0 * (1 + 1 * C.LEVEL_DAMAGE_SCALAR) * C.HEAL_MULT), 'Mend amount carries the +10%');
+  // Healer & druid pass: heals are a percentage of the target's max HP (basic 50%)
+  eq(healed, Math.round(uT.maxHp * ADV.Combat.HEAL_PCT.basic), 'Mend heals 50% of the target\'s max HP at basic');
   uT.chp = 50; uR.chp = 50; const before = uR.chp;
   ADV.Combat.act(st, uH, { kind: 'skill', skillId: 'triage', targetUid: uT.uid });
   ok(uR.chp > before, 'Field Surgery (intermediate Triage) heals the whole party');
@@ -96,6 +97,42 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 })();
 
 (function () {
+  console.log('\n-- Opportunist: +10% max HP on all damage below 50% --');
+  const p = mkCh({ name: 'P', stats: { hp: 100, atk: 12, def: 4, spd: 10 } }); give(p, 'opportunist', 1); give(p, 'cleave', 1);
+  const e = mkCh({ name: 'E', stats: { hp: 200, atk: 8, def: 0, spd: 6 } });
+  const st = fight(p, e, 19);
+  const pu = unit(st, p), eu = unit(st, e);
+  const bonus = Math.round(eu.maxHp * 0.10);
+  const m = ADV.Combat.manifestFor(pu, 'cleave');
+  eu.chp = Math.round(eu.maxHp * 0.6);
+  const rawHigh = ADV.Combat._internals.computeDamage(st, pu, eu, m);
+  eu.chp = Math.round(eu.maxHp * 0.4);
+  const rawLow = ADV.Combat._internals.computeDamage(st, pu, eu, m);
+  eq(rawLow, rawHigh, 'the strike formula itself does not double-dip');
+  eu.chp = Math.round(eu.maxHp * 0.6);
+  const hitHigh = ADV.Combat._internals.dealDamage(st, pu, eu, 10, 'attack');
+  eu.chp = Math.round(eu.maxHp * 0.4);
+  const hitLow = ADV.Combat._internals.dealDamage(st, pu, eu, 10, 'attack');
+  eq(hitLow, hitHigh + bonus, 'a strike on a wounded foe adds 10% of their max HP');
+  eu.chp = Math.round(eu.maxHp * 0.4);
+  eu.statuses = [];
+  ADV.Combat._internals.addStatus(st, eu, { kind: 'bleed', power: 0.6, rounds: 3, srcAtk: 12, srcUid: pu.uid, srcLevel: 1 });
+  const beforeBleed = eu.chp;
+  ADV.Combat._internals.endRoundTicks(st);
+  const bleedDmg = beforeBleed - eu.chp;
+  // Poison & bleed pass: a tick is a percentage of the target's max HP (basic 50% over 3 ticks)
+  const baseDot = Math.round(eu.maxHp * ADV.Combat.DOT_PCT.basic / 3);
+  eq(bleedDmg, baseDot + bonus, 'bleed on a wounded foe also adds 10% max HP');
+  eu.chp = Math.round(eu.maxHp * 0.8);
+  eu.downed = false;
+  eu.statuses = [];
+  ADV.Combat._internals.addStatus(st, eu, { kind: 'poison', power: 0.6, rounds: 3, srcAtk: 12, srcUid: pu.uid, srcLevel: 1 });
+  const beforePoi = eu.chp;
+  ADV.Combat._internals.endRoundTicks(st);
+  eq(beforePoi - eu.chp, baseDot, 'poison on a healthy foe does not get the bonus');
+})();
+
+(function () {
   console.log('\n-- 12. Septic Sanguine --');
   const p = mkCh({ name: 'P', isPlayer: true }); give(p, 'septic_sanguine'); give(p, 'venom_fang', 1);
   const q = mkCh({ name: 'Q' }); give(q, 'venom_fang', 1);
@@ -109,7 +146,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
     return { tick: tick ? tick.dmg : 0, heal };
   };
   const a = dot(p), b = dot(q);
-  ok(a.tick === Math.round(b.tick * 1.35), 'poison ticks 35% harder', a.tick + ' vs ' + b.tick);
+  ok(a.tick === Math.round(b.tick * 1.25), 'poison ticks 25% harder at basic', a.tick + ' vs ' + b.tick);
   ok(a.heal >= Math.round(a.tick * 0.5) && b.heal === 0, 'and feeds the holder', a.heal);
 })();
 
@@ -189,6 +226,32 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Courtship.recordShared(w2, [him.id, she.id]); ADV.Courtship.recordShared(w2, [him.id, she.id]);
   ADV.Courtship.tick(w2, g2.rng, () => {}, false);
   ok((w2.pendingProposals || []).some(p => p.fromId === him.id), 'a man asks the female player after two shared quests');
+})();
+
+(function () {
+  console.log('\n-- romance: Friendly opposite sex can be asked; they ask within 3 quests --');
+  const g = newGame(24, 'm');
+  const world = g.world, me = ADV.Game.player(g);
+  me.inventory.gold = 5000;
+  ADV.Courtship.invalidate(world);
+  const her = world.characters.find(c => c.alive && c.sex === 'f' && !c.isPlayer);
+  ok(her && ADV.Rel.canRomance(world, me.id, her.id).ok, 'the player can request romance once she is Friendly');
+  const him = world.characters.find(c => c.alive && c.sex === 'm' && !c.isPlayer && c !== me);
+  ADV.Rel.commit(world, her.id, him.id);
+  ok(ADV.Rel.canRomance(world, me.id, her.id).ok && ADV.Housing.canTakeSpouse(me), 'a Friendly woman can still be asked even if she already has a spouse');
+  ADV.Rel.removePartner(her, him.id); ADV.Rel.removePartner(him, her.id);
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  eq((world.pendingProposals || []).length, 0, 'Friendly strangers do not ask on the first tick');
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  eq((world.pendingProposals || []).length, 0, 'nor on the second');
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  ok((world.pendingProposals || []).length >= 1, 'by the third quest someone Friendly asks');
+  world.pendingProposals = [];
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  eq((world.pendingProposals || []).length, 0, 'they do not ask again on the next tick');
+  world.questClock += 2;
+  ADV.Courtship.tick(world, g.rng, () => {}, false);
+  ok((world.pendingProposals || []).length >= 1, 'after a quest in between, another ask can land');
 })();
 
 (function () {

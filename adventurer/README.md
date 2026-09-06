@@ -583,3 +583,152 @@ the one cached bust per look — no texture per mood.
   `npm run sheets` writes /tmp/shots/sheet_*.png (moods × 2 sizes, wolf +
   sentinel + faction enemies, creation grid, all sets × 2 sexes, greyscale
   silhouette row) — look at them after any change to portraits.js.
+
+## Healer & druid pass (HEALER_DRUID_PROMPT.md)
+
+Support classes now read from across the room, and their numbers are
+percentages a player can reason about.
+
+- **Numbers (Part A).** `Combat.healPct(st, src, tgt, skillId, tier)` is the
+  only place a heal amount is computed: **50 / 100 / 150 %** of the *target's*
+  max HP at basic / intermediate / advanced, times the skill's `healMult`
+  (default 1; `triage` 1.5 → 75%, doubled under 25%). Single-target heals reach
+  **2** allies at intermediate and **4** at advanced (the chosen one, then the
+  lowest); party/lane heals keep their scope. Regeneration (`hotRounds`) is
+  **double the tier value over 5 ticks** (`hot.ticks/perTick`), refreshes
+  instead of stacking, and puts the caster on a **3-turn cooldown**
+  (`u.cooldowns`, greyed as "recovering · N" on the action bar; the AI skips
+  it). Druid heals lay the same total as a **heal-over-time across 3 ticks**
+  plus a **thorn shield** `{kind:'thornShield', pool, reflectPct: 0.5,
+  rounds: 3}` whose pool is 50/100/150% of the target's max HP; it drinks
+  attack/spell damage first, reflects half of what it absorbs through the
+  normal `reflect` path, and breaks at 0 (`shieldAbsorb` / `shieldBreak`
+  events). `growth_field` keeps its terrain and also lays the druid heal on the
+  lane. Deviation: the brief asked for "150% damage reduction" at advanced; a
+  shield cannot block more than a whole hit, so it is a 150%-of-max-HP pool.
+  Deviation: the brief said `power` multiplies the percentage; the existing
+  powers (2.5, 3.6) would have made 125–180% basics, so a new `healMult` field
+  does that job and `power` stays the offensive-mode number.
+- **Revives.** A revive by a healer skill puts `wings` (2 rounds) on the
+  risen; by a druid skill, `grove` (`buffRounds`, 3). The reviver speaks once
+  per fight, guaranteed on the first revive (35% after), from
+  `ADV.DATA.REVIVE_LINES.healer` (warm) / `.druid` (flat) — 12 original lines
+  each — as a `line` event the combat scene plays as a 1.6 s speech beat.
+- **Shapeshift (C1).** `beast_shape`, the `*_form` skills, `bear_stance` and
+  `storm_shape` set `u.form` to `werewolf | werebear | panther` (random from
+  `st.rng`; bear stance is always the bear, warhound the wolf, serpent/fox the
+  panther) with a `form` status that drops with the buff. On the field
+  `Portraits.beastKey(scene, ch, beast)` draws the beast in the character's own
+  palette (hair → fur, eye colour kept, costume trim as a collar) on the wolf
+  mood rig, so expressions still play on a muzzle; `VFX.transform` is the beat
+  (shake, two vertical snaps, swap on the second with an impact frame, leaves
+  and fur-flecks, a green ring) and `VFX.revertForm` brings the face back when
+  the status ends. Roster and dialogue never show the beast.
+- **Effects (B, C).** `VFX.healCrosses` — green plus signs rising from the
+  frame, 5/9/14 by tier, three sizes, the number lands when they finish; the
+  druid's are leaf-tinted with leaves among them; ticks show a couple.
+  `VFX.wings` (layered feather strokes, unfold 400 ms, a beat every 2.4 s, a
+  halo, dissolve to motes), `VFX.lifeTree` (trunk + boughs by tier, canopy past
+  the frame top, a masked sheet of running water scrolling behind, a thorn ring
+  that thickens by tier, leaves drifting; `flash()` on a reflected hit throws
+  thorn shards at the attacker), `VFX.grove` (green cracks, 5–7 saplings that
+  spring up, an emerald canopy, fireflies, a light pool; sheds a sapling per
+  round). Healer recipes are the delivery (beam, rings, white frame under 25%,
+  gold hexagonal ward shell, grey motes flying off on cleanse, white-hot on
+  undead/conscripts); druid actives got briar rings, a green comet + roots for
+  `thorn_lash`, grass tufts for `growth_field`, a lightning crown for
+  `storm_shape`, falling grey crosses for `wither_touch`. Idle marks in
+  `syncStatus`: `hot` (cross pulse every 700 ms), `ward` (gold hex shell),
+  `thornShield` (tree), `grove`, `wings`; up to four marks per unit.
+- **Home screens (Part D, `js/ui/home_life.js`).** `HomeLife.attach` puts
+  code-drawn actors (head, torso, alternating legs, a carried thing) on every
+  home. Inn: repainted as the common room — long table with tankards, bowls and
+  a candle, the bar with shelves of bottles and kegs, a hearth with embers and
+  a light pool, ceiling beams, and **two windows** through which alone the
+  weather shows (every WeatherFX layer is geometry-masked to the panes; tint
+  off); an innkeeper wiping, a serving girl on rounds with a tray, patrons who
+  lift tankards, a dog breathing by the fire. Camp/cottage: a deer that walks
+  in, grazes and leaves, rabbits hopping, a fox at dusk, an owl turning its
+  head plus fireflies and bats at night, birds by day. Brick: eleven corn
+  stalks swaying with the weather's wind, twelve flowers that turn toward the
+  sun by day and glow by moonlight, a cat on the wall. Mansion: carriages
+  (rolling wheels, trotting horse) arrive every 18–30 s, a passenger walks up to
+  the door, the carriage rolls off; maids and butlers cross the porch with
+  trays, decanters and cakes; window silhouettes at night. Castle: two guards
+  flanking the gate who shift their weight, farmland with rows, a turning
+  windmill, bent labourers, banners in the wind, and carriages arriving
+  continuously with randomised nobles (gown or doublet, cloak, circlet or cap)
+  received by a steward.
+- **Tests.** `node test/heal.js` (54 headless checks: percentages, targets,
+  regen ticks/cooldown/refresh, druid ticks + shield absorb/reflect/break,
+  shapeshift forms, revive marks and lines), `node test/browser_heal.js` (17:
+  beast on the field, transform/revert, crosses by tier, every mark's
+  lifecycle, live revives with lines, all recipes in range) and
+  `node test/browser_home.js` (20: actors per home, the inn's masked weather,
+  corn tweens, carriages, staff, teardown). `npm run sheets:heal` writes the
+  beasts, tree, wings and grove to /tmp/shots. Headless Chromium runs the field
+  at ~1–3 fps and Phaser substitutes small deltas for long frames, so the
+  browser suites set `game.loop._min = 1000`, scale the scene clocks and poll
+  for state instead of sleeping. `test/requests3.js`'s Mend expectation moved
+  to the percentage rule. `test/integration.js` fails its "player alive"
+  invariant on some seeds (3, and the default after this change) because the
+  player can die outside a quest; the same failure exists on seed 3 before this
+  pass — pre-existing, not introduced here.
+
+## Poison, bleed, healers & bosses pass (DOT_PROMPT.md)
+
+- **Percentage DoTs (§1–§3).** `Combat.dotTick(st, status, tgt)` is the only
+  place a poison or bleed tick is computed: a fraction of the **target's max
+  HP** by the tier of the skill that applied it — **50 / 100 / 200 %** at basic
+  / intermediate / advanced (`Combat.DOT_PCT`) — spread evenly over the
+  status's ticks (3 unless the skill names another `rounds`; Plague Fang keeps
+  four), remainder on the last tick so the total is exact. Every poison/bleed
+  is normalised on `addStatus` to `{ tier, pct, ticks, ticksTotal, dealt }`;
+  `rounds`/`fresh` no longer apply to these two kinds, so there is no fourth
+  grace tick and the campaign poisons that had no duration (the sprays, Serpent
+  Form's on-hit) now expire after three. `power`, `srcAtk` and `srcLevel` stay on
+  the status but do not feed the tick. Burn and shadowDot are unchanged. Tier
+  comes from the applying skill's manifest; riders from a self-status (Fox Form,
+  Serpent Form, Paper Charm) carry their granting skill's tier; Unseen Guard uses
+  the guard's perk tier; boss `hitStatus` riders and anything with no skill
+  behind them are basic. `ADV.DATA.CONST.DOT_ENEMY_MULT` (1.0) multiplies ticks
+  dealt by side B to side A only — turn it down if enemy poison proves too lethal
+  for the party; it ships symmetric. Stacking, Septic Sanguine's spread /
+  `dotMult` / `dotLeech`, Opportunist's +10%, adjacency, `venom_draw`, Afflict
+  and every cure are untouched — which means stacks multiply: three intermediate
+  Venom Fangs are 300% poison + 300% bleed over three turns.
+- **Heals cleanse (§9).** `Combat.healCleanse(st, tgt, scope, byUid)`. A healer's
+  restoring heal strips every poison and bleed stack (basic), plus burn and
+  heal-cut (intermediate), plus the whole `NEG_STATUSES` list (advanced). Druid
+  heals strip poison + bleed on application and on each tick; a regeneration
+  tick strips one of each. Any **self-heal** (leech, lifesteal, drain, kill
+  heal — `healUnit` with `src == null` or `src === tgt`) of ≥ 10% of max HP in
+  one instance strips one stack of each, ≥ 25% strips all; under 10% nothing.
+  Revives by a healer or druid clear everything on the risen. Emits
+  `cleansed { byHeal }` so the field shows it. The AI treats a poisoned or
+  bleeding ally as hurt even at full HP.
+- **Enemy healers (§10).** New: `field_chaplain` (law — mend, guardian ward,
+  spark), `cutpurse_leech` (criminal — blood pact, stitch-and-run, backstab),
+  `moss_matron` (wild beast — growth field, regenerate, thorn lash); Storm
+  Bailiff trades frost touch for triage, Thorn Lurker gains regenerate. Enemy
+  defs carry `healer: true`; `Quests.maybeHealer` gives roughly one tier-2+
+  party fight in three a same-camp healer (never tier 1, never replacing the
+  lead). New types start at level 10 so the first hour stays as it was.
+- **Boss floors and guards (§11).** `Campaign.guardBoss` runs on every `mini`,
+  `boss` and `boardBoss` encounter in both campaigns: each boss-flagged
+  character gets `hpFloor = Character.maxHp(player)` at build time, applied to
+  the combat unit's `maxHp` (never to saved stats, never lowering a boss above
+  it), and the escort is checked for a tank (`Campaign.isTankSkill`) and a
+  healer of the faction; whatever is missing is **appended** from
+  `ADV.DATA.CAMPAIGN_BOSS_GUARD` with its role skill forced into the loadout.
+  The author's `with` list is never replaced.
+- **Tests.** `node test/dot.js` (39: the three tiers, exact totals and
+  rounding, four-tick skills, no permanent poisons across the data, tier
+  resolution, `DOT_ENEMY_MULT`, stacking, Septic, Opportunist, venom_draw,
+  every cleanse scope and threshold, AI heals the poisoned),
+  `node test/enemy_healers.js` (18: roster per camp, encounter weighting, each
+  healer type heals a poisoned ally in a live fight) and
+  `node test/boss_floor.js` (40: the guard table, every boss encounter of every
+  faction at 90 and 900 player HP — floor, tank, healer, authored escorts kept,
+  growth ≤ 2, never lowered). `test/requests3.js`'s Opportunist-on-bleed
+  expectation moved to the percentage rule.

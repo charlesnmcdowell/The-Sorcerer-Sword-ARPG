@@ -130,6 +130,7 @@ const PARAM_LABEL = {
   retaliationPower: v => `retaliation ${v}× ATK each time a marked enemy attacks (ignores DEF)`,
   executeThreshold: v => `bonus vs targets under ${Math.round(v * 100)}% HP`,
   bonusMult: v => `bonus damage ×${v}`,
+  bonusHpPct: v => `+${Math.round(v * 100)}% of the target's max HP as extra damage (strikes, bleed, and poison)`,
   killRefundsAction: () => 'kills refund the action (act again)',
   backLaneBonus: v => `×${v} damage while you stand in the back lane`,
   ignoreCover: () => 'ignores lane cover',
@@ -142,8 +143,14 @@ const PARAM_LABEL = {
   thirdHitTwice: () => 'every 3rd consecutive attacking turn strikes twice',
   cleaveRows: v => v === 1 ? "hits the target's row" : `hits ${v} rows around the target`,
   hitScale: () => 'damage is multiplied by the number of enemies hit',
-  status: v => 'inflicts: ' + Object.entries(v).map(([k, s]) =>
-    `${k}${s.stacks ? ' (STACKS)' : ''} ${s.power}× ATK/2 per round, ${s.rounds} rounds`).join('; '),
+  status: (v, tier) => 'inflicts: ' + Object.entries(v).map(([k, s]) => {
+    // poison & bleed are a percentage of the target's max HP by tier (DOT_PROMPT.md §1)
+    if ((k === 'poison' || k === 'bleed') && ADV.Combat && ADV.Combat.DOT_PCT) {
+      const pct = ADV.Combat.DOT_PCT[tier || 'basic'] || 0.5, n = s.rounds || 3;
+      return `${k}${s.stacks ? ' (STACKS)' : ''}: ${Math.round(pct * 100)}% of the target's health over ${n} turns`;
+    }
+    return `${k}${s.stacks ? ' (STACKS)' : ''} ${s.power}× ATK/2 per round, ${s.rounds} rounds`;
+  }).join('; '),
   defStrip: v => `strips ${v} DEF for the battle (counters Armored +${C().ARMORED_BONUS_DEF})`,
   defStripAll: () => 'strips ALL DEF for the battle',
   delayTarget: () => 'target acts later this round (SPD −4 in the order)',
@@ -155,6 +162,10 @@ const PARAM_LABEL = {
   evadeNext: v => `evades the next ${v} attack(s)`,
   untargetableRounds: v => `untargetable for ${v} round(s)`,
   freeStrike: () => 'plus a free 2.0-power strike',
+  freeAction: () => 'free action — does not end your turn; you may still use another skill',
+  fullHpBackstabPct: v => `against a target at full health, deals ${Math.round(v * 100)}% of a Backstab`,
+  dotMult: v => `bleed and poison damage ×${v}`,
+  dotLeech: v => `heal ${Math.round(v * 100)}% of the bleed and poison damage you deal`,
   counterNext: v => `negates the next ${v} attack(s) and reflects the damage`,
   thornPct: v => `reflects ${Math.round(v * 100)}% of damage taken`,
   thornScope: v => `thorns cover: ${v}`,
@@ -177,7 +188,16 @@ const PARAM_LABEL = {
   wardReflect: () => 'ward reflects the blocked damage',
   doubleBelow: v => `doubled on targets under ${Math.round(v * 100)}% HP`,
   fullHealBelow: v => `FULL heal on targets under ${Math.round(v * 100)}% HP`,
-  revive: () => 'revives a downed ally at 40% HP',
+  revive: () => 'revives fallen allies',
+  reviveHp: v => `returns at ${Math.round(v * 100)}% HP`,
+  reviveCount: v => v > 1 ? `raises up to ${v} fallen allies` : 'raises one fallen ally',
+  selfRevive: () => 'triggers automatically when you fall — cannot be clicked',
+  reviveUses: v => v === 1 ? 'once per battle' : `up to ${v} times per battle`,
+  reviveAtkMult: v => `+${Math.round((v - 1) * 100)}% damage after rising`,
+  reviveBuffRounds: v => `the rise buff lasts ${v} turn(s)`,
+  reviveStealthRounds: v => `rises invisible for ${v} turn(s)`,
+  reviveEvade: v => `evades the next ${v} attack(s) after rising`,
+  grantSelfTurn: v => `takes ${v} extra turn(s) after rising`,
   oncePerBattle: () => 'once per battle',
   dualHeal: () => 'damages the enemy AND heals allies for the same amount',
   healTargets: v => `heals ${v === 'party' ? 'the whole party' : v + ' most-wounded ally(s)'}`,
@@ -290,12 +310,12 @@ const SKIP_KEYS = new Set(['name', 'note', 'tiers', 'id', 'kind', 'archetype', '
   'target', 'reach', 'offensive', 'heal', 'elemental', 'universal', 'unique', 'noSlot',
   'forbidden', 'social', 'warning', 'katana', 'noTierGrowth', 'faction', 'campaign', 'tier']);
 
-function paramLines(data) {
+function paramLines(data, tier) {
   const out = [];
   for (const [k, v] of Object.entries(data)) {
     if (SKIP_KEYS.has(k) || v == null || v === false) continue;
     const f = PARAM_LABEL[k];
-    out.push('  · ' + (f ? f(v) : `${k}: ${JSON.stringify(v)}`));
+    out.push('  · ' + (f ? f(v, tier) : `${k}: ${JSON.stringify(v)}`));
   }
   return out;
 }
@@ -347,7 +367,7 @@ const SkillInfo = {
     }
 
     // current-tier parameters (the backend truth)
-    const pl = paramLines(data);
+    const pl = paramLines(data, tier);
     if (pl.length) { L.push('this tier does:'); L.push(...pl); }
 
     // offensive mode
@@ -361,7 +381,7 @@ const SkillInfo = {
     for (const tname of ['basic', 'intermediate', 'advanced']) {
       if (tname === tier || sk.noTierGrowth) continue;
       const td = Object.assign({}, sk, sk.tiers[tname]);
-      const diffs = paramLines(sk.tiers[tname]);
+      const diffs = paramLines(sk.tiers[tname], tname);
       L.push(`${tname} (×${C().TIER_MULT[tname]}): ${td.name}${diffs.length ? ' — ' + diffs.map(s => s.replace('  · ', '')).join('; ') : ''}`);
     }
 
@@ -387,7 +407,12 @@ const GearSetInfo = {
     const floor = set.floor || C().GEAR_SET_FLOOR_LEVEL;
     const L = [];
     L.push(set.name);
-    L.push(`Floors matching skills at level ${floor} (Intermediate if they were lower).`);
+    if (set.advanceTier || set.cost >= (C().GOLD.gearSet || 800)) {
+      L.push(`Advances matching skills one tier (Intermediate skills become Advanced). Floors the rest at level ${floor}.`);
+    } else {
+      L.push(`Floors matching skills at level ${floor} (Intermediate if they were lower).`);
+    }
+    L.push('Matching skills and perks use an unlimited armor slot while you wear this — they do not spend your skill or perk slots.');
     L.push('Archetypes: ' + (set.archetypes || []).join(', '));
     if (set.extraSkills && set.extraSkills.length) {
       L.push('Also floors: ' + set.extraSkills.map(id => (ADV.DATA.SKILLS[id] && ADV.DATA.SKILLS[id].name) || id).join(', '));
