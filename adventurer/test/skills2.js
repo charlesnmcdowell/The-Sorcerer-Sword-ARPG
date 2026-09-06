@@ -140,11 +140,24 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   eq(st5.turnQueue.filter(t => t.uid === unit(st5, lk).uid).length, 2, 'Lightning King acts twice per round');
 })();
 
-// ---------------- 5. smoke bomb durations ----------------
+// ---------------- 5. smoke bomb durations / cooldown; backstab power ----------------
 (function () {
   console.log('\n-- 5. Vanish / Shadowstep duration --');
   eq(ADV.DATA.SKILLS.smoke_bomb.tiers.intermediate.untargetableRounds, 2, 'Vanish: 2 rounds');
   eq(ADV.DATA.SKILLS.smoke_bomb.tiers.advanced.untargetableRounds, 3, 'Shadowstep: 3 rounds');
+  const rogue = mkCh({}); give(rogue, 'smoke_bomb', 1); give(rogue, 'backstab', 1);
+  const foe = ADV.Character.makeEnemy(new ADV.RNG(6), 'bandit', { level: 3 });
+  const st = fight(rogue, foe, 51);
+  const ur = unit(st, rogue);
+  ADV.Combat.act(st, ur, { kind: 'skill', skillId: 'smoke_bomb', targetUid: ur.uid });
+  eq(ADV.Combat.cooldownLeft(ur, 'smoke_bomb'), 3, 'basic Smoke Bomb: cooldown 3');
+  const again = ADV.Combat.act(st, ur, { kind: 'skill', skillId: 'smoke_bomb', targetUid: ur.uid });
+  ok(!again.ok, 'refused while recovering');
+  const bs = ADV.SkillSys.manifest(rogue, rogue.actives.find(a => a.skillId === 'backstab'));
+  eq(bs.data.power, 3, 'basic Backstab is half power (3.0)');
+  rogue.actives.find(a => a.skillId === 'backstab').level = 10;
+  const bs2 = ADV.SkillSys.manifest(rogue, rogue.actives.find(a => a.skillId === 'backstab'));
+  eq(bs2.data.power, 6, 'Throat Cut keeps the old 6.0');
 })();
 
 // ---------------- 6. bribes ----------------
@@ -159,73 +172,47 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   ADV.Rel.move(world, hater.id, p.id, -100, 'murder', { set: true });
   const offer = ADV.Game.bribeOffer(game, hater);
   ok(offer && offer.fee > 0 && offer.chance === 0.4, 'offer exists for a hater (Charm L1: 40%)', JSON.stringify(offer));
-  const charm = p.perks.find(e => e.skillId === 'charm');
+  const charm = p.perks.find(e => e.skillId === 'charm') || p.actives.find(e => e.skillId === 'charm');
+  const st1 = fight([p], [hater], 71);
+  st1.rng = { chance: () => true, float: () => 0, pick: a => a[0], int: (a) => a, shuffle: a => a, fork: () => st1.rng };
+  const r1 = ADV.Combat.act(st1, unit(st1, p), { kind: 'bribe', targetUid: unit(st1, hater).uid, fee: offer.fee, chance: offer.chance });
+  ok(r1.ok && r1.success && unit(st1, hater).fled, 'basic Charm: bribed enemy walks away');
   charm.level = 25; charm.uses = 250;
   const offerAdv = ADV.Game.bribeOffer(game, hater);
   ok(offerAdv && offerAdv.chance === 0.8, 'Charm at advanced bribes at 80%');
   ok(!ADV.Game.bribeOffer(game, ADV.Character.makeEnemy(new ADV.RNG(8), 'bandit', {})), 'no bribing monsters');
-  const st = fight([p], [hater], 71);
-  st.rng = { chance: () => true, float: () => 0, pick: a => a[0], int: (a) => a, shuffle: a => a, fork: () => st.rng }; // force success
-  const up = unit(st, p), uh = unit(st, hater);
-  const r = ADV.Combat.act(st, up, { kind: 'bribe', targetUid: uh.uid, fee: offer.fee, chance: offer.chance });
-  ok(r.ok && r.success && uh.fled, 'bribed enemy walks away');
-  eq(p.inventory.gold, 500 - offer.fee, 'fee deducted');
+  const hater2 = world.characters.find(c => !c.isPlayer && c !== hater) || hater;
+  ADV.Rel.move(world, hater2.id, p.id, -100, 'murder', { set: true });
+  p.inventory.gold = 500;
+  const st = fight([p], [hater2], 72);
+  st.rng = { chance: () => true, float: () => 0, pick: a => a[0], int: (a) => a, shuffle: a => a, fork: () => st.rng };
+  const up = unit(st, p), uh = unit(st, hater2);
+  const r = ADV.Combat.act(st, up, { kind: 'bribe', targetUid: uh.uid, fee: offerAdv.fee, chance: offerAdv.chance });
+  ok(r.ok && r.success && uh.side === 'a' && !uh.fled, 'Beguile recruits the bribed enemy for this fight');
+  eq(p.inventory.gold, 500 - offerAdv.fee, 'fee deducted');
   ok(st.over && st.winner === 'a', 'battle ends when the last enemy is bought off');
 })();
 
-// ---------------- 7. cleanse family ----------------
+// ---------------- 7. Holy Smite (was Cleanse) ----------------
 (function () {
-  console.log('\n-- 7. Cleanse / Purify / Absolution --');
-  // basic: cure ALL + smite undead
+  console.log('\n-- 7. Holy Smite --');
   const priest = mkCh({}); give(priest, 'cleanse', 1);
-  const ally = mkCh({ name: 'Ally', archetypeInclination: ['tank'] });
-  const foes = [ADV.Character.makeEnemy(new ADV.RNG(9), 'bandit', {})];
-  const stA = fight([ally, priest], foes, 81);
-  const uPriest = unit(stA, priest), uAlly = unit(stA, ally);
-  uAlly.statuses.push({ kind: 'burn', rounds: 3, power: 1 }, { kind: 'frozen', skips: 1 }, { kind: 'shocked', pct: 0.1, rounds: 2 });
-  ADV.Combat.act(stA, uPriest, { kind: 'skill', skillId: 'cleanse', targetUid: uAlly.uid });
-  eq(uAlly.statuses.filter(x => ['burn', 'frozen', 'shocked'].includes(x.kind)).length, 0, 'basic Cleanse strips every negative status');
-
-  // undead smite + conscript freeing
-  const und = mkCh({ name: 'Walker', isUndead: true });
-  const consc = mkCh({ name: 'Chained', isConscript: true, conscriptorId: 'x' });
-  const stB = fight([priest], [und, consc], 91);
-  const uP2 = unit(stB, priest), uU = unit(stB, und), uC = unit(stB, consc);
-  const pool = ADV.Combat.validTargets(stB, uP2, 'cleanse', false);
-  ok(pool.includes(uU) && pool.includes(uC), 'cleanse can target enemy undead and conscripts');
-  const hpU = uU.chp;
-  ADV.Combat.act(stB, uP2, { kind: 'skill', skillId: 'cleanse', targetUid: uU.uid });
-  ok(uU.chp < hpU, 'cleanse smites the undead', hpU - uU.chp);
-  ADV.Combat.act(stB, uP2, { kind: 'skill', skillId: 'cleanse', targetUid: uC.uid });
-  ok(consc.__freedByCleanse && uC.fled, 'conscript freed and leaves the battle');
-
-  // purify: immunity + conscription block
-  const priest2 = mkCh({}); give(priest2, 'cleanse', 12); // intermediate
-  const stC = fight([priest2], [ADV.Character.makeEnemy(new ADV.RNG(10), 'bandit', {})], 101);
-  const uP3 = unit(stC, priest2);
-  ADV.Combat.act(stC, uP3, { kind: 'skill', skillId: 'cleanse', targetUid: uP3.uid });
-  ok(uP3.statuses.some(x => x.kind === 'purified' && x.rounds === 3), 'Purify grants 3-round immunity');
-  ADV.Combat.addStatus ? null : null;
-  const stCount = uP3.statuses.length;
-  // try to burn the purified target
-  const arso = mkCh({}); give(arso, 'fire_bolt', 1);
-  // simulate via a direct act from a fresh foe inside same battle is complex; test addStatus path:
-  uP3.statuses.push; // no-op
-  ADV.Combat.exportHp(stC);
-  ok(priest2.__purifiedAtEnd, 'purified flag survives combat end');
-  const denied = ADV.Divine.resolveDefeated({ pendingPopulation: [], questClock: 0, characters: [], edges: [] },
-    new ADV.RNG(1), (() => { const v = mkCh({}); give(v, 'conscript', 1); return v; })(), priest2, 'conscript', () => {});
-  ok(denied.error && /warded/.test(denied.error), 'purified defeated cannot be conscripted');
-
-  // absolution: unraise undead ally, 6-round immunity
-  const priest3 = mkCh({}); give(priest3, 'cleanse', 25); // advanced
-  const undAlly = mkCh({ name: 'RaisedFriend', isUndead: true, raisedById: 'necro1' });
-  const stD = fight([priest3, undAlly], [ADV.Character.makeEnemy(new ADV.RNG(11), 'bandit', {})], 111);
-  const uP4 = unit(stD, priest3), uUA = unit(stD, undAlly);
-  ADV.Combat.act(stD, uP4, { kind: 'skill', skillId: 'cleanse', targetUid: uUA.uid });
-  ok(undAlly.__unraised, 'Absolution marks the undead for restoration to life');
-  ADV.Combat.act(stD, uP4, { kind: 'skill', skillId: 'cleanse', targetUid: uP4.uid });
-  ok(uP4.statuses.some(x => x.kind === 'purified' && x.rounds === 6), 'Absolution immunity lasts 6 rounds');
+  const foe = ADV.Character.makeEnemy(new ADV.RNG(9), 'bandit', {});
+  const st = fight([priest], [foe], 81);
+  const uP = unit(st, priest), uF = unit(st, foe);
+  uF.evade = 0;
+  const hp = uF.chp;
+  const r = ADV.Combat.act(st, uP, { kind: 'skill', skillId: 'cleanse', targetUid: uF.uid });
+  ok(r.ok && uF.chp < hp, 'Holy Smite damages the enemy');
+  ok(uF.statuses.some(x => x.kind === 'burn'), 'applies burn');
+  const w = uF.statuses.find(x => x.kind === 'withering');
+  ok(w && w.rounds === 2, 'applies wither for 2 turns');
+  const healed = ADV.Combat._internals.healUnit(st, uP, uF, 80);
+  eq(healed, 0, 'withered target cannot receive healing');
+  const ally = mkCh({ name: 'Ally' });
+  const st2 = fight([priest, ally], [ADV.Character.makeEnemy(new ADV.RNG(10), 'bandit', {})], 82);
+  const pool = ADV.Combat.validTargets(st2, unit(st2, priest), 'cleanse', false);
+  ok(pool.every(x => x.side === 'b'), 'Holy Smite targets enemies, not allies');
 })();
 
 // ---------------- 8. snare seals ----------------

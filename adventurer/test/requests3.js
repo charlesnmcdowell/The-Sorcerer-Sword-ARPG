@@ -120,8 +120,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const beforeBleed = eu.chp;
   ADV.Combat._internals.endRoundTicks(st);
   const bleedDmg = beforeBleed - eu.chp;
-  // Poison & bleed pass: a tick is a percentage of the target's max HP (basic 50% over 3 ticks)
-  const baseDot = Math.round(eu.maxHp * ADV.Combat.DOT_PCT.basic / 3);
+  const baseDot = Math.round(eu.maxHp * ADV.Combat.DOT_PCT.basic / ADV.Combat.DOT_TICKS);
   eq(bleedDmg, baseDot + bonus, 'bleed on a wounded foe also adds 10% max HP');
   eu.chp = Math.round(eu.maxHp * 0.8);
   eu.downed = false;

@@ -681,22 +681,19 @@ percentages a player can reason about.
   place a poison or bleed tick is computed: a fraction of the **target's max
   HP** by the tier of the skill that applied it — **50 / 100 / 200 %** at basic
   / intermediate / advanced (`Combat.DOT_PCT`) — spread evenly over the
-  status's ticks (3 unless the skill names another `rounds`; Plague Fang keeps
-  four), remainder on the last tick so the total is exact. Every poison/bleed
-  is normalised on `addStatus` to `{ tier, pct, ticks, ticksTotal, dealt }`;
-  `rounds`/`fresh` no longer apply to these two kinds, so there is no fourth
-  grace tick and the campaign poisons that had no duration (the sprays, Serpent
-  Form's on-hit) now expire after three. `power`, `srcAtk` and `srcLevel` stay on
-  the status but do not feed the tick. Burn and shadowDot are unchanged. Tier
-  comes from the applying skill's manifest; riders from a self-status (Fox Form,
-  Serpent Form, Paper Charm) carry their granting skill's tier; Unseen Guard uses
-  the guard's perk tier; boss `hitStatus` riders and anything with no skill
-  behind them are basic. `ADV.DATA.CONST.DOT_ENEMY_MULT` (1.0) multiplies ticks
-  dealt by side B to side A only — turn it down if enemy poison proves too lethal
-  for the party; it ships symmetric. Stacking, Septic Sanguine's spread /
-  `dotMult` / `dotLeech`, Opportunist's +10%, adjacency, `venom_draw`, Afflict
-  and every cure are untouched — which means stacks multiply: three intermediate
-  Venom Fangs are 300% poison + 300% bleed over three turns.
+  status's ticks (`Combat.DOT_TICKS` = **6**; authoring that still says
+  `rounds: 3` stretches to 6, and any other length is scaled the same way so
+  Plague Fang's 4 becomes 8), remainder on the last tick so the total is exact.
+  Every poison/bleed is normalised on `addStatus` to
+  `{ tier, pct, ticks, ticksTotal, dealt }`; `rounds`/`fresh` no longer apply
+  to these two kinds. `power`, `srcAtk` and `srcLevel` stay on the status but
+  do not feed the tick. Burn and shadowDot are unchanged. Tier comes from the
+  applying skill's manifest; riders from a self-status (Fox Form, Serpent Form,
+  Paper Charm) carry their granting skill's tier; Unseen Guard uses the guard's
+  perk tier; boss `hitStatus` riders and anything with no skill behind them are
+  basic. `ADV.DATA.CONST.DOT_ENEMY_MULT` (1.0) multiplies ticks dealt by side B
+  to side A only. Stacking is unchanged: three intermediate Venom Fangs are
+  still 300% poison + 300% bleed, now over six turns.
 - **Heals cleanse (§9).** `Combat.healCleanse(st, tgt, scope, byUid)`. A healer's
   restoring heal strips every poison and bleed stack (basic), plus burn and
   heal-cut (intermediate), plus the whole `NEG_STATUSES` list (advanced). Druid
@@ -732,3 +729,91 @@ percentages a player can reason about.
   faction at 90 and 900 player HP — floor, tank, healer, authored escorts kept,
   growth ≤ 2, never lowered). `test/requests3.js`'s Opportunist-on-bleed
   expectation moved to the percentage rule.
+
+## Skill audit (SKILL_AUDIT_PROMPT.md)
+
+Every skill in `skills.js` / `campaign_skills.js` / `campaign2_skills.js` /
+`monster_skills.js` now manifests, targets, plans and acts at levels 1 / 10 / 25
+without throwing. Data keys the descriptions promised are read through
+`SkillSys.knownVal` / `knownSum` / `knownProduct` instead of hardcoded skill
+ids. Title perks that only had an `advanced` stub, and uniques whose three
+tiers were identical, are `noTierGrowth: true` so tooltips stop promising a
+"+" / advanced form.
+
+- **Bulwark+ / Rampart.** `protectAdjacent` was tooltip-only; the guard now
+  covers adjacent-lane allies.
+- **Charm → Beguile.** `recruitForEncounter` was dead; a successful bribe now
+  flips the target onto your side for the rest of the fight instead of fleeing.
+- **True Rest.** `oneShotUndead` now actually kills undead in the hit loop.
+- **Master Swordsman.** `katanaFreeSlots` (was hardcoded to this id) is a real
+  data key: any perk that sets it exempts katana actives from the slot cap.
+- **Lone Wolf.** `turnPlacement: 'distributed'` spreads the extra turns through
+  the round instead of stacking them consecutive.
+- **Lightning King.** Extra-turn count and `consecutive` read from data, not
+  the skill id.
+- **Momentum+.** `accuracy` makes attacks unable to miss while Momentum is
+  armed.
+- **Smoke Bomb.** A second free action in the same turn is refused (the UI
+  already hid it; `Combat.act` now matches).
+- **Raise / Grove Rise.** `oncePerBattle` is enforced at the start of `act`,
+  so a spent revive cannot silently succeed as a no-op heal.
+- **See Invisibility / Hollow Discipline / Reading the Field / Signal Smoke.**
+  `seeInvis` unstealths targets in `validTargets`.
+- **Case the Room / See Invisibility / Chart the Water.** `revealHp` shows
+  enemy HP numbers; `revealLoadouts` / `revealPerks` toast the enemy kit at
+  combat start.
+- **Colours and Papers.** `revealContracts` shows encounter types on the
+  board.
+- **Fallback Point.** `autoFlee` (was hardcoded) guarantees one successful
+  flee per quest.
+- **Prodigy.** `levelMult` multiplies skill XP (was hardcoded ×5).
+- **Sixty Years.** `witnessStartLevel` starts witnessed skills at that level.
+- **Beast Handler.** `followerDef` is applied to conscripts and summons.
+- **King's Commission.** `lawfulPayMult` multiplies gold from law-aligned
+  contracts.
+- **Lookism.** `oppositeSexFriendly` is what courtship reads (not the skill
+  id).
+- **Corpse Work.** `killGold` pays out per kill.
+- **Rich.** `goldMult` multiplies all gold via `knownProduct`.
+- **Quartermaster's Root.** `betweenHealPct` heals the party between
+  encounters (was hardcoded to this id).
+- **Articles of War.** `healAtEnd` on a share status heals each linked ally
+  for that fraction of max HP when the share expires.
+- **Green Discipline.** `firstInRoundOne` is read from data, not the id.
+- **Powder Discipline.** `noReload` is read from data, not the id.
+- **Naval Discipline.** `laneNoDelay` is read from data, not the id.
+- **Clan Blood.** Threw `amount is not defined` on every cast — leftover
+  assignment from the percentage-heal pass. The share of damage-taken already
+  lives in `pctOf`.
+- **Ghoststep.** Description now mentions the stealth the effect already
+  applied. Names still differ by tier; `noTierGrowth` stops the tooltip
+  promising a stronger form.
+- **Poisoned Quarrel.** Description still claimed poison "never expires";
+  after the DoT pass it ticks a share of max HP over three turns.
+- **Divine Conscript.** Uses `m.data.duration` then the constant fallback.
+- **Passive actives** (Quartermaster's Root and kin). `Combat.act` no-ops
+  with a `use` event; the AI skips them.
+
+**`noTierGrowth` (incomplete or identical tiers, no number change):**
+carrion_sense, case_the_room, corpse_work, quiet_word, beast_handler,
+terms_of_engagement, fallback_point, muster, see_invisibility, prodigy,
+hollow_discipline, fifty_names, silent_trade, sixty_years, unbroken_form,
+the_clan_watches, standing_order, green_discipline, shares_and_plunder,
+powder_discipline, sea_legs, black_flag, naval_discipline, kings_commission,
+broadside_doctrine, colours_and_papers, true_rest, gods_edict, hero,
+demigod, master_swordsman, lone_wolf, rich, katana_slash, god_aura,
+counter_attack, finisher, lightning_king, arena_champion, lookism,
+ghoststep.
+
+**Tests.** `node test/skill_audit.js` (18: 231 skills × three tiers never
+throw; perks survive ten scripted rounds; every enemy / campaign / guard
+skill id exists; promised keys are read; growing skills have three tiers;
+tooltip labels every printed key; Smoke Bomb / Raise honour
+freeAction / oncePerBattle; front-reach cannot pierce a living front). Added
+to `package.json`'s `test` chain.
+
+**Unbalanced, left alone.** Three stacked intermediate poisons are still
+300% of max HP over three ticks (DoT pass). Clan Blood heals 1 HP when you
+have taken no damage (`Math.max(1, …)`). Title perks stay flat on purpose.
+Charm's Beguile recruit is strong for one encounter — that is the written
+advanced form, not a new number.
