@@ -248,12 +248,12 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   // loot share as a hireling
   ADV.Game.startQuest(g, pick, {});
   g.quest.lootGold = 100; g.quest.readyToComplete = true; g.quest.encIdx = pick.encounters.length;
-  const gold0 = me.inventory.gold, lg0 = ADV.Vault.wealthOf(world, leader);
+  const gold0 = me.inventory.gold;
   const out = ADV.Game.completeQuest(g);
   eq(out.wage, 30, 'wage paid');
   const heads = 1 + ADV.Party.members(world, party).length;
   eq(me.inventory.gold - gold0, 30 + Math.floor(100 / heads), 'the hireling gets wage + an equal loot share, not the whole field');
-  ok(ADV.Vault.wealthOf(world, leader) > lg0, 'the leader pockets the rest');
+  ok(out.leaderTake > 0, 'the leader pockets the rest');
   // leader: losing contracts blocked
   ADV.Party.removeMember(world, party, me.id);
   const mine = ADV.Party.create(world, me.id);

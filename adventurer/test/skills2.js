@@ -87,6 +87,7 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   ok(ud.statuses.some(x => x.kind === 'frozen'), 'Frost Touch freezes');
   ADV.Combat.act(st, um, { kind: 'skill', skillId: 'frost_touch', targetUid: ud.uid });
   eq(ud.statuses.filter(x => x.kind === 'frozen').length, 1, 'no double-freeze stacking');
+  um.stormMark = 0; // fire-bolt's mage flare would otherwise pad the first Spark
   const hpBefore = ud.chp;
   ADV.Combat.act(st, um, { kind: 'skill', skillId: 'spark', targetUid: ud.uid });
   ok(ud.statuses.some(x => x.kind === 'shocked'), 'Spark shocks');

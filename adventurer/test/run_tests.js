@@ -22,7 +22,7 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const st = ADV.Combat.create([a], [d], { rng });
   const ua = st.units.find(u => u.ch === a), ud = st.units.find(u => u.ch === d);
   const r = ADV.Combat.act(st, ua, { kind: 'skill', skillId: 'aimed_shot', targetUid: ud.uid });
-  const dmgEv = st.events.filter(e => e.t === 'damage' && e.uid === ud.uid).pop();
+  const dmgEv = st.events.filter(e => e.t === 'damage' && e.uid === ud.uid)[0];
   eq(dmgEv.dmg, 23, 'Aimed Shot L1 vs DEF10 = 23');
 
   // level 25 advanced: 72
@@ -32,11 +32,13 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const st2 = ADV.Combat.create([a2], [d2], { rng: new ADV.RNG(2) });
   const ua2 = st2.units[0], ud2 = st2.units[1];
   ADV.Combat.act(st2, ua2, { kind: 'skill', skillId: 'aimed_shot', targetUid: ud2.uid });
-  const dmgEv2 = st2.events.filter(e => e.t === 'damage' && e.uid === ud2.uid).pop();
+  const aimedHits = st2.events.filter(e => e.t === 'damage' && e.uid === ud2.uid);
+  const dmgEv2 = aimedHits[0];
   // GDD: round(11*3.0*1.8*1.375)-10 = 72; Volley at 25 has power 2.0 though.
   // Aimed Shot advanced = Volley (power 2.0 all enemies): recompute per data.
-  console.log('   advanced aimed shot dealt', dmgEv2.dmg, '(volley form, power 2.0)');
-  ok(dmgEv2.dmg >= 39 && dmgEv2.dmg <= 80, 'advanced manifestation is decisive');
+  // Ranger flare may append half-power follow-up arrows after the volley hit.
+  console.log('   advanced aimed shot dealt', dmgEv2 && dmgEv2.dmg, '(volley form, power 2.0)');
+  ok(dmgEv2 && dmgEv2.dmg >= 39 && dmgEv2.dmg <= 80, 'advanced manifestation is decisive');
 })();
 
 (function () {

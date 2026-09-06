@@ -360,7 +360,8 @@ function newGame(seed, skills) {
   eq(q.name, 'A short road job', 'canned name');
   ok(q.tutorialEasy, 'marked easy');
   eq(q.encounters.length, 2, 'two encounters');
-  ok(q.encounters.every(e => e.enemyTypeIds.length === 1 && e.enemyTypeIds[0] === 'bandit'), 'one bandit each');
+  eq(q.factionAlignment, 'neutral', 'tutorial party job stays off the banners');
+  ok(q.encounters.every(e => e.enemyTypeIds.length === 1 && e.enemyTypeIds[0] === 'dire_wolf'), 'one beast each');
   eq(q.enemyLevels[0], 1, 'levels start at the bottom of tier 1');
   eq(q.enemyLevels[1], 2, 'levels stay at the bottom of tier 1');
   const g = newGame(31);
