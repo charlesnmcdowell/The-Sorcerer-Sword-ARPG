@@ -146,7 +146,17 @@ for (let step = 0; step < QUESTS; step++) {
     // --- rescues & divine offers ---
     if (world.pendingRescues.length && rng.chance(0.5)) {
       const r = ADV.Game.acceptRescue(game, world.pendingRescues[0]);
-      if (r.ok && r.st) { playCombat(r.st); ADV.Game.finishRescue(game); rescues++; continue; }
+      if (r.ok && r.st) {
+        playCombat(r.st);
+        const fr = ADV.Game.finishRescue(game);
+        rescues++;
+        if (fr && fr.playerDead) {
+          deaths++;
+          ADV.Game.onPlayerDeath(game, null);
+          ADV.Game.continueAfterDeath(game, { name: 'Monkey' + deaths, sex: rng.chance(0.5) ? 'f' : 'm', portraitSeed: deaths, portraitSlot: 2, startingSkills: [A.perk].concat(A.actives.slice(0, 2)) });
+        }
+        continue;
+      }
     }
     if ((world.divineOffers || []).length && rng.chance(0.3)) {
       const o = world.divineOffers[0];
@@ -165,7 +175,11 @@ for (let step = 0; step < QUESTS; step++) {
     const stage = ADV.Game.careerStage(game);
     const roster = ADV.Game.partyRoster(game);
     const options = game.board.filter(q => q.track === 'solo' || roster.length >= 2);
-    const q = rng.pick(options.filter(x => x.tier === 1 || x.tier === 2 || (x.isBoss && roster.length >= 3))) || options[0];
+    const pickable = options.filter(x => {
+      if (x.monsterBoss || x.isBoss) return roster.length >= 3;
+      return x.tier === 1 || x.tier === 2;
+    });
+    const q = rng.pick(pickable) || options.filter(x => !x.monsterBoss && !x.isBoss)[0] || options[0];
     const s = ADV.Game.startQuest(game, q, { vaultGold: rng.chance(0.5) ? Math.floor(p.inventory.gold / 2) : 0 });
     if (!s.ok) { ADV.Game.stayHome(game); continue; }
 

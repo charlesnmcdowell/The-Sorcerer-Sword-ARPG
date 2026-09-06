@@ -316,7 +316,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   eq(h2.length, 2, 'two 300g contracts'); eq(h3.length, 2, 'two 600g contracts');
   ok(h2.concat(h3).every(q => q.hazard && q.encounters.every(e => e.enemyTypeIds.includes(q.hazard))), 'each is built around a debuff crew');
   const types = new Set(h2.concat(h3).flatMap(q => q.encounters.flatMap(e => e.enemyTypeIds)));
-  ok(['marsh_stalker', 'ember_cultist', 'frost_hag', 'gravewarden'].some(t => types.has(t)), 'debuff enemies appear');
+  ok(['marsh_stalker', 'ember_cultist', 'frost_hag', 'gravewarden', 'plague_knave'].some(t => types.has(t)), 'debuff enemies appear');
   const e = ADV.Character.makeEnemy(new ADV.RNG(1), 'gravewarden', { level: 12 });
   ok(e.actives.some(a => a.skillId === 'wither_touch'), 'Gravewarden carries heal-cancel');
   const world = g.world;

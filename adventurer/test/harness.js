@@ -7,7 +7,8 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/data/constants.js', 'js/data/skills.js', 'js/data/campaign_skills.js', 'js/data/campaign_data.js', 'js/data/campaign_dialogue.js',
-  'js/data/campaign2_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js', 'js/data/enemies.js',
+  'js/data/campaign2_skills.js', 'js/data/monster_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js', 'js/data/enemies.js',
+  'js/data/minibosses.js',
   'js/data/names.js', 'js/data/tutorial.js', 'js/data/registry.js',
   'js/data/dialogue.js', 'js/data/dialogue_hiro.js', 'js/data/dialogue2.js',
   'js/core/rng.js', 'js/core/util.js', 'js/core/skillsys.js', 'js/core/character.js',
