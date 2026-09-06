@@ -1229,7 +1229,44 @@ function adoptMask(g, img) {
   const pc = img.parentContainer;
   if (pc && pc.mask && g.mask !== pc.mask) { try { g.setMask(pc.mask); } catch (e) {} }
 }
-function alphaOf(img) { return (img.alpha == null ? 1 : img.alpha) * (img.parentContainer ? (img.parentContainer.alpha == null ? 1 : img.parentContainer.alpha) : 1); }
+function worldAlpha(img) {
+  if (!img || img.visible === false || img.active === false) return 0;
+  let a = img.alpha == null ? 1 : img.alpha;
+  let p = img.parentContainer;
+  while (p) {
+    if (p.visible === false || p.active === false) return 0;
+    a *= (p.alpha == null ? 1 : p.alpha);
+    p = p.parentContainer;
+  }
+  return a;
+}
+function alphaOf(img) { return worldAlpha(img); }
+function hostLive(img) { return !!(img && img.scene && worldAlpha(img) > 0.02); }
+function syncOverlay(g, img) {
+  if (!g || !g.active) return false;
+  const on = hostLive(img);
+  try { g.__faceFx = true; } catch (e) {}
+  try { g.setVisible(!!on); } catch (e) {}
+  try { g.setAlpha(on ? worldAlpha(img) : 0); } catch (e) {}
+  return on;
+}
+function followHost(scene, g, img) {
+  if (!scene || !g || !img) return () => {};
+  try { g.__faceFx = true; } catch (e) {}
+  const tick = () => {
+    if (!g.active || !img.scene) {
+      try { scene.events.off('update', tick); } catch (e) {}
+      return;
+    }
+    syncOverlay(g, img);
+  };
+  scene.events.on('update', tick);
+  const stop = () => { try { scene.events.off('update', tick); } catch (e) {} };
+  try { img.once('destroy', stop); } catch (e) {}
+  try { g.once('destroy', stop); } catch (e) {}
+  tick();
+  return stop;
+}
 function lerp(a, b, t) { return a + (b - a) * t; }
 
 // Paint a mood at intensity onto Graphics g for the image. Pure function of
@@ -1384,6 +1421,83 @@ function timedPaint(g, img, meta, mood, k, extra) {
   const t0 = now(); paintMood(g, img, meta, mood, k, extra); STATS.paintMs += now() - t0; STATS.paints++;
 }
 
+// ---- beast portraits (HEALER_DRUID_PROMPT.md C1) ----------------------------
+// The portrait becomes the beast, but it is still THIS person: the fur takes
+// the hair colour, the eyes keep their colour, the costume's trim shows as a
+// collar. Three rigs share the wolf's mood machinery (ears, eyes, lip line).
+function drawBeast(ctx, beast, pal) {
+  ctx.clearRect(0, 0, W, H);
+  const fur = pal.fur || '#4a3a2a', dark = shade(fur, 0.55), light = shade(fur, 1.3);
+  const eye = pal.eye || '#c8a018', trim = pal.trim || '#8a6a2a';
+  ctx.fillStyle = pal.bg || '#2a2420'; ctx.fillRect(0, 0, W, H);
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(255,255,255,0.05)'); grad.addColorStop(1, 'rgba(0,0,0,0.35)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  const cx = W / 2;
+  const furStrokes = (x, y, rx, ry, n) => {
+    ctx.strokeStyle = rgba(dark, 0.55); ctx.lineWidth = 1.4;
+    for (let i = 0; i < n; i++) { const a = Math.PI * 0.1 + (i / (n - 1)) * Math.PI * 0.8; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * rx * 0.7, y + Math.sin(a) * ry * 0.7); ctx.lineTo(x + Math.cos(a) * (rx + 4 + (i % 3) * 4), y + Math.sin(a) * (ry + 4)); ctx.stroke(); }
+  };
+  const eyes = (dx, dy, w, h, slit) => {
+    for (const s of [-1, 1]) {
+      ctx.fillStyle = eye; ctx.beginPath(); ctx.ellipse(cx + s * dx, EYE_Y + dy, w, h, s * 0.25, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#101010'; ctx.beginPath(); if (slit) ctx.ellipse(cx + s * dx, EYE_Y + dy, 1.6, h * 0.8, 0, 0, Math.PI * 2); else ctx.arc(cx + s * dx, EYE_Y + dy, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(cx + s * dx - 2, EYE_Y + dy - 1.5, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+  };
+  const collar = (y, r) => { ctx.strokeStyle = trim; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(cx, y, r, r * 0.35, 0, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke(); ctx.fillStyle = shade(trim, 1.3); ctx.beginPath(); ctx.arc(cx, y + r * 0.35, 5, 0, Math.PI * 2); ctx.fill(); };
+  let rig;
+  if (beast === 'werewolf') {
+    // hunched shoulders fill the frame; long muzzle; ears up; bared teeth
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 120, 120, 80, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 40, 82, 70, 0, 0, Math.PI * 2); ctx.fill(); furStrokes(cx, EYE_Y + 40, 82, 70, 30);
+    for (const s of [-1, 1]) { ctx.fillStyle = fur; ctx.beginPath(); ctx.moveTo(cx + s * 22, EYE_Y - 34); ctx.lineTo(cx + s * 50, EYE_Y - 84); ctx.lineTo(cx + s * 48, EYE_Y - 30); ctx.closePath(); ctx.fill(); ctx.fillStyle = shade(fur, 0.7); ctx.beginPath(); ctx.moveTo(cx + s * 28, EYE_Y - 36); ctx.lineTo(cx + s * 46, EYE_Y - 72); ctx.lineTo(cx + s * 45, EYE_Y - 34); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 4, 52, 46, 0, 0, Math.PI * 2); ctx.fill();
+    softEllipse(ctx, cx + 22, EYE_Y + 12, 26, 32, '#000000', 0.22);
+    ctx.fillStyle = shade(fur, 0.85); ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 42, 26, 34, 0, 0, Math.PI * 2); ctx.fill();   // muzzle
+    ctx.fillStyle = '#1c1c1c'; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 26, 10, 7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#3a1010'; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 58, 22, 9, 0, 0, Math.PI); ctx.fill();          // open mouth
+    ctx.fillStyle = '#e8e2d2'; for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(cx + i * 9 - 3, EYE_Y + 56); ctx.lineTo(cx + i * 9, EYE_Y + 66 + (Math.abs(i) === 2 ? 4 : 0)); ctx.lineTo(cx + i * 9 + 3, EYE_Y + 56); ctx.closePath(); ctx.fill(); }
+    eyes(22, -6, 9, 5.5, false);
+    ctx.strokeStyle = dark; ctx.lineWidth = 3; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * 12, EYE_Y - 16); ctx.lineTo(cx + s * 32, EYE_Y - 22); ctx.stroke(); }   // brow ridge
+    collar(EYE_Y + 96, 58);
+    rig = { rig: 'wolf', fur, earL: { x: cx - 36, y: EYE_Y - 58 }, earR: { x: cx + 36, y: EYE_Y - 58 }, eyeY: EYE_Y - 6, eyeDX: 22, eyeW: 9, eyeH: 5.5, lipY: EYE_Y + 54 };
+  } else if (beast === 'werebear') {
+    // broad head, small round ears, heavy jaw; shoulders past the frame edge
+    ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 130, 150, 90, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 50, 100, 80, 0, 0, Math.PI * 2); ctx.fill(); furStrokes(cx, EYE_Y + 50, 100, 80, 34);
+    for (const s of [-1, 1]) { ctx.fillStyle = fur; ctx.beginPath(); ctx.arc(cx + s * 52, EYE_Y - 40, 18, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = shade(fur, 0.7); ctx.beginPath(); ctx.arc(cx + s * 52, EYE_Y - 40, 10, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 10, 66, 58, 0, 0, Math.PI * 2); ctx.fill();
+    softEllipse(ctx, cx + 26, EYE_Y + 16, 30, 36, '#000000', 0.2);
+    ctx.fillStyle = shade(fur, 1.15); ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 44, 34, 30, 0, 0, Math.PI * 2); ctx.fill();   // muzzle
+    ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 30, 13, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#2a1a10'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx - 16, EYE_Y + 58); ctx.quadraticCurveTo(cx, EYE_Y + 66, cx + 16, EYE_Y + 58); ctx.stroke();   // heavy jaw line
+    ctx.fillStyle = '#e8e2d2'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * 14 - 3, EYE_Y + 58); ctx.lineTo(cx + s * 14, EYE_Y + 68); ctx.lineTo(cx + s * 14 + 3, EYE_Y + 58); ctx.closePath(); ctx.fill(); }
+    eyes(24, -2, 7, 5, false);
+    collar(EYE_Y + 106, 70);
+    rig = { rig: 'wolf', fur, earL: { x: cx - 52, y: EYE_Y - 40 }, earR: { x: cx + 52, y: EYE_Y - 40 }, eyeY: EYE_Y - 2, eyeDX: 24, eyeW: 7, eyeH: 5, lipY: EYE_Y + 60 };
+  } else {
+    // panther: sleek head, ears back and low, green-gold slit eyes, one paw raised into frame
+    const black = shade(fur, 0.45);
+    ctx.fillStyle = shade(black, 0.8); ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 120, 110, 70, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = black; ctx.beginPath(); ctx.ellipse(cx + 8, EYE_Y + 36, 66, 58, -0.1, 0, Math.PI * 2); ctx.fill();
+    for (const s of [-1, 1]) { ctx.fillStyle = black; ctx.beginPath(); ctx.moveTo(cx + s * 30, EYE_Y - 26); ctx.lineTo(cx + s * 54, EYE_Y - 52); ctx.lineTo(cx + s * 52, EYE_Y - 14); ctx.closePath(); ctx.fill(); ctx.fillStyle = shade(fur, 0.9); ctx.beginPath(); ctx.moveTo(cx + s * 34, EYE_Y - 26); ctx.lineTo(cx + s * 50, EYE_Y - 44); ctx.lineTo(cx + s * 49, EYE_Y - 18); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle = black; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 4, 48, 40, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = shade(black, 1.5); ctx.beginPath(); ctx.ellipse(cx - 14, EYE_Y - 8, 26, 22, 0, 0, Math.PI * 2); ctx.fill();   // sheen
+    ctx.fillStyle = black; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 30, 24, 22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2a1a1a'; ctx.beginPath(); ctx.ellipse(cx, EYE_Y + 22, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(230,230,220,0.8)'; ctx.lineWidth = 1; for (const s of [-1, 1]) for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(cx + s * 10, EYE_Y + 30 + i * 3); ctx.lineTo(cx + s * 44, EYE_Y + 24 + i * 6); ctx.stroke(); }   // whiskers
+    ctx.fillStyle = '#e8e2d2'; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * 9 - 2, EYE_Y + 42); ctx.lineTo(cx + s * 9, EYE_Y + 52); ctx.lineTo(cx + s * 9 + 2, EYE_Y + 42); ctx.closePath(); ctx.fill(); }
+    eyes(20, -4, 8, 5, true);
+    // raised paw, bottom-left
+    ctx.fillStyle = black; ctx.beginPath(); ctx.ellipse(cx - 62, EYE_Y + 128, 30, 22, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e8e2d2'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(cx - 84 + i * 12, EYE_Y + 114); ctx.lineTo(cx - 80 + i * 12, EYE_Y + 100); ctx.lineTo(cx - 76 + i * 12, EYE_Y + 114); ctx.closePath(); ctx.fill(); }
+    collar(EYE_Y + 92, 54);
+    rig = { rig: 'wolf', fur: black, earL: { x: cx - 42, y: EYE_Y - 34 }, earR: { x: cx + 42, y: EYE_Y - 34 }, eyeY: EYE_Y - 4, eyeDX: 20, eyeW: 8, eyeH: 5, lipY: EYE_Y + 40 };
+  }
+  return rig;
+}
+
 const Portraits = {
   W, H, MOODS, MOOD_IDS, PERSONALITY_BIAS, TAG_MOODS, TAG_IGNORE, SET_LOOK, PATTERNS, STATS,
   CREATION_SLOTS: 17,
@@ -1445,6 +1559,34 @@ const Portraits = {
     return key;
   },
 
+  // C1: the beast this character becomes. Palette from their own portrait meta.
+  beastKey(scene, ch, beast) {
+    beast = beast || 'werewolf';
+    const humanKey = Portraits.key(scene, ch);
+    const meta = metaFor(humanKey, ch);
+    const hair = meta.hair != null ? '#' + meta.hair.toString(16).padStart(6, '0') : '#3a2a1c';
+    const skin = meta.skinHex || '#8a5c3a';
+    const look = ch.equippedSet && SET_LOOK[ch.equippedSet];
+    const trim = look && look.palette && look.palette.trim ? (typeof look.palette.trim === 'number' ? '#' + look.palette.trim.toString(16).padStart(6, '0') : look.palette.trim) : '#8a6a2a';
+    const eye = meta.eyeHex || (beast === 'panther' ? '#9ad84a' : '#c8a018');
+    const key = 'pb1_' + beast + '_' + hair.slice(1) + '_' + skin.slice(1) + '_' + trim.slice(1);
+    if (cacheKeys.has(key) && scene.textures.exists(key)) return key;
+    const tex = scene.textures.createCanvas(key, W, H);
+    const ctx = tex.getContext();
+    const fur = beast === 'panther' ? shade(hair, 0.5) : shade(hair, 1.05);
+    const rig = drawBeast(ctx, beast, { fur, eye, trim, bg: shade(skin, 0.35) });
+    tex.refresh();
+    cacheKeys.add(key);
+    META[key] = Object.assign({
+      eyeY: EYE_Y, eyeDX: EYE_DX, eyeW: 8, eyeH: 5, browY: EYE_Y - 12, mouthY: EYE_Y + 30,
+      monster: true, rig: 'wolf', sex: ch.sex || 'm', lid: null, hair: hexInt(hair), skinHex: skin, beast,
+      hairBox: { x: W / 2 - 40, y: EYE_Y - 52, w: 80, h: 36 }, masked: false,
+    }, rig);
+    META[key].furHex = hexInt(rig.fur);
+    return key;
+  },
+  BEASTS: ['werewolf', 'werebear', 'panther'],
+
   // Idle life. A bust that breathes and blinks reads as a person; the same bust
   // held perfectly still reads as a placeholder. Two tweens, no new textures.
   animate(scene, img, ch, key) {
@@ -1461,12 +1603,14 @@ const Portraits = {
     const lids = [];
     const lidCol = meta.rig === 'wolf' ? (meta.furHex || 0x5a5a5f) : (meta.lid != null ? meta.lid : 0x8a5c3a);
     const drawLids = () => {
+      if (!hostLive(img)) return;
       const F = frame(img);
       const ey = F.y(meta.eyeY);
       const dx = meta.eyeDX * F.s;
       for (const sgn of [-1, 1]) {
-        const g = scene.add.graphics().setDepth(depthOf(img) + 1).setAlpha(alphaOf(img));
+        const g = scene.add.graphics().setDepth(depthOf(img) + 1);
         adoptMask(g, img);
+        followHost(scene, g, img);
         lids.push(g);
         g.fillStyle(lidCol, 1);
         g.fillEllipse(F.x(W / 2) + sgn * dx, ey + 1 * F.s, (meta.eyeW || 7.5) * 2.1 * F.s, (meta.eyeH || 5) * 2.2 * F.s);
@@ -1477,7 +1621,7 @@ const Portraits = {
     const schedule = () => {
       timer = scene.time.delayedCall(2600 + Math.random() * 4200, () => {
         if (!img.scene) return;
-        drawLids();
+        if (hostLive(img)) drawLids();
         scene.time.delayedCall(95, () => { clearLids(); if (img.scene) schedule(); });
       });
     };
@@ -1488,7 +1632,7 @@ const Portraits = {
       const sac = () => {
         gazeTimer = scene.time.delayedCall(1500 + Math.random() * 2500, () => {
           if (!img.scene) return;
-          if (!img.__gazeLock) Portraits.look(scene, img, ch, key, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1.2, 260);
+          if (!img.__gazeLock && hostLive(img)) Portraits.look(scene, img, ch, key, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1.2, 260);
           sac();
         });
       };
@@ -1515,16 +1659,18 @@ const Portraits = {
     }
     const meta = metaFor(key, ch);
     const g = scene.add.graphics().setDepth(depthOf(img) + 3);
+    try { g.__faceFx = true; } catch (e) {}
     let last = null;
     const extra = { t: 0 };
     const tick = (t) => {
       if (!img.scene) return;
       STATS.ticks++;
       extra.t = t || 0;
+      if (!syncOverlay(g, img)) { last = null; try { g.clear(); } catch (e) {} return; }
       const sig = sigOf(img, mood, k, meta.rig === 'sentinel' && mood === 'dazed' ? extra : null);
       if (sig === last) return;
       last = sig;
-      g.setDepth(depthOf(img) + 3).setAlpha(alphaOf(img)); adoptMask(g, img);
+      g.setDepth(depthOf(img) + 3); adoptMask(g, img);
       timedPaint(g, img, meta, mood, k, extra);
     };
     tick(0);
@@ -1558,16 +1704,20 @@ const Portraits = {
     const r = q.shift();
     const meta = metaFor(key, ch);
     const g = scene.add.graphics().setDepth(depthOf(img) + 4).setAlpha(0);
+    try { g.__faceFx = true; } catch (e) {}
+    const fade = { a: 0 };
     const cur = { mood: r.mood, until: scene.time.now + r.ms, g };
     img.__reactCur = cur;
     let last = null;
     const tick = () => {
       if (!img.scene) return;
+      const host = worldAlpha(img);
+      try { g.setVisible(host > 0.02); g.setAlpha(host * fade.a); } catch (e) {}
       const sig = sigOf(img, r.mood, r.k, null);
       if (sig !== last) { last = sig; g.setDepth(depthOf(img) + 4); adoptMask(g, img); timedPaint(g, img, meta, r.mood, r.k, null); }
       if (scene.time.now >= cur.until && !cur.leaving) {
         cur.leaving = true;
-        scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: finish });
+        scene.tweens.add({ targets: fade, a: 0, duration: 200, onComplete: finish });
       }
     };
     const finish = () => {
@@ -1578,7 +1728,7 @@ const Portraits = {
       if (img.scene) Portraits._nextReact(scene, img, ch, key);
     };
     scene.events.on('update', tick);
-    scene.tweens.add({ targets: g, alpha: 1, duration: 80 });
+    scene.tweens.add({ targets: fade, a: 1, duration: 80 });
     try { img.once('destroy', finish); } catch (e) {}
   },
 
@@ -1591,9 +1741,11 @@ const Portraits = {
     if (img.__gazeG) { try { img.__gazeG.destroy(); } catch (e) {} img.__gazeG = null; }
     const g = scene.add.graphics().setDepth(depthOf(img) + 2);
     img.__gazeG = g;
+    followHost(scene, g, img);
     const st = { t: 0 };
     const paint = () => {
       if (!img.scene) return;
+      if (!syncOverlay(g, img)) { try { g.clear(); } catch (e) {} return; }
       g.clear(); adoptMask(g, img);
       const F = frame(img);
       const cx = F.x(W / 2), ey = F.y(meta.eyeY), edx = meta.eyeDX * F.s;
@@ -1637,12 +1789,14 @@ const Portraits = {
     const any = state && Object.keys(state).some(k => state[k]);
     if (!any || meta.rig !== 'human') { const noop = () => {}; img.__skinStop = noop; return noop; }
     const g = scene.add.graphics().setDepth(depthOf(img) + 2);
+    try { g.__faceFx = true; } catch (e) {}
     let last = null; let t0 = scene.time.now;
     const tick = (t) => {
       if (!img.scene) return;
+      if (!syncOverlay(g, img)) { last = null; try { g.clear(); } catch (e) {} return; }
       const sig = sigOf(img, 'skin', 1, state.burning ? { t } : null) + JSON.stringify(state);
       if (sig === last) return; last = sig;
-      g.clear(); g.setDepth(depthOf(img) + 2).setAlpha(alphaOf(img)); adoptMask(g, img);
+      g.clear(); g.setDepth(depthOf(img) + 2); adoptMask(g, img);
       const F = frame(img);
       const cx = F.x(W / 2), ey = F.y(meta.eyeY);
       const faceW = 52 * F.s, faceH = 70 * F.s;
@@ -1670,33 +1824,23 @@ const Portraits = {
     if (meta.rig !== 'human' || meta.masked) return () => {};
     opts = opts || {};
     const g = scene.add.graphics().setDepth(depthOf(img) + 2.5);
-    let analyser = null, data = null;
-    try {
-      if (audioEl && window.AudioContext && !opts.noAnalyser) {
-        const AC = Portraits._audioCtx || (Portraits._audioCtx = new window.AudioContext());
-        if (!audioEl.__advSrc) { audioEl.__advSrc = AC.createMediaElementSource(audioEl); audioEl.__advSrc.connect(AC.destination); }
-        analyser = AC.createAnalyser(); analyser.fftSize = 256; audioEl.__advSrc.connect(analyser);
-        data = new Uint8Array(analyser.fftSize);
-      }
-    } catch (e) { analyser = null; }
+    try { g.__faceFx = true; } catch (e) {}
+    // Timed flap only. Routing the clip through Web Audio
+    // (createMediaElementSource) takes exclusive output — a suspended
+    // AudioContext after a tab switch then mutes every later line.
     const words = Math.max(1, (opts.words || 6));
     const fallbackMs = opts.ms || Math.min(6000, 220 * words);
     const t0 = scene.time.now;
     let lastOpen = -1, acc = 0;
     const tick = (t, dt) => {
       if (!img.scene) return;
+      if (!syncOverlay(g, img)) { try { g.clear(); } catch (e) {} return; }
       acc += dt || 16; if (acc < 66) return; acc = 0;   // ~15 Hz
-      let open = 0;
-      if (analyser) {
-        analyser.getByteTimeDomainData(data);
-        let sum = 0; for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
-        open = Math.min(0.6, Math.sqrt(sum / data.length) * 3.2);
-        if (audioEl.paused || audioEl.ended) { stop(); return; }
-      } else {
-        const el = t - t0;
-        if (el > fallbackMs) { stop(); return; }
-        open = 0.15 + 0.3 * Math.abs(Math.sin(el / 110)) * (Math.sin(el / 370) > -0.3 ? 1 : 0);
-      }
+      const elapsed = t - t0;
+      const playing = audioEl && !audioEl.error && !audioEl.paused && !audioEl.ended;
+      if (audioEl && (audioEl.ended || (audioEl.paused && audioEl.currentTime > 0))) { stop(); return; }
+      if (!playing && elapsed > fallbackMs) { stop(); return; }
+      const open = 0.15 + 0.3 * Math.abs(Math.sin(elapsed / 110)) * (Math.sin(elapsed / 370) > -0.3 ? 1 : 0);
       if (Math.abs(open - lastOpen) < 0.03) return; lastOpen = open;
       g.clear();
       if (open < 0.05) return;

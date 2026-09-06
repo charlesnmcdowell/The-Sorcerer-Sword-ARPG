@@ -54,6 +54,9 @@ function chooseAction(st, u) {
     const m = manifestFor(u, e.skillId);
     const d = m.data;
     if (d.freeBuff) continue;
+    if (d.selfRevive) continue;
+    if (d.freeAction && u.freeActionUsed) continue;
+    if (Combat.cooldownLeft && Combat.cooldownLeft(u, e.skillId) > 0) continue;
     const seal = u.statuses.find(x => x.kind === 'sealed');
     if (seal && (seal.tiers || []).includes(m.tier)) continue;
     let offensiveMode = false;
@@ -61,7 +64,7 @@ function chooseAction(st, u) {
     if (d.heal) {
       const hurt = allies.filter(a => a.chp / a.maxHp < 0.7).sort((x, y) => x.chp / x.maxHp - y.chp / y.maxHp);
       const downed = st.units.filter(x => x.side === u.side && x.downed && !x.fled && !x.reserved);
-      if (d.revive && downed.length && !u.usedOncePerBattle[e.skillId]) {
+      if (d.revive && downed.length && ADV.Combat.canSpendBattleUse(u, e.skillId, d)) {
         candidates.push({ kind: 'skill', skillId: e.skillId, targetUid: downed[0].uid, weight: 50 });
         continue;
       }
@@ -88,6 +91,12 @@ function chooseAction(st, u) {
       // Smoke Escape manifestation condition: near death (§3) — once, not a stall loop
       if (hpPct < 0.35 && u.evade === 0 && u.untargetable === 0 && !u.marksBy.length) {
         candidates.push({ kind: 'skill', skillId: e.skillId, targetUid: u.uid, weight: 5 });
+      } else if (d.freeAction && !u.freeActionUsed && !u.stealth) {
+        const opener = u.ch.actives.some(a => {
+          const md = manifestFor(u, a.skillId);
+          return md && md.data.openerOrStealth;
+        });
+        if (opener) candidates.push({ kind: 'skill', skillId: e.skillId, targetUid: u.uid, weight: 4 });
       }
       continue;
     }
@@ -142,7 +151,7 @@ function avoidLookism(list) {
 
 Combat.aiTakeTurn = function (st, u) {
   if (Combat.tryNpcSmite && Combat.tryNpcSmite(st, u)) return { ok: true };
-  const act = u.planned || chooseAction(st, u);
+  let act = u.planned || chooseAction(st, u);
   u.planned = null;
   if (!act || act.kind === 'hold') { ev(st, { t: 'hold', uid: u.uid }); return { ok: true }; }
   // re-validate target
@@ -151,10 +160,15 @@ Combat.aiTakeTurn = function (st, u) {
     if (!t || t.downed || t.fled || t.reserved) {
       const fresh = chooseAction(st, u);
       if (!fresh || fresh.kind === 'hold') { ev(st, { t: 'hold', uid: u.uid }); return { ok: true }; }
-      return Combat.act(st, u, fresh);
+      act = fresh;
     }
   }
-  return Combat.act(st, u, act);
+  const res = Combat.act(st, u, act);
+  if (res && res.refund) {
+    const again = chooseAction(st, u);
+    if (again && again.kind !== 'hold') return Combat.act(st, u, again);
+  }
+  return res;
 };
 
 })();
