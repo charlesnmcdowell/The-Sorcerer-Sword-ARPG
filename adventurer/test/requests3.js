@@ -86,8 +86,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 
 (function () {
   console.log('\n-- 5. Opportunist / Sneak flee bonus --');
-  const a = mkCh({ name: 'A', stats: { hp: 100, atk: 10, def: 10, spd: 8 } }); give(a, 'opportunist');
-  const b = mkCh({ name: 'B', stats: { hp: 100, atk: 10, def: 10, spd: 8 } }); give(b, 'sneak');
+  const a = mkCh({ name: 'A', stats: { hp: 100, atk: 10, def: 10, spd: 8 } }); give(a, 'opportunist', 25);
+  const b = mkCh({ name: 'B', stats: { hp: 100, atk: 10, def: 10, spd: 8 } }); give(b, 'sneak', 25);
   const c = mkCh({ name: 'C', stats: { hp: 100, atk: 10, def: 10, spd: 8 } });
   const foe = mkCh({ name: 'F', stats: { hp: 100, atk: 10, def: 10, spd: 14 } });
   const chance = (ch) => { const st = fight(ch, foe, 7); const u = unit(st, ch); ADV.Combat.act(st, u, { kind: 'flee' }); return st.events.find(e => e.t === 'flee').chance; };
@@ -291,7 +291,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   eq(offers.map(o => o.cost).join(','), '300,600', 'tutoring priced 300 / 600');
   ok(ADV.SkillSys.tutor(p2, 'cleave', 'intermediate').ok && p2.actives.find(a => a.skillId === 'cleave').level === C.TIER_THRESHOLDS.intermediate, 'lifted to Intermediate');
   ok(ADV.SkillSys.tutor(p2, 'cleave', 'advanced').ok && p2.inventory.gold === 100, 'then Advanced, 900g spent');
-  ok(!ADV.SkillSys.tutorOffers(p2, 'bulwark').length, 'perks have nothing to buy');
+  if (!ADV.SkillSys.knows(p2, 'bulwark')) ADV.SkillSys.learn(p2, 'bulwark', { free: true });
+  ok(ADV.SkillSys.tutorOffers(p2, 'bulwark').length > 0, 'perks can be tutored like actives');
 })();
 
 (function () {

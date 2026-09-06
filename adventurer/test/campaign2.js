@@ -269,11 +269,15 @@ console.log('\n== §6 the faction war ==');
 {
   const g = newG();
   const p = ADV.Game.player(g);
-  p.stats.hp = 4000; p.combatHp = 4000; p.inventory.gold = 9000;
-  for (const k of Object.keys(p.stats)) p.stats[k] = Math.max(p.stats[k], 140);
-  let q = null;
-  for (let i = 0; i < 80 && !q; i++) { const c = ADV.Quests.makeWarQuest(g.rng, 'bell', 1); if (c.track !== 'party') q = c; }
-  ok(!!q, 'a solo war contract exists');
+  p.stats = { hp: 8000, atk: 140, def: 40, spd: 24 }; p.combatHp = 8000; p.inventory.gold = 9000;
+  if (!ADV.SkillSys.knows(p, 'aimed_shot')) ADV.SkillSys.learn(p, 'aimed_shot', { free: true });
+  const shot = p.actives.find(e => e.skillId === 'aimed_shot'); if (shot) shot.level = 40;
+  const mate = g.world.characters.find(c => !c.isPlayer && c.alive);
+  const company = ADV.Party.create(g.world, p.id);
+  if (mate) { company.memberIds.push(mate.id); mate.partyId = company.id; company.wages[mate.id] = 0; }
+  const q = ADV.Quests.makeWarQuest(g.rng, 'bell', 2);
+  ok(!!q && q.track === 'party' && q.special, 'a war contract is a special party writ');
+  ok((q.cEnc || []).filter(e => e.mini).length === 2, 'and it always fields two named bosses');
   const r = ADV.Game.startQuest(g, q, {});
   ok(r.ok, 'and it starts', r.error);
   let guard = 0;
@@ -284,8 +288,12 @@ console.log('\n== §6 the faction war ==');
     while (!st.over && t++ < 4000) {
       const cur = ADV.Combat.currentTurn(st); if (!cur) break;
       if (cur.unit.ch.isPlayer) {
+        const av = ADV.Combat.validTargets(st, cur.unit, 'aimed_shot', false);
         const bv = ADV.Combat.validTargets(st, cur.unit, 'basic_attack');
-        if (bv.length) ADV.Combat.act(st, cur.unit, { kind: 'attack', targetUid: bv[0].uid });
+        const boss = (av.length ? av : bv).find(u => u.ch && u.ch.boss);
+        if (boss && av.includes(boss)) ADV.Combat.act(st, cur.unit, { kind: 'skill', skillId: 'aimed_shot', targetUid: boss.uid });
+        else if (av.length) ADV.Combat.act(st, cur.unit, { kind: 'skill', skillId: 'aimed_shot', targetUid: av[0].uid });
+        else if (bv.length) ADV.Combat.act(st, cur.unit, { kind: 'attack', targetUid: bv[0].uid });
         else ADV.Combat.act(st, cur.unit, { kind: 'defend' });
       } else ADV.Combat.aiTakeTurn(st, cur.unit);
       ADV.Combat.advance(st);
@@ -303,19 +311,17 @@ console.log('\n== §7 the god line ==');
   const gl = D.GOD_LINE;
   ok(!!gl, 'the god line is defined');
   eq(gl.basePay, 1000, 'a thousand gold the first time');
-  eq(gl.gateQuests, 25, 'gated at twenty-five quests');
-  eq(gl.routes.length, 4, 'two bosses, two routes each');
-  ok(!!D.CAMPAIGN_CHARS.pale_mother && !!D.CAMPAIGN_CHARS.drowned_king, 'both gods are cast');
+  eq(gl.gateQuests, 0, 'god contracts are not quest-count gated');
+  eq(gl.routes.length, 3, 'death, chaos, and life — one route each');
+  ok(!!D.CAMPAIGN_CHARS.pale_mother && !!D.CAMPAIGN_CHARS.drowned_king && !!D.CAMPAIGN_CHARS.first_bloom, 'three gods are cast');
   const g = newG();
-  const p = ADV.Game.player(g);
-  p.questsCompleted = 5;
-  ok(!ADV.Quests.makeGodQuest(g.world, g.rng), 'no god quest below the gate');
-  p.questsCompleted = 30;
+  const posted = ADV.Quests.makeGodBoard(g.world, g.rng);
+  eq(posted.length, 3, 'all three god contracts post on a fresh board');
+  ok(posted.every(q => q.track === 'party' && q.godLine && q.isBoss), 'and each is a party boss contract');
   const gq = ADV.Quests.makeGodQuest(g.world, g.rng);
-  ok(!!gq, 'it appears once the gate is passed');
+  ok(!!gq, 'a god quest builds without a quest-count gate');
   eq(gq.track, 'party', 'and it is party-only');
   ok(gq.isBoss && gq.godLine, 'and it is a boss contract on the god line');
-  // §7: the payout halves each time the line is run again
   eq(ADV.Quests.godPayout(g), 1000, 'first run pays a thousand');
   g.campaign2.godRuns = 1; eq(ADV.Quests.godPayout(g), 500, 'second pays five hundred');
   g.campaign2.godRuns = 2; eq(ADV.Quests.godPayout(g), 250, 'third pays two-fifty');
@@ -354,8 +360,8 @@ console.log('\n== §3 the four encounter verbs ==');
   const p = ADV.Game.player(g);
   const enemies = [{ species: 'human', enemyLevel: 5, sex: 'm', inventory: { gold: 10 },
                      factionStanding: { law: 40, criminal: 0 }, perks: [], actives: [] }];
-  // Campaign perks exist only at advanced (campaign 1 §13d-2), so the skill's
-  // own stated condition is the gate at every level, not the tier.
+  // Campaign encounter verbs read the perk's current tier. At level 1 the
+  // stated condition is the basic gate.
   const verbsFor = (perkId, q, level) => {
     p.perks = [{ skillId: perkId, level: level || 1, uses: 0 }];
     return ADV.Quests.availableVerbs(g.world, p, [], q || { name: 'Ordinary work' }, enemies);

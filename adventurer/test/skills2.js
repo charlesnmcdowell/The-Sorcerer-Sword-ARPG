@@ -158,7 +158,11 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   const hater = world.characters.find(c => !c.isPlayer);
   ADV.Rel.move(world, hater.id, p.id, -100, 'murder', { set: true });
   const offer = ADV.Game.bribeOffer(game, hater);
-  ok(offer && offer.fee > 0 && offer.chance === 0.8, 'offer exists for a hater (perks are advanced-only: 80%)', JSON.stringify(offer));
+  ok(offer && offer.fee > 0 && offer.chance === 0.4, 'offer exists for a hater (Charm L1: 40%)', JSON.stringify(offer));
+  const charm = p.perks.find(e => e.skillId === 'charm');
+  charm.level = 25; charm.uses = 250;
+  const offerAdv = ADV.Game.bribeOffer(game, hater);
+  ok(offerAdv && offerAdv.chance === 0.8, 'Charm at advanced bribes at 80%');
   ok(!ADV.Game.bribeOffer(game, ADV.Character.makeEnemy(new ADV.RNG(8), 'bandit', {})), 'no bribing monsters');
   const st = fight([p], [hater], 71);
   st.rng = { chance: () => true, float: () => 0, pick: a => a[0], int: (a) => a, shuffle: a => a, fork: () => st.rng }; // force success

@@ -12,15 +12,17 @@ const unit = (st, ch) => st.units.find(u => u.ch === ch);
 const mem = memBackend;
 
 (function () {
-  console.log('\n-- §13d-2 perks are advanced-only, gold-only, never witnessed --');
+  console.log('\n-- §13d-2 perks start at basic, level by use, gold-only, never witnessed --');
   const t = mkCh({}); give(t, 'bulwark', 1);
   const m = ADV.SkillSys.manifest(t, t.perks[0]);
-  eq(m.tier, 'advanced', 'a level-1 perk manifests at advanced');
-  eq(m.data.reflectPct, 0.6, 'Bulwark reflects 60% from day one');
+  eq(m.tier, 'basic', 'a level-1 perk manifests at basic');
+  eq(m.data.reflectPct, 0.25, 'Bulwark reflects 25% at level 1');
   ok(ADV.SkillSys.witness(t, 'marksman', 'basic') === null && !t.journal.marksman, 'perks cannot be witnessed');
   t.freeSkillsUsed = 3;
   eq(ADV.SkillSys.trainerCost(t, 'marksman'), 150, 'perks cost gold even if seen');
-  ok(ADV.SkillSys.recordUse(t, 'bulwark') === null, 'perks never level');
+  t.perks[0].uses = 9;
+  const lv = ADV.SkillSys.recordUse(t, 'bulwark');
+  ok(lv && lv.leveled && lv.level === 2, 'perks level from use like actives');
 })();
 
 (function () {

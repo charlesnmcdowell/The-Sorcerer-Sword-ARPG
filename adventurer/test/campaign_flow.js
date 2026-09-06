@@ -10,7 +10,8 @@ function eq(a, b, n) { ok(a === b, n, a + ' != ' + b); }
 const mem = memBackend;
 
 function strong(p) {
-  p.stats = { hp: 1600, atk: 60, def: 35, spd: 22 };
+  p.stats = { hp: 8000, atk: 120, def: 40, spd: 24 };
+  if (!ADV.SkillSys.knows(p, 'aimed_shot')) ADV.SkillSys.learn(p, 'aimed_shot', { free: true });
   for (const e of p.perks.concat(p.actives)) e.level = 40;
   p.homeId = 'brick';
   p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 8 } };
@@ -41,9 +42,13 @@ function runQuest(game, quest) {
         if (st.round < 2 && st.spawnQueue && st.spawnQueue.length) {
           ADV.Combat.act(st, t.unit, { kind: 'defend' });
         } else {
+          const av = ADV.Combat.validTargets(st, t.unit, 'aimed_shot', false);
           const cv = ADV.Combat.validTargets(st, t.unit, 'cleave', false);
           const bv = ADV.Combat.validTargets(st, t.unit, 'basic_attack');
-          if (cv.length) ADV.Combat.act(st, t.unit, { kind: 'skill', skillId: 'cleave', targetUid: cv[0].uid });
+          const boss = (av.length ? av : bv).find(u => u.ch && (u.ch.boss || u.ch.isBossFight || u.ch.isGod));
+          if (boss && av.includes(boss)) ADV.Combat.act(st, t.unit, { kind: 'skill', skillId: 'aimed_shot', targetUid: boss.uid });
+          else if (boss) ADV.Combat.act(st, t.unit, { kind: 'attack', targetUid: boss.uid });
+          else if (cv.length) ADV.Combat.act(st, t.unit, { kind: 'skill', skillId: 'cleave', targetUid: cv[0].uid });
           else if (bv.length) ADV.Combat.act(st, t.unit, { kind: 'attack', targetUid: bv[0].uid });
           else ADV.Combat.act(st, t.unit, { kind: 'defend' });
         }
@@ -75,7 +80,7 @@ function playFaction(fid, opts) {
   opts = opts || {};
   console.log('\n-- ' + fid + ' campaign --');
   ADV.Save.setBackend(mem());
-  const g = ADV.Game.newGame({ seed: 100 + fid.length, name: 'Test', sex: 'f', portraitSlot: 1, portraitSeed: 1, startingSkills: ['bulwark', 'cleave', 'mend'] });
+  const g = ADV.Game.newGame({ seed: 100 + fid.length, name: 'Test', sex: 'f', portraitSlot: 1, portraitSeed: 1, startingSkills: ['bulwark', 'aimed_shot', 'cleave'] });
   strong(ADV.Game.player(g));
   const s = ADV.Campaign.state(g);
   ok(!ADV.Campaign.menuVisible(g), 'Campaign menu hidden at the start');
