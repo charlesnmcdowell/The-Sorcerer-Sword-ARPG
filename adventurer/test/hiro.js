@@ -126,5 +126,81 @@ function contract(game) {
   ok(fs.existsSync(dir) && fs.readdirSync(dir).filter(f => f.endsWith('.mp3')).length === 16, 'sixteen clips generated');
 })();
 
+(function () {
+  console.log('\n-- kit, name, ronin gear --');
+  const named = ADV.Character.makeRegistry(new ADV.RNG(1), 'hiro', 'Blade');
+  eq(named.name, 'Blade', 'the creation name is kept');
+  eq(ADV.Character.makeRegistry(new ADV.RNG(2), 'hiro', '   ').name, 'Hiro', 'blank name falls back to Hiro');
+  eq(named.equippedSet, 'ronin', 'starts in Ronin Gear');
+  ok(ADV.DATA.GEAR_SETS.ronin && ADV.DATA.GEAR_SETS.ronin.campaign, 'Ronin Gear exists and is not sold');
+  ok(ADV.DATA.GEAR_SETS.ronin.extraSkills.includes('katana_slash'), 'the set carries the katana kit');
+  ok(named.bloodline && named.bloodline.demigod, 'demigod bloodline is set');
+  const ids = named.perks.map(e => e.skillId).concat(named.actives.map(e => e.skillId));
+  ok(['demigod', 'master_swordsman', 'lone_wolf', 'rich', 'katana_slash', 'god_aura', 'counter_attack', 'finisher'].every(id => ids.includes(id)), 'full unique kit');
+  ok(ADV.SkillSys.slotExempt(named, ADV.DATA.SKILLS.katana_slash), 'Master Swordsman parks katana skills outside the active cap');
+  ok(ADV.SkillSys.countsTowardCap(named, 'god_aura'), 'God Aura still uses an active slot');
+  const g = newGame(5, 'f');
+  contract(g); contract(g);
+  const npc = ADV.Hiro.npc(g.world);
+  eq(npc.name, 'Hiro', 'the town NPC keeps the registry name');
+  eq(npc.equippedSet, 'ronin', 'the town NPC wears Ronin Gear');
+})();
+
+(function () {
+  console.log('\n-- combat: bleed, aura evade, demigod heal, finisher --');
+  const Cb = ADV.Combat;
+  const I = Cb._internals;
+  function duel(h, foe, seed) {
+    for (const c of [h, foe]) c.combatHp = null;
+    return Cb.create([h], [foe], { rng: new ADV.RNG(seed || 3) });
+  }
+  const h = ADV.Character.makeRegistry(new ADV.RNG(9), 'hiro', 'Hiro');
+  h.stats = { hp: 200, atk: 24, def: 10, spd: 40 };
+  const foe = ADV.Character.base({ stats: { hp: 400, atk: 8, def: 0, spd: 4 } });
+  const st = duel(h, foe, 3);
+  const uh = st.units.find(u => u.ch === h), ue = st.units.find(u => u.ch === foe);
+  ue.evade = 0;
+  ok(uh.turnsPerRound === 3, 'Lone Wolf takes three turns');
+  ok(st.turnQueue.filter(t => t.uid === uh.uid).length === 3, 'those turns sit in the round');
+  Cb.currentTurn(st);
+  Cb.act(st, uh, { kind: 'skill', skillId: 'katana_slash', targetUid: ue.uid });
+  const bleed = ue.statuses.find(s => s.kind === 'bleed');
+  ok(bleed && bleed.pct === Cb.DOT_PCT.basic && bleed.ticks === Cb.DOT_TICKS, 'Katana Slash applies the modern bleed (% of max HP over ticks)');
+  ok(bleed.stacks, 'the bleed is marked stacking (refresh on reapply)');
+  I.addStatus(st, uh, { kind: 'poison', tier: 'basic', rounds: 3, stacks: true });
+  ok(!uh.statuses.some(s => s.kind === 'poison'), 'Demigod is immune to poison');
+  ok(st.events.some(e => e.t === 'immune' && e.uid === uh.uid), 'immunity is announced');
+  uh.chp = uh.maxHp - 50;
+  I.healUnit(st, null, uh, 10);
+  ok(uh.chp === uh.maxHp && uh.tempHp === 50, 'Demigod multiplies healing received ×10 and banks the rest as uncapped overheal');
+  Cb.act(st, uh, { kind: 'skill', skillId: 'god_aura', targetUid: uh.uid });
+  const aura = uh.statuses.find(s => s.kind === 'aura');
+  ok(aura && aura.atk === 1.3 && aura.def === 1.3 && aura.evadePct === 0.15, 'God Aura writes ATK, DEF, and 15% evade');
+  ok(Math.abs(Cb.evadeChance(st, uh) - 0.15) < 0.001, 'the aura evade is a live percentage roll');
+  const maxBefore = uh.maxHp;
+  uh.tempHp = 0;
+  uh.chp = Math.round(maxBefore * 0.5);
+  ue.chp = Math.round(ue.maxHp * 0.2);
+  const missing = uh.maxHp - uh.chp;
+  Cb.act(st, uh, { kind: 'skill', skillId: 'finisher', targetUid: ue.uid });
+  ok(ue.downed, 'Finisher executes under 40%');
+  ok(uh.chp === maxBefore, 'the kill heal fills the pool he had when the blow landed');
+  ok(uh.tempHp === Math.round(maxBefore * 0.3) * 10 - missing, 'Demigod turns the rest into uncapped overheal');
+  ok(h.bonusStats.atk === 1 && h.bonusStats.hp === 1 && h.finisherGains === 1 && uh.maxHp === maxBefore + 1, 'Finisher permanently raises all stats by 1');
+})();
+
+(function () {
+  console.log('\n-- Finisher gains die with him --');
+  const g = newGame(11, 'f');
+  contract(g); contract(g);
+  const h = ADV.Hiro.npc(g.world);
+  h.bonusStats = { hp: 4, atk: 4, def: 4, spd: 4 };
+  h.finisherGains = 4;
+  ADV.Death.finalize(g.world, h, null, 'killed');
+  ok(h.alive && h.finisherGains === 0, 'resurrection clears the Finisher tally');
+  eq(h.bonusStats.atk, 0, 'and strips those stat gains');
+  eq(h.equippedSet, 'ronin', 'he still wears Ronin Gear when he stands up');
+})();
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);
