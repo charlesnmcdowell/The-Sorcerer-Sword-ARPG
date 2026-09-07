@@ -270,6 +270,8 @@ console.log('\n== §6 the faction war ==');
   const g = newG();
   const p = ADV.Game.player(g);
   p.stats = { hp: 8000, atk: 140, def: 40, spd: 24 }; p.combatHp = 8000; p.inventory.gold = 9000;
+  // DOT pass: enemy poison/bleed is a percentage of max HP, so a big HP pool is no armour; the script only aims shots
+  p.statusImmunities = ['poison', 'bleed'];
   if (!ADV.SkillSys.knows(p, 'aimed_shot')) ADV.SkillSys.learn(p, 'aimed_shot', { free: true });
   const shot = p.actives.find(e => e.skillId === 'aimed_shot'); if (shot) shot.level = 40;
   const mate = g.world.characters.find(c => !c.isPlayer && c.alive);
