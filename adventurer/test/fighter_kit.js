@@ -89,5 +89,53 @@ console.log('-- bulwark on any enemy death --');
   ok(st.events.some(e => e.t === 'bulwarkKill' && e.uid === ut.uid), 'and announces the heal');
 }
 
+console.log('-- bulwark physical / health reduction --');
+{
+  const rng = new ADV.RNG(2);
+  const tank = ADV.Character.base({ stats: { hp: 200, atk: 8, def: 0, spd: 5 } });
+  tank.perks = [{ skillId: 'bulwark', level: 1, uses: 0 }];
+  const foe = ADV.Character.base({ stats: { hp: 200, atk: 20, def: 0, spd: 20 } });
+  const st = Cb.create([tank], [foe], { rng });
+  const ut = st.units.find(u => u.ch === tank);
+  const ue = st.units.find(u => u.ch === foe);
+  const raw = I.applyRawDamage(st, ue, ut, 40, 'attack');
+  eq(raw, 20, 'basic Bulwark halves a physical 40');
+  ut.chp = 200;
+  const hpHit = I.applyRawDamage(st, ue, ut, 40, 'dot');
+  eq(hpHit, 20, 'and halves a percent-HP / DoT tick the same way');
+  tank.perks[0].level = 10;
+  ut.chp = 200;
+  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 10, 'intermediate Bulwark leaves 25%');
+  tank.perks[0].level = 25;
+  ut.chp = 200;
+  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 4, 'advanced Bulwark leaves 10%');
+}
+
+console.log('-- shield wall negates for 2 turns --');
+{
+  const rng = new ADV.RNG(2);
+  const tank = ADV.Character.base({ stats: { hp: 200, atk: 8, def: 0, spd: 40 } });
+  tank.actives = [{ skillId: 'shield_wall', level: 1, uses: 0 }];
+  const foe = ADV.Character.base({ stats: { hp: 400, atk: 20, def: 0, spd: 5 } });
+  foe.actives = [{ skillId: 'backstab', level: 1, uses: 0 }, { skillId: 'venom_fang', level: 1, uses: 0 }];
+  const st = Cb.create([tank], [foe], { rng });
+  const ut = st.units.find(u => u.ch === tank);
+  const ue = st.units.find(u => u.ch === foe);
+  ue.evade = 0;
+  Cb.currentTurn(st);
+  ok(Cb.act(st, ut, { kind: 'skill', skillId: 'shield_wall', targetUid: ut.uid }).ok, 'Shield Wall goes up');
+  const hp0 = ut.chp;
+  I.dealDamage(st, ue, ut, 80, 'attack');
+  eq(ut.chp, hp0, 'the wall negates a physical blow');
+  I.dealDamage(st, ue, ut, 30, 'dot');
+  eq(ut.chp, hp0, 'and a health tick');
+  endRound(st);
+  I.dealDamage(st, ue, ut, 80, 'attack');
+  eq(ut.chp, hp0, 'still negated the next turn');
+  endRound(st);
+  I.dealDamage(st, ue, ut, 80, 'attack');
+  ok(ut.chp < hp0, 'the wall is gone after two turns');
+}
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);

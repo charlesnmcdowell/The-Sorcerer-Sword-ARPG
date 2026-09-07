@@ -63,7 +63,7 @@ console.log('-- §2 duration follows the skill; power/srcAtk/srcLevel do nothing
   ok(p.ticks === 8, `Plague Fang's four authored rounds stretch to eight ticks (${p.ticks})`);
   const n0 = st.events.length; for (let i = 0; i < 8; i++) endRound(st);
   const total = dots(st, n0, ue.uid).filter(e => e.dmg).reduce((a, e) => a + e.dmg, 0);
-  ok(total === Math.round(30000 * 2.0) * 2 && dots(st, n0, ue.uid).length === 16, `same 200% total over eight ticks (${total})`);
+  ok(total === Math.round(30000 * Cb.DOT_PCT.advanced) * 2 && dots(st, n0, ue.uid).length === 16, `same ${Cb.DOT_PCT.advanced * 100}% total over eight ticks (${total})`);
   const { st: s2, ue: e2 } = duel(['venom_fang'], {});
   const a = { kind: 'poison', tier: 'basic', power: 9.9, srcAtk: 999, srcLevel: 99, srcUid: null };
   I.addStatus(s2, e2, a);

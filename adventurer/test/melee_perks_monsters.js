@@ -46,7 +46,8 @@ console.log('\n-- Cleave rows and hit-scale --');
   const ua = unit(st, a), ub = unit(st, b), uc = unit(st, c);
   ua.lane = 'front'; ub.lane = 'mid'; uc.lane = 'back';
   ADV.Combat.act(st, uh, { kind: 'skill', skillId: 'cleave', targetUid: ua.uid });
-  ok(ua.chp < ua.maxHp && ub.chp < ub.maxHp && uc.chp < uc.maxHp, 'advanced Cleave hits all three rows');
+  ok(ua.chp < ua.maxHp, 'advanced Cleave still hits the front');
+  ok(ub.chp === ub.maxHp && uc.chp === uc.maxHp, 'advanced Cleave does not cut through a standing front line');
 }
 
 {
@@ -66,7 +67,7 @@ console.log('\n-- Cleave rows and hit-scale --');
   up.lane = 'front'; uq.lane = 'front';
   ADV.Combat.act(st2, uh2, { kind: 'skill', skillId: 'cleave', targetUid: up.uid });
   const pairDmg = dmgOn(st2, up.uid);
-  ok(pairDmg >= soloDmg * 2 - 1, 'Cleave damage is multiplied by enemies hit', pairDmg + ' vs solo ' + soloDmg);
+  ok(pairDmg >= Math.round(soloDmg * 1.5) - 1, 'Cleave damage grows with enemies hit', pairDmg + ' vs solo ' + soloDmg);
   ok(uq.chp < uq.maxHp, 'same-row mate is also hit');
 }
 
@@ -103,10 +104,21 @@ console.log('\n-- Melee extra targets by tier --');
   const st = fight(hero, [a, b, c], 8);
   const uh = unit(st, hero);
   const ua = unit(st, a), ub = unit(st, b), uc = unit(st, c);
-  ua.lane = 'front'; ub.lane = 'mid'; uc.lane = 'back';
+  ua.lane = 'front'; ub.lane = 'front'; uc.lane = 'front';
   ADV.Combat.act(st, uh, { kind: 'skill', skillId: 'sunder', targetUid: ua.uid });
   const hit = [ua, ub, uc].filter(u => u.chp < u.maxHp).length;
-  eq(hit, 3, 'advanced Sunder hits three enemies');
+  eq(hit, 3, 'advanced Sunder hits three reachable enemies');
+}
+
+{
+  const hero = mk({ name: 'Cover' });
+  give(hero, 'sunder', 25);
+  const a = mk({ name: 'A' }), mid = mk({ name: 'Mid' }), back = mk({ name: 'Back' });
+  const st = fight(hero, [a, mid, back], 8);
+  const uh = unit(st, hero), ua = unit(st, a), um = unit(st, mid), ubk = unit(st, back);
+  ua.lane = 'front'; um.lane = 'mid'; ubk.lane = 'back';
+  ADV.Combat.act(st, uh, { kind: 'skill', skillId: 'sunder', targetUid: ua.uid });
+  ok(ua.chp < ua.maxHp && um.chp === um.maxHp && ubk.chp === ubk.maxHp, 'melee extras do not swing through cover');
 }
 
 console.log('\n-- Momentum stacks across different targets --');
@@ -136,7 +148,7 @@ console.log('\n-- Momentum stacks across different targets --');
   ok(!uh.momentumArmed, 'hold clears the armed flag');
 }
 
-console.log('\n-- Septic Sanguine spreads bleed and poison two rows --');
+console.log('\n-- Septic Sanguine leaps to the nearest ally --');
 {
   const hero = mk({ name: 'Septic' });
   give(hero, 'septic_sanguine', 1);
@@ -148,8 +160,8 @@ console.log('\n-- Septic Sanguine spreads bleed and poison two rows --');
   ua.lane = 'front'; ub.lane = 'mid'; uc.lane = 'back';
   ADV.Combat.act(st, uh, { kind: 'skill', skillId: 'venom_fang', targetUid: ua.uid });
   ok(ua.statuses.some(s => s.kind === 'bleed') && ua.statuses.some(s => s.kind === 'poison'), 'primary is bled and poisoned');
-  ok(ub.statuses.some(s => s.kind === 'bleed') && ub.statuses.some(s => s.kind === 'poison'), 'mid row is also tagged');
-  ok(uc.statuses.some(s => s.kind === 'bleed') && uc.statuses.some(s => s.kind === 'poison'), 'back row is also tagged');
+  ok(ub.statuses.some(s => s.kind === 'bleed') && ub.statuses.some(s => s.kind === 'poison'), 'the nearest row is also tagged');
+  ok(!uc.statuses.some(s => s.kind === 'bleed' || s.kind === 'poison'), 'the leap is one body, not the whole field');
 }
 
 console.log('\n-- Ice and lightning bite constructs harder --');
