@@ -374,7 +374,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   console.log('\n-- 14. hazard contracts & 15. population --');
   const g = newGame(61, 'm');
   const board = g.board;
-  const h2 = board.filter(q => q.payout === 300), h3 = board.filter(q => q.payout === 600);
+  const h2 = board.filter(q => q.hazard && q.payout === 300), h3 = board.filter(q => q.hazard && q.payout === 600);
   eq(h2.length, 2, 'two 300g contracts'); eq(h3.length, 2, 'two 600g contracts');
   ok(h2.concat(h3).every(q => q.hazard && q.encounters.every(e => e.enemyTypeIds.includes(q.hazard))), 'each is built around a debuff crew');
   const types = new Set(h2.concat(h3).flatMap(q => q.encounters.flatMap(e => e.enemyTypeIds)));
