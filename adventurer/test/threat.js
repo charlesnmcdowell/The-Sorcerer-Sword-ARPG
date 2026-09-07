@@ -132,6 +132,18 @@ console.log('-- taunt resets the side --');
   ok(st.events.some(e => e.t === 'threatReset'), 'emits threatReset');
 }
 
+console.log('-- threatLeader hides a tie --');
+{
+  const a = kit(['cleave']); const b = kit(['cleave']); const e = kit(['cleave']);
+  const st = fight([a, b], e, 2);
+  const ua = unit(st, a), ub = unit(st, b);
+  ua.threat = ub.threat = 80;
+  ua.threatDamage = ub.threatDamage = 0;
+  ok(Cb.threatLeader(st, 'a') == null, 'no crown when two units share the top');
+  Cb.addThreat(st, ua, 10, 'taunt');
+  ok(Cb.threatLeader(st, 'a') === ua, 'a unique lead returns that unit');
+}
+
 console.log('-- headline: tank holds the room --');
 {
   const seeds = [3, 7, 11, 19, 29, 41, 53, 67];

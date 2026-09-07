@@ -57,6 +57,15 @@ console.log('-- extra ranger use refunds once per round --');
   Cb.currentTurn(stS);
   const rs = Cb.act(stS, us, { kind: 'skill', skillId: 'smoke_bomb', targetUid: us.uid });
   ok(rs && rs.refund && us.rangerUsesLeft === 1, 'rogue freeAction refunds without spending the Sniper use');
+  const blocked = withPerk('sniper', 1);
+  give(blocked, 'aimed_shot', 1);
+  const stB = fight(blocked, foe, 5);
+  const ub = unit(stB, blocked), ufoe = unit(stB, foe);
+  ufoe.statuses.push({ kind: 'countersign', rounds: 2 });
+  Cb.currentTurn(stB);
+  const rb = Cb.act(stB, ub, { kind: 'skill', skillId: 'aimed_shot', targetUid: ufoe.uid });
+  ok(stB.events.some(e => e.t === 'interrupted'), 'countersign interrupts the shot');
+  ok(ub.rangerUsesLeft === 1 && !(rb && rb.refund), 'an interrupted shot does not spend the Sniper use');
 }
 
 console.log('-- evadeChance sums, caps, and respects exemptions --');
