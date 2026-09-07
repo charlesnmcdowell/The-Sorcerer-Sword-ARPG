@@ -151,10 +151,11 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 
 (function () {
   console.log('\n-- 16. Lookism --');
-  const p = mkCh({ name: 'P', isPlayer: true, sex: 'm' }); give(p, 'lookism');
-  const ally = mkCh({ name: 'A' });
+  const p = mkCh({ name: 'P', isPlayer: true, sex: 'm', archetypeInclination: ['fighter'] }); give(p, 'lookism');
+  const ally = mkCh({ name: 'A', archetypeInclination: ['fighter'] });
   const foe = mkCh({ name: 'F' }); give(foe, 'cleave');
   const st = fight([p, ally], foe, 9);
+  st.rng = { float: () => 0.5, chance: () => false };
   const plan = ADV.Combat.planFor(st, unit(st, foe));
   eq(plan.targetUid, unit(st, ally).uid, 'enemies pick the party over the pretty one');
   eq(ADV.Party.hirelingWageFor(p), C.GOLD.hirelingWage + 10, 'hired for 10g over the going rate');
@@ -268,9 +269,9 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const e1 = mkCh({ name: 'Hurt' }); const e2 = mkCh({ name: 'Healthy' });
   const st = fight([healer, ally], [e1, e2], 7);
   const uh = unit(st, healer), ua = unit(st, ally), u1 = unit(st, e1), u2 = unit(st, e2);
-  u1.chp = 40; u2.chp = 180; ua.chp = 30; uh.chp = 90;
+  u1.chp = 8; u2.chp = 180; ua.chp = 30; uh.chp = 90;
   const foe = ADV.Combat.lowestHealth(ADV.Combat.validTargets(st, uh, 'fire_bolt', false));
-  eq(foe && foe.ch, e1, 'offensive auto picks the lowest-health enemy');
+  eq(foe && foe.ch, e1, 'lowestHealth still names the weakest enemy');
   ok(ADV.Combat.skillNeedsAuto(healer, 'fire_bolt', false), 'Fire Bolt offers auto');
   ok(ADV.Combat.skillNeedsAuto(healer, 'smoke_bomb', false), 'self-only skills can be set to auto');
   ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
@@ -280,7 +281,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ok(ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'Fire Bolt stays auto when Mend is added');
   const ready = ADV.Combat.autoReadyAction(st, uh);
   eq(ready && ready.action.skillId, 'fire_bolt', 'auto-ready starts with Fire Bolt');
-  eq(ready && ready.tgt.ch, e1, 'auto-ready aims at the weakest enemy');
+  eq(ready && ready.tgt.ch, e1, 'auto-ready still takes a finishable foe');
   const ready2 = ADV.Combat.autoReadyAction(st, uh);
   eq(ready2 && ready2.action.skillId, 'mend', 'the next auto swing is Mend');
   ADV.SkillSys.forget(healer, 'mend');

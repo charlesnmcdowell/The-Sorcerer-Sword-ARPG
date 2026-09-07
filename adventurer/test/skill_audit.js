@@ -138,7 +138,8 @@ console.log('-- data keys are read in core --');
   const promised = ['protectAdjacent', 'oppositeSexFriendly', 'targetedLast', 'accuracy', 'laneShift',
     'duration', 'recruitForEncounter', 'revealHp', 'revealLoadouts', 'followerDef', 'revealContracts',
     'autoFlee', 'revealPerks', 'levelMult', 'witnessStartLevel', 'healAtEnd', 'lawfulPayMult',
-    'oneShotUndead', 'katanaFreeSlots', 'turnPlacement', 'passive', 'goldMult', 'killGold', 'seeInvis'];
+    'oneShotUndead', 'katanaFreeSlots', 'turnPlacement', 'passive', 'goldMult', 'killGold', 'seeInvis',
+    'evadePct', 'rangerExtraUse'];
   const unread = promised.filter(k => blob.indexOf(k) < 0);
   ok(unread.length === 0, 'promised keys are read in core or ui', unread.join(', '));
 }

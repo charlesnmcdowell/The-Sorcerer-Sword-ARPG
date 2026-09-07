@@ -253,13 +253,13 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   const e1 = mkCh({ name: 'Hurt' }); const e2 = mkCh({ name: 'Healthy' });
   const st = fight([healer, ally], [e1, e2], 41);
   const uh = unit(st, healer), ua = unit(st, ally), u1 = unit(st, e1);
-  u1.chp = 40; ua.chp = ua.maxHp; uh.chp = uh.maxHp;
+  u1.chp = 8; ua.chp = ua.maxHp; uh.chp = uh.maxHp;
   ADV.Combat.setSkillAuto(healer, 'mend', true, false);
   ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
   ok(ADV.Combat.skillAutoOn(healer, 'mend', false) && ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'both skills stay in the rotation');
   const ready = ADV.Combat.autoReadyAction(st, uh);
   eq(ready && ready.action.skillId, 'fire_bolt', 'full-party Mend is skipped; Fire Bolt fires instead');
-  eq(ready && ready.tgt.ch, e1, 'the fallback aims at the weakest enemy');
+  eq(ready && ready.tgt.ch, e1, 'the fallback still takes a finishable foe');
   ua.chp = 20;
   healer.autoIdx = 0;
   const readyHeal = ADV.Combat.autoReadyAction(st, uh);

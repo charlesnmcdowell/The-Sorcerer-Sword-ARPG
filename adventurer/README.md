@@ -64,6 +64,39 @@ actives, 8 starting NPCs, 5 enemy types + 5 bosses, 4 gear sets, 3 factions):
 - Tutorial: 5 pre-game cards + ~38 fire-once contextual prompts, all
   archived in the Codex.
 
+## Threat, targeting and the Sniper (THREAT_PROMPT.md)
+
+Enemy AI no longer piles onto the lowest HP fraction. Each combat unit carries
+a battle-only threat value read off the kit (`tank` +18, `fighter` +14,
+ranger/druid/healer/mage/none +5, `rogue` −6, plus +6 for
+`Campaign.isTankSkill`, bosses/heroes ×1.3). `threatBase = clamp(40 + sum, 15, 160)`.
+Lane layout fills the front with the highest-threat kits first; healers stay
+mid; an explicit `archetypeInclination` still wins.
+
+During the fight, healing is loud (`round(applied / tgt.maxHp * 60)`, overheal
+and self-heals at half, cleanses +8, revives +40). Raw damage does not add
+threat — only a party's over-share (`threatDamage`, cap +90), which falls as
+the rest catch up. Threat decays 15% toward base each round. Stealth hides
+the value without zeroing it. A kill is +20. Taunt (and Arena Champion's
+on-kill taunt) resets the taunter's side to base, then gives the taunter +40.
+
+Hostile AI picks with a weighted draw over threat × kill-shot × lookism ×
+same-lane, with an 8% floor so nobody is immune. Marks still force the target.
+Player click targeting, `validTargets`, and heal/buff auto (`lowestHealth`)
+are unchanged. Player AUTO on a hostile skill uses the same threat pick;
+finishable foes still win via the kill-shot weight.
+
+**Sniper** (`sniper`) is a ranger perk: 10% / 25% / 50% `evadePct` and one
+extra ranger-skill use per round. Percentage evasion is new — `u.evade` remains
+a charge counter. `Combat.evadeChance` sums Sniper and aura `evadePct` (God
+Aura's 15% party evade is live), cap 0.75. The roll happens in `applyRawDamage`
+before a charge is spent. A Sniper dodge is a "read"; a charge dodge is a
+"miss". Each side's threat leader wears a teal chevron; a thin bar under HP
+shows share of that side's max.
+
+Tuned as shipped from the prompt numbers. If the headline soak ever slips,
+change the weights, not the rule.
+
 ## Architecture
 
 `js/data/` is pure content (skills, enemies, constants, dialogue — no logic).

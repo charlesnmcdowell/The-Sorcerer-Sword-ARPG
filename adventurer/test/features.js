@@ -312,11 +312,11 @@ function newGame(seed, skills) {
   ADV.Combat.setSkillAuto(healer, 'mend', true, false);
   ok(ADV.Combat.skillAutoOn(healer, 'mend', false), 'Mend takes over as the auto skill');
   ok(!ADV.Combat.skillAutoOn(healer, 'fire_bolt', false), 'only one auto skill at a time');
-  uh.chp = 90; ua.chp = 30; u1.chp = 40; u2.chp = 180;
+  uh.chp = 90; ua.chp = 30; u1.chp = 8; u2.chp = 180;
   ADV.Combat.setSkillAuto(healer, 'fire_bolt', true, false);
   const ready = ADV.Combat.autoReadyAction(st, uh);
   eq(ready && ready.action.skillId, 'fire_bolt', 'auto-ready repeats Fire Bolt');
-  eq(ready && ready.tgt.ch, e1, 'auto-ready aims at the weakest enemy');
+  eq(ready && ready.tgt.ch, e1, 'auto-ready still takes a finishable foe');
   ADV.Combat.act(st, uh, { kind: 'skill', skillId: ready.action.skillId, targetUid: ready.tgt.uid });
   ok(u1.chp < 40, 'the repeating skill actually fires');
   const ready2 = ADV.Combat.autoReadyAction(st, uh);

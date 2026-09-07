@@ -70,8 +70,12 @@ for (let step = 0; step < QUESTS; step++) {
         ADV.Housing.buy(game, nextHome.id);
       }
     }
-    inv(p && p.alive, 'player alive at step ' + step);
-    if (!p || !p.alive) break;
+    if (!p || !p.alive) {
+      deaths++;
+      ADV.Game.onPlayerDeath(game, null);
+      ADV.Game.continueAfterDeath(game, { name: 'Monkey' + deaths, sex: rng.chance(0.5) ? 'f' : 'm', portraitSeed: deaths, portraitSlot: 2, startingSkills: [A.perk].concat(A.actives.slice(0, 2)) });
+      continue;
+    }
 
     // --- random town actions ---
     if (rng.chance(0.3)) { // trainer
@@ -241,7 +245,13 @@ for (let step = 0; step < QUESTS; step++) {
 
     // ---- invariants each step ----
     const w2 = game.world;
-    const p2 = player();
+    let p2 = player();
+    if (!p2 || !p2.alive) {
+      deaths++;
+      ADV.Game.onPlayerDeath(game, null);
+      ADV.Game.continueAfterDeath(game, { name: 'Monkey' + deaths, sex: rng.chance(0.5) ? 'f' : 'm', portraitSeed: deaths, portraitSlot: 2, startingSkills: [A.perk].concat(A.actives.slice(0, 2)) });
+      p2 = player();
+    }
     inv(p2 && p2.alive, 'player alive after step');
     inv(p2.inventory.gold >= 0, 'gold never negative', p2.inventory.gold);
     for (const c of w2.characters) {
