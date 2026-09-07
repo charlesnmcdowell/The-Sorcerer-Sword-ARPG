@@ -135,9 +135,9 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   ue.maxHp = 3000; ue.chp = 3000;
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
-  ok(ue.statuses.filter(s => s.kind === 'poison').length === 2, 'advanced: two applications are two stacks');
+  ok(ue.statuses.filter(s => s.kind === 'poison').length === 1, 'advanced poison refreshes instead of stacking');
   const n0 = st.events.length; endRound(st);
-  ok(dots(st, n0, ue.uid).length === 4, 'four ticks a round with two stacks of each');
+  ok(dots(st, n0, ue.uid).length === 2, 'one poison tick and one bleed tick a round');
 }
 {
   const { st, ua, ue } = duel(['venom_fang'], { venom_fang: lvl.basic, septic_sanguine: lvl.advanced }, ['septic_sanguine']);
@@ -153,6 +153,30 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   const n1 = s2.events.length; endRound(s2);
   const t2 = dots(s2, n1, e2.uid)[0];
   ok(t2.dmg === Math.round(3000 * 0.5 / Cb.DOT_TICKS) + 300, `Opportunist adds 10% of max HP to each tick under half (${t2.dmg})`);
+}
+{
+  const { st, ua, ue } = duel(['venom_fang'], { septic_sanguine: lvl.basic }, ['septic_sanguine']);
+  ua.chp = 40;
+  I.addStatus(st, ua, { kind: 'poison', tier: 'basic', srcUid: ue.uid });
+  const n0 = st.events.length; endRound(st);
+  const tick = dots(st, n0, ua.uid)[0];
+  const heals = st.events.slice(n0).filter(e => e.t === 'heal' && e.uid === ua.uid);
+  ok(tick && heals.length && heals[0].amount === Math.max(1, Math.round(tick.dmg * 0.5)), 'basic septic also heals from poison you suffer');
+}
+{
+  const rng = new ADV.RNG(3);
+  const a = ADV.Character.base({ stats: { hp: 200, atk: 12, def: 10, spd: 30 } });
+  a.perks = [{ skillId: 'septic_sanguine', level: lvl.advanced, uses: 0 }];
+  const ally = ADV.Character.base({ stats: { hp: 200, atk: 10, def: 10, spd: 5 } });
+  const e = ADV.Character.makeEnemy(rng, 'bandit', { level: 1 });
+  const st = Cb.create([a, ally], [e], { rng });
+  const ua = st.units.find(u => u.ch === a), ual = st.units.find(u => u.ch === ally), ue = st.units.find(u => u.ch === e);
+  ua.chp = 40;
+  I.addStatus(st, ual, { kind: 'bleed', tier: 'basic', srcUid: ue.uid });
+  const n0 = st.events.length; endRound(st);
+  const tick = dots(st, n0, ual.uid)[0];
+  const heal = st.events.slice(n0).find(e => e.t === 'heal' && e.uid === ua.uid);
+  ok(tick && heal && heal.amount === Math.max(1, Math.round(tick.dmg * 2)), 'advanced septic heals from any poison or bleed on the field');
 }
 {
   // venom_draw moves the poison and it recomputes on the new target's max HP
@@ -193,6 +217,26 @@ console.log('-- death hop: poison and bleed by tier --');
     ok(r.hopped.length === r.want, `${tier}: hops to ${r.want} extra enem${r.want === 1 ? 'y' : 'ies'} (${r.hopped.length})`);
     if (r.want > 0) ok(r.hopped.every(u => u.statuses.some(s => s.kind === 'poison') && u.statuses.some(s => s.kind === 'bleed')), `${tier}: both poison and bleed leap`);
   }
+}
+{
+  const rng = new ADV.RNG(4);
+  const a = ADV.Character.base({ stats: { hp: 200, atk: 12, def: 10, spd: 30 } });
+  const foes = [];
+  for (let i = 0; i < 5; i++) foes.push(ADV.Character.makeEnemy(rng, 'bandit', { level: 1 }));
+  const st = Cb.create([a], foes, { rng });
+  const side = st.units.filter(u => u.side === 'b');
+  const first = side[0], rest = side.slice(1);
+  rest.forEach(u => { u.maxHp = 400; u.chp = 400; });
+  I.addStatus(st, first, { kind: 'poison', tier: 'advanced', srcUid: null });
+  first.chp = 0; first.downed = true;
+  I.onUnitDown(st, first);
+  const afterFirst = rest.filter(u => u.statuses.some(s => s.kind === 'poison'));
+  ok(afterFirst.length === 3, `advanced hop infects 3 extras once (${afterFirst.length})`);
+  const second = rest.find(u => u.statuses.some(s => s.kind === 'poison'));
+  second.chp = 0; second.downed = true;
+  I.onUnitDown(st, second);
+  const afterSecond = rest.filter(u => u !== second && u.statuses.some(s => s.kind === 'poison'));
+  ok(afterSecond.length === 2, 'a second death does not hop again');
 }
 
 console.log('-- §9 heals cleanse --');
@@ -240,9 +284,9 @@ console.log('-- §9 heals cleanse --');
   c = mk('mend', 1); c.ual.__st = c.st; c.ual.maxHp = 200; c.ual.chp = 20;
   poisoned(c.ual);
   I.healUnit(c.st, null, c.ual, 10);   // 5%: nothing
-  ok(c.ual.statuses.filter(s => s.kind === 'poison').length === 2 && c.ual.statuses.filter(s => s.kind === 'bleed').length === 1, 'a 5% self-heal clears nothing');
+  ok(c.ual.statuses.filter(s => s.kind === 'poison').length === 1 && c.ual.statuses.filter(s => s.kind === 'bleed').length === 1, 'a 5% self-heal clears nothing');
   I.healUnit(c.st, null, c.ual, 20);   // 10%: one of each
-  ok(c.ual.statuses.filter(s => s.kind === 'poison').length === 1 && !c.ual.statuses.some(s => s.kind === 'bleed'), 'a 10% self-heal clears one poison and one bleed');
+  ok(!c.ual.statuses.some(s => s.kind === 'poison' || s.kind === 'bleed'), 'a 10% self-heal clears one poison and one bleed');
   I.addStatus(c.st, c.ual, { kind: 'bleed', tier: 'basic', srcUid: null, stacks: true }); I.addStatus(c.st, c.ual, { kind: 'poison', tier: 'basic', srcUid: null, stacks: true });
   I.healUnit(c.st, null, c.ual, 60);   // 30%: all
   ok(!c.ual.statuses.some(s => s.kind === 'poison' || s.kind === 'bleed'), 'a 25%+ self-heal clears them all');

@@ -100,6 +100,18 @@ for (const tier of ['basic', 'intermediate', 'advanced']) {
   ok(!ua[0].statuses.some(s => s.kind === 'poison' || s.kind === 'bleed'), 'regenerate clears poison and bleed on cast');
   ok(st.events.some(e => e.t === 'cleansed' && e.byHeal && e.uid === ua[0].uid), 'and emits cleansed{byHeal}');
 }
+{
+  const { st, uh, ua, ue } = party(['regenerate'], { regenerate: 1 });
+  const pool = Cb.validTargets(st, uh, 'regenerate', true);
+  ok(pool.every(t => t.side !== uh.side) && pool.includes(ue), 'Poison targets enemies, never the healer');
+  const r = Cb.act(st, uh, { kind: 'skill', skillId: 'regenerate', targetUid: uh.uid, offensiveMode: true });
+  ok(r.ok, 'Poison still fires if the healer is passed as the target');
+  ok(!uh.statuses.some(s => s.kind === 'poison'), 'and does not poison the caster');
+  ok(ue.statuses.some(s => s.kind === 'poison'), 'it poisons the enemy instead');
+  const { st: s2, uh: h2, ue: e2 } = party(['regenerate'], { regenerate: 1 });
+  Cb.act(s2, h2, { kind: 'skill', skillId: 'regenerate', targetUid: e2.uid, offensiveMode: true });
+  ok(e2.statuses.some(s => s.kind === 'poison') && !h2.statuses.some(s => s.kind === 'poison'), 'a chosen enemy is poisoned, the healer is not');
+}
 
 console.log('-- A3 druid heals + thorn shield --');
 for (const tier of ['basic', 'intermediate', 'advanced']) {
