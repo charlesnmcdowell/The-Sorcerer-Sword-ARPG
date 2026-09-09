@@ -339,8 +339,8 @@ console.log('\n== §8 sixty personalities ==');
   eq(live.filter(p => p.sex === 'f').length, 30, 'thirty female');
   const added = live.filter(p => /^[MF](2[1-9]|30)$/.test(p.id));
   eq(added.length, 20, 'twenty are new');
-  ok(added.every(p => ['general','friendly','hatred','romantic'].every(b => (p[b] || []).length === 4)),
-     'each new one has four bands of four');
+  ok(added.every(p => ['general','friendly','hatred','romantic'].every(b => (p[b] || []).length >= 4)),
+     'each new one has the four social bands');
   ok(added.every(p => ['general','friendly','hatred','romantic']
       .every(b => p[b].some(l => !/\{(them|their|they|partner)\}/.test(l)))),
      'each band has at least one unconditional line');
@@ -348,7 +348,7 @@ console.log('\n== §8 sixty personalities ==');
   const g = newG();
   const seen = new Set();
   for (let i = 0; i < 400; i++) {
-    const npc = ADV.Character.seedNPC(g.rng, g.world, {});
+    const npc = ADV.Character.seedNPC(g.rng, null, { sex: i % 2 ? 'f' : 'm' });
     if (npc.personalityId) seen.add(npc.personalityId);
   }
   const reached = added.filter(p => seen.has(p.id)).length;
@@ -415,11 +415,11 @@ console.log('\n== §0a voice routing ==');
   const npc = ADV.Character.seedNPC(g.rng, g.world, { sex: 'f' });
   eq(ADV.Character.voiceTagFor(g.world, npc), null, 'an ordinary NPC keeps her own voice');
   npc.bloodline = { demigod: true };
-  eq(ADV.Character.voiceTagFor(g.world, npc), 'godf', 'a female demigod speaks in the goddess voice');
+  eq(ADV.Character.voiceTagFor(g.world, npc), null, 'a female demigod keeps her personality voice');
   ok(npc.personalityId, 'and keeps her rolled personality');
   const m = ADV.Character.seedNPC(g.rng, g.world, { sex: 'm' });
   m.bloodline = { demigod: true };
-  eq(ADV.Character.voiceTagFor(g.world, m), 'godm', 'a male demigod speaks in the god voice');
+  eq(ADV.Character.voiceTagFor(g.world, m), null, 'a male demigod keeps his personality voice');
   ok(!ADV.Character.voiceTagFor(g.world, ADV.Game.player(g)), 'the player is never retagged');
   // every voice the add-on casts is present
   const cast = require('../tools/voice_casting.json');

@@ -50,7 +50,9 @@ const fs = require('fs');
     return sc.sel.skills.slice();
   });
   console.log('chosen:', chosen);
-  await click(640, 709, 1200);  // Step into the world
+  await click(640, 709, 800);  // Step into the world — personality picker
+  await click(190, 204, 250);  // first male voice
+  await click(640, 700, 1200); // Keep this personality
   const active = await page.evaluate(() => window.__game.scene.scenes.filter(s => s.scene.isActive()).map(s => s.scene.key).join(','));
   console.log('scene:', active);
   const state = await page.evaluate(() => {

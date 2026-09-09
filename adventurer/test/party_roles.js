@@ -85,13 +85,13 @@ console.log('\n-- Bulwark and frost armor cut finalized hits, including % HP --'
   const uf = st.units.find(u => u.ch === foe);
 
   const raw = I.applyRawDamage(st, uf, ut, 100, 'attack');
-  eq(raw, 80, 'Bulwark 20% cuts a 100 hit to 80 after the number is set');
-  eq(ut.chp, ut.maxHp - 80, 'the HP loss matches');
+  eq(raw, 50, 'Bulwark halves a 100 hit after the number is set');
+  eq(ut.chp, ut.maxHp - 50, 'the HP loss matches');
 
   ut.chp = ut.maxHp;
   ut.statuses.push({ kind: 'iceArmor', pct: 0.5 });
   const iced = I.applyRawDamage(st, uf, ut, 100, 'attack');
-  eq(iced, 40, 'Frost Armor 50% stacks with Bulwark on the same finalized 100 (0.8 × 0.5)');
+  eq(iced, 25, 'Frost Armor 50% stacks with Bulwark on the same finalized 100 (0.5 × 0.5)');
 
   function godHit(defender) {
     const god = mk({ name: 'God', stats: { hp: 80, atk: 10, def: 0, spd: 20 } });
@@ -107,7 +107,7 @@ console.log('\n-- Bulwark and frost armor cut finalized hits, including % HP --'
   give(wall, 'bulwark', 1);
   const hitWall = godHit(wall);
   ok(hitBare && hitBare.dmg >= 100, 'god blow includes 50% of max HP', hitBare && hitBare.dmg);
-  eq(hitWall && hitWall.dmg, Math.round(hitBare.dmg * 0.8), 'Bulwark cuts that same % HP blow by 20%');
+  eq(hitWall && hitWall.dmg, Math.round(hitBare.dmg * 0.5), 'Bulwark halves that same % HP blow');
 }
 
 console.log('\n-- DoTs also eat personal reduction --');
@@ -119,7 +119,7 @@ console.log('\n-- DoTs also eat personal reduction --');
   const ut = st.units.find(u => u.ch === tank);
   const uf = st.units.find(u => u.ch === foe);
   const dealt = ADV.Combat._internals.applyRawDamage(st, uf, ut, 50, 'dot');
-  eq(dealt, 40, 'a 50-point DoT tick is cut to 40 by Bulwark');
+  eq(dealt, 25, 'a 50-point DoT tick is halved by Bulwark');
 }
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

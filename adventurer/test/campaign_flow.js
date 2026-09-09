@@ -10,7 +10,10 @@ function eq(a, b, n) { ok(a === b, n, a + ' != ' + b); }
 const mem = memBackend;
 
 function strong(p) {
-  p.stats = { hp: 8000, atk: 360, def: 40, spd: 24 };   // bosses now match the player's HP (DOT_PROMPT.md §11), so the strong player must hit like one too
+  // Bosses copy the player's HP and add 20% of it per hit. An 8000 HP dummy
+  // therefore dies to the boss, not the other way around. Keep HP modest and
+  // let the inflated ATK actually finish the fight.
+  p.stats = { hp: 420, atk: 360, def: 40, spd: 24 };
   if (!ADV.SkillSys.knows(p, 'aimed_shot')) ADV.SkillSys.learn(p, 'aimed_shot', { free: true });
   for (const e of p.perks.concat(p.actives)) e.level = 40;
   p.homeId = 'brick';

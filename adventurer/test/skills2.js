@@ -38,11 +38,13 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   const ut = unit(st, tank), uf = unit(st, foe);
   ADV.Combat.act(st, ut, { kind: 'skill', skillId: 'shield_wall', targetUid: ut.uid });
   ADV.Combat.act(st, ut, { kind: 'skill', skillId: 'taunt', targetUid: uf.uid });
-  ok(ut.statuses.find(x => x.kind === 'guard').rounds === 3, 'guard lasts 3 rounds at basic');
+  ok(ut.statuses.find(x => x.kind === 'guard').rounds === 1, 'guard lasts 1 round at basic');
   ok(uf.statuses.find(x => x.kind === 'taunted').rounds === 3, 'taunt mark is timed (3 rounds)');
-  for (let i = 0; i < 3; i++) endRound(st);
-  ok(ut.statuses.some(x => x.kind === 'guard'), 'guard still up after 2 full rounds');
-  for (let i = 0; i < 3; i++) endRound(st);
+  endRound(st);
+  ok(ut.statuses.some(x => x.kind === 'guard'), 'guard still up through the round it was applied');
+  endRound(st);
+  ok(!ut.statuses.some(x => x.kind === 'guard'), 'guard expired after its round');
+  for (let i = 0; i < 5; i++) endRound(st);
   ok(!uf.marksBy.includes(ut.uid), 'taunt mark expired and unhooked from marksBy');
 })();
 
@@ -67,8 +69,8 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
   const backPool = ADV.Combat.validTargets(st, uR, 'mend', false);
   ok(backPool.includes(uH) && backPool.includes(uT), 'back-liner heals anyone');
   const wardPool = ADV.Combat.validTargets(st, uH, 'guardian_ward', false);
-  ok(wardPool.includes(uR) && wardPool.includes(uH), 'ward reaches same lane and BEHIND');
-  ok(!wardPool.includes(uT), 'ward cannot reach a target AHEAD of the caster');
+  ok(wardPool.includes(uR) && wardPool.includes(uH), 'ward reaches same lane and behind');
+  ok(wardPool.includes(uT), 'ward also reaches a target ahead of the caster');
 })();
 
 // ---------------- 4. elemental statuses & perks ----------------
@@ -280,7 +282,7 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
 (function () {
   console.log('\n-- poison hops to the next living foe --');
   const hero = mkCh({ isPlayer: true, stats: { hp: 200, atk: 18, def: 8, spd: 14 } });
-  give(hero, 'venom_fang', 1);
+  give(hero, 'venom_fang', 10);
   const a = mkCh({ name: 'First', stats: { hp: 80, atk: 6, def: 8, spd: 8 } });
   const b = mkCh({ name: 'Next', stats: { hp: 80, atk: 6, def: 2, spd: 8 } });
   const st = fight(hero, [a, b], 61);

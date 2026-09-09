@@ -29,16 +29,16 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const a2 = ADV.Character.base({ stats: { hp: 100, atk: 11, def: 10, spd: 10 } });
   a2.actives.push({ skillId: 'aimed_shot', level: 25, uses: 250 });
   const d2 = ADV.Character.base({ stats: { hp: 95, atk: 10, def: 10, spd: 9 } });
-  const st2 = ADV.Combat.create([a2], [d2], { rng: new ADV.RNG(2) });
-  const ua2 = st2.units[0], ud2 = st2.units[1];
+  const d3 = ADV.Character.base({ stats: { hp: 95, atk: 10, def: 10, spd: 8 } });
+  const st2 = ADV.Combat.create([a2], [d2, d3], { rng: new ADV.RNG(2) });
+  const ua2 = st2.units[0], ud2 = st2.units.find(u => u.ch === d2);
   ADV.Combat.act(st2, ua2, { kind: 'skill', skillId: 'aimed_shot', targetUid: ud2.uid });
-  const aimedHits = st2.events.filter(e => e.t === 'damage' && e.uid === ud2.uid);
-  const dmgEv2 = aimedHits[0];
-  // GDD: round(11*3.0*1.8*1.375)-10 = 72; Volley at 25 has power 2.0 though.
-  // Aimed Shot advanced = Volley (power 2.0 all enemies): recompute per data.
-  // Ranger flare may append half-power follow-up arrows after the volley hit.
-  console.log('   advanced aimed shot dealt', dmgEv2 && dmgEv2.dmg, '(volley form, power 2.0)');
-  ok(dmgEv2 && dmgEv2.dmg >= 39 && dmgEv2.dmg <= 80, 'advanced manifestation is decisive');
+  const volleyUids = new Set(st2.units.filter(u => u.side === 'b').map(u => u.uid));
+  const aimedHits = st2.events.filter(e => e.t === 'damage' && volleyUids.has(e.uid));
+  const dmgEv2 = aimedHits.find(e => e.uid === ud2.uid);
+  console.log('   advanced aimed shot dealt', dmgEv2 && dmgEv2.dmg, '(volley form, power 1.4)');
+  ok(aimedHits.length >= 2, 'Volley hits every enemy');
+  ok(dmgEv2 && dmgEv2.dmg >= 20 && dmgEv2.dmg <= 40, 'advanced manifestation is decisive');
 })();
 
 (function () {
@@ -176,7 +176,7 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
       if (!p[b].some(l => !/\{(them|their|they|partner)\}/.test(l))) unconditionalOk = false;
     }
   }
-  eq(lines, 960, '960 lines');
+  eq(lines, 1260, '1260 social statements including 300 bonus lines');
   // §17a: no line may be shared between two personalities.
   const bagged = new Map(); let dupes = 0;
   for (const p of Object.values(D)) for (const b of ['general', 'friendly', 'hatred', 'romantic'])

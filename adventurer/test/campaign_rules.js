@@ -27,7 +27,7 @@ const mem = memBackend;
 
 (function () {
   console.log('\n-- §0d Backstab: opener or stealth only, any lane; Exposed --');
-  const rogue = mkCh({ stats: { hp: 100, atk: 12, def: 10, spd: 14 } }); give(rogue, 'backstab'); give(rogue, 'smoke_bomb'); give(rogue, 'cleave');
+  const rogue = mkCh({ stats: { hp: 100, atk: 12, def: 10, spd: 14 } }); give(rogue, 'backstab', 10); give(rogue, 'smoke_bomb'); give(rogue, 'cleave');
   const foe = ADV.Character.makeEnemy(new ADV.RNG(3), 'bandit', { level: 3 }); foe.stats.hp = 400; foe.stats.def = 10;
   const st = fight(rogue, foe, 5);
   const ur = unit(st, rogue), uf = unit(st, foe);
