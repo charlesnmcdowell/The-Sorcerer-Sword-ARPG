@@ -27,6 +27,9 @@ function keepFed(game) {
 }
 function runQuest(game, quest) {
   keepFed(game);
+  const p=ADV.Game.player(game);
+  const info=ADV.Game.departureInfo(game,quest);
+  p.inventory.gold=Math.max(p.inventory.gold,info.tuition+(info.travel?info.travel.total:0));
   const r = ADV.Game.startQuest(game, quest, {});
   if (!r.ok) throw new Error('startQuest: ' + r.error);
   const log = { beats: [], banter: [], reinforced: false, exits: 0 };
@@ -43,6 +46,10 @@ function runQuest(game, quest) {
         // Hold the first round when The Quiet has a spawn queue so the Risen
         // can actually arrive — a one-shot wipe used to skip the reinforce.
         if (st.round < 2 && st.spawnQueue && st.spawnQueue.length) {
+          // This artificial wait probes reinforcement/progression, not survival
+          // against a particular RNG roll. Travel days change that roll. Buffer
+          // the waiting test actor without increasing the boss's HP floor.
+          t.unit.tempHp = Math.max(t.unit.tempHp, t.unit.maxHp * 4);
           ADV.Combat.act(st, t.unit, { kind: 'defend' });
         } else {
           const av = ADV.Combat.validTargets(st, t.unit, 'aimed_shot', false);

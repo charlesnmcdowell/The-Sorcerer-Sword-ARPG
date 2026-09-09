@@ -15,7 +15,10 @@ function contract(game) {
   const p = ADV.Game.player(game); p.stats = { hp: 900, atk: 40, def: 30, spd: 20 };
   p.homeId = 'brick';
   p.meal = { id: 'bread', name: 'Bread', bonus: { hp: 8 } };
-  ADV.Game.startQuest(game, q, {});
+  const info = ADV.Game.departureInfo(game, q);
+  p.inventory.gold = Math.max(p.inventory.gold, info.tuition + ((info.travel && info.travel.total) || 0));
+  const started = ADV.Game.startQuest(game, q, {});
+  if (!started.ok) throw new Error('startQuest: ' + started.error);
   while (!game.quest.readyToComplete && !game.quest.over) {
     ADV.Game.currentEncounter(game); const st = ADV.Game.startCombat(game, false);
     let n = 0; while (!st.over && n++ < 500) { const t = ADV.Combat.currentTurn(st); if (!t) break; if (t.unit.ch.isPlayer) { const bv = ADV.Combat.validTargets(st, t.unit, 'basic_attack'); ADV.Combat.act(st, t.unit, bv.length ? { kind: 'attack', targetUid: bv[0].uid } : { kind: 'defend' }); } else ADV.Combat.aiTakeTurn(st, t.unit); ADV.Combat.advance(st); }
