@@ -189,7 +189,7 @@ function contract(game) {
   ok(ue.downed, 'Finisher executes under 40%');
   ok(uh.chp === maxBefore, 'the kill heal fills the pool he had when the blow landed');
   ok(uh.tempHp === Math.round(maxBefore * 0.3) * 10 - missing, 'Demigod turns the rest into uncapped overheal');
-  ok(h.bonusStats.atk === 1 && h.bonusStats.hp === 1 && h.finisherGains === 1 && uh.maxHp === maxBefore + 1, 'Finisher permanently raises all stats by 1');
+  ok(h.bonusStats.atk === 1 && h.bonusStats.hp === 1 && h.finisherGains === 1 && uh.maxHp === maxBefore + 2, 'Finisher permanently raises all stats by 1');
 })();
 
 (function () {

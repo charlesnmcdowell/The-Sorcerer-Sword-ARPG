@@ -214,9 +214,9 @@ console.log('\n-- Neutral 300g+ contracts finish on a mini-boss --');
 
 console.log('\n-- Faction kits --');
 {
-  ok(ADV.DATA.ENEMIES.hedge_mage.actives.includes('venom_fang'), 'criminal hedge mage uses poison');
-  ok(ADV.DATA.ENEMIES.town_watch.actives.includes('fire_bolt'), 'town watch casts fire');
-  ok(ADV.DATA.ENEMIES.plated_sentinel.actives.includes('spark'), 'sentinels cast lightning');
+  ok(ADV.DATA.ENEMIES.hedge_mage.actives.includes('frost_touch'), 'criminal hedge mage casts frost');
+  ok(ADV.DATA.ENEMIES.town_watch.actives.includes('sunder') && ADV.DATA.ENEMIES.town_watch.actives.includes('taunt'), 'town watch holds the line');
+  ok(ADV.DATA.ENEMIES.plated_sentinel.actives.includes('mace_swing') && ADV.DATA.ENEMIES.plated_sentinel.actives.includes('shield_wall'), 'sentinels fight in plate');
   ok(ADV.DATA.ENEMIES.dire_wolf.actives.includes('pack_snap'), 'wolves have a unique melee');
   ok(ADV.DATA.SKILLS.pack_snap.unique, 'pack snap cannot be learned');
   ok(ADV.DATA.ENEMIES.ember_cultist.camp === 'law', 'ember cultists stand with the law');

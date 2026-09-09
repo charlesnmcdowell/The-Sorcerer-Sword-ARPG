@@ -158,7 +158,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   st.rng = { float: () => 0.5, chance: () => false };
   const plan = ADV.Combat.planFor(st, unit(st, foe));
   eq(plan.targetUid, unit(st, ally).uid, 'enemies pick the party over the pretty one');
-  eq(ADV.Party.hirelingWageFor(p), C.GOLD.hirelingWage + 10, 'hired for 10g over the going rate');
+  eq(ADV.Party.hirelingWageFor(p), C.GOLD.hirelingWage + 100 + 10, 'Lookism plus the player wage bump');
   const g = newGame(11, 'm', ['lookism', 'cleave', 'mend']);
   const world = g.world, me = ADV.Game.player(g);
   ADV.Courtship.tick(world, g.rng, () => {}, false);
@@ -321,9 +321,9 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   ADV.Party.removeMember(world, party, me.id);
   const mine = ADV.Party.create(world, me.id);
   const hire = world.characters.find(c => c.alive && !c.isPlayer && !c.partyId);
-  mine.memberIds.push(hire.id); mine.wages[hire.id] = 200; hire.partyId = mine.id; hire.leaderId = me.id;
-  const cheap = g.board.find(q => q.track === 'party' && q.payout < 200);
-  ok(cheap && !ADV.Game.contractCoversPayroll(g, cheap) && !ADV.Game.startQuest(g, cheap, {}).ok, 'a contract that cannot cover payroll is refused');
+  const cheapest = g.board.filter(q => q.track === 'party').sort((a, b) => (a.payout || 0) - (b.payout || 0))[0];
+  mine.memberIds.push(hire.id); mine.wages[hire.id] = (cheapest.payout || 0) + 50; hire.partyId = mine.id; hire.leaderId = me.id;
+  ok(cheapest && !ADV.Game.contractCoversPayroll(g, cheapest) && !ADV.Game.startQuest(g, cheapest, {}).ok, 'a contract that cannot cover payroll is refused');
 })();
 
 (function () {
@@ -375,8 +375,8 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   console.log('\n-- 14. hazard contracts & 15. population --');
   const g = newGame(61, 'm');
   const board = g.board;
-  const h2 = board.filter(q => q.hazard && q.payout === 300), h3 = board.filter(q => q.hazard && q.payout === 600);
-  eq(h2.length, 2, 'two 300g contracts'); eq(h3.length, 2, 'two 600g contracts');
+  const h2 = board.filter(q => q.hazard && q.payout === 400), h3 = board.filter(q => q.hazard && q.payout === 700);
+  eq(h2.length, 2, 'two 400g hazard contracts'); eq(h3.length, 2, 'two 700g hazard contracts');
   ok(h2.concat(h3).every(q => q.hazard && q.encounters.every(e => e.enemyTypeIds.includes(q.hazard))), 'each is built around a debuff crew');
   const types = new Set(h2.concat(h3).flatMap(q => q.encounters.flatMap(e => e.enemyTypeIds)));
   ok(['marsh_stalker', 'ember_cultist', 'frost_hag', 'gravewarden', 'plague_knave'].some(t => types.has(t)), 'debuff enemies appear');
@@ -420,7 +420,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   g = 0; while (!st2.over && g++ < 50) { const t = ADV.Combat.currentTurn(st2); if (!t) break; const bv = ADV.Combat.validTargets(st2, t.unit, 'basic_attack'); ADV.Combat.act(st2, t.unit, bv.length ? { kind: 'attack', targetUid: bv[0].uid } : { kind: 'defend' }); ADV.Combat.advance(st2); }
   ADV.Combat.exportHp(st2);
   eq(tank.stats.hp, 240, 'second battle: 240');
-  eq(ADV.Character.maxHp(tank), 240, 'max HP reflects it');
+  eq(ADV.Character.maxHp(tank), 480, 'max HP reflects the grown pool plus the player safety buffer');
   // NPCs with the perk grow on the world clock
   const gm = newGame(71, 'm'); const w = gm.world;
   const npc = w.characters.find(c => !c.isPlayer && c.alive && c.perks.some(x => x.skillId === 'bulwark'));

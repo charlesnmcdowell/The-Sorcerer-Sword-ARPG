@@ -111,7 +111,7 @@ console.log('\n-- NPC hero/villain floor and smite --');
   const dummy = mk({ name: 'Mook', stats: { hp: 80, atk: 4, def: 0, spd: 6 } });
   const st = fight(player, [hero, dummy], 7);
   const uh = unit(st, hero);
-  ok(uh.maxHp >= unit(st, player).maxHp, 'NPC hero HP is at least the player\'s');
+  ok(uh.maxHp >= ADV.Character.effStat(player, 'hp') / 2, 'NPC hero HP matches the player without the safety buffer');
   ok(unit(st, player).maxHp === ADV.Character.effStat(player, 'hp'), 'the player is not raised to a hero floor');
 }
 

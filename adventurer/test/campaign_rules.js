@@ -224,7 +224,7 @@ const mem = memBackend;
 })();
 
 (function () {
-  console.log('\n-- wages: apply 30–200 by reputation, raises to 300 --');
+  console.log('\n-- wages: apply 30–200 by reputation, raises to 300 (player +100) --');
   const G = ADV.DATA.CONST.GOLD;
   eq(G.hirelingWage, 30, 'wages start at 30');
   eq(G.typicalWage, 30, 'offers start at 30');
@@ -262,9 +262,9 @@ const mem = memBackend;
   const named = ADV.Party.requestRaise(world, { chance: () => true }, p, 70);
   ok(named.ok && named.accepted && named.wage === 70, 'you can name the next raise');
   world.questClock++;
-  party.wages[p.id] = 300; p.wage = 300;
-  const top = ADV.Party.requestRaise(world, { chance: () => true }, p, 310);
-  eq(top.ok, false, '300g is the raise ceiling');
+  party.wages[p.id] = 400; p.wage = 400;
+  const top = ADV.Party.requestRaise(world, { chance: () => true }, p, 410);
+  eq(top.ok, false, '400g is the player raise ceiling');
 })();
 
 (function () {
