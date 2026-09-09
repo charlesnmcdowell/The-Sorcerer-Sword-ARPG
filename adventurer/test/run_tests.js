@@ -330,10 +330,42 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   }
   eq(errs, 0, 'no tick errors');
   const adults = ADV.World.adults(world).filter(c => !c.isPlayer);
+  const kit = c => (c.perks || []).length + (c.actives || []).length;
+  const lvl = c => Math.max(1, ...(c.perks || []).map(e => e.level), ...(c.actives || []).map(e => e.level));
+  const quested = adults.filter(c => (c.questsCompleted || 0) > 0).length;
+  const goldUp = adults.filter(c => (c.inventory.gold || 0) > 0).length;
+  const goldSum = adults.reduce((n, c) => n + (c.inventory.gold || 0), 0);
+  const leveled = adults.filter(c => lvl(c) > 1).length;
+  const extraSkills = adults.filter(c => kit(c) > 3).length;
+  const geared = adults.filter(c => c.equippedSet).length;
+  const paired = adults.filter(c => ADV.Rel.partnerIds(c).length).length;
+  const kids = world.characters.reduce((n, c) => n + ((c.dependents || []).length), 0) + (world.orphans || []).length;
+  const births = world.eventFeed.filter(e => /had a child/.test(e.text || '')).length;
+  const hatred = world.edges.filter(e => e.score <= ADV.DATA.CONST.REL.HATRED_MAX).length;
   console.log('   pop after 60:', adults.length, 'feed lines:', world.eventFeed.length,
-    'edges:', world.edges.length, 'orphans:', world.orphans.length);
+    'edges:', world.edges.length, 'orphans:', world.orphans.length,
+    'quested=' + quested, 'gold=' + goldSum, 'gear=' + geared, 'kids=' + kids, 'hatred=' + hatred);
   ok(adults.length >= ADV.DATA.CONST.POP_FLOOR, 'population above floor');
   ok(world.eventFeed.length > 5, 'event feed is alive');
+  ok(quested >= 8, 'NPCs complete contracts on the clock', quested);
+  ok(goldSum >= 400 && goldUp >= 6, 'NPCs earn gold', goldSum + '/' + goldUp);
+  ok(leveled >= 4, 'used skills gain levels', leveled);
+  ok(extraSkills >= 1, 'NPCs buy extra skills', extraSkills);
+  ok(geared >= 1, 'NPCs buy armor sets', geared);
+  ok(paired >= 4, 'NPCs form relationships', paired);
+  ok(births >= 1 || kids >= 1, 'NPC couples have children', births + '/' + kids);
+  const couple = adults.find(c => {
+    const ids = ADV.Rel.partnerIds(c);
+    const other = ids.length ? ADV.World.byId(world, ids[0]) : null;
+    return other && other.alive && !other.isPlayer;
+  });
+  ok(couple, 'a living couple exists to jilt');
+  if (couple) {
+    const ex = ADV.World.byId(world, ADV.Rel.partnerIds(couple)[0]);
+    ADV.Rel.jilt(world, couple, ex);
+    ok(!ADV.Rel.isPartner(couple, ex), 'jilt ends the marriage');
+    ok(ADV.Rel.hates(world, ex.id, couple.id), 'the abandoned partner drops to hatred');
+  }
   // O(N) check: outbound non-player edges per NPC <= 1
   const badSlots = adults.filter(n =>
     world.edges.filter(e => e.fromId === n.id && e.toId !== world.playerId).length > 1);
