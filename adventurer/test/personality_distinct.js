@@ -17,15 +17,26 @@ for(const [pid,p]of Object.entries(A.DATA.DIALOGUE)){
   const speaker={personalityId:pid};
   for(const family of new Set(families.flat())){
    const eligible=lines.map((_,i)=>i).filter(i=>families[i].includes(family));
-   for(let cycle=0;cycle<4;cycle++){
-    const seen=new Set();
-    for(let j=0;j<eligible.length;j++){
-     const line=A.util.speakEx(null,speaker,band,{replyTo:family,rand:(j%7)/7});
-     assert.ok(line,pid+' '+band+' missing '+family);
-     assert.ok(eligible.includes(line.idx),pid+' off-topic reply after pool exhausted');
-     assert.ok(!seen.has(line.idx),pid+' repeated before compatible pool exhausted');
-     seen.add(line.idx);selections++;
-    }
+   speaker.lastVariantUsed={};speaker.dialogueRotation={};
+   const seen=new Set();
+   for(let j=0;j<eligible.length;j++){
+    const line=A.util.speakEx(null,speaker,band,{replyTo:family,rand:(j%7)/7});
+    assert.ok(line,pid+' '+band+' missing '+family);
+    assert.ok(eligible.includes(line.idx),pid+' left the subject before that family was spent');
+    assert.ok(!seen.has(line.idx),pid+' repeated before compatible pool exhausted');
+    seen.add(line.idx);selections++;
+   }
+   const usable=[];
+   for(let i=0;i<lines.length;i++){
+    const needs=A.util.lineNeeds(lines[i]);
+    if(needs.includes('them')||needs.includes('partner'))continue;
+    usable.push(i);
+   }
+   while(seen.size<usable.length){
+    const line=A.util.speakEx(null,speaker,band,{replyTo:family,rand:0.4});
+    assert.ok(line,pid+' '+band+' went silent with replies left');
+    assert.ok(!seen.has(line.idx),pid+' repeated before the rest of the band was spent');
+    seen.add(line.idx);selections++;
    }
   }
   assert.equal(A.util.speakEx(null,speaker,band,{replyTo:'unknown-subject'}),null);

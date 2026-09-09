@@ -57,10 +57,15 @@ for (const band of ['general_response','friendly_response','hatred_response','ro
  const pool = A.DATA.DIALOGUE[replyNpc.personalityId][band];
  assert.ok(pool.length >= 4, band + ' keeps the full emotional pool');
  const rules=A.DATA.DIALOGUE[replyNpc.personalityId].replyFamilies[band];
- const eligible=pool.map((_,i)=>i).filter(i=>rules[i].includes('thanks'));
- const used = noRepeat(replyNpc, band, {replyTo:'thanks', target:player.name}, 36,eligible.length===1);
- assert.equal(used.size,eligible.length,band+' rotates every appropriate thanks reply');
- assert.ok([...used].every(i=>eligible.includes(i)),band+' does not substitute another subject');
+ const thanks=pool.map((_,i)=>i).filter(i=>rules[i].includes('thanks'));
+ replyNpc.lastVariantUsed = {}; replyNpc.dialogueRotation = {};
+ const first = noRepeat(replyNpc, band, {replyTo:'thanks', target:player.name}, thanks.length, thanks.length===1);
+ assert.equal(first.size,thanks.length,band+' spends every thanks reply first');
+ assert.ok([...first].every(i=>thanks.includes(i)),band+' answers thanks before reaching for other replies');
+ if (pool.length > thanks.length) {
+  const more = noRepeat(replyNpc, band, {replyTo:'thanks', target:player.name}, pool.length - thanks.length);
+  assert.ok([...more].every(i => !first.has(i)),band+' uses other responses after thanks is spent');
+ }
 }
 noRepeat({...npc, lastVariantUsed:{}, dialogueRotation:{}}, 'friendly', {score:80, target:player.name}, 24);
 noRepeat({...npc, lastVariantUsed:{}, dialogueRotation:{}}, 'hatred', {score:-80, target:player.name}, 24);
