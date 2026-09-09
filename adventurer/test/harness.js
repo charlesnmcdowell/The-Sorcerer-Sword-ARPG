@@ -7,8 +7,9 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/data/constants.js', 'js/data/skills.js', 'js/data/campaign_skills.js', 'js/data/campaign_data.js', 'js/data/campaign_dialogue.js',
-  'js/data/campaign2_skills.js', 'js/data/monster_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js', 'js/data/enemies.js',
-  'js/data/minibosses.js',
+  'js/data/campaign2_skills.js', 'js/data/monster_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js',   'js/data/enemies.js',
+  'js/data/minibosses.js', 'js/data/enemy_tactics.js',
+  'js/data/enemy_tactics.js',
   'js/data/names.js', 'js/data/tutorial.js', 'js/data/registry.js',
   'js/data/dialogue.js', 'js/data/dialogue_hiro.js', 'js/data/dialogue2.js', 'js/data/dialogue_context.js', 'js/data/dialogue_bonus.js', 'js/data/travel.js', 'js/data/personality_events.js', 'js/data/personality_pairs.js', 'js/data/personality_travel.js', 'js/data/personality_social.js', 'js/data/campaign_story.js', 'js/data/voice_manifest.js',
   'js/core/rng.js', 'js/core/util.js', 'js/core/skillsys.js', 'js/core/character.js',
@@ -16,7 +17,8 @@ const FILES = [
   'js/core/survival.js',
   'js/core/combat.js', 'js/core/combat_ai.js', 'js/core/combat_effects.js', 'js/core/relationships.js', 'js/core/courtship.js', 'js/core/hiro.js', 'js/core/vault.js',
   'js/core/quests.js', 'js/core/party.js', 'js/core/divine.js', 'js/core/death.js',
-  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/conversation.js', 'js/core/travel.js',
+  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/balance_support.js',
+  'js/core/balance_support.js',
 ];
 
 function load() {

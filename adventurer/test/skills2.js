@@ -269,6 +269,38 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
 })();
 
 (function () {
+  console.log('\n-- turning AUTO off actually drops the last skill --');
+  const ch = mkCh({ isPlayer: true }); give(ch, 'fire_bolt', 1);
+  ADV.Combat.setSkillAuto(ch, 'basic_attack', true, false);
+  ok(ADV.Combat.skillAutoOn(ch, 'basic_attack', false), 'Attack AUTO arms');
+  ADV.Combat.setSkillAuto(ch, 'basic_attack', false, false);
+  ok(!ADV.Combat.skillAutoOn(ch, 'basic_attack', false), 'Attack AUTO stays off when it was the only one');
+  eq(ADV.Combat.autoList(ch).length, 0, 'the rotation is empty after the last Attack toggle');
+  ok(!ch.autoAttack && !ch.autoRepeat, 'legacy attack flags do not resurrect it');
+
+  ADV.Combat.setSkillAuto(ch, 'fire_bolt', true, false);
+  ADV.Combat.setSkillAuto(ch, 'basic_attack', true, false);
+  ADV.Combat.setSkillAuto(ch, 'fire_bolt', false, false);
+  ok(ADV.Combat.skillAutoOn(ch, 'basic_attack', false), 'Attack stays on after dropping Fire Bolt');
+  ADV.Combat.setSkillAuto(ch, 'basic_attack', false, false);
+  ok(!ADV.Combat.skillAutoOn(ch, 'basic_attack', false), 'Attack turns off after the other skill is already gone');
+  eq(ADV.Combat.autoList(ch).length, 0, 'clearing the last remaining skill empties the rotation');
+
+  ADV.Combat.setSkillAuto(ch, 'fire_bolt', true, false);
+  ADV.Combat.setSkillAuto(ch, 'fire_bolt', false, false);
+  ok(!ADV.Combat.skillAutoOn(ch, 'fire_bolt', false), 'a lone skill AUTO also stays off');
+  ok(!ch.actives.find(e => e.skillId === 'fire_bolt').auto, 'the per-skill flag is cleared');
+
+  const legacy = mkCh({ isPlayer: true, autoOrder: undefined, autoAdopted: false, autoAttack: true });
+  delete legacy.autoOrder;
+  legacy.autoAdopted = false;
+  legacy.autoAttack = true;
+  ok(ADV.Combat.skillAutoOn(legacy, 'basic_attack', false), 'old saves still fold autoAttack into the list');
+  ADV.Combat.setSkillAuto(legacy, 'basic_attack', false, false);
+  ok(!ADV.Combat.skillAutoOn(legacy, 'basic_attack', false), 'then that folded Attack can still be turned off');
+})();
+
+(function () {
   console.log('\n-- Venom Fang applies poison and bleed --');
   const rogue = mkCh({ stats: { hp: 100, atk: 14, def: 8, spd: 14 } }); give(rogue, 'venom_fang', 1);
   const foe = mkCh({ name: 'Mark', stats: { hp: 200, atk: 8, def: 6, spd: 8 } });

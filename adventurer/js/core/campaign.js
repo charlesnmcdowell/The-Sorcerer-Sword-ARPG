@@ -236,7 +236,10 @@ Campaign.spawnEnemy = function (rng, typeId, level, opts) {
       { kind: 'poison', power: 0.5, rounds: 3, stacks: true },
       { kind: 'burn', power: 0.8, rounds: 2 },
     ];
-    ch.hitStatus = rng.pick(riders);
+    const kit=t.pool||[];
+    const burning=kit.some(id=>/fire|flame|ember|ashfall|siege/.test(id));
+    const venom=kit.some(id=>/poison|venom|serpent|wither/.test(id));
+    ch.hitStatus = riders[burning?2:venom?1:0];
   }
   if (t.undead || opts.undead) { ch.isUndead = true; ch.statusImmunities = t.statusImmunities || []; }
   if (t.statusImmunities) ch.statusImmunities = t.statusImmunities;
@@ -245,6 +248,7 @@ Campaign.spawnEnemy = function (rng, typeId, level, opts) {
   // roll the equipped subset from the pool (signature always included)
   const pool = t.pool.slice();
   const picks = [];
+  if (!opts.signature && t.tactics && pool.includes(t.tactics.signature)) opts = Object.assign({}, opts, { signature: t.tactics.signature });
   if (opts.signature && pool.includes(opts.signature)) { picks.push(opts.signature); pool.splice(pool.indexOf(opts.signature), 1); }
   const n = opts.equips != null ? opts.equips : t.equips;
   const shuffled = rng.shuffle(pool);
@@ -275,7 +279,7 @@ Campaign.isTankSkill = function (id) {
 };
 Campaign.guardBoss = function (game, out, factionId, level, rng, spawn) {
   const p = ADV.Game.player(game);
-  const floor = p ? ADV.Character.maxHp(p) : 0;
+  const floor = p ? ADV.Character.maxHp(p) / 2 : 0; // exclude the player's safety buffer
   const restores = (id) => { const d = D().SKILLS[id]; return !!(d && d.heal && (d.power || d.hotRounds || d.healFromTaken || d.revive) && d.target !== 'enemy'); };
   const guardish = (id) => Campaign.isTankSkill(id);
   const skillsOf = (ch) => (ch.actives || []).concat(ch.perks || []).map(a => a.skillId);
