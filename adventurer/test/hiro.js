@@ -205,5 +205,79 @@ function contract(game) {
   eq(h.equippedSet, 'ronin', 'he still wears Ronin Gear when he stands up');
 })();
 
+(function () {
+  console.log('\n-- rival intercepts stay rare and usually not Hiro --');
+  const g = newGame(13, 'f');
+  contract(g); contract(g);
+  g.tutorial = { step: 'done' };
+  const p = ADV.Game.player(g);
+  const world = g.world;
+  const q = { track: 'party', campaign: false, factionAlignment: 'neutral' };
+  const origChance = C.RIVAL_CHANCE, origHiro = C.HIRO_RIVAL_CHANCE;
+  const origGrace = C.RIVAL_GRACE_QUESTS, origCool = C.RIVAL_COOLDOWN_QUESTS;
+  function restore() {
+    C.RIVAL_CHANCE = origChance; C.HIRO_RIVAL_CHANCE = origHiro;
+    C.RIVAL_GRACE_QUESTS = origGrace; C.RIVAL_COOLDOWN_QUESTS = origCool;
+  }
+  try {
+    C.RIVAL_CHANCE = 1;
+    world.lastRivalOuting = null;
+    for (let i = 0; i < 5; i++) {
+      p.questsCompleted = i; p.questsFailed = 0;
+      ok(!ADV.Game.shouldMeetRival(g, q), 'no rival during the first five contracts (' + i + ')');
+    }
+    p.questsCompleted = 5;
+    ok(ADV.Game.shouldMeetRival(g, q), 'a rival can appear after five contracts');
+
+    world.lastRivalOuting = 5;
+    p.questsCompleted = 6;
+    ok(!ADV.Game.shouldMeetRival(g, q), 'the next contract after a raid cannot be raided');
+    p.questsCompleted = 7;
+    ok(!ADV.Game.shouldMeetRival(g, q), 'the second contract after a raid still cannot be raided');
+    p.questsCompleted = 8;
+    ok(ADV.Game.shouldMeetRival(g, q), 'a rival can return after two raid-free contracts');
+
+    for (const party of world.parties) {
+      const lead = ADV.Party.leader(world, party);
+      if (lead) { lead.factionLeaning = 'neutral'; lead.factionStanding = {}; }
+    }
+    const hiroParty = ADV.Party.of(world, ADV.Hiro.npc(world));
+    ok(hiroParty, 'Hiro still leads a company');
+    const otherLeads = world.parties.filter(x => x !== hiroParty && ADV.Party.leader(world, x));
+    ok(otherLeads.length > 0, 'other companies exist to raid');
+    let hiroHits = 0, otherHits = 0, noneHits = 0;
+    for (let i = 0; i < 400; i++) {
+      const picked = ADV.Game.pickRivalParty(g, q);
+      if (!picked) noneHits++;
+      else if (ADV.Hiro.isHiro(ADV.Party.leader(world, picked))) hiroHits++;
+      else otherHits++;
+    }
+    ok(noneHits === 0, 'a rival is chosen when another company is available');
+    ok(hiroHits >= 3 && hiroHits <= 45, 'Hiro is about 5% of intercepts', hiroHits);
+    ok(otherHits > hiroHits * 5, 'other party leads take most intercepts', otherHits + ' vs ' + hiroHits);
+
+    world.parties = world.parties.filter(x => x === hiroParty);
+    C.HIRO_RIVAL_CHANCE = 0.05;
+    let onlyHiro = 0, onlyNone = 0;
+    for (let i = 0; i < 200; i++) {
+      const picked = ADV.Game.pickRivalParty(g, q);
+      if (!picked) onlyNone++;
+      else if (ADV.Hiro.isHiro(ADV.Party.leader(world, picked))) onlyHiro++;
+    }
+    ok(onlyNone > 150, 'Hiro alone usually skips the raid', onlyNone);
+    ok(onlyHiro > 0 && onlyHiro < 30, 'Hiro alone still rarely intercepts', onlyHiro);
+
+    C.HIRO_RIVAL_CHANCE = 0;
+    p.questsCompleted = 12;
+    world.lastRivalOuting = null;
+    C.RIVAL_CHANCE = 1;
+    const skipped = ADV.Game.attachRival(g, q);
+    ok(!skipped, 'a Hiro-only skip does not attach a rival');
+    ok(world.lastRivalOuting == null, 'a skipped raid does not start the cooldown');
+  } finally {
+    restore();
+  }
+})();
+
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);
 process.exit(fail ? 1 : 0);
