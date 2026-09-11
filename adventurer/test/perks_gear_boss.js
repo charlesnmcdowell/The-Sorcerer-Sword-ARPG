@@ -219,7 +219,7 @@ console.log('\n-- Title wipe notice stays up; old lives cannot Continue --');
   const broken = memBackend();
   broken.setItem('adv:world', JSON.stringify({ seed: 1, playerId: 'c1' }));
   ADV.Save.setBackend(broken);
-  ok(ADV.Save.hasSave() && !ADV.Save.hasValidContinue(), 'a leftover world key is not a Continue');
+  ok(!ADV.Save.hasSave() && !ADV.Save.hasValidContinue(), 'a legacy world key is reset by the art release gate');
   ok(ADV.TitleNotice.visible(), 'so the wipe notice still shows');
 }
 
