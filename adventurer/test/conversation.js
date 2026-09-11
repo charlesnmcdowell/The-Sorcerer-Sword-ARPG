@@ -69,6 +69,32 @@ for (const band of ['general_response','friendly_response','hatred_response','ro
 }
 noRepeat({...npc, lastVariantUsed:{}, dialogueRotation:{}}, 'friendly', {score:80, target:player.name}, 24);
 noRepeat({...npc, lastVariantUsed:{}, dialogueRotation:{}}, 'hatred', {score:-80, target:player.name}, 24);
+{
+ const speaker={personalityId:npc.personalityId, lastVariantUsed:{}, dialogueRotation:{}};
+ const band='friendly_response';
+ const rules=A.DATA.DIALOGUE[speaker.personalityId].replyFamilies[band];
+ const contact=A.DATA.DIALOGUE[speaker.personalityId][band].map((_,i)=>i).filter(i=>rules[i].includes('contact'));
+ const walked=[];
+ for (let i = 0; i < contact.length; i++) walked.push(A.util.speakEx(w, speaker, band, {replyTo:'contact', target:player.name}).idx);
+ assert.deepEqual(walked, contact, 'contact replies walk their family in order');
+ if (contact.length > 1) {
+  assert.notEqual(A.util.speakEx(w, speaker, band, {replyTo:'contact', target:player.name}).idx, walked[walked.length-1], 'a new cycle does not reopen the last contact reply');
+ }
+ const greeter={personalityId:npc.personalityId, lastVariantUsed:{}, dialogueRotation:{}};
+ const greetPool=A.DATA.DIALOGUE[greeter.personalityId].friendly.filter((t,i)=>{
+  const needs=A.util.lineNeeds(t); return !needs.includes('them') && !needs.includes('partner');
+ });
+ const greetSeen=new Set();
+ let lastGreet=null;
+ const greetN=Math.min(8, greetPool.length);
+ for (let i = 0; i < greetN; i++) {
+  const line=A.util.speakEx(w, greeter, 'friendly', {score:80, target:player.name});
+  if (lastGreet != null) assert.notEqual(line.idx, lastGreet);
+  lastGreet=line.idx;
+  greetSeen.add(line.idx);
+ }
+ assert.equal(greetSeen.size, greetN, 'a warm greeting uses the whole friendly pool, not two neighbouring lines');
+}
 A.Conversation.remember(w,'revived',player.id,npc.id);
 A.Conversation.remember(w,'revived',player.id,npc.id);
 assert.equal(npc.conversationMemory.filter(e=>e.kind==='revived').length,1);
