@@ -850,48 +850,6 @@ to `package.json`'s `test` chain.
 have taken no damage (`Math.max(1, …)`). Title perks stay flat on purpose.
 Charm's Beguile recruit is strong for one encounter — that is the written
 advanced form, not a new number.
- a life. Design: `VARENHOLMS_GATE_CAMPAIGN.md`. Every line and
-choice: `js/data/campaign3_dialogue.js` (text only; the voice pass is pending —
-`VARENHOLMS_GATE_VOICE_SCRIPT.md` lists every clip by character, and
-`tools/c3_voice_lines.json` is the generation manifest). Art order sheet:
-`VARENHOLMS_GATE_ART_REQUIREMENTS.md`.
-
-- Data: `js/data/campaign3_data.js` (faction `gate`, 46 characters, 24 enemy
-  types, 19 minis, 14 quests). Engine: `js/core/campaign3.js` (loads after
-  `game.js`; wraps the same `ADV.Campaign` hooks campaign2 wraps, plus
-  `Game.currentEncounter` / `Game.finishCombat` for openers and closings on any
-  encounter). UI: `js/ui/campaign3_ui.js` (Story hall `Panels.story`, the choice
-  modal, the epilogue card; patches `CampaignUI.fill/speaker/playBeat` for
-  campaign3 beats only).
-- Progress lives in `game.meta.c3` and survives death; companions are campaign
-  actors rebuilt per quest at the quest's level; up to three ride along.
-- Tests: `test/campaign3.js` (three full scripted playthroughs through real
-  combat), `test/campaign3_lines.js` (every beat, reply, gate and token),
-  `test/browser_story.js` (hall, departure, a real choice in an encounter, a
-  town-arrival choice, the epilogue card; server on :8734).
-- Gate + publish: `python3 tools/safe_publish.py --check-only` /
-  `python3 tools/safe_publish.py <site-repo> [--dest play/adventurer] [--browser]`.
- a life. Design: `VARENHOLMS_GATE_CAMPAIGN.md`. Every line and
-choice: `js/data/campaign3_dialogue.js` (text only; the voice pass is pending —
-`VARENHOLMS_GATE_VOICE_SCRIPT.md` lists every clip by character, and
-`tools/c3_voice_lines.json` is the generation manifest). Art order sheet:
-`VARENHOLMS_GATE_ART_REQUIREMENTS.md`.
-
-- Data: `js/data/campaign3_data.js` (faction `gate`, 46 characters, 24 enemy
-  types, 19 minis, 14 quests). Engine: `js/core/campaign3.js` (loads after
-  `game.js`; wraps the same `ADV.Campaign` hooks campaign2 wraps, plus
-  `Game.currentEncounter` / `Game.finishCombat` for openers and closings on any
-  encounter). UI: `js/ui/campaign3_ui.js` (Story hall `Panels.story`, the choice
-  modal, the epilogue card; patches `CampaignUI.fill/speaker/playBeat` for
-  campaign3 beats only).
-- Progress lives in `game.meta.c3` and survives death; companions are campaign
-  actors rebuilt per quest at the quest's level; up to three ride along.
-- Tests: `test/campaign3.js` (three full scripted playthroughs through real
-  combat), `test/campaign3_lines.js` (every beat, reply, gate and token),
-  `test/browser_story.js` (hall, departure, a real choice in an encounter, a
-  town-arrival choice, the epilogue card; server on :8734).
-- Gate + publish: `python3 tools/safe_publish.py --check-only` /
-  `python3 tools/safe_publish.py <site-repo> [--dest play/adventurer] [--browser]`.
 
 ## Story campaign: Varenholm's Gate (campaign3)
 
@@ -899,11 +857,16 @@ A fourteen-quest story campaign with a silent protagonist and pick-a-line
 choices, reached from the **Varenholm's Gate** entry in the town menu from the
 first minute of a life. Design: `VARENHOLMS_GATE_CAMPAIGN.md`. Every line and
 choice: `js/data/campaign3_dialogue.js` (text only; the voice pass is pending —
-`VARENHOLMS_GATE_VOICE_SCRIPT.md` lists every clip by character, and
+`VARENHOLMS_GATE_VOICE_SCRIPT.md` is the script in playing order plus a casting appendix, and
 `tools/c3_voice_lines.json` is the generation manifest). Art order sheet:
 `VARENHOLMS_GATE_ART_REQUIREMENTS.md`.
 
-- Data: `js/data/campaign3_data.js` (faction `gate`, 46 characters, 24 enemy
+- Voices: every named person carries a `region` (`CAMPAIGN3_REGIONS`) with a
+  real-world flavour (Ethiopian Lanternhold, Georgia-USA Thornbury, Welsh
+  Dunmere, Kenyan Umbra, Nigerian Gate, Japanese elves, Arabic dark elves,
+  Turkish Kalden, Indian Vashk, Jamaican Umbral Hand, Mexican Dawning Flame);
+  accents live in word choice and idiom, never phonetic spelling.
+- Data: `js/data/campaign3_data.js` (faction `gate`, 47 characters, 24 enemy
   types, 19 minis, 14 quests). Engine: `js/core/campaign3.js` (loads after
   `game.js`; wraps the same `ADV.Campaign` hooks campaign2 wraps, plus
   `Game.currentEncounter` / `Game.finishCombat` for openers and closings on any
