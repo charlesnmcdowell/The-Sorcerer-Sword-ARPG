@@ -64,7 +64,7 @@ console.log('\n-- Recorded SFX land on the right skills --');
     spark: ['lightning_use', 'lightning_hit'],
     poison_spray: ['acid_use', 'acid_hit'],
     venom_draw: ['acid_use', 'acid_hit'],
-    venom_fang: ['bite_use', 'bite_hit'],
+    venom_fang: ['thrust_use', 'thrust_hit'],   // a dagger stab, not jaws (reported: the bite bank sounded like biting an apple)
     shadow_lance: ['shadow_use', 'shadow_hit'],
     umbral_rake: ['shadow_use', 'shadow_hit'],
     thorn_lash: ['nature_use', 'nature_hit'],

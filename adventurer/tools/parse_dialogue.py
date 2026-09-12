@@ -8,9 +8,11 @@ Format expected:
   1. "Line text with {tokens}."
 """
 import json, re, sys
+from pathlib import Path
 
-SRC = "/home/claude/adventurer/GDD.md"
-OUT = "/home/claude/adventurer/js/data/dialogue.js"
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / 'docs/design/GDD.md'
+OUT = ROOT / 'js/data/dialogue.js'
 
 text = open(SRC, encoding="utf-8").read()
 part3 = text.split("# Part III")[1]

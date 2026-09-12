@@ -1,0 +1,46 @@
+# Anime art expansion — full-game update
+
+The approved art style now runs in the normal game. The fitting room remains available as a separate sample; it is no longer the only place the new art appears.
+
+## What changed
+
+- **Appearance variety:** 27 ordinary adult head/hair designs, five eye shapes, five mouth shapes, six eye colors and eight lip colors. Creation has a cosmetic appearance editor. Locs, natural curls, braids, cornrows, fades, buns, ponytails, hime and two-block cuts, long waves, short cuts, beards, goatees and mustaches are represented. The head library includes deep, brown, tan, light, fair and pale complexions. Hair/face/complexion are authored together; eye and lip choices are independent. Hairstyles are available without ethnicity restrictions.
+- **Story identities:** 77 reserved looks cover the 76 named campaign characters and Hiro. This includes the original faction recruiters, rivals, leaders and antagonists, the divine cast, and the 46 newly added Varenholm’s Gate characters. Ordinary NPCs and character creation cannot select these heads. Jiro has an undead complexion, damaged face, cloudy eyes without living pupils, and worn shinobi clothing. Gate identities reflect elves, a halfling, a dwarf, half-orc and ogre characters, ages, scars, rank and profession. Sarn retains Korvath’s facial resemblance under his disguise. Bramm carries Pip.
+- **Equipment:** all 24 equipment sets have male and female wardrobe coverage, plus ordinary clothing. Warden’s Gear has its own design. Korvath and Bramm also have dedicated default torsos. Armor, dresses, field coats, faction uniforms, ninja masks and headgear fit the new portrait proportions. Adult female clothing has a defined bust and fitted silhouette; dependent children use a separate modest child atlas.
+- **Persistent identity:** buying, selling, granting, inheriting or outfitting gear reads the current `equippedSet`. Face, hairstyle, eye/lip selection, personality and voice are separate. Raised/conscripted versions retain their identity. Reverting from a druid form returns to current equipment. Individual human enemies now vary within a shared enemy type.
+- **Creatures and forms:** 32 new creature/form frames plus the four approved wolf, bear, panther and sentinel illustrations. Every current enemy definition resolves to an illustrated family or authored character. Species variants retain their family and use markings/palette differences. Serpent, hound, fox and storm forms no longer borrow unrelated animal pictures; three-tail and nine-tail fox upgrades have separate illustrations. Human combat stances retain human portraits.
+- **World art:** 34 detailed compositions cover all current battle-ground recipes, travel location types and six homes, with explicit aliases. Gate journeys use these scenery types through the campaign’s location mappings. Title, creation, town, quest staging, battles, travel, funerals and death screens use the production art. The funeral now has an illustrated grave, flowers and lantern.
+- **Motion and atmosphere:** breathing, blinking, expressions and speaking mouths, restrained secondary torso motion for adult women, material-dependent armor stiffness, water/cloth movement, drifting leaves and mist, smoke, lamps and scene drift. Evening/night grading and warm light pools keep scenes readable. Clouds now have soft layered shapes. Settings persist the breathing and secondary-motion preferences and respect reduced-motion preferences.
+- **Combat presentation:** melee and normal-attack strokes have an ink silhouette, colored core, bright edge and impact starburst. Slash arcs rotate around their contact point. Existing skill mechanics, dialogue, profanity, voice assignments and sound libraries remain in use. No ElevenLabs credits were spent on this art rollout.
+- **Scene cleanup:** changing creation stages destroys old display objects and animation listeners. Unused background textures and portrait compositions are released. Quest backdrops are now drawn above the base fill, where they remain visible.
+
+## Engine and asset pipeline
+
+The game remains on Phaser 3.87, with its existing 1280×760 logical layout and both WebGL and Canvas paths. The implementation uses local transparent illustrated atlases, canvas composition and Phaser images. The art was generated with the built-in image tool; Python/Pillow/NumPy handle deterministic alpha cleanup, cropping, packing and WebP export. Source PNG masters and prompts remain under `assets/anime/`. No external art service, account or runtime subscription is required.
+
+`anime_identities.js` defines head landmarks and exclusive cast recipes. `anime_world.js` assembles head, torso, headwear, masks and face overlays through the existing Portraits API. `anime_art.js` animates those images. `anime_environments.js` maps locations, streams scenery and animates local details. `anime_customization.js` provides creation choices. `anime_manifest.js` is generated by `tools/anime_overhaul/export_assets.py`.
+
+This is illustrated portrait animation with canvas deformation and local effects. It does not introduce skeletal walking animations, Live2D rigs or fully separated painted parallax planes. Scenery uses complete compositions with independently animated water, cloth, lighting and atmospheric overlays.
+
+## Fresh-game release
+
+Save version 2 implements the approved mandatory fresh start. Legacy world, character, relationship, estate, meta and backup keys are cleared together. Old backups cannot restore a pre-expansion character. Current-version saves and backups remain valid, and current meta/history survives ordinary death and reincarnation. The art fitting room does not write a production save or trigger the wipe. The title notice explains the fresh start.
+
+The existing journey rules remain: new content plays once without skipping; the second viewing can be skipped; it automatically bypasses subsequent viewings. Death, reincarnation and inheritance do not count as a new playthrough.
+
+## Verification
+
+The local checks cover every equipment set, enemy definition, named character, form and environment mapping; ordinary NPC exclusion from reserved heads; character-creation choices; identity through party purchases and save/reload; masks and Jiro’s cloudy eyes; first/second/third travel behavior; and legacy/current save compatibility. Browser checks exercise real town, quest, funeral and combat scenes and scene teardown.
+
+WebGL at 1280×760 and Canvas at a 915×515 landscape viewport passed gameplay checks. This is desktop Chrome viewport emulation, not a physical mobile-device certification. The performance and texture reports under `tools/anime_overhaul/` describe their sampled scenes; they do not measure every possible party or device.
+
+The full regression command is `npm test`. Additional art checks are `node test/anime_save.js`, `node tools/anime_overhaul/production_check.js`, `node tools/anime_overhaul/world_check.js`, `node tools/anime_overhaul/gameplay_check.js`, `node tools/anime_overhaul/story_scene_check.js`, `node tools/anime_overhaul/preview_check.js` and `node tools/art_upgrade/real_combat.js`.
+
+All of those checks passed on the final build. Coverage includes 48 equipment variants, 120 enemy definitions, 76 campaign characters plus Hiro, and all 34 scenery compositions. Existing rival tests were adjusted to the game's already-current grace/chance rules, and the old-save fixture now expects the approved wipe.
+
+The 18-character combat sample measured a 16.7 ms median frame interval and 17 ms at the 95th percentile in headless desktop Chrome. The town/settings samples measured 16.7 ms median and 16.8 ms at the 95th percentile in both tested renderers. These short samples are not a universal performance guarantee.
+
+The 86 production WebP files total 58,171,264 bytes (about 55.5 MiB), alongside the retained v1 creature images. A sampled town/quest run estimated 41.3 MiB of decoded texture pixels and 199.8 MiB of retained atlas-image pixels, excluding driver/browser overhead, transient composition canvases and other caches. The renderer removes source atlases from GPU textures after loading, bounds the cropped-part cache to 20 entries, trims unused portraits, and retains at most three unused scenery textures.
+
+See `ANIME_ART_INVENTORY.json` for the current content-to-art mapping and `assets/anime/v2/generation.json` for generation provenance. Changes are in the local game workspace; no remote deployment was performed.
+
