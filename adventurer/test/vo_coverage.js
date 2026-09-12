@@ -41,6 +41,7 @@ function walkCampaign(bag, tag) {
 
 walkCampaign(ADV.DATA.CAMPAIGN_DIALOGUE, 'campaign1');
 walkCampaign(ADV.DATA.CAMPAIGN2_DIALOGUE, 'campaign2');
+walkCampaign(ADV.DATA.CAMPAIGN3_DIALOGUE, 'campaign3');
 
 function walkNamed(bag, key, tag) {
   if (!bag) return;
