@@ -145,8 +145,8 @@ function endRound(st) { // run everyone's turn as holds by draining the queue
 // ---------------- 5. smoke bomb durations / cooldown; backstab power ----------------
 (function () {
   console.log('\n-- 5. Vanish / Shadowstep duration --');
-  eq(ADV.DATA.SKILLS.smoke_bomb.tiers.intermediate.untargetableRounds, 2, 'Vanish: 2 rounds');
-  eq(ADV.DATA.SKILLS.smoke_bomb.tiers.advanced.untargetableRounds, 3, 'Shadowstep: 3 rounds');
+  eq(ADV.DATA.SKILLS.smoke_bomb.tiers.intermediate.untargetableRounds, 1, 'Vanish: 1 round, then evade');
+  eq(ADV.DATA.SKILLS.smoke_bomb.tiers.advanced.untargetableRounds, 1, 'Shadowstep: 1 round, then evade');
   const rogue = mkCh({}); give(rogue, 'smoke_bomb', 1); give(rogue, 'backstab', 1);
   const foe = ADV.Character.makeEnemy(new ADV.RNG(6), 'bandit', { level: 3 });
   const st = fight(rogue, foe, 51);

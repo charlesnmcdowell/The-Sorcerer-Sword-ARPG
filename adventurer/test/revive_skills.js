@@ -134,7 +134,7 @@ console.log('\n-- Shadow Rise: thin, unseen, evasive; advanced twice --');
   const ur = unit(st, r), ue = unit(st, e);
   kill(st, ue, ur);
   eq(ur.chp, Math.round(ur.maxHp * 0.50), 'advanced Cheat Death returns at 50%');
-  ok(ur.stealth && ur.stealthRounds === 3, 'advanced stays unseen for 3 turns');
+  ok(ur.stealth && ur.stealthRounds === 2, 'advanced stays unseen for 2 turns');
   kill(st, ue, ur);
   ok(!ur.downed, 'advanced Cheat Death can trigger a second time');
   kill(st, ue, ur);

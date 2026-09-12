@@ -332,14 +332,14 @@ function newGame(seed, skills) {
   const hero = mkCh({ isPlayer: true, stats: { hp: 200, atk: 14, def: 10, spd: 12 } });
   give(hero, 'cleave', 1);
   const bandit = mkCh({ name: 'Bandit', stats: { hp: 200, atk: 10, def: 8, spd: 10 } });
-  give(bandit, 'smoke_bomb', 1);
+  give(bandit, 'smoke_bomb', ADV.DATA.CONST.TIER_THRESHOLDS.intermediate);
   const st = fight(hero, bandit, 3);
   const uh = unit(st, hero), ub = unit(st, bandit);
   ADV.Combat.setSkillAuto(hero, 'cleave', true, false);
   ok(!!ADV.Combat.autoReadyAction(st, uh), 'cleave auto is ready before the smoke');
   ADV.Combat.act(st, ub, { kind: 'skill', skillId: 'smoke_bomb', targetUid: ub.uid });
-  ok(ub.stealth, 'the bandit is in smoke');
-  eq(ADV.Combat.validTargets(st, uh, 'cleave', false).length, 0, 'cleave has no target in the smoke');
+  ok(ub.untargetable, 'the bandit Vanished');
+  eq(ADV.Combat.validTargets(st, uh, 'cleave', false).length, 0, 'cleave has no target while they are vanished');
   eq(ADV.Combat.validTargets(st, uh, 'basic_attack', false).length, 0, 'the basic attack is also empty');
   ok(!ADV.Combat.autoReadyAction(st, uh), 'auto will not fire into empty air');
   ok(!ADV.Combat.hasLegalCombatAction(st, uh), 'nothing legal except wait or flee');
