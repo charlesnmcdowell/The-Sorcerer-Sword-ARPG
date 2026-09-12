@@ -155,6 +155,23 @@ console.log('\n-- 800g sets, armor slots, septic, venom fang, smoke --');
   ok(learned.ok, 'a matching armor skill learns past the active cap');
   ok(ADV.SkillSys.inArmorSlot(ch, 'cleave'), 'cleave sits in the armor slot');
   eq(ADV.SkillSys.slottedCount(ch, 'active'), 4, 'armor skills do not count toward the cap');
+  ch.equippedSet = null;
+  ok(ADV.SkillSys.isOverCapacity(ch), 'losing the set puts the extra active over the cap');
+  eq(ADV.SkillSys.overBy(ch, 'active'), 1, 'one extra must be forgotten');
+  eq(ADV.SkillSys.trimToCap(ch).length, 1, 'trimToCap forgets the overflow');
+  ok(!ADV.SkillSys.isOverCapacity(ch), 'the loadout fits after the trim');
+
+  const g = newGame(21);
+  const p = ADV.Game.player(g);
+  p.inventory.gold = 500;
+  p.actives = [];
+  give(p, 'mend', 1); give(p, 'fire_bolt', 1); give(p, 'frost_touch', 1); give(p, 'spark', 1);
+  p.equippedSet = 'warrior';
+  ADV.SkillSys.learn(p, 'cleave');
+  p.equippedSet = null;
+  const q = (g.board || []).find(x => x.track === 'solo') || (g.board || [])[0];
+  const blocked = ADV.Game.startQuest(g, q, {});
+  ok(!blocked.ok, 'startQuest refuses a loadout over the skill cap');
 }
 
 {

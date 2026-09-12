@@ -86,6 +86,53 @@ console.log('\n-- A worn set parks matching skills in armor slots --');
   ok(ADV.SkillSys.inArmorSlot(hiro, 'cleave'), 'Ronin Gear also parks fighter skills');
 }
 
+console.log('\n-- Losing a set forces extras back onto the slot cap --');
+{
+  const ch = mk({ equippedSet: 'mage' });
+  give(ch, 'mend', 1);
+  give(ch, 'raise', 1);
+  give(ch, 'cleave', 1);
+  give(ch, 'aimed_shot', 1);
+  const parked = ADV.SkillSys.learn(ch, 'spark', {});
+  const parked2 = ADV.SkillSys.learn(ch, 'fire_bolt', {});
+  ok(parked.ok && parked2.ok, 'matching mage actives learn past the cap while parked');
+  eq(ADV.SkillSys.slottedCount(ch, 'active'), 4, 'parked skills do not count while the set is worn');
+  ok(!ADV.SkillSys.isOverCapacity(ch), 'wearing the set is not over capacity');
+  ch.equippedSet = null;
+  eq(ADV.SkillSys.slottedCount(ch, 'active'), 6, 'unequipping puts parked skills back on the cap');
+  eq(ADV.SkillSys.overBy(ch, 'active'), 2, 'two extras must be set down');
+  ok(ADV.SkillSys.isOverCapacity(ch), 'the loadout is over capacity after the set comes off');
+  const kept = ADV.SkillSys.learn(ch, 'frost_touch', {});
+  ok(!kept.ok && kept.needForget, 'learning is still blocked while over the cap');
+  const dropped = ADV.SkillSys.trimToCap(ch);
+  eq(dropped.length, 2, 'trimToCap forgets only the extras');
+  eq(ADV.SkillSys.slottedCount(ch, 'active'), 4, 'actives fit the cap after the trim');
+  ok(!ADV.SkillSys.isOverCapacity(ch), 'trimToCap clears the overflow');
+  ok(dropped.every(id => ch.skillLevels && ch.skillLevels[id]), 'dropped skills keep their level in the journal');
+  ok(dropped.every(id => !ADV.SkillSys.knows(ch, id)), 'dropped skills are no longer slotted');
+
+  const perks = mk({ equippedSet: 'mage' });
+  give(perks, 'bulwark', 1);
+  give(perks, 'devoted', 1);
+  give(perks, 'septic_sanguine', 1);
+  ok(ADV.SkillSys.learn(perks, 'arcane_focus', {}).ok, 'a matching perk parks past the perk cap');
+  ok(ADV.SkillSys.learn(perks, 'pyromaniac', {}).ok, 'a second matching perk also parks');
+  eq(ADV.SkillSys.slottedCount(perks, 'perk'), 3, 'three unmatched perks fill the cap while two sit in armor');
+  perks.equippedSet = 'hunter';
+  eq(ADV.SkillSys.overBy(perks, 'perk'), 2, 'a ranger set does not park the mage perks');
+  const perkDrop = ADV.SkillSys.trimToCap(perks);
+  eq(perkDrop.length, 2, 'two perks come off after the armor swap');
+  eq(ADV.SkillSys.slottedCount(perks, 'perk'), 3, 'perks fit the cap after the trim');
+
+  const back = mk({ equippedSet: 'mage' });
+  give(back, 'mend', 1); give(back, 'raise', 1); give(back, 'cleave', 1); give(back, 'aimed_shot', 1);
+  ADV.SkillSys.learn(back, 'spark', {});
+  back.equippedSet = null;
+  ok(ADV.SkillSys.isOverCapacity(back), 'selling the set overflows');
+  back.equippedSet = 'mage';
+  ok(!ADV.SkillSys.isOverCapacity(back), 'buying a matching set again parks the extra');
+}
+
 console.log('\n-- Campaign armours advance three archetypes --');
 {
   const want = {
