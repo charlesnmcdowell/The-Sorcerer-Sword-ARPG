@@ -1,5 +1,7 @@
 # Art, weather and animation audit — September 11, 2026
 
+**September 12 follow-up:** The loading and routing checks below did not prove visible motion in painted fire and water. A subsequent pixel audit found and fixed missing campaign effects, weather layering, and panorama alignment. See [the background motion audit](VARENHOLMS_GATE_MOTION_AUDIT.md) for the current results and changes.
+
 The local game has been audited and corrected. The tested paths have no remaining missing art requests, browser rendering errors, or unbalanced scenery resources.
 
 [Open the updated art viewer](http://127.0.0.1:8734/index.html?gateArtPreview=1&art=20260911-gate3).
