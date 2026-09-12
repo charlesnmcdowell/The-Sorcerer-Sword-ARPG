@@ -17,7 +17,7 @@ const FILES = [
   'js/core/survival.js',
   'js/core/combat.js', 'js/core/combat_ai.js', 'js/core/combat_effects.js', 'js/core/relationships.js', 'js/core/courtship.js', 'js/core/hiro.js', 'js/core/vault.js',
   'js/core/quests.js', 'js/core/party.js', 'js/core/divine.js', 'js/core/death.js',
-  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/balance_support.js', 'js/core/family_support.js',
+  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/difficulty.js', 'js/core/balance_support.js', 'js/core/family_support.js',
 ];
 
 function load() {
