@@ -250,7 +250,7 @@ _He dies._
 
 > [breathless] {target}! Oh, thank every saint that listens. I saw you both leave and I followed — yes, I know, I was not supposed to — and then I saw the torches, and the big one in the black armour, and I ran the other way, because I am not brave. I am only fast.
 >
-> [quieter] He is dead. Tesfaye. I saw him fall. I keep thinking I will turn around and he will be standing there telling me I have ink on my nose.
+> [quieter] He is dead. Tesfaye. I saw him fall. I can't believe we left him there. He should be with us.
 >
 > [urgent] Tell me what the big one said to him. I was too far; I saw his mouth move and Tesfaye shake his head. What did he want?
 >
@@ -278,7 +278,7 @@ _He dies._
 
 **HIWOT**  `q1_join`
 
-> [firm] I am coming with you. Do not argue: I am the only one of us who can open a lock, and you know it. Tesfaye used to say a locked door is only a question. I am very good at questions.
+> [firm] I am coming with you. I can pick locks and keep watch while you sleep. Besides, if you leave me here, I will only have to follow you again.
 >
 
 _Hiwot joins the company._
@@ -1129,7 +1129,7 @@ _(if Winston in company, Delphine not in company)_
 
 **GRUKHAR**  `q4_grukhar_winston_reply`
 
-> [hoarse] The Consortium's. Everything on this coast is the Consortium's. Ask a smaller question.
+> [hoarse] The Consortium's. They're the ones who hired me. You'll find the details in those letters.
 >
 
 _(if Delphine not in company)_
@@ -1279,7 +1279,7 @@ _Grukhar's letters name a courier in Thornbury and a lord of bandits in the Gnas
 
 **YOHANNES**  `q5_sage_ask`
 
-> [dry] Well. You have questions; you have had the look of someone with questions since the stable wall. Put them.
+> [dry] Well? I can see you are not satisfied. Tell me what you want to know.
 >
 
 > **What do you say?**
@@ -2246,7 +2246,7 @@ _(if not umbralBetrayed, Winston recruited)_
 >
 > [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
 >
-> [fading] Feed it or starve it. The same question. A harder answer.
+> [fading] You can still refuse it, my child. It will offer you more power each time. Remember what taking it would cost.
 >
 
 > **What do you say?**
@@ -2608,7 +2608,7 @@ _(if flag umbralBetrayed)_
 
 > [silken] Put the swords down; you will not need them on my floor, and I have poured two cups. I am Folake. I keep Kolade Adeyinka's bed warm and the Consortium's secrets warmer.
 >
-> [pleasant] There. I have given you his name, which nobody in this city says aloud, and I gave it first, which is not my habit. So you owe me one answer, and here is the question. On the Griffon Road, before the old man died — what did Kolade offer him? He always offers. I want to know what he thought Tesfaye was worth.
+> [pleasant] I have given you his name. Now tell me what happened on the Griffon Road. Before Tesfaye died, did Kolade offer him a bargain? He usually does. I want to know what he offered.
 >
 
 _(if Santiago in company)_
@@ -3057,7 +3057,7 @@ _(if Delphine in company)_
 
 **DAWIT**  `q10_letter`
 
-> [gently] Sit. — Before I give you this, and I will give it to you, I have a question I have been keeping since the night you two left. Did he say anything, at the end? Anything at all.
+> [gently] Sit. I have Tesfaye's letter here. Before you read it... did he say anything at the end? I need to know.
 >
 
 > **What do you say?**
@@ -3442,7 +3442,7 @@ _(combat, no dialogue)_
 
 > [steady] Put the swords away. If I wanted you dead I would have done it from the rooftop.
 >
-> [grave] I am Amara. I love Kolade Adeyinka, and I helped him kill the man who raised you, and I am going to ask something of you. Before I do — answer me one question, so I know who I am asking. Have you ever loved someone who was wrong? Not mistaken. Wrong.
+> [grave] I am Amara. I love Kolade Adeyinka. I also helped him kill the man who raised you. I know what that makes me to you. But I need you to hear me. Have you ever loved someone even after you knew what they'd done?
 >
 
 > **What do you say?**
@@ -4077,7 +4077,7 @@ _One of the following, whoever is riding along:_
 
 > [warm] You came. I hoped you would. Every other one of us I have found, I have had to hunt; you walked here on your own feet, and I find I am proud of that, which is a strange thing to feel about someone I mean to kill.
 >
-> [calm] Sit with me a moment before we do this. There is a question I have carried for thirty years, and you are the only person alive who can answer it. Did he ever speak of me? Tesfaye. Once, in twenty years — a word, a name, a warning?
+> [calm] Sit with me a moment. Did Tesfaye ever speak of me? In all those years he raised you, did he mention my name? I've waited thirty years to hear that he remembered me.
 >
 
 > **What do you say?**
@@ -4446,55 +4446,55 @@ _One line, at random, from a companion in the second round of a fight._
 
 | # | Character | Role | From | Lines | Voice ID |
 |---|---|---|---|---|---|
-| 1 | Amara | companion | Nigerian (Yoruba and Igbo) | 27 | _unassigned_ |
-| 2 | Bahadır | companion | Turkish | 9 | _unassigned_ |
-| 3 | Beau | companion | Georgia, USA | 15 | _unassigned_ |
-| 4 | Dai Morgan | companion | Welsh valleys | 18 | _unassigned_ |
-| 5 | Delphine | companion | Georgia, USA | 93 | _unassigned_ |
-| 6 | Desmond | companion | Jamaican | 14 | _unassigned_ |
-| 7 | Devendra | companion | Indian | 8 | _unassigned_ |
-| 8 | Hiwot | companion | Ethiopian highlands | 77 | _unassigned_ |
-| 9 | Itsuki | companion | Japanese | 25 | _unassigned_ |
-| 10 | Kaito | companion | Japanese | 28 | _unassigned_ |
-| 11 | Layla | companion | Arabic | 22 | _unassigned_ |
-| 12 | Santiago | companion | Mexican | 21 | _unassigned_ |
-| 13 | Wanjiru | companion | Kenyan | 12 | _unassigned_ |
-| 14 | Winston | companion | Jamaican | 30 | _unassigned_ |
-| 15 | Yasemin | companion | Turkish | 10 | _unassigned_ |
-| 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 35 | _unassigned_ |
-| 17 | Abba Gebre | keeper | Ethiopian highlands | 6 | _unassigned_ |
-| 18 | Baba Olusegun | tutor | Nigerian (Yoruba and Igbo) | 1 | _unassigned_ |
-| 19 | Cal Boone | spy | Georgia, USA | 6 | _unassigned_ |
-| 20 | Dawit | keeper | Ethiopian highlands | 10 | _unassigned_ |
-| 21 | Duke Adebayo | duke | Nigerian (Yoruba and Igbo) | 20 | _unassigned_ |
-| 22 | Duke Folasade | duke | Nigerian (Yoruba and Igbo) | 3 | _unassigned_ |
-| 23 | Duke Olumide | duke | Nigerian (Yoruba and Igbo) | 4 | _unassigned_ |
-| 24 | Emeka Obi | officer | Nigerian (Yoruba and Igbo) | 10 | _unassigned_ |
-| 25 | Folake | mistress | Nigerian (Yoruba and Igbo) | 17 | _unassigned_ |
-| 26 | Gethin Pryce | mayor | Welsh valleys | 11 | _unassigned_ |
-| 27 | Nib | knife | Georgia, USA | 6 | _unassigned_ |
-| 28 | Sanni | stranger | Nigerian (Yoruba and Igbo) | 8 | _unassigned_ |
-| 29 | Tesfaye | recruiter | Ethiopian highlands | 43 | _unassigned_ |
-| 30 | Tunde Softfoot | thief | Nigerian (Yoruba and Igbo) | 4 | _unassigned_ |
-| 31 | Yohannes | sage | Ethiopian highlands | 13 | _unassigned_ |
-| 32 | Adigun Adeyinka | boss | Nigerian (Yoruba and Igbo) | 7 | _unassigned_ |
-| 33 | Bankole | boss | Nigerian (Yoruba and Igbo) | 1 | _unassigned_ |
-| 34 | Femi | boss | Nigerian (Yoruba and Igbo) | 7 | _unassigned_ |
-| 35 | Gbenga | boss | Nigerian (Yoruba and Igbo) | 3 | _unassigned_ |
-| 36 | Gorruk (the Bandit Lord) | boss | invented | 3 | _unassigned_ |
-| 37 | Grukhar | boss | invented | 10 | _unassigned_ |
-| 38 | Idris | boss | Nigerian (Yoruba and Igbo) | 2 | _unassigned_ |
-| 39 | Jelani | boss | Nigerian (Yoruba and Igbo) | 2 | _unassigned_ |
-| 40 | Kemi | boss | Nigerian (Yoruba and Igbo) | 1 | _unassigned_ |
-| 41 | Lurleen | boss | Georgia, USA | 6 | _unassigned_ |
-| 42 | Merle | boss | Georgia, USA | 8 | _unassigned_ |
-| 43 | Olamide | boss | Nigerian (Yoruba and Igbo) | 7 | _unassigned_ |
-| 44 | Rasheed | boss | Nigerian (Yoruba and Igbo) | 1 | _unassigned_ |
-| 45 | Segun Marr | boss | Nigerian (Yoruba and Igbo) | 3 | _unassigned_ |
+| 1 | Amara | companion | Nigerian (Yoruba and Igbo) | 27 | nlQtoxiWTYC3witBlK1H |
+| 2 | Bahadır | companion | Turkish | 9 | ZZKBkhKNX9bfxn63cQTM |
+| 3 | Beau | companion | Georgia, USA | 15 | 7ma36jg9JC0d1pfrWXMw |
+| 4 | Dai Morgan | companion | Welsh valleys | 18 | QZU5JP2C26gx328DNBza |
+| 5 | Delphine | companion | Georgia, USA | 93 | a3tSl2M9CVI359Oy7H6v |
+| 6 | Desmond | companion | Jamaican | 14 | 5OtKrUz8y0NUBuMW6YcK |
+| 7 | Devendra | companion | Indian | 8 | Sm4AUh4ykvT9ljuZ5Uy8 |
+| 8 | Hiwot | companion | Ethiopian highlands | 77 | 0F4ybvRD5Lm0AIt5almW |
+| 9 | Itsuki | companion | Japanese | 25 | EqIniNyrvzFcbGecFyI5 |
+| 10 | Kaito | companion | Japanese | 28 | O5EDsXljBLA6l3KfYEde |
+| 11 | Layla | companion | Arabic | 22 | 7nj1jqrTE7EDXPyxWBhY |
+| 12 | Santiago | companion | Mexican | 21 | xHLnsxqUy4cc16VOmSD4 |
+| 13 | Wanjiru | companion | Kenyan | 12 | U1NXjHF5ene7Eze10d5J |
+| 14 | Winston | companion | Jamaican | 30 | R7jdv6H5bZOU3sQIMhbd |
+| 15 | Yasemin | companion | Turkish | 10 | E7IRB2a3OVqRb6T7du39 |
+| 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 35 | CmD1sSN0Gj3pJq3OxRyg |
+| 17 | Abba Gebre | keeper | Ethiopian highlands | 6 | k1pVjlfHqGzrko6MqjgN |
+| 18 | Baba Olusegun | tutor | Nigerian (Yoruba and Igbo) | 1 | TRPEspiEsb4Zif6sGonu |
+| 19 | Cal Boone | spy | Georgia, USA | 6 | svSvKKBdngsY0ysEx6yS |
+| 20 | Dawit | keeper | Ethiopian highlands | 10 | jDMhBWlFSleqsyqVHw2R |
+| 21 | Duke Adebayo | duke | Nigerian (Yoruba and Igbo) | 20 | 1N3Ubm5NzIILaxKqZSWn |
+| 22 | Duke Folasade | duke | Nigerian (Yoruba and Igbo) | 3 | MWtIvoi54McT7xb5USQh |
+| 23 | Duke Olumide | duke | Nigerian (Yoruba and Igbo) | 4 | R6Aoacs81lnwJOkdYTvh |
+| 24 | Emeka Obi | officer | Nigerian (Yoruba and Igbo) | 10 | IGMfg4ZRwOnenZgljHpm |
+| 25 | Folake | mistress | Nigerian (Yoruba and Igbo) | 17 | 6ILPXNE4jEAfwjCvmbEz |
+| 26 | Gethin Pryce | mayor | Welsh valleys | 11 | iUOf0Teoe8GQ6633Uazp |
+| 27 | Nib | knife | Georgia, USA | 6 | aiHuPZx6mGgpzcNDwtX2 |
+| 28 | Sanni | stranger | Nigerian (Yoruba and Igbo) | 8 | pL61gpUJHGbG1ctjcpcm |
+| 29 | Tesfaye | recruiter | Ethiopian highlands | 43 | EFtnObJs7ex53VSB3niw |
+| 30 | Tunde Softfoot | thief | Nigerian (Yoruba and Igbo) | 4 | Xazy5XB2Ls4qYhmhvhLy |
+| 31 | Yohannes | sage | Ethiopian highlands | 13 | efEXUGgwSIpGeDUw4Vx0 |
+| 32 | Adigun Adeyinka | boss | Nigerian (Yoruba and Igbo) | 7 | KZpCMq3CCfA6P6hsnSvp |
+| 33 | Bankole | boss | Nigerian (Yoruba and Igbo) | 1 | 4cHt9cX9ngcPiEaw8Kud |
+| 34 | Femi | boss | Nigerian (Yoruba and Igbo) | 7 | 1V8ftW86u2NXoV2QR76J |
+| 35 | Gbenga | boss | Nigerian (Yoruba and Igbo) | 3 | brlt4NQGEVKYUPZHGlMp |
+| 36 | Gorruk (the Bandit Lord) | boss | invented | 3 | fHJkS6rGX3KuLo1kf0wn |
+| 37 | Grukhar | boss | invented | 10 | d9QexFKeaE8pDBNegABG |
+| 38 | Idris | boss | Nigerian (Yoruba and Igbo) | 2 | Zjllzaofqu5CuNshWGwW |
+| 39 | Jelani | boss | Nigerian (Yoruba and Igbo) | 2 | 68X70AB3zrqH7rtaQUHH |
+| 40 | Kemi | boss | Nigerian (Yoruba and Igbo) | 1 | zzp11mPTUa7yKugVGfwD |
+| 41 | Lurleen | boss | Georgia, USA | 6 | xWbXI06Q9UpLaSG8TVpw |
+| 42 | Merle | boss | Georgia, USA | 8 | al2GsnInvOnScFc93vu6 |
+| 43 | Olamide | boss | Nigerian (Yoruba and Igbo) | 7 | qY77JO62oGpUeMUDF7bS |
+| 44 | Rasheed | boss | Nigerian (Yoruba and Igbo) | 1 | SwayIXZEQHYPgOU8ZLVO |
+| 45 | Segun Marr | boss | Nigerian (Yoruba and Igbo) | 3 | ouilM4BVCVF7fxKGukKI |
 
 ## Amara  `amara`
 
-**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** nlQtoxiWTYC3witBlK1H
 
 **Who they are:** Kolade's lover and sword-hand. A monk of the Gate's fire temples who wants him stopped, not slaughtered. Grave, exact, tired.
 
@@ -4534,7 +4534,7 @@ _One line, at random, from a companion in the second round of a fight._
 **q11_docks**
 
 - `q11_docks_1` — [steady] Put the swords away. If I wanted you dead I would have done it from the rooftop.
-- `q11_docks_2` — [grave] I am Amara. I love Kolade Adeyinka, and I helped him kill the man who raised you, and I am going to ask something of you. Before I do — answer me one question, so I know who I am asking. Have you ever loved someone who was wrong? Not mistaken. Wrong.
+- `q11_docks_2` — [grave] I am Amara. I love Kolade Adeyinka. I also helped him kill the man who raised you. I know what that makes me to you. But I need you to hear me. Have you ever loved someone even after you knew what they'd done?
 
 **q11_docks_ask**
 
@@ -4589,7 +4589,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Bahadır  `bramm`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** ZZKBkhKNX9bfxn63cQTM
 
 **Who they are:** A huge, loud ranger of Kalden with a hamster named Fındık on his shoulder and a witch to protect. Loyal to the bone.
 
@@ -4624,7 +4624,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Beau  `dorran`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** 7ma36jg9JC0d1pfrWXMw
 
 **Who they are:** A Warden fighter from the Shore Road with a stammer he hates and a shield he never puts down. Delphine's husband.
 
@@ -4674,7 +4674,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Dai Morgan  `durnik`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** QZU5JP2C26gx328DNBza
 
 **Who they are:** A dwarf priest whose clan dug the Mirkhollow mine before the Consortium stole it. Slow to anger, impossible to move.
 
@@ -4742,7 +4742,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Delphine  `selene`
 
-**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** a3tSl2M9CVI359Oy7H6v
 
 **Who they are:** A Warden druid of the Shore Road, Tesfaye's old friend. Blunt, protective, allergic to self-pity. Speaks for the balance of things.
 
@@ -5032,7 +5032,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Desmond  `vess`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** 5OtKrUz8y0NUBuMW6YcK
 
 **Who they are:** An Umbral Hand necromancer who giggles at wounds. Unstable, brilliant, always listening for the Hand.
 
@@ -5075,7 +5075,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Devendra  `aurelius`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** Sm4AUh4ykvT9ljuZ5Uy8
 
 **Who they are:** A Crimson Wizard of Vashk who narrates his own superiority under his breath. Wants Yasemin dead; wants you useful.
 
@@ -5109,7 +5109,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Hiwot  `wren_ward`
 
-**Sex:** female · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion · **Voice ID:** 0F4ybvRD5Lm0AIt5almW
 
 **Who they are:** Your foster-sister from Lanternhold, raised beside you in the keepers' library. Quick hands, quicker mouth, hides fear behind jokes.
 
@@ -5118,12 +5118,12 @@ _One line, at random, from a companion in the second round of a fight._
 **q1_catchup**
 
 - `q1_catchup_1` — [breathless] Oh, thank every saint that listens. I saw you both leave and I followed — yes, I know, I was not supposed to — and then I saw the torches, and the big one in the black armour, and I ran the other way, because I am not brave. I am only fast.
-- `q1_catchup_2` — [quieter] He is dead. Tesfaye. I saw him fall. I keep thinking I will turn around and he will be standing there telling me I have ink on my nose.
+- `q1_catchup_2` — [quieter] He is dead. Tesfaye. I saw him fall. I can't believe we left him there. He should be with us.
 - `q1_catchup_3` — [urgent] Tell me what the big one said to him. I was too far; I saw his mouth move and Tesfaye shake his head. What did he want?
 
 **q1_join**
 
-- `q1_join_1` — [firm] I am coming with you. Do not argue: I am the only one of us who can open a lock, and you know it. Tesfaye used to say a locked door is only a question. I am very good at questions.
+- `q1_join_1` — [firm] I am coming with you. I can pick locks and keep watch while you sleep. Besides, if you leave me here, I will only have to follow you again.
 
 **q1_wren_cold**
 
@@ -5365,7 +5365,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Itsuki  `ithrel`
 
-**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** EqIniNyrvzFcbGecFyI5
 
 **Who they are:** An elf ranger of the eastern woods who has hunted the bandit lord Gorruk for a year. Grief made him quiet; the quiet made him precise.
 
@@ -5455,7 +5455,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Kaito  `faelen`
 
-**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** O5EDsXljBLA6l3KfYEde
 
 **Who they are:** An elf bounty-hunter of the eastern woods who flirts with anything and finishes every job. Cheerful, mercenary, surprisingly loyal.
 
@@ -5557,7 +5557,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Layla  `ilvara`
 
-**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** 7nj1jqrTE7EDXPyxWBhY
 
 **Who they are:** A dark-elf priestess of the deep cities, fleeing her own people and a bounty. Contemptuous, curious, thinks mercy is a luxury the strong buy.
 
@@ -5638,7 +5638,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Santiago  `cassian`
 
-**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion (romanceable) · **Voice ID:** xHLnsxqUy4cc16VOmSD4
 
 **Who they are:** A squire of the Order of the Dawning Flame, from its chapter house in the sun-lands, on his first errand. Earnest, rigid, secretly terrified of failing.
 
@@ -5715,7 +5715,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Wanjiru  `nettle`
 
-**Sex:** female · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion · **Voice ID:** U1NXjHF5ene7Eze10d5J
 
 **Who they are:** An Umbra druid of the Mirkhollow who believes the forest is owed blood. Fierce, literal, no patience for cities.
 
@@ -5756,7 +5756,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Winston  `fennick`
 
-**Sex:** male · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** companion · **Voice ID:** R7jdv6H5bZOU3sQIMhbd
 
 **Who they are:** Desmond's halfling minder. Sour, practical, would sell you for a good boot. Umbral Hand.
 
@@ -5869,7 +5869,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Yasemin  `ysolde`
 
-**Sex:** female · **Role:** companion · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** companion · **Voice ID:** E7IRB2a3OVqRb6T7du39
 
 **Who they are:** A Kalden witch under Bahadır's guard. Formal, watchful, sees the bloodline in you before you do.
 
@@ -5905,7 +5905,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Kolade Adeyinka, the Armoured  `korvath`
 
-**Sex:** male · **Role:** antagonist · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** antagonist · **Voice ID:** CmD1sSN0Gj3pJq3OxRyg
 
 **Who they are:** Your half-brother, raised in the Gate by a Consortium merchant. A giant in spiked black plate who believes bloodshed is a ladder. Calm, courteous, absolutely certain.
 
@@ -5947,7 +5947,7 @@ _One line, at random, from a companion in the second round of a fight._
 **q14_altar**
 
 - `q14_altar_1` — [warm] You came. I hoped you would. Every other one of us I have found, I have had to hunt; you walked here on your own feet, and I find I am proud of that, which is a strange thing to feel about someone I mean to kill.
-- `q14_altar_2` — [calm] Sit with me a moment before we do this. There is a question I have carried for thirty years, and you are the only person alive who can answer it. Did he ever speak of me? Tesfaye. Once, in twenty years — a word, a name, a warning?
+- `q14_altar_2` — [calm] Sit with me a moment. Did Tesfaye ever speak of me? In all those years he raised you, did he mention my name? I've waited thirty years to hear that he remembered me.
 
 **q14_altar_last**
 
@@ -6011,7 +6011,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Abba Gebre  `hadrian`
 
-**Sex:** male · **Role:** keeper · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** keeper · **Voice ID:** k1pVjlfHqGzrko6MqjgN
 
 **Who they are:** First Keeper of Lanternhold. Proud of the library and suspicious of everyone who leaves it, you most of all.
 
@@ -6040,7 +6040,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Baba Olusegun  `ostwin`
 
-**Sex:** male · **Role:** tutor · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** tutor · **Voice ID:** TRPEspiEsb4Zif6sGonu
 
 **Who they are:** Kolade's tutor in the old prophecies. Dry, doting, the only one who calls Kolade 'my boy'.
 
@@ -6052,7 +6052,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Cal Boone  `cael`
 
-**Sex:** male · **Role:** spy · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** spy · **Voice ID:** svSvKKBdngsY0ysEx6yS
 
 **Who they are:** A Warden spy from the Shore Road who was caught. Half-starved, still joking, remembers every name he heard in the tent.
 
@@ -6078,7 +6078,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Dawit  `ambrose`
 
-**Sex:** male · **Role:** keeper · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** keeper · **Voice ID:** jDMhBWlFSleqsyqVHw2R
 
 **Who they are:** A keeper of Lanternhold and Tesfaye's friend. Kind eyes, careful hands, keeps the letter you were never supposed to read.
 
@@ -6106,7 +6106,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 **q10_letter**
 
-- `q10_letter_1` — [gently] Sit. — Before I give you this, and I will give it to you, I have a question I have been keeping since the night you two left. Did he say anything, at the end? Anything at all.
+- `q10_letter_1` — [gently] Sit. I have Tesfaye's letter here. Before you read it... did he say anything at the end? I need to know.
 
 **q10_letter_anger**
 
@@ -6126,7 +6126,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Duke Adebayo  `halvard`
 
-**Sex:** male · **Role:** duke · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** duke · **Voice ID:** 1N3Ubm5NzIILaxKqZSWn
 
 **Who they are:** Grand Duke and commander of the Burning Gauntlet. Tired, precise, poisoned by the end.
 
@@ -6193,7 +6193,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Duke Folasade  `mira`
 
-**Sex:** female · **Role:** duke · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** duke · **Voice ID:** MWtIvoi54McT7xb5USQh
 
 **Who they are:** A Grand Duke and a mage. Watches everyone, trusts nobody, and is usually right.
 
@@ -6210,7 +6210,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Duke Olumide  `orlan`
 
-**Sex:** male · **Role:** duke · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** duke · **Voice ID:** R6Aoacs81lnwJOkdYTvh
 
 **Who they are:** A Grand Duke who was a soldier first and still stands like one. Loud, decent, easily bored.
 
@@ -6231,7 +6231,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Emeka Obi  `halloran`
 
-**Sex:** male · **Role:** officer · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** officer · **Voice ID:** IGMfg4ZRwOnenZgljHpm
 
 **Who they are:** A Burning Gauntlet officer with a burn-scarred jaw. Plain-spoken, fair, dead by the eleventh chapter.
 
@@ -6273,7 +6273,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Folake  `lysandra`
 
-**Sex:** female · **Role:** mistress · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** mistress · **Voice ID:** 6ILPXNE4jEAfwjCvmbEz
 
 **Who they are:** Kolade's mistress and the Consortium's cleverest survivor. Silk voice, ledger heart, offers a deal in every sentence.
 
@@ -6282,7 +6282,7 @@ _One line, at random, from a companion in the second round of a fight._
 **q9_floor**
 
 - `q9_floor_1` — [silken] Put the swords down; you will not need them on my floor, and I have poured two cups. I am Folake. I keep Kolade Adeyinka's bed warm and the Consortium's secrets warmer.
-- `q9_floor_2` — [pleasant] There. I have given you his name, which nobody in this city says aloud, and I gave it first, which is not my habit. So you owe me one answer, and here is the question. On the Griffon Road, before the old man died — what did Kolade offer him? He always offers. I want to know what he thought Tesfaye was worth.
+- `q9_floor_2` — [pleasant] I have given you his name. Now tell me what happened on the Griffon Road. Before Tesfaye died, did Kolade offer him a bargain? He usually does. I want to know what he offered.
 
 **q9_floor_business**
 
@@ -6334,7 +6334,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Gethin Pryce  `tollan`
 
-**Sex:** male · **Role:** mayor · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** mayor · **Voice ID:** iUOf0Teoe8GQ6633Uazp
 
 **Who they are:** Mayor of Dunmere. Sweating, harried, honest enough. Would pay anyone to make the mine problem someone else's.
 
@@ -6380,7 +6380,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Nib  `nib`
 
-**Sex:** male · **Role:** knife · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** knife · **Voice ID:** aiHuPZx6mGgpzcNDwtX2
 
 **Who they are:** The first hired knife, a Shore Road man in a road-cloak with a purse to earn. Easy-going about murder; not paid enough to be brave.
 
@@ -6409,7 +6409,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Sanni  `sarn`
 
-**Sex:** male · **Role:** stranger · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** stranger · **Voice ID:** pL61gpUJHGbG1ctjcpcm
 
 **Who they are:** A quiet stranger with a ring to give away. The disguise Kolade wears when he wants to watch you choose.
 
@@ -6446,7 +6446,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Tesfaye  `aldric`
 
-**Sex:** male · **Role:** recruiter · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** recruiter · **Voice ID:** EFtnObJs7ex53VSB3niw
 
 **Who they are:** Your foster-father, a retired Warden mage who keeps the library at Lanternhold. Gentle voice, iron patience, a man who has planned for this night for twenty years.
 
@@ -6548,7 +6548,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 - `q7_dream_1` — [echoing] Closer to the throne this time, my child. You did not walk here. It walked to you.
 - `q7_dream_2` — [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
-- `q7_dream_3` — [fading] Feed it or starve it. The same question. A harder answer.
+- `q7_dream_3` — [fading] You can still refuse it, my child. It will offer you more power each time. Remember what taking it would cost.
 
 **q7_dream_embrace**
 
@@ -6587,7 +6587,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Tunde Softfoot  `fen`
 
-**Sex:** male · **Role:** thief · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** thief · **Voice ID:** Xazy5XB2Ls4qYhmhvhLy
 
 **Who they are:** The thieves' guild's voice in the Undervault. Soft-spoken, keeps ledgers of favours, never forgets a debt.
 
@@ -6605,7 +6605,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Yohannes  `torvald`
 
-**Sex:** male · **Role:** sage · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** sage · **Voice ID:** efEXUGgwSIpGeDUw4Vx0
 
 **Who they are:** The sage in the grey cloak, a hill-man of the old highland school. Old beyond reason, amused by everything, tells you exactly as much as he decides you can carry.
 
@@ -6619,7 +6619,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 **q5_sage_ask**
 
-- `q5_sage_ask_1` — [dry] Well. You have questions; you have had the look of someone with questions since the stable wall. Put them.
+- `q5_sage_ask_1` — [dry] Well? I can see you are not satisfied. Tell me what you want to know.
 
 **q5_test_forget**
 
@@ -6653,7 +6653,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Adigun Adeyinka  `maddox`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** KZpCMq3CCfA6P6hsnSvp
 
 **Who they are:** Head of the Iron Consortium's Gate office and Kolade's foster-father. A merchant who thinks he is still in charge.
 
@@ -6683,7 +6683,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Bankole  `vask`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** 4cHt9cX9ngcPiEaw8Kud
 
 **Who they are:** A Consortium leader; Adigun's partner. Louder than he is clever.
 
@@ -6695,7 +6695,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Femi  `verlan`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** 1V8ftW86u2NXoV2QR76J
 
 **Who they are:** The Consortium's courier in Thornbury, a city man posing as a wine merchant. Sweats when questioned, folds when paid.
 
@@ -6728,7 +6728,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Gbenga  `grell`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** brlt4NQGEVKYUPZHGlMp
 
 **Who they are:** Kolade's best knife, sent into the catacombs to finish it. Professional, bored, unbothered by tombs.
 
@@ -6745,7 +6745,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Gorruk, the Bandit Lord  `gorruk`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** fHJkS6rGX3KuLo1kf0wn
 
 **Who they are:** An ogre-mage who runs the bandit companies for the Consortium. Cruel for sport, cowardly when it counts.
 
@@ -6765,7 +6765,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Grukhar  `grukhar`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** d9QexFKeaE8pDBNegABG
 
 **Who they are:** A half-orc priest of Veylan poisoning the Dunmere ore for pay he has not been paid. Bitter, frightened, dangerous.
 
@@ -6803,11 +6803,11 @@ _One line, at random, from a companion in the second round of a fight._
 
 **q4_grukhar_winston_reply**
 
-- `q4_grukhar_winston_reply_1` — [hoarse] The Consortium's. Everything on this coast is the Consortium's. Ask a smaller question.
+- `q4_grukhar_winston_reply_1` — [hoarse] The Consortium's. They're the ones who hired me. You'll find the details in those letters.
 
 ## Idris  `idris`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** Zjllzaofqu5CuNshWGwW
 
 **Who they are:** The 'healer' at Duke Adebayo's bedside. A doppelganger wearing a physician.
 
@@ -6820,7 +6820,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Jelani  `jarem`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** 68X70AB3zrqH7rtaQUHH
 
 **Who they are:** Kolade's court mage. Serves because Kolade is winning; would serve anyone who was.
 
@@ -6833,7 +6833,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Kemi  `kessa`
 
-**Sex:** female · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** boss · **Voice ID:** zzp11mPTUa7yKugVGfwD
 
 **Who they are:** The other half. Quiet, a mage, the one who actually plans.
 
@@ -6845,7 +6845,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Lurleen  `lessa`
 
-**Sex:** female · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** female · **Role:** boss · **Voice ID:** xWbXI06Q9UpLaSG8TVpw
 
 **Who they are:** A knife for hire from the Shore Road who takes her work personally. Smiles when she is losing.
 
@@ -6874,7 +6874,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Merle  `morwin`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** al2GsnInvOnScFc93vu6
 
 **Who they are:** A hired mage-assassin from the Thornbury country with a bounty notice in his coat. Talks too much before he casts.
 
@@ -6911,7 +6911,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Olamide  `malvane`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** qY77JO62oGpUeMUDF7bS
 
 **Who they are:** The Consortium mage running the Mirkhollow mine. Fussy, meticulous, keeps the slaves' names in a ledger.
 
@@ -6944,7 +6944,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Rasheed  `ravel`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** SwayIXZEQHYPgOU8ZLVO
 
 **Who they are:** Half of Kolade's pet assassins. Loud, vain, deadly with two blades.
 
@@ -6956,7 +6956,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 ## Segun Marr  `lucan`
 
-**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+**Sex:** male · **Role:** boss · **Voice ID:** ouilM4BVCVF7fxKGukKI
 
 **Who they are:** The Burning Gauntlet officer who sold the company to Kolade. Commands it now. Sneers to hide the shame.
 
@@ -6973,4 +6973,4 @@ _One line, at random, from a companion in the second round of a fight._
 
 ---
 
-**Totals:** 45 characters · 668 clips · 78,604 characters of text (ElevenLabs bills per character).
+**Totals:** 45 characters · 668 clips · 78,229 characters of text (ElevenLabs bills per character).
