@@ -254,12 +254,12 @@ console.log('\n-- God-tier bosses carry an edict for anyone over 800 max HP --')
   eq(pick && pick.targetUid, uf2.uid, 'and prefers the player if they qualify');
 }
 
-console.log('\n-- Title wipe notice stays up; old lives cannot Continue --');
+console.log('\n-- Retired title notice; Continue still validates saves --');
 {
   ADV.Save.setBackend(memBackend());
-  ok(ADV.TitleNotice.visible(), 'first login shows the wipe notice');
+  ok(!ADV.TitleNotice, 'the retired wipe announcement is removed');
   ADV.Game.newGame({ name: 'Keep', sex: 'm', portrait: 1, archetype: 'fighter' });
-  ok(ADV.Save.hasValidContinue() && ADV.TitleNotice.visible(), 'wipe notice stays up after a save exists');
+  ok(ADV.Save.hasValidContinue(), 'a valid save can still Continue');
   ok(!ADV.Save.hasVoicedContinue(), 'a life with no personality is not a voiced Continue');
   ADV.Game.newGame({ name: 'Keep', sex: 'm', portrait: 1, archetype: 'fighter', personalityId: 'M01' });
   ok(ADV.Save.hasVoicedContinue(), 'a voiced life can Continue');
@@ -267,7 +267,7 @@ console.log('\n-- Title wipe notice stays up; old lives cannot Continue --');
   broken.setItem('adv:world', JSON.stringify({ seed: 1, playerId: 'c1' }));
   ADV.Save.setBackend(broken);
   ok(!ADV.Save.hasSave() && !ADV.Save.hasValidContinue(), 'a legacy world key is reset by the art release gate');
-  ok(ADV.TitleNotice.visible(), 'so the wipe notice still shows');
+  ok(!ADV.TitleNotice, 'legacy saves do not restore the announcement');
 }
 
 console.log('\n-- Saves survive a missing key and come back from backup --');
