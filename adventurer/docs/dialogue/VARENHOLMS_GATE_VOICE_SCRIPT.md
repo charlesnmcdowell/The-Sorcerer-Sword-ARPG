@@ -1030,7 +1030,7 @@ _One of the following, whoever is riding along:_
 
 > [low] It smells like wet dog and hot metal. Four levels of that, going down.
 >
-> [quiet] If I go quiet down here it is not because I am frightened. It is because I am very frightened, and I would rather you did not know.
+> [quiet] Keep your light up. I can't see where these stairs end.
 >
 
 **DELPHINE**  `q4_down`
@@ -1056,6 +1056,13 @@ _(if Delphine in company)_
 ### Scene 3: The third level
 
 _(combat, no dialogue)_
+
+_During combat, once: Winston must be present and successfully apply Whisper of Ending after the chief has healed._
+
+**WINSTON**  `q4_healing`
+
+> [firm] That chief keeps healing. I've shut it off for now. Hit him before it wears off.
+>
 
 ### Scene 4: Grukhar's chamber
 
@@ -4197,13 +4204,13 @@ _(if any of: Amara in company / flag amaraPassed)_
 
 ## In combat — companion banter
 
-_One line, at random, from a companion in the second round of a fight._
+_One suitable line from a standing ally in round two. Unheard lines rotate before repeats; named listeners must be present, and status remarks require that status on a living enemy. Consecutive repeats stay silent._
 
 **HIWOT**  `banter`
 
 > [shouting] The left one! The left one is looking at YOU!
 >
-> [breathless] I am fine! I am behind a thing! Keep going!
+> [breathless] Still with you. Keep going!
 >
 > [gleeful] Got his purse. And his knife. And his — never mind, keep fighting.
 >
@@ -4232,14 +4239,14 @@ _One line, at random, from a companion in the second round of a fight._
 >
 > [sing-song] More, more, more —
 >
-> [delighted] I love this company. Nobody screams at me.
+> [delighted] Come on, then. I'm right here.
 >
 
 **WINSTON**  `banter`
 
 > [flat] Back lane. Poison. Done.
 >
-> [calm] The big one has a bad knee. Use it.
+> [calm] Stay close. Don't give them a gap.
 >
 > [dry] Desmond, stop laughing, it puts them off.
 >
@@ -4277,7 +4284,7 @@ _One line, at random, from a companion in the second round of a fight._
 >
 > [formal] Your aura flares when you fight. Interesting.
 >
-> [cool] Bahadır, the left. Fındık, be quiet.
+> [cool] Keep them in front of us.
 >
 
 **DEVENDRA**  `banter`
@@ -4459,7 +4466,7 @@ _One line, at random, from a companion in the second round of a fight._
 | 11 | Layla | companion | Arabic | 22 | 7nj1jqrTE7EDXPyxWBhY |
 | 12 | Santiago | companion | Mexican | 21 | xHLnsxqUy4cc16VOmSD4 |
 | 13 | Wanjiru | companion | Kenyan | 12 | U1NXjHF5ene7Eze10d5J |
-| 14 | Winston | companion | Jamaican | 30 | R7jdv6H5bZOU3sQIMhbd |
+| 14 | Winston | companion | Jamaican | 31 | R7jdv6H5bZOU3sQIMhbd |
 | 15 | Yasemin | companion | Turkish | 10 | E7IRB2a3OVqRb6T7du39 |
 | 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 35 | CmD1sSN0Gj3pJq3OxRyg |
 | 17 | Abba Gebre | keeper | Ethiopian highlands | 6 | k1pVjlfHqGzrko6MqjgN |
@@ -5071,7 +5078,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 - `banter_1` — [giggling] Oh, he is BURNING. Look at him go, man.
 - `banter_2` — [sing-song] More, more, more —
-- `banter_3` — [delighted] I love this company. Nobody screams at me.
+- `banter_3` — [delighted] Come on, then. I'm right here.
 
 ## Devendra  `aurelius`
 
@@ -5176,7 +5183,7 @@ _One line, at random, from a companion in the second round of a fight._
 **q4_down**
 
 - `q4_down_1` — [low] It smells like wet dog and hot metal. Four levels of that, going down.
-- `q4_down_2` — [quiet] If I go quiet down here it is not because I am frightened. It is because I am very frightened, and I would rather you did not know.
+- `q4_down_2` — [quiet] Keep your light up. I can't see where these stairs end.
 
 **q4_letters**
 
@@ -5360,7 +5367,7 @@ _One line, at random, from a companion in the second round of a fight._
 **banter**
 
 - `banter_1` — [shouting] The left one! The left one is looking at YOU!
-- `banter_2` — [breathless] I am fine! I am behind a thing! Keep going!
+- `banter_2` — [breathless] Still with you. Keep going!
 - `banter_3` — [gleeful] Got his purse. And his knife. And his — never mind, keep fighting.
 
 ## Itsuki  `ithrel`
@@ -5814,6 +5821,10 @@ _One line, at random, from a companion in the second round of a fight._
 
 - `q4_grukhar_winston_1` — [flat] Which spring shipment, priest? Whose wagons?
 
+**q4_healing**
+
+- `q4_healing_1` — [firm] That chief keeps healing. I've shut it off for now. Hit him before it wears off.
+
 **q5_camp**
 
 - `q5_camp_1` — [calm] Three ways into a camp like that, man. Loud, quiet, or invited.
@@ -5864,7 +5875,7 @@ _One line, at random, from a companion in the second round of a fight._
 **banter**
 
 - `banter_1` — [flat] Back lane. Poison. Done.
-- `banter_2` — [calm] The big one has a bad knee. Use it.
+- `banter_2` — [calm] Stay close. Don't give them a gap.
 - `banter_3` — [dry] Desmond, stop laughing, it puts them off.
 
 ## Yasemin  `ysolde`
@@ -5901,7 +5912,7 @@ _One line, at random, from a companion in the second round of a fight._
 
 - `banter_1` — [calm] Frost. Hold him still.
 - `banter_2` — [formal] Your aura flares when you fight. Interesting.
-- `banter_3` — [cool] Bahadır, the left. Fındık, be quiet.
+- `banter_3` — [cool] Keep them in front of us.
 
 ## Kolade Adeyinka, the Armoured  `korvath`
 
@@ -6973,4 +6984,4 @@ _One line, at random, from a companion in the second round of a fight._
 
 ---
 
-**Totals:** 45 characters · 668 clips · 78,229 characters of text (ElevenLabs bills per character).
+**Totals:** 45 characters · 669 clips · 78,200 characters of text (ElevenLabs bills per character).
