@@ -454,6 +454,26 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
 })();
 
 (function () {
+  console.log('\n-- Gate company seats --');
+  const game = { meta: {} };
+  const C3 = ADV.Campaign3;
+  eq(C3.recruit(game, 'wren_ward') && C3.inCompany(game, 'wren_ward'), true, 'first recruit rides');
+  C3.recruit(game, 'dorran');
+  C3.recruit(game, 'selene');
+  eq(C3.companyIds(game).length, 3, 'three fill the company');
+  const seats = C3.applyRecruits(game, ['vess', 'fennick']);
+  ok(C3.isRecruited(game, 'vess') && C3.isRecruited(game, 'fennick'), 'overflow still joins the roster');
+  eq(seats.overflow.join(','), 'vess,fennick', 'full company reports overflow');
+  eq(C3.inCompany(game, 'vess'), false, 'overflow does not ride');
+  ok(C3.replaceCompany(game, 'wren_ward', 'vess'), 'replace swaps a rider');
+  ok(C3.inCompany(game, 'vess') && !C3.inCompany(game, 'wren_ward'), 'newcomer rides, old rider waits');
+  eq(C3.companyIds(game).length, 3, 'swap keeps the cap');
+  ok(C3.seat(game, 'fennick') === false, 'seat refuses a fourth');
+  C3.dismiss(game, 'dorran');
+  ok(C3.seat(game, 'fennick'), 'open seat takes the next recruit');
+})();
+
+(function () {
   console.log('\n-- harness mirrors index.html --');
   const r = checkScriptOrder();
   ok(r.ok, 'test harness loads the same data/core scripts in the same order as index.html', r.missing.join(', ') || (r.order ? '' : 'order differs'));

@@ -7,7 +7,7 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/data/constants.js', 'js/data/skills.js', 'js/data/campaign_skills.js', 'js/data/campaign_data.js', 'js/data/campaign_dialogue.js',
-  'js/data/campaign2_skills.js', 'js/data/monster_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js', 'js/data/campaign3_data.js', 'js/data/campaign3_dialogue.js',   'js/data/enemies.js',
+  'js/data/campaign2_skills.js', 'js/data/monster_skills.js', 'js/data/campaign2_data.js', 'js/data/campaign2_dialogue.js', 'js/data/campaign3_data.js', 'js/data/campaign3_dialogue.js', 'js/data/campaign3_perks.js',   'js/data/enemies.js',
   'js/data/minibosses.js',
   'js/data/enemy_tactics.js',
   'js/data/names.js', 'js/data/tutorial.js', 'js/data/registry.js',
@@ -17,7 +17,7 @@ const FILES = [
   'js/core/survival.js',
   'js/core/combat.js', 'js/core/combat_ai.js', 'js/core/combat_effects.js', 'js/core/relationships.js', 'js/core/courtship.js', 'js/core/hiro.js', 'js/core/vault.js',
   'js/core/quests.js', 'js/core/party.js', 'js/core/divine.js', 'js/core/death.js',
-  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/difficulty.js', 'js/core/balance_support.js', 'js/core/family_support.js',
+  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/campaign3_perks.js', 'js/core/campaign3_perk_combat.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/difficulty.js', 'js/core/balance_support.js', 'js/core/family_support.js',
 ];
 
 function load() {

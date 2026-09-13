@@ -14,6 +14,7 @@ const Cb = ADV.Combat;
 const TH = ADV.DATA.CONST.TIER_THRESHOLDS;
 const LEVELS = [1, TH.intermediate, TH.advanced];
 const META = new Set(['id', 'name', 'kind', 'archetype', 'desc', 'tiers', 'faction', 'campaign', 'campaign2',
+  'campaignReward', 'group', 'key', 'quest', 'questName', 'requirement',
   'unique', 'universal', 'noSlot', 'noTierGrowth', 'forbidden', 'social', 'warning', 'katana', 'monster',
   'elemental', 'element', 'offensive', 'heal', 'target', 'reach', 'power', 'melee']);
 
