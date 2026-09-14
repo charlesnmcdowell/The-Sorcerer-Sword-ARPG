@@ -458,19 +458,18 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const game = { meta: {} };
   const C3 = ADV.Campaign3;
   eq(C3.recruit(game, 'wren_ward') && C3.inCompany(game, 'wren_ward'), true, 'first recruit rides');
-  C3.recruit(game, 'dorran');
-  C3.recruit(game, 'selene');
-  eq(C3.companyIds(game).length, 3, 'three fill the company');
-  const seats = C3.applyRecruits(game, ['vess', 'fennick']);
-  ok(C3.isRecruited(game, 'vess') && C3.isRecruited(game, 'fennick'), 'overflow still joins the roster');
-  eq(seats.overflow.join(','), 'vess,fennick', 'full company reports overflow');
-  eq(C3.inCompany(game, 'vess'), false, 'overflow does not ride');
-  ok(C3.replaceCompany(game, 'wren_ward', 'vess'), 'replace swaps a rider');
-  ok(C3.inCompany(game, 'vess') && !C3.inCompany(game, 'wren_ward'), 'newcomer rides, old rider waits');
-  eq(C3.companyIds(game).length, 3, 'swap keeps the cap');
-  ok(C3.seat(game, 'fennick') === false, 'seat refuses a fourth');
+  for (const id of ['dorran', 'selene', 'vess', 'fennick']) C3.recruit(game, id);
+  eq(C3.companyIds(game).length, C3.MAX_COMPANY, 'five companions fill the company');
+  const seats = C3.applyRecruits(game, ['ithrel', 'bramm']);
+  ok(C3.isRecruited(game, 'ithrel') && C3.isRecruited(game, 'bramm'), 'overflow still joins the roster');
+  eq(seats.overflow.join(','), 'ithrel,bramm', 'full company reports overflow');
+  eq(C3.inCompany(game, 'ithrel'), false, 'overflow does not ride');
+  ok(C3.replaceCompany(game, 'wren_ward', 'ithrel'), 'replace swaps a rider');
+  ok(C3.inCompany(game, 'ithrel') && !C3.inCompany(game, 'wren_ward'), 'newcomer rides, old rider waits');
+  eq(C3.companyIds(game).length, C3.MAX_COMPANY, 'swap keeps the cap');
+  ok(C3.seat(game, 'bramm') === false, 'seat refuses a sixth companion');
   C3.dismiss(game, 'dorran');
-  ok(C3.seat(game, 'fennick'), 'open seat takes the next recruit');
+  ok(C3.seat(game, 'bramm'), 'open seat takes the next recruit');
 })();
 
 (function () {
