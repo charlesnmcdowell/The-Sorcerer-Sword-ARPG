@@ -16,11 +16,17 @@ are for a challenge, and the challenge is *more enemies and better ones*, not a 
 | Enemy skill levels (kits climb tiers; tier-1 mooks bring their perks) | as authored | +2 | +4 |
 | Enemy kit floor (no skill below this level) | none | 10 — every kit at least intermediate | 10 — the +4 carries seasoned kits to advanced |
 | Enemy health / attack / defence | ×1 / ×1 / ×1 | ×1.05 / ×1.05 / ×1 | ×1 / ×1 / ×1 |
+| Most a basic-tier skill can take in one use | no limit | a third of the foe | a third of the foe |
 | Your health buffer | ×2 | ×1.5 | natural |
 | Health back after a won encounter | 50% | 35% | 20% |
 | Contract pay | +100g | +50g | no bonus, ×0.85 |
 | Auto combat stops itself | below 50% | below 30% | never |
 | Solo flee warning (naval narrator) | yes | yes | no |
+
+A basic-tier skill is an opener from Normal up, not an execution: one use takes at most a
+third of a foe's maximum health and never kills outright, however far the wielder outclasses
+them. The allowance covers the whole action, so extra hits and anything the blow sets off draw
+on the same third. Easy keeps no limit — it is the game as it has always played.
 
 What never changes: stories, companions, choices, rewards in kind, loot, and the stats of
 anyone on your side — conscripts, the risen, hired hands and story companions fight with the
