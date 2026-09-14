@@ -50,7 +50,8 @@ for (const tier of ['basic', 'intermediate', 'advanced']) {
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
   const n0 = st.events.length; for (let i = 0; i < Cb.DOT_TICKS; i++) endRound(st);
   const total = dots(st, n0, ue.uid).filter((e, i) => i % 2 === 0).reduce((a, e) => a + e.dmg, 0);
-  ok(dots(st, n0, ue.uid).reduce((a, e) => a + e.dmg, 0) === 182, `rounding: 100% on 91 HP deals exactly 91 per status (${dots(st, n0, ue.uid).map(e => e.dmg).join('+')})`);
+  const want91 = Math.round(91 * Cb.DOT_PCT.intermediate) * 2;
+  ok(dots(st, n0, ue.uid).reduce((a, e) => a + e.dmg, 0) === want91, `rounding: ${Cb.DOT_PCT.intermediate * 100}% on 91 HP deals exactly ${want91 / 2} per status (${dots(st, n0, ue.uid).map(e => e.dmg).join('+')})`);
 }
 
 console.log('-- §2 duration follows the skill; power/srcAtk/srcLevel do nothing --');
@@ -67,7 +68,7 @@ console.log('-- §2 duration follows the skill; power/srcAtk/srcLevel do nothing
   const { st: s2, ue: e2 } = duel(['venom_fang'], {});
   const a = { kind: 'poison', tier: 'basic', power: 9.9, srcAtk: 999, srcLevel: 99, srcUid: null };
   I.addStatus(s2, e2, a);
-  ok(Cb.dotTick(s2, a, e2) === Math.round(300 * 0.5 / Cb.DOT_TICKS), `power 9.9 / srcAtk 999 / srcLevel 99 change nothing (${Cb.dotTick(s2, a, e2)})`);
+  ok(Cb.dotTick(s2, a, e2) === Math.round(300 * Cb.DOT_PCT.basic / Cb.DOT_TICKS), `power 9.9 / srcAtk 999 / srcLevel 99 change nothing (${Cb.dotTick(s2, a, e2)})`);
 }
 
 console.log('-- §2 every source carries ticks (no permanent poisons) --');
@@ -106,11 +107,11 @@ console.log('-- §3 tier resolution and DOT_ENEMY_MULT --');
   C.DOT_ENEMY_MULT = 0.5;
   const half = Cb.dotTick(st, s, ua);
   C.DOT_ENEMY_MULT = 1.0;
-  ok(one === Math.round(ua.maxHp * 0.5 / Cb.DOT_TICKS) && half === Math.round(one * 0.5), `DOT_ENEMY_MULT halves enemy→player ticks (${one} → ${half})`);
+  ok(one === Math.round(ua.maxHp * Cb.DOT_PCT.basic / Cb.DOT_TICKS) && half === Math.round(one * 0.5), `DOT_ENEMY_MULT halves enemy→player ticks (${one} → ${half})`);
   const p2 = { kind: 'bleed', tier: 'basic', srcUid: ua.uid };
   I.addStatus(st, ue, p2);
   C.DOT_ENEMY_MULT = 0.5;
-  ok(Cb.dotTick(st, p2, ue) === Math.round(ue.maxHp * 0.5 / Cb.DOT_TICKS), 'and leaves player→enemy ticks alone');
+  ok(Cb.dotTick(st, p2, ue) === Math.round(ue.maxHp * Cb.DOT_PCT.basic / Cb.DOT_TICKS), 'and leaves player→enemy ticks alone');
   C.DOT_ENEMY_MULT = 1.0;
 }
 
@@ -145,14 +146,14 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
   const n0 = st.events.length; endRound(st);
   const t = dots(st, n0, ue.uid)[0];
-  ok(t.dmg === Math.round(3000 * 0.5 / Cb.DOT_TICKS) * 2, `Septic Sanguine (advanced, dotMult 2) doubles the percentage tick (${t.dmg})`);
+  ok(t.dmg === Math.round(Math.round(3000 * Cb.DOT_PCT.basic / Cb.DOT_TICKS) * 1.6), `Septic Sanguine (advanced, dotMult 1.6) scales the percentage tick (${t.dmg})`);
   ok(ua.chp > 50, 'and feeds the owner');
   const { st: s2, ua: a2, ue: e2 } = duel(['venom_fang'], { venom_fang: lvl.basic, opportunist: 1 }, ['opportunist']);
   e2.maxHp = 3000; e2.chp = 1000;
   Cb.act(s2, a2, { kind: 'skill', skillId: 'venom_fang', targetUid: e2.uid });
   const n1 = s2.events.length; endRound(s2);
   const t2 = dots(s2, n1, e2.uid)[0];
-  ok(t2.dmg === Math.round(3000 * 0.5 / Cb.DOT_TICKS) + 300, `Opportunist adds 10% of max HP to each tick under half (${t2.dmg})`);
+  ok(t2.dmg === Math.round(3000 * Cb.DOT_PCT.basic / Cb.DOT_TICKS) + 300, `Opportunist adds 10% of max HP to each tick under half (${t2.dmg})`);
 }
 {
   const { st, ua, ue } = duel(['venom_fang'], { septic_sanguine: lvl.basic }, ['septic_sanguine']);
@@ -176,7 +177,7 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   const n0 = st.events.length; endRound(st);
   const tick = dots(st, n0, ual.uid)[0];
   const heal = st.events.slice(n0).find(e => e.t === 'heal' && e.uid === ua.uid);
-  ok(tick && heal && heal.amount === Math.max(1, Math.round(tick.dmg * 2)), 'advanced septic heals from any poison or bleed on the field');
+  ok(tick && heal && heal.amount === Math.max(1, Math.round(tick.dmg * 1.0)), 'advanced septic heals from any poison or bleed on the field');
 }
 {
   // venom_draw moves the poison and it recomputes on the new target's max HP
@@ -191,7 +192,7 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   const r = Cb.act(st, uh, { kind: 'skill', skillId: 'venom_draw', targetUid: ue.uid });
   const moved = ue.statuses.find(s => s.kind === 'poison');
   ok(r.ok && !ual.statuses.some(s => s.kind === 'poison') && moved && moved.tier === 'intermediate', 'venom_draw moves the poison with its tier');
-  ok(Cb.dotTick(st, moved, ue) === Math.round(300 * 1.0 / Cb.DOT_TICKS), `and the tick recomputes on the enemy's 300 HP (${Cb.dotTick(st, moved, ue)})`);
+  ok(Cb.dotTick(st, moved, ue) === Math.round(300 * Cb.DOT_PCT.intermediate / Cb.DOT_TICKS), `and the tick recomputes on the enemy's 300 HP (${Cb.dotTick(st, moved, ue)})`);
 }
 
 console.log('-- death hop: poison and bleed by tier --');

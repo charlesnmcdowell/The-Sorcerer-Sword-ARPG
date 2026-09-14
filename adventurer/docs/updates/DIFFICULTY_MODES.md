@@ -14,7 +14,8 @@ are for a challenge, and the challenge is *more enemies and better ones*, not a 
 | --- | --- | --- | --- |
 | Extra enemies per fight (the encounter's own kinds; never more adds than you have companions) | 0 | +1 | +2 |
 | Enemy skill levels (kits climb tiers; tier-1 mooks bring their perks) | as authored | +2 | +4 |
-| Enemy health / attack / defence | ×1 / ×1 / ×1 | ×1.05 / ×1.05 / ×1 | ×1.1 / ×1.1 / ×1 |
+| Enemy kit floor (no skill below this level) | none | 10 — every kit at least intermediate | 10 — the +4 carries seasoned kits to advanced |
+| Enemy health / attack / defence | ×1 / ×1 / ×1 | ×1.05 / ×1.05 / ×1 | ×1 / ×1 / ×1 |
 | Your health buffer | ×2 | ×1.5 | natural |
 | Health back after a won encounter | 50% | 35% | 20% |
 | Contract pay | +100g | +50g | no bonus, ×0.85 |
@@ -54,16 +55,18 @@ Full run, six seeds, six builds (fighter, mage, ranger, healer, tank, rogue):
 
 | Scenario | Easy | Normal | Hard |
 | --- | --- | --- | --- |
-| Solo career, tier 1 | 100% win, 100% hp | 100%, 100% | 100%, 100% |
-| Solo career, tier 2 | 90%, 99% | 89%, 97% | 85%, 92% |
-| Solo career, tier 3 | 88%, 98% | 85%, 95% | 71%, 92% |
-| Party of four, tier 2 | 93%, 99% | 86%, 97% | 64%, 94% |
-| Party of four, tier 3 | 83%, 99% | 68%, 91% | 41%, 87% |
-| Varenholm's Gate, chapters 1–4 | 60%, 71% | 58%, 69% | 43%, 80% |
-| Varenholm's Gate, all | 35% | 30% | 19% |
+| Solo career, tier 1 | 100% win, 100% hp | 100%, 100% | 100%, 99% |
+| Solo career, tier 2 | 98%, 100% | 98%, 98% | 97%, 93% |
+| Solo career, tier 3 | 100%, 99% | 99%, 95% | 86%, 94% |
+| Party of four, tier 2 | 96%, 100% | 90%, 98% | 60%, 95% |
+| Party of four, tier 3 | 94%, 99% | 77%, 89% | 51%, 92% |
+| Varenholm's Gate, chapters 10–13 | 25%, 83% | 18%, 72% | 3%, 60% |
+| Varenholm's Gate, all | 9% | 6% | 3% |
 
-Read the Gate rows as relative, not absolute: the AI player loses most boss fights on every
-setting because a boss's hits carry a fifth of the target's maximum health and the AI never
-guards, taunts or retreats — a person does. The three columns still fall in order, which is the
-contract. `node test/difficulty_sim.js` runs the full pass; `--only=hard --scenario=party
+(Measured after the balance pass — `updates/BALANCE_PASS.md` — with the Gate's own
+fivefold enemy health in place.) Read the Gate rows as relative, not absolute: the Gate
+now gives every enemy five times the health and twice the attack and defence
+(`CAMPAIGN3_COMBAT`), and the AI player never guards, taunts, retreats or brings the
+scripted company's full kit — a person does. The three columns still fall in order, which is
+the contract. `node test/difficulty_sim.js` runs the full pass; `--only=hard --scenario=party
 --override='{"hard":{"foeLevel":6}}'` tries a lever without editing the table.

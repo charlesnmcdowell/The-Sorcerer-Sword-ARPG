@@ -1220,20 +1220,20 @@ _One of the following, whoever is riding along:_
 
 > [echoing] You are dreaming, my child, and I am dead, and both of those things are true at once.
 >
-> [gentle] There is a throne in this dream. You will see it more clearly each time you come here. Do not sit in it. Do not look at it for long.
+> [gentle] That throne belonged to Morrak, the god of murder. He died before you were born. You are one of his children, and part of his power lives in you.
 >
-> [fading] Something in your blood is waking. You can feed it or you can starve it. That is the only choice that matters, and you will make it more than once.
+> [grave] He intended his children to kill one another and take that power for themselves, until one could claim his throne. You can refuse, my child. You do not have to kill for him.
 >
 
 > **What do you say?**
-> 1. "What am I, Tesfaye? Tell me plainly." — _question — the choice returns_
+> 1. "You knew what I was when you brought me to Lanternhold?" — _question — the choice returns_
 > 2. "I do not want whatever this is. Starve it." — _blood -1; sets dream1_
 > 3. "Show me the throne." — _blood +1; sets dream1_
 >
 
 **TESFAYE** *(reply to 1)*  `q4_dream_ask`
 
-> [sorrowful] If I could, I would. Dreams are not letters; they carry only what you already half-know. You are the child of something that should have stayed dead — and you are mine. Both. Only the second is yours to keep.
+> [sorrowful] I did. I brought you there to keep you out of Morrak's followers' reach. I should have told you while I was alive. I was afraid of what it would do to you.
 >
 
 **TESFAYE** *(reply to 2)*  `q4_dream_reject`
@@ -2289,20 +2289,20 @@ _(if not umbralBetrayed, Winston recruited)_
 
 > [echoing] The throne is closer this time, my child. You'll keep seeing it as your power grows.
 >
-> [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
+> [grave] Morrak, the god of murder, left many children. You are one of them. Some of your kin have begun killing the others for his power. The man who hunts you is using the Consortium's money and hired killers to find them.
 >
-> [fading] You can still refuse it, my child. It will offer you more power each time. Remember what taking it would cost.
+> [fading] Each child he kills makes him stronger and removes another rival for the throne. That is why he wants you dead. You can stop him without claiming Morrak's throne yourself.
 >
 
 > **What do you say?**
 > 1. "Others. How many? Who?" — _question — the choice returns_
-> 2. "Starve it. I am not sitting in anyone's chair." — _blood -1; sets dream2_
+> 2. "I will stop him. I will not claim Morrak's throne." — _blood -1; sets dream2_
 > 3. "If there are others, I had better be the strongest." — _blood +1; sets dream2_
 >
 
 **TESFAYE** *(reply to 1)*  `q7_dream_others`
 
-> [quiet] I never learned the number. Enough that the one who hunts you has made a study of it, and is not afraid of running out.
+> [quiet] I do not know how many are still alive. Most were raised by mortal families, as you were. Some may not know what they are. The man in black has been searching for them for years.
 >
 
 **TESFAYE** *(reply to 2)*  `q7_dream_reject`
@@ -2511,7 +2511,7 @@ _(combat, no dialogue)_
 
 **DUKE ADEBAYO**  `q8_duke_work`
 
-> [precise] The Iron Consortium has been strangling this city's iron for a year and blaming Calder for it. War with Calder would kill ten thousand people, and the Council votes on that war in a fortnight. I need their papers — the ones in their own tower, in their own hand — before the vote. It is not a small matter.
+> [precise] The Consortium poisoned its rivals' ore and kept its own iron to sell at a higher price. Adigun blames Calder for the shortage. Now someone is demanding we settle it with a war. The Council votes in a fortnight. I need the orders from their tower to prove who caused this, before ten thousand people die over a shortage those men arranged.
 >
 
 > **What do you say?**
@@ -2541,7 +2541,7 @@ _(combat, no dialogue)_
 
 ## Quest 9 — The Consortium Tower  *(Chapter 5)*
 
-_Duke Adebayo wants the Iron Consortium's papers. You go in as a mercenary looking for work and come out with the top floor's secrets._
+_The mine's orders lead to the Iron Consortium's headquarters. Adebayo wants their records. Inside, a well-dressed merchant offers help and asks you to stop his father._
 
 ### Setting out
 
@@ -2550,6 +2550,17 @@ _Duke Adebayo wants the Iron Consortium's papers. You go in as a mercenary looki
 > [precise] The Consortium is hiring swords. You walk in the front door as swords. The ledgers are on the top floor with three men who never leave it.
 >
 > [dry] If you can do it without burning the tower down, the city would appreciate it. If you cannot, the city will understand.
+>
+
+*Inside the Consortium headquarters, a man in a fine merchant's coat draws you aside before the clerk can ask your business. He introduces himself as Sanni.*
+
+**SANNI**  `q9_tower`
+
+> [quiet, city-formal] Tesfaye's ward. I am Sanni. I knew him through the keep's book trade. He wrote about you and Hiwot. I was sorry to hear what happened on the Griffon Road.
+>
+> [low] Adigun Adeyinka is my father. He runs this office. Those orders from the mine carry his seal, and he has gone to Lanternhold to secure the keepers' support. The papers upstairs will prove it.
+>
+> [urgent] He is preparing a war with Calder. Kill him before he buys the Council's vote and you could save thousands of lives. Go to the summit at Lanternhold. Read the evidence first, and hear what he has to say. I will meet you there.
 >
 
 ### Scene 1: The lobby
@@ -2715,7 +2726,7 @@ _(if Layla in company)_
 
 **FOLAKE** *(reply to 2)*  `q9_lysandra_deal`
 
-> [pleased] Kolade is not a merchant's son. He is something older, and he believes you are the same. He wants a war so that a great many people die at once; he believes that makes him a god, and his tutor believes it too, and the tutor is the clever one.
+> [pleased] Adigun wants high iron prices. A frightened city pays them. Kolade wants the war to happen. He has been using his father's couriers to hunt Morrak's children behind his back, and his tutor promises him godhood through mass murder. His father would stop the war if he knew how close it was.
 >
 > [soft] When you need a way into the palace, come to me. I will have one. The price is his head, and the Consortium afterward — for me.
 >
@@ -2910,15 +2921,15 @@ _The romance closer: whichever companions have grown close enough (affinity 3 or
 
 ## Quest 10 — Return to Lanternhold  *(Chapter 6)*
 
-_The Consortium leaders have gone to the library you grew up in. Adebayo gives you a book to buy your way through the gate. Something is waiting inside that is not the Consortium._
+_Sanni has accused his father of planning a war. The Consortium leaders are meeting at Lanternhold. Take the evidence, hear Adigun out, and decide whether to kill him or bring him before Adebayo._
 
 ### Setting out
 
-*The hill road to Lanternhold. A quiet man in a plain coat is waiting at the milestone with something small in his hand.*
+*The hill road to Lanternhold. Sanni, the merchant you met at the Consortium headquarters, is waiting at the milestone with a ring in his hand.*
 
 **SANNI**  `q10_ring`
 
-> [quiet, city-formal] You are Tesfaye's ward. I knew him. Not well; well enough to be sorry.
+> [quiet, city-formal] You found the papers, then. My father is in the reading room with Bankole and Rotimi. Before you go in, I have something of Tesfaye's for you.
 >
 > [calm] Take this ring. It was his once, before it was mine. And know this, my friend: the three men inside deserve whatever you decide to give them. Nobody will weep.
 >
@@ -2934,7 +2945,7 @@ _(if Hiwot in company)_
 
 **SANNI**  `q10_ring_hiwot_reply`
 
-> [a warm, easy smile] The way one knows a rumour, young lady. From a distance, and better than the rumour would like.
+> [a warm, easy smile] He had dealings outside the keep, young lady. Some of them were confidential. I gave him my word that they would stay that way.
 >
 
 _(if Hiwot in company)_
@@ -2952,14 +2963,14 @@ _(if Hiwot in company)_
 >
 
 > **What do you say?**
-> 1. "...Thank you. Who are you?" — _sets sarnRing_
-> 2. "I do not take gifts from strangers on roads." — _Hiwot +1_
+> 1. "If it was Tesfaye's, I want it back." — _sets sarnRing_
+> 2. "Keep it. I have not decided whether to trust you." — _Hiwot +1_
 > 3. "If this is a trick, I will find you." — _blood +1; sets sarnRing_
 >
 
 **SANNI** *(reply to 1)*  `q10_sarn_take`
 
-> [soft] Sanni. Nobody. Wear it inside; the keepers will know it. Go well.
+> [soft] Wear it inside. The keepers will know it. Find my father before he leaves the reading room.
 >
 
 **SANNI** *(reply to 2)*  `q10_sarn_refuse`
@@ -2980,14 +2991,14 @@ _(if Hiwot not in company)_
 >
 
 > **What do you say?**
-> 1. "...Thank you. Who are you?" — _sets sarnRing_
-> 2. "I do not take gifts from strangers on roads." — _Hiwot +1_
+> 1. "If it was Tesfaye's, I want it back." — _sets sarnRing_
+> 2. "Keep it. I have not decided whether to trust you." — _Hiwot +1_
 > 3. "If this is a trick, I will find you." — _blood +1; sets sarnRing_
 >
 
 **SANNI** *(reply to 1)*  `q10_sarn_take`
 
-> [soft] Sanni. Nobody. Wear it inside; the keepers will know it. Go well.
+> [soft] Wear it inside. The keepers will know it. Find my father before he leaves the reading room.
 >
 
 **SANNI** *(reply to 2)*  `q10_sarn_refuse`
@@ -3044,7 +3055,7 @@ _(if Hiwot in company)_
 
 > [startled] Guards — no. No, hold. I know who you are.
 >
-> [shaking] Adigun Adeyinka. I run the Consortium's Gate office. I did not order Tesfaye killed. I did not order YOU killed. That was — ah-ah, that was my son. My foster-son. He does not answer to me anymore.
+> [shaking] Adigun Adeyinka. The mines, the bandits, the lies about Calder — we paid for those. I wanted higher prices, not a war that would close our trade routes. My foster-son is buying votes to send the army across the border. He used my seal to order your death, and Tesfaye's. My own couriers obey him now.
 >
 
 _(if Delphine in company)_
@@ -3074,8 +3085,8 @@ _(if Delphine in company)_
 >
 
 > **What do you say?**
-> 1. "Three names on a letter. Three men in a room. Easy arithmetic." — _blood +1; Santiago -1; Delphine -1; Layla +1; sets leadersKilled_
-> 2. "Your son. Say his name." — _no fight; sets leadersSpared_
+> 1. "You paid for the mines and the bandits. You will not leave this room alive." — _blood +1; Santiago -1; Delphine -1; Layla +1; sets leadersKilled_
+> 2. "I will not kill you. Tell me what your son has been doing." — _no fight; sets leadersSpared_
 > 3. "You will answer to Adebayo. All three of you. Nobody dies in a library." — _no fight; blood -1; Santiago +1; sets leadersSpared; sets leadersArrested_
 >
 
@@ -3086,7 +3097,7 @@ _(if Delphine in company)_
 
 **ADIGUN ADEYINKA** *(reply to 2)*  `q10_summit_talk`
 
-> [whispering] Kolade. Kolade Adeyinka. I found him in a gutter and I raised him to count money, and he has been counting something else since a tutor filled his head with prophecies.
+> [whispering] Kolade. Kolade Adeyinka. His tutor told him who his real father was. Then he started paying for reports on other children, all over the coast. I thought he was looking for relatives. I found the death notices with the bounty payments.
 >
 > [broken] He is in this keep tonight. I do not know what face he is wearing.
 >
@@ -3098,7 +3109,48 @@ _(if Delphine in company)_
 
 ### Scene 3: The catacombs
 
-*The upper reading room. Dawit has a sealed letter under his hand. The wax is twenty years old.*
+*Before you can escort the merchants out, Sanni enters and bars the door. Two of his retainers seize Bankole and Rotimi. Sanni draws a knife and steps toward Adigun.*
+
+_(if not leadersKilled)_
+
+**SANNI**  `q10_murder`
+
+> [cold] You were supposed to kill him. Very well. Father, your couriers brought me your letter to the Council. You will not be calling off my war.
+>
+
+*Sanni drives the knife into Adigun. Behind him, his retainers cut the other two merchants' throats. Sanni wipes the blade inside his sleeve and opens the door.*
+
+_(if not leadersKilled)_
+
+**ADIGUN ADEYINKA**  `q10_summit_kill`
+
+> [terrified] He will not stop when we are dead. He will not STOP —
+>
+
+_He dies._
+
+*Sanni calls the keep's guards into the reading room. He points at your company, standing beside the three bodies. His retainers step aside to let the guards through.*
+
+**SANNI**  `q10_accuse`
+
+> [shouting] Guards! In here! Tesfaye's ward has murdered my father and his partners. Take their weapons. Do not let this company leave the keep!
+>
+
+_(if flag leadersKilled)_
+
+**ABBA GEBRE**  `q10_arrest`
+
+> [thundering] Three men dead in my reading room. Put down your weapons. You and your whole company are under arrest. To the cells. Now.
+>
+
+_(if not leadersKilled)_
+
+**ABBA GEBRE**  `q10_arrest_spared`
+
+> [thundering] You say you spared them. Sanni says he found you over their bodies. I will hear you separately, under guard. Put down your weapons. To the cells.
+>
+
+*The lock turns behind your company. Your weapons are taken to a chest outside the cell. Hours later, Dawit comes to the bars with Tesfaye's sealed letter.*
 
 **DAWIT**  `q10_letter`
 
@@ -3159,23 +3211,11 @@ _(if Delphine in company)_
 > [frightened] Do not — {target}. He wrote the last line for exactly that look on your face. Read it again.
 >
 
-_(if flag leadersKilled)_
-
-**ABBA GEBRE**  `q10_arrest`
-
-> [thundering] Three men are dead in my reading room, and this — this THING was seen leaving it. Take them. Take all of them.
->
-
-_(if flag leadersSpared)_
-
-**ABBA GEBRE**  `q10_arrest_spared`
-
-> [thundering] Three men are dead in my reading room — found at midnight, throats opened — and this company was the last to speak with them. Take them. Take all of them.
->
+*Dawit opens the cell. You reclaim your gear while he uncovers a narrow passage behind the wall. Footsteps are already coming down the stairs.*
 
 **DAWIT**  `q10_escape`
 
-> [urgent] The catacombs. There is a way to the shore under the old tombs. Gebre does not know it; Tesfaye did. Go, and do not trust any face you meet down there. Not even mine.
+> [urgent] I brought the cell key. Your gear is in the chest outside; take it. Sanni has ordered your transfer to the Gate at dawn. I do not trust him. The old passage behind this wall leads through the catacombs to the shore. Go, and do not trust any face you meet down there.
 >
 
 **GBENGA**  `q10_catacombs`
@@ -3350,25 +3390,39 @@ _One of the following, whoever is riding along:_
 
 > [weary] The shore. Air. We're out.
 >
-> [hard] Every keeper in Lanternhold thinks we killed three men tonight, and the man who did it was inside those walls wearing somebody's face.
+> [hard] Sanni sent us after his father. Then he called the guards on us. With Adigun dead and us wanted for murder, who is left to stop him?
 >
 
 **HIWOT**  `q10_shore`
 
 > [shaking] Out. We are out. I am never going home again, am I.
 >
-> [small] He was IN there. He was in the library, with us.
+> [small] Sanni sent us into that room. Then he told the guards we'd murdered his father. He had this planned before we ever left the city.
 >
 
 ### Back in town
+
+*Back at the Consortium tower, away from your company: Sanni has set aside his merchant's coat. He wears the spiked black armour from the Griffon Road. His tutor calls him Kolade.*
+
+**BABA OLUSEGUN** *(to Kolade Adeyinka)*  `q10_unmasked`
+
+> [dry] Your father is dead, Kolade. The ward has escaped the keep. I take it we are continuing with the war?
+>
+
+**KOLADE ADEYINKA** *(to Baba Olusegun)*  `q10_unmasked`
+
+> [calm] Of course. Adigun wanted frightened customers paying twice the price. He would never have let the armies march. Now the Consortium is mine, and the ward will be hunted as a murderer.
+>
+> [pleased] Let them run. We know where to look for the other children. Once the war begins, nobody will spare soldiers to protect them. I will deal with Tesfaye's ward when I choose.
+>
 
 *The throne is close enough to touch. A man in black armour is already sitting in it, and he is smiling at you like a brother.*
 
 **TESFAYE**  `q10_dream`
 
-> [echoing] You know now. I am sorry it was a letter.
+> [echoing] Now you have my letter. I should have told you about your brother myself, when I could still help you face him.
 >
-> [grave] He is your brother, and he will be a god if enough people die at once. That is the whole of his plan. It is not a stupid plan.
+> [grave] Kolade plans to murder the other children and take their power. His tutor means to use the deaths in the war as an offering to Morrak, to make Kolade a god. Stop the war and you deny him that sacrifice.
 >
 > [fading] The last time I ask. Feed it, or starve it.
 >
@@ -4506,9 +4560,9 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 | 13 | Wanjiru | companion | Kenyan | 12 | U1NXjHF5ene7Eze10d5J |
 | 14 | Winston | companion | Jamaican | 31 | R7jdv6H5bZOU3sQIMhbd |
 | 15 | Yasemin | companion | Turkish | 10 | E7IRB2a3OVqRb6T7du39 |
-| 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 35 | CmD1sSN0Gj3pJq3OxRyg |
+| 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 37 | CmD1sSN0Gj3pJq3OxRyg |
 | 17 | Abba Gebre | keeper | Ethiopian highlands | 6 | k1pVjlfHqGzrko6MqjgN |
-| 18 | Baba Olusegun | tutor | Nigerian (Yoruba and Igbo) | 1 | TRPEspiEsb4Zif6sGonu |
+| 18 | Baba Olusegun | tutor | Nigerian (Yoruba and Igbo) | 2 | TRPEspiEsb4Zif6sGonu |
 | 19 | Cal Boone | spy | Georgia, USA | 6 | svSvKKBdngsY0ysEx6yS |
 | 20 | Dawit | keeper | Ethiopian highlands | 10 | jDMhBWlFSleqsyqVHw2R |
 | 21 | Duke Adebayo | duke | Nigerian (Yoruba and Igbo) | 20 | 1N3Ubm5NzIILaxKqZSWn |
@@ -4518,7 +4572,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 | 25 | Folake | mistress | Nigerian (Yoruba and Igbo) | 17 | 6ILPXNE4jEAfwjCvmbEz |
 | 26 | Gethin Pryce | mayor | Welsh valleys | 11 | iUOf0Teoe8GQ6633Uazp |
 | 27 | Nib | knife | Georgia, USA | 6 | aiHuPZx6mGgpzcNDwtX2 |
-| 28 | Sanni | stranger | Nigerian (Yoruba and Igbo) | 8 | pL61gpUJHGbG1ctjcpcm |
+| 28 | Sanni | stranger | Nigerian (Yoruba and Igbo) | 13 | pL61gpUJHGbG1ctjcpcm |
 | 29 | Tesfaye | recruiter | Ethiopian highlands | 43 | EFtnObJs7ex53VSB3niw |
 | 30 | Tunde Softfoot | thief | Nigerian (Yoruba and Igbo) | 4 | Xazy5XB2Ls4qYhmhvhLy |
 | 31 | Yohannes | sage | Ethiopian highlands | 13 | efEXUGgwSIpGeDUw4Vx0 |
@@ -5015,7 +5069,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q10_shore**
 
 - `q10_shore_1` — [weary] The shore. Air. We're out.
-- `q10_shore_2` — [hard] Every keeper in Lanternhold thinks we killed three men tonight, and the man who did it was inside those walls wearing somebody's face.
+- `q10_shore_2` — [hard] Sanni sent us after his father. Then he called the guards on us. With Adigun dead and us wanted for murder, who is left to stop him?
 
 **q10_summit_selene**
 
@@ -5345,7 +5399,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q10_shore**
 
 - `q10_shore_1` — [shaking] Out. We are out. I am never going home again, am I.
-- `q10_shore_2` — [small] He was IN there. He was in the library, with us.
+- `q10_shore_2` — [small] Sanni sent us into that room. Then he told the guards we'd murdered his father. He had this planned before we ever left the city.
 
 **q11_alleg_consortium**
 
@@ -5973,6 +6027,11 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 - `q1_question_1` — [curious, unhurried] Before you die for it, old man, satisfy me on one point. Does the child know? Have you told it what it is, or have you let it grow up believing it is yours?
 
+**q10_unmasked**
+
+- `q10_unmasked_1` — [calm] Of course. Adigun wanted frightened customers paying twice the price. He would never have let the armies march. Now the Consortium is mine, and the ward will be hunted as a murderer.
+- `q10_unmasked_2` — [pleased] Let them run. We know where to look for the other children. Once the war begins, nobody will spare soldiers to protect them. I will deal with Tesfaye's ward when I choose.
+
 **q12_face_aldric**
 
 - `q12_face_aldric_1` — [quiet, honest] He was never mine. He chose you. He could have chosen both of us, and he chose you, and I have made my peace with it in a way I do not think you have.
@@ -6068,11 +6127,11 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_arrest**
 
-- `q10_arrest_1` — [thundering] Three men are dead in my reading room, and this — this THING was seen leaving it. Take them. Take all of them.
+- `q10_arrest_1` — [thundering] Three men dead in my reading room. Put down your weapons. You and your whole company are under arrest. To the cells. Now.
 
 **q10_arrest_spared**
 
-- `q10_arrest_spared_1` — [thundering] Three men are dead in my reading room — found at midnight, throats opened — and this company was the last to speak with them. Take them. Take all of them.
+- `q10_arrest_spared_1` — [thundering] You say you spared them. Sanni says he found you over their bodies. I will hear you separately, under guard. Put down your weapons. To the cells.
 
 **q10_gate**
 
@@ -6094,6 +6153,10 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **Who they are:** Kolade's tutor in the old prophecies. Dry, doting, the only one who calls Kolade 'my boy'.
 
 **From:** Varenholm's Gate — dukes, Gauntlet, Consortium, temples, thieves — Nigerian (Yoruba and Igbo). **Voice:** Grand, formal city English. "It is not a small matter", "my friend", "ah-ah!", "I am telling you", "o" softening the end of a line. Titles matter; elders are "Baba" and "Mama".
+
+**q10_unmasked**
+
+- `q10_unmasked_1` — [dry] Your father is dead, Kolade. The ward has escaped the keep. I take it we are continuing with the war?
 
 **q12_teleport**
 
@@ -6147,7 +6210,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_escape**
 
-- `q10_escape_1` — [urgent] The catacombs. There is a way to the shore under the old tombs. Gebre does not know it; Tesfaye did. Go, and do not trust any face you meet down there. Not even mine.
+- `q10_escape_1` — [urgent] I brought the cell key. Your gear is in the chest outside; take it. Sanni has ordered your transfer to the Gate at dawn. I do not trust him. The old passage behind this wall leads through the catacombs to the shore. Go, and do not trust any face you meet down there.
 
 **q10_gate**
 
@@ -6188,7 +6251,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q8_duke_work**
 
-- `q8_duke_work_1` — [precise] The Iron Consortium has been strangling this city's iron for a year and blaming Calder for it. War with Calder would kill ten thousand people, and the Council votes on that war in a fortnight. I need their papers — the ones in their own tower, in their own hand — before the vote. It is not a small matter.
+- `q8_duke_work_1` — [precise] The Consortium poisoned its rivals' ore and kept its own iron to sell at a higher price. Adigun blames Calder for the shortage. Now someone is demanding we settle it with a war. The Council votes in a fortnight. I need the orders from their tower to prove who caused this, before ten thousand people die over a shortage those men arranged.
 
 **q8_halvard_blood**
 
@@ -6348,7 +6411,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_lysandra_deal**
 
-- `q9_lysandra_deal_1` — [pleased] Kolade is not a merchant's son. He is something older, and he believes you are the same. He wants a war so that a great many people die at once; he believes that makes him a god, and his tutor believes it too, and the tutor is the clever one.
+- `q9_lysandra_deal_1` — [pleased] Adigun wants high iron prices. A frightened city pays them. Kolade wants the war to happen. He has been using his father's couriers to hunt Morrak's children behind his back, and his tutor promises him godhood through mass murder. His father would stop the war if he knew how close it was.
 - `q9_lysandra_deal_2` — [soft] When you need a way into the palace, come to me. I will have one. The price is his head, and the Consortium afterward — for me.
 
 **q9_lysandra_kill**
@@ -6460,13 +6523,27 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **Sex:** male · **Role:** stranger · **Voice ID:** pL61gpUJHGbG1ctjcpcm
 
-**Who they are:** A quiet stranger with a ring to give away. The disguise Kolade wears when he wants to watch you choose.
+**Who they are:** Sanni, a courteous merchant who claims to know Tesfaye and steers the ward against Adigun. Kolade's civilian identity, used to engineer the murder and arrest.
 
 **From:** Varenholm's Gate — dukes, Gauntlet, Consortium, temples, thieves — Nigerian (Yoruba and Igbo). **Voice:** Grand, formal city English. "It is not a small matter", "my friend", "ah-ah!", "I am telling you", "o" softening the end of a line. Titles matter; elders are "Baba" and "Mama".
 
+**q9_tower**
+
+- `q9_tower_1` — [quiet, city-formal] Tesfaye's ward. I am Sanni. I knew him through the keep's book trade. He wrote about you and Hiwot. I was sorry to hear what happened on the Griffon Road.
+- `q9_tower_2` — [low] Adigun Adeyinka is my father. He runs this office. Those orders from the mine carry his seal, and he has gone to Lanternhold to secure the keepers' support. The papers upstairs will prove it.
+- `q9_tower_3` — [urgent] He is preparing a war with Calder. Kill him before he buys the Council's vote and you could save thousands of lives. Go to the summit at Lanternhold. Read the evidence first, and hear what he has to say. I will meet you there.
+
+**q10_accuse**
+
+- `q10_accuse_1` — [shouting] Guards! In here! Tesfaye's ward has murdered my father and his partners. Take their weapons. Do not let this company leave the keep!
+
+**q10_murder**
+
+- `q10_murder_1` — [cold] You were supposed to kill him. Very well. Father, your couriers brought me your letter to the Council. You will not be calling off my war.
+
 **q10_ring**
 
-- `q10_ring_1` — [quiet, city-formal] You are Tesfaye's ward. I knew him. Not well; well enough to be sorry.
+- `q10_ring_1` — [quiet, city-formal] You found the papers, then. My father is in the reading room with Bankole and Rotimi. Before you go in, I have something of Tesfaye's for you.
 - `q10_ring_2` — [calm] Take this ring. It was his once, before it was mine. And know this, my friend: the three men inside deserve whatever you decide to give them. Nobody will weep.
 
 **q10_ring_ask**
@@ -6479,7 +6556,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_ring_hiwot_reply**
 
-- `q10_ring_hiwot_reply_1` — [a warm, easy smile] The way one knows a rumour, young lady. From a distance, and better than the rumour would like.
+- `q10_ring_hiwot_reply_1` — [a warm, easy smile] He had dealings outside the keep, young lady. Some of them were confidential. I gave him my word that they would stay that way.
 
 **q10_sarn_refuse**
 
@@ -6487,7 +6564,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_sarn_take**
 
-- `q10_sarn_take_1` — [soft] Sanni. Nobody. Wear it inside; the keepers will know it. Go well.
+- `q10_sarn_take_1` — [soft] Wear it inside. The keepers will know it. Find my father before he leaves the reading room.
 
 **q10_sarn_threat**
 
@@ -6578,12 +6655,12 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q4_dream**
 
 - `q4_dream_1` — [echoing] You are dreaming, my child, and I am dead, and both of those things are true at once.
-- `q4_dream_2` — [gentle] There is a throne in this dream. You will see it more clearly each time you come here. Do not sit in it. Do not look at it for long.
-- `q4_dream_3` — [fading] Something in your blood is waking. You can feed it or you can starve it. That is the only choice that matters, and you will make it more than once.
+- `q4_dream_2` — [gentle] That throne belonged to Morrak, the god of murder. He died before you were born. You are one of his children, and part of his power lives in you.
+- `q4_dream_3` — [grave] He intended his children to kill one another and take that power for themselves, until one could claim his throne. You can refuse, my child. You do not have to kill for him.
 
 **q4_dream_ask**
 
-- `q4_dream_ask_1` — [sorrowful] If I could, I would. Dreams are not letters; they carry only what you already half-know. You are the child of something that should have stayed dead — and you are mine. Both. Only the second is yours to keep.
+- `q4_dream_ask_1` — [sorrowful] I did. I brought you there to keep you out of Morrak's followers' reach. I should have told you while I was alive. I was afraid of what it would do to you.
 
 **q4_dream_embrace**
 
@@ -6596,8 +6673,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q7_dream**
 
 - `q7_dream_1` — [echoing] The throne is closer this time, my child. You'll keep seeing it as your power grows.
-- `q7_dream_2` — [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
-- `q7_dream_3` — [fading] You can still refuse it, my child. It will offer you more power each time. Remember what taking it would cost.
+- `q7_dream_2` — [grave] Morrak, the god of murder, left many children. You are one of them. Some of your kin have begun killing the others for his power. The man who hunts you is using the Consortium's money and hired killers to find them.
+- `q7_dream_3` — [fading] Each child he kills makes him stronger and removes another rival for the throne. That is why he wants you dead. You can stop him without claiming Morrak's throne yourself.
 
 **q7_dream_embrace**
 
@@ -6606,7 +6683,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q7_dream_others**
 
-- `q7_dream_others_1` — [quiet] I never learned the number. Enough that the one who hunts you has made a study of it, and is not afraid of running out.
+- `q7_dream_others_1` — [quiet] I do not know how many are still alive. Most were raised by mortal families, as you were. Some may not know what they are. The man in black has been searching for them for years.
 
 **q7_dream_reject**
 
@@ -6618,8 +6695,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_dream**
 
-- `q10_dream_1` — [echoing] You know now. I am sorry it was a letter.
-- `q10_dream_2` — [grave] He is your brother, and he will be a god if enough people die at once. That is the whole of his plan. It is not a stupid plan.
+- `q10_dream_1` — [echoing] Now you have my letter. I should have told you about your brother myself, when I could still help you face him.
+- `q10_dream_2` — [grave] Kolade plans to murder the other children and take their power. His tutor means to use the deaths in the war as an offering to Morrak, to make Kolade a god. Stop the war and you deny him that sacrifice.
 - `q10_dream_3` — [fading] The last time I ask. Feed it, or starve it.
 
 **q10_dream_embrace**
@@ -6711,7 +6788,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q10_summit**
 
 - `q10_summit_1` — [startled] Guards — no. No, hold. I know who you are.
-- `q10_summit_2` — [shaking] Adigun Adeyinka. I run the Consortium's Gate office. I did not order Tesfaye killed. I did not order YOU killed. That was — ah-ah, that was my son. My foster-son. He does not answer to me anymore.
+- `q10_summit_2` — [shaking] Adigun Adeyinka. The mines, the bandits, the lies about Calder — we paid for those. I wanted higher prices, not a war that would close our trade routes. My foster-son is buying votes to send the army across the border. He used my seal to order your death, and Tesfaye's. My own couriers obey him now.
 
 **q10_summit_arrest**
 
@@ -6727,7 +6804,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q10_summit_talk**
 
-- `q10_summit_talk_1` — [whispering] Kolade. Kolade Adeyinka. I found him in a gutter and I raised him to count money, and he has been counting something else since a tutor filled his head with prophecies.
+- `q10_summit_talk_1` — [whispering] Kolade. Kolade Adeyinka. His tutor told him who his real father was. Then he started paying for reports on other children, all over the coast. I thought he was looking for relatives. I found the death notices with the bounty payments.
 - `q10_summit_talk_2` — [broken] He is in this keep tonight. I do not know what face he is wearing.
 
 ## Bankole  `vask`
@@ -7022,4 +7099,4 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 ---
 
-**Totals:** 45 characters · 669 clips · 78,246 characters of text (ElevenLabs bills per character).
+**Totals:** 45 characters · 677 clips · 80,550 characters of text (ElevenLabs bills per character).

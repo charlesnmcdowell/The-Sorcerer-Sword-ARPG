@@ -49,7 +49,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 
 (function () {
   console.log('\n-- 3. Lightning King back-to-back, Pyromaniac leech from burns --');
-  const p = mkCh({ name: 'P', isPlayer: true }); give(p, 'lightning_king'); give(p, 'fire_bolt'); give(p, 'pyromaniac');
+  const p = mkCh({ name: 'P', isPlayer: true }); give(p, 'lightning_king', 10); give(p, 'fire_bolt'); give(p, 'pyromaniac');   // back-to-back from intermediate (balance pass)
   const e = mkCh({ name: 'E' }); e.stats.hp = 900;
   const st = fight(p, e, 5);
   eq(st.turnQueue.slice(0, 2).map(x => x.uid).join(','), 'a0,a0', 'two consecutive turns at the top of the round');
@@ -75,7 +75,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const pu = unit(st, p); pu.chp = 50;
   ADV.Combat.act(st, pu, { kind: 'attack', targetUid: unit(st, e1).uid });
   ok(unit(st, e1).downed, 'first enemy down');
-  eq(pu.chp, 50 + Math.round(pu.maxHp * 0.5), 'restored half of max HP on the kill');
+  eq(pu.chp, 50 + Math.round(pu.maxHp * 0.35), 'restored a third of max HP on the kill');
   eq(pu.arenaStacks, 1, 'one damage stack');
   ok(unit(st, e2).marksBy.includes(pu.uid) && unit(st, e2).statuses.some(x => x.kind === 'taunted' && x.rounds === 2), 'every enemy taunted for 2 rounds');
   const m = ADV.SkillSys.manifest(p, p.actives[0]);
@@ -145,7 +145,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
     return { tick: tick ? tick.dmg : 0, heal };
   };
   const a = dot(p), b = dot(q);
-  ok(a.tick === Math.round(b.tick * 1.25), 'poison ticks 25% harder at basic', a.tick + ' vs ' + b.tick);
+  ok(a.tick === Math.round(b.tick * 1.2), 'poison ticks 20% harder at basic', a.tick + ' vs ' + b.tick);
   ok(a.heal >= Math.round(a.tick * 0.5) && b.heal === 0, 'and feeds the holder', a.heal);
 })();
 
@@ -402,7 +402,7 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
 })();
 
 (function () {
-  console.log('\n-- survival growth: Bulwark / Arena Champion +20 max HP per battle survived --');
+  console.log('\n-- survival growth: Bulwark / Arena Champion +20 max HP per battle survived, for the quest --');
   const tank = mkCh({ name: 'T', isPlayer: true, stats: { hp: 200, atk: 30, def: 10, spd: 10 } }); give(tank, 'bulwark');
   const champ = mkCh({ name: 'A', stats: { hp: 200, atk: 30, def: 10, spd: 10 } }); give(champ, 'arena_champion');
   const plain = mkCh({ name: 'P', stats: { hp: 200, atk: 30, def: 10, spd: 10 } });
@@ -410,21 +410,27 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   let g = 0; while (!st.over && g++ < 50) { const t = ADV.Combat.currentTurn(st); if (!t) break; const bv = ADV.Combat.validTargets(st, t.unit, 'basic_attack'); ADV.Combat.act(st, t.unit, bv.length ? { kind: 'attack', targetUid: bv[0].uid } : { kind: 'defend' }); ADV.Combat.advance(st); }
   ok(st.over && st.winner === 'a', 'battle won');
   ADV.Combat.exportHp(st);
-  eq(tank.stats.hp, 220, 'Bulwark: +20 max HP after the battle');
-  eq(champ.stats.hp, 220, 'Arena Champion: +20 max HP after the battle');
-  eq(plain.stats.hp, 200, 'no perk, no growth');
+  eq(tank.stats.hp, 200, 'Bulwark: the base stat is untouched');
+  eq(tank.questHp, 20, 'Bulwark: +20 max HP after the battle, for this quest');
+  eq(champ.questHp, 20, 'Arena Champion: +20 max HP after the battle, for this quest');
+  ok(!plain.questHp && plain.stats.hp === 200, 'no perk, no growth');
   eq(tank.survivalBattles, 1, 'one battle counted');
   ok(st.events.filter(e => e.t === 'survivalGrowth').length === 2, 'growth events fire once each (idempotent on export)');
   // a second battle grows again — every encounter of a quest counts
   const st2 = fight([tank], [mkCh({ name: 'E2', stats: { hp: 40, atk: 5, def: 5, spd: 5 } })], 13);
   g = 0; while (!st2.over && g++ < 50) { const t = ADV.Combat.currentTurn(st2); if (!t) break; const bv = ADV.Combat.validTargets(st2, t.unit, 'basic_attack'); ADV.Combat.act(st2, t.unit, bv.length ? { kind: 'attack', targetUid: bv[0].uid } : { kind: 'defend' }); ADV.Combat.advance(st2); }
   ADV.Combat.exportHp(st2);
-  eq(tank.stats.hp, 240, 'second battle: 240');
+  eq(tank.questHp, 40, 'second battle: +40 for the quest');
   eq(ADV.Character.maxHp(tank), 480, 'max HP reflects the grown pool plus the player safety buffer');
+  // and it is gone once the contract resolves
+  { const gq = newGame(72, 'f'); const pq = ADV.Game.player(gq); give(pq, 'bulwark'); pq.questHp = 60; const q = gq.board.find(x => x.track === 'solo'); ADV.Game.startQuest(gq, q, {});
+    eq(pq.questHp, 0, 'a new contract starts with no carried growth');
+    pq.questHp = 40; gq.quest.readyToComplete = true; gq.quest.encIdx = gq.quest.quest.encounters.length; gq.quest.lootGold = 0; ADV.Game.completeQuest(gq);
+    eq(pq.questHp, 0, 'home again: the growth is spent'); }
   // NPCs with the perk grow on the world clock
   const gm = newGame(71, 'm'); const w = gm.world;
   const npc = w.characters.find(c => !c.isPlayer && c.alive && c.perks.some(x => x.skillId === 'bulwark'));
-  if (npc) { const h0 = npc.stats.hp; npc.personality.caution = 100; let grew = false; for (let i = 0; i < 12 && !grew; i++) { ADV.World.tick(w, gm.rng, {}); grew = npc.stats.hp > h0; } ok(grew, 'an NPC Bulwark holder grows on the clock'); }
+  if (npc) { const h0 = npc.stats.hp; npc.personality.caution = 100; let grew = false; for (let i = 0; i < 12 && !grew; i++) { ADV.World.tick(w, gm.rng, {}); grew = npc.stats.hp > h0; } ok(!grew, 'an NPC Bulwark holder no longer grows permanently on the clock'); }
 })();
 
 console.log(`\n==== ${pass} passed, ${fail} failed ====`);

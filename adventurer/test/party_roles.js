@@ -106,7 +106,7 @@ console.log('\n-- Bulwark and frost armor cut finalized hits, including % HP --'
   const wall = mk({ name: 'Wall2' });
   give(wall, 'bulwark', 1);
   const hitWall = godHit(wall);
-  ok(hitBare && hitBare.dmg >= 100, 'god blow includes 50% of max HP', hitBare && hitBare.dmg);
+  ok(hitBare && hitBare.dmg >= Math.round(200 * ADV.DATA.CONST.GOD_HIT_PCT), 'god blow includes a share of max HP (GOD_HIT_PCT)', hitBare && hitBare.dmg);
   eq(hitWall && hitWall.dmg, Math.round(hitBare.dmg * 0.5), 'Bulwark halves that same % HP blow');
 }
 

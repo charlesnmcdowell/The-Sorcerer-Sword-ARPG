@@ -188,7 +188,7 @@ Thornbury, the road south, the gnoll fortress.
 ### Q4 — The Dunmere Mines (tier 2, 4 enc)
 - enc1–3: tunnel kobolds (goblin art placeholder), a kobold shaman, a collapsed level with a Veylan acolyte.
 - enc4: **Grukhar** (boss) + acolytes. ▶ *grukhar_plea* before the fight: he offers the letters for his life. Take the letters and let him go (bypass, Itsuki aff −1) / kill him (letters recovered anyway).
-- Closing: the letters name Femi in Thornbury and a "Gorruk". **Dream 1** on arrival: Tesfaye's voice, a stone throne. ▶ *dream1* — reject (heritage −1, gain Cure) / embrace (heritage +1, gain Drain).
+- Closing: the letters name Femi in Thornbury and a "Gorruk". **Dream 1** on arrival explains Morrak, the god of murder, the ward's parentage, and his intended succession through children killing one another for power. The ward can refuse. These facts play before any optional question. ▶ *dream1* — reject (heritage −1, gain Cure) / embrace (heritage +1, gain Drain).
 
 ### Q5 — The Bandit Camp (tier 2, 4 enc)
 - Departure: **Yohannes** shows himself — Tesfaye's friend; points north.
@@ -211,7 +211,7 @@ Thornbury, the road south, the gnoll fortress.
 - enc4: **Olamide** (boss).
 - ▶ *flood* (closing choice): Beau has gone below to bring the slaves up. Open the valve now (mine drowned; **Beau dies**; slaves die; Delphine aff −3, heritage +1) / wait for Beau (extra encounter: Consortium reinforcements; everyone lives; Delphine aff +1).
 - enc5 (conditional): reinforcements.
-- Closing: Olamide's papers name the Consortium's leaders in Varenholm's Gate. Road to the city opens. **Dream 2** on arrival ▶ *dream2*.
+- Closing: Olamide's papers name the Consortium's leaders in Varenholm's Gate. Road to the city opens. **Dream 2** recaps the ward's divine parentage and explains that the black-armoured hunter uses Consortium resources to find the other children. Each murder strengthens him and removes a rival. Refusing the throne remains valid. ▶ *dream2*.
 - ▶ *vess_papers* on arrival (if Desmond & Winston recruited): they want the papers for the Umbral Hand. Give them (they stay; Delphine aff −1) / refuse (they leave; return as enemies in Q9).
 
 ### Q8 — Varenholm's Gate (tier 3, 4 enc)
@@ -222,7 +222,7 @@ Thornbury, the road south, the gnoll fortress.
 - Arrival: Duke Adebayo receives the company. ▶ *halvard_terms* — serve for the city (allegiance leaning gauntlet, aff Santiago/Delphine +1) / serve for pay (Hiwot +1) / ask what Adebayo knows about the bloodline (heritage flag `askedHalvard`).
 
 ### Q9 — The Consortium Tower (tier 3, 4 enc)
-- Departure: Adebayo's plan — enter as a mercenary applicant.
+- Departure: Adebayo's plan — enter as a mercenary applicant. At the headquarters, Sanni approaches in a fine civilian coat, claims to know Tesfaye through the book trade, identifies Adigun as his father, and directs the ward to the upstairs evidence and Lanternhold summit. He urges the ward to kill Adigun to prevent war. This is a deliberate lie about his father's aims, not neutral exposition.
 - enc1: ▶ *tower_lobby* — talk past the clerk (bypass; needs no Consortium-hostile flag) / fight.
 - enc2: the counting floor — (if Desmond & Winston were refused at Q7: **they** are the guards here).
 - enc3: **Folake**'s floor — ▶ *lysandra*: she offers a bargain (allegiance:consortium available later; heritage flag) / arrest her / kill her (heritage +1).
@@ -230,14 +230,17 @@ Thornbury, the road south, the gnoll fortress.
 - Arrival: **romance closer** — if any romanceable companion has aff ≥ 3, ▶ *romance_pick* lets the player commit (or not). One commitment per playthrough.
 
 ### Q10 — Return to Lanternhold (tier 3, 5 enc)
-- Departure: **Sanni** offers a ring and a hint. ▶ *sarn_ring* — take it (flag `sarnRing`) / refuse.
+- Departure: **Sanni**, now familiar from the headquarters, offers a ring he claims belonged to Tesfaye and renews his invitation to confront Adigun. ▶ *q10_sarn* — take it (flag `sarnRing`) / refuse / threaten him. Hiwot challenges the claimed friendship if present.
 - enc1: the reading rooms — Consortium bodyguards.
-- ▶ *maddox* (opener enc2): Adigun Adeyinka, Bankole, Rotimi at the summit. Kill them (fight; heritage +1) / let them talk (bypass — they are murdered anyway that night, offscreen).
-- Cutscene: Dawit gives the ward Tesfaye's letter: **you are a child of Morrak**. Arrest. Escape into the catacombs.
+- ▶ *q10_summit* (opener enc2): Adigun Adeyinka, Bankole and Rotimi at the summit. Adigun admits the ore sabotage, bandits and false accusations against Calder: he wanted higher prices, not a war that closes trade routes. His foster-son is pursuing war and the ward's death. Kill them (fight; heritage +1), hear Adigun out (bypass), or arrest them (bypass). His optional account describes the tutor, bloodline research, bounty payments and death notices.
+- Before enc3: if the ward spared the leaders, Sanni enters and murders Adigun; his retainers kill the partners. This is an on-screen dialogue/death beat with the existing red-flash treatment. If the ward killed them, this second killing is omitted. On both paths Sanni calls the keep's guards and accuses the company. Abba Gebre arrests them. Successful noncombat bypasses count as sparing the leaders; repeat attempts clear the opposite outcome's flags.
+- In custody: a cell scene with iron bars. Dawit brings Tesfaye's letter, which confirms the divine parentage and identifies the brother. After the existing letter choices, he opens the cell, the company reclaims its gear, and he shows the passage into the catacombs. Equipment custody is confined to the cutscene; inventory is not destroyed or charged again.
 - enc3: Gbenga and his knives.
 - enc4: ▶ *catacomb_wren* — a doppelganger wearing Hiwot's face (or Tesfaye's if Hiwot is not in company). Strike first (Hiwot injured, `wrenHurt`: she leaves the company until Q13) / ask the question only Hiwot knows (she stays; aff +2).
 - enc5: phase spiders and the ghouls at the exit.
-- Arrival: **Dream 3** ▶ *dream3*. The **villain reveal** card: Sanni was Kolade.
+- Arrival: a private scene back at the Consortium tower reveals Sanni in the black armour as Kolade. Baba Olusegun speaks to him, not to the absent player. Kolade explains that removing Adigun gives him the Consortium, discredits the ward and lets him pursue war and hunt Morrak's other children. Sets `sarnUnmasked`. **Dream 3** follows, connecting the killings to the proposed mass-death offering. ▶ *dream3*.
+
+The 13 September conspiracy patch preserves the fourteen quests, encounter counts, reward/perk effects, voice casting and endings. It adds eight voice segments and replaces twenty; the exact review and credit receipts are described in `docs/dialogue/GATE_CONSPIRACY_REVIEW_2026-09-13.md`. The children taking divine power is campaign lore; this patch adds no automatic per-kill stat reward or mandatory murder requirement.
 
 ### Q11 — The Hunted City (tier 3, 4 enc)
 Wanted posters; Emeka Obi is dead; Segun Marr commands the Gauntlet.
