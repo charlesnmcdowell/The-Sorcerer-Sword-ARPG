@@ -14,7 +14,8 @@ are for a challenge, and the challenge is *more enemies and better ones*, not a 
 | --- | --- | --- | --- |
 | Extra enemies per fight (the encounter's own kinds; never more adds than you have companions) | 0 | +1 | +2 |
 | Enemy skill levels (kits climb tiers; tier-1 mooks bring their perks) | as authored | +2 | +4 |
-| Enemy kit floor (no skill below this level) | none | 10 — every kit at least intermediate | 10 — the +4 carries seasoned kits to advanced |
+| Enemy kit floor (no skill below this level) | none | 10 — intermediate kits | 10 — the +4 carries seasoned kits to advanced |
+| Lowest enemy level the kit floor reaches | — | level 8 | level 4 |
 | Enemy health / attack / defence | ×1 / ×1 / ×1 | ×1.05 / ×1.05 / ×1 | ×1 / ×1 / ×1 |
 | Most a basic-tier skill can take in one use | no limit | a third of the foe | a third of the foe |
 | Your health buffer | ×2 | ×1.5 | natural |
@@ -22,6 +23,14 @@ are for a challenge, and the challenge is *more enemies and better ones*, not a 
 | Contract pay | +100g | +50g | no bonus, ×0.85 |
 | Auto combat stops itself | below 50% | below 30% | never |
 | Solo flee warning (naval narrator) | yes | yes | no |
+
+The kit floor reaches only enemies that are already seasoned. A wolf on a first contract is a
+wolf, not a veteran wolf: below the threshold a creature fights with the kit it was written
+with. Applied to everything, the floor put an intermediate kit on every mook on the road —
+40% more damage, and a second strike on the skills that gain one at that tier — which made
+early Normal bite far harder than intended. Measured on early contracts, an ordinary group now
+needs about 38 rounds to put a healthy character down on Normal and 25 on Hard, against 72 on
+Easy; before the threshold it was 15 and 10.
 
 A basic-tier skill is an opener from Normal up, not an execution: one use takes at most a
 third of a foe's maximum health and never kills outright, however far the wielder outclasses
@@ -61,16 +70,19 @@ Full run, six seeds, six builds (fighter, mage, ranger, healer, tank, rogue):
 
 | Scenario | Easy | Normal | Hard |
 | --- | --- | --- | --- |
-| Solo career, tier 1 | 100% win, 100% hp | 100%, 100% | 100%, 99% |
-| Solo career, tier 2 | 98%, 100% | 98%, 98% | 97%, 93% |
-| Solo career, tier 3 | 100%, 99% | 99%, 95% | 86%, 94% |
-| Party of four, tier 2 | 96%, 100% | 90%, 98% | 60%, 95% |
-| Party of four, tier 3 | 94%, 99% | 77%, 89% | 51%, 92% |
-| Varenholm's Gate, chapters 10–13 | 25%, 83% | 18%, 72% | 3%, 60% |
-| Varenholm's Gate, all | 9% | 6% | 3% |
+| Solo career, tier 1 | 100% win, 100% hp | 100%, 100% | 100%, 97% |
+| Solo career, tier 2 | 98%, 100% | 98%, 97% | 98%, 89% |
+| Solo career, tier 3 | 100%, 99% | 100%, 97% | 90%, 96% |
+| Party of four, tier 2 | 95%, 100% | 87%, 97% | 61%, 95% |
+| Party of four, tier 3 | 93%, 100% | 75%, 94% | 41%, 88% |
+| Varenholm's Gate, chapters 1–4 | 23% | 23% | 25% |
+| Varenholm's Gate, chapters 10–13 | 25%, 87% | 25%, 73% | 15%, 55% |
+| Varenholm's Gate, all | 14% | 14% | 11% |
 
-(Measured after the balance pass — `updates/BALANCE_PASS.md` — with the Gate's own
-fivefold enemy health in place.) Read the Gate rows as relative, not absolute: the Gate
+Four seeds, six builds (fighter, mage, ranger, healer, tank, rogue), measured after the
+balance pass, the basic-tier cap and the kit-floor threshold.
+
+Read the Gate rows as relative, not absolute: the Gate
 now gives every enemy five times the health and twice the attack and defence
 (`CAMPAIGN3_COMBAT`), and the AI player never guards, taunts, retreats or brings the
 scripted company's full kit — a person does. The three columns still fall in order, which is

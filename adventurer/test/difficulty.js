@@ -76,9 +76,13 @@ console.log('\n-- enemies: more, better, a little stronger --');
   const e2 = ADV.Character.makeEnemy(ADV.rngFromString('m'), 'bandit', { level: 4, world: g.world });
   ok(Df.isFoe(e1) && Df.isFoe(e2), 'stock enemies are foes');
   const lift = l => Math.max(l + H.foeLevel, H.foeSkillFloor || 0);
-  eq(e2.enemyLevel, lift(e1.enemyLevel), 'hard: a veteran, levels up (never below the kit floor)');
+  eq(e2.enemyLevel, e1.enemyLevel + H.foeLevel, 'hard: a veteran, levels up by the offset');
   ok(e2.actives.every((a, i) => a.level === lift(e1.actives[i].level)), 'hard: every skill climbs by the offset, or to the floor');
   ok(e2.actives.every(a => a.level >= ADV.DATA.CONST.TIER_THRESHOLDS.intermediate), 'hard: every kit is at least intermediate');
+  // The kit floor raises how well an enemy fights, never what it is. It once lifted
+  // enemyLevel too, which turned a first-contract wolf into a level-10 one.
+  ok(e2.enemyLevel < (H.foeSkillFloor || 0) || e1.enemyLevel + H.foeLevel >= (H.foeSkillFloor || 0),
+    'hard: the kit floor never inflates the creature\'s own level', 'lvl ' + e1.enemyLevel + ' -> ' + e2.enemyLevel);
   ok(e1.perks.length === 0 && e2.perks.length > 0, 'hard: a tier-1 mook brings its perks');
   ok(ADV.Character.effStat(e2, 'atk') >= Math.round(e1.stats.atk * H.foeAtk) - 1 && ADV.Character.maxHp(e2) >= Math.round(e1.stats.hp * H.foeHp) - 1, 'hard: the stat edge applies');
   Df.set(g, 'easy');
