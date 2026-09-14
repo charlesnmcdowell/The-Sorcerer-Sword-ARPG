@@ -284,6 +284,34 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   ok(!h3.vaultId, 'widower vault pointer is cleared');
 })();
 
+(function () {
+  console.log('\n-- Insurance on the next marriage --');
+  const world = ADV.World.create(781);
+  const man = world.characters.find(c => c.sex === 'm');
+  const first = world.characters.find(c => c.sex === 'f');
+  const next = world.characters.find(c => c.sex === 'f' && c !== first);
+  man.inventory.gold = 200;
+  ADV.Rel.move(world, first.id, man.id, 60, 'romance');
+  ADV.Rel.move(world, man.id, first.id, 60, 'romance');
+  ADV.Rel.commit(world, man.id, first.id);
+  first.inventory.gold = 50;
+  ok(ADV.Vault.payPremium(world, first), 'first marriage can buy insurance');
+  ok(ADV.Vault.of(world, first).insuranceActive, 'first policy is on her vault');
+  ADV.Rel.jilt(world, first, man);
+  ok(!ADV.Vault.of(world, first).insuranceActive, 'jilt burns the old household policy');
+  ADV.Rel.move(world, next.id, man.id, 60, 'romance');
+  ADV.Rel.move(world, man.id, next.id, 60, 'romance');
+  man.inventory.gold = 80;
+  ADV.Rel.commit(world, man.id, next.id);
+  eq(man.inventory.gold, 0, 'remarriage still vaults his purse');
+  ok(ADV.Vault.of(world, next).gold >= 80, 'his gold is in the new vault');
+  ok(!ADV.Vault.of(world, next).insuranceActive, 'new marriage starts uninsured');
+  ok(ADV.Vault.payPremium(world, man), 'widower can buy again from the vault');
+  ok(ADV.Vault.of(world, next).insuranceActive, 'new policy covers the new wife');
+  ADV.Death.finalize(world, man, null, 'quest');
+  ok(next.inventory.gold >= ADV.DATA.CONST.GOLD.insurancePayout, 'new wife is paid when he dies');
+})();
+
 // ============================================================ forbidden & divine
 (function () {
   console.log('\n-- Conscription & Divine Intervention (§3a) --');
