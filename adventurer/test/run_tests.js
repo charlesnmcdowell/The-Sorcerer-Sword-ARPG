@@ -312,6 +312,20 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   ok(next.inventory.gold >= ADV.DATA.CONST.GOLD.insurancePayout, 'new wife is paid when he dies');
 })();
 
+(function () {
+  console.log('\n-- Second courtesy purse and home reload --');
+  ADV.Save.setBackend({ _m: {}, getItem(k) { return this._m[k] || null; }, setItem(k, v) { this._m[k] = v; }, removeItem(k) { delete this._m[k]; } });
+  const game = ADV.Game.newGame({ seed: 5, name: 'Bram', sex: 'm', portraitSeed: 1, portraitSlot: 1, startingSkills: ['cleave'] });
+  game.meta.grantGold10000 = true;
+  const before = ADV.Game.player(game).inventory.gold;
+  ok(ADV.Game.grantCourtesyGold2(game), 'second purse is paid once');
+  eq(ADV.Game.player(game).inventory.gold, before + 10000, 'ten thousand gold added');
+  ok(game.meta.courtesyGoldNotice2 && game.meta.homeReloadNotice, 'apology and home-reload cards are queued');
+  ok(!ADV.Game.grantCourtesyGold2(game), 'second purse does not repeat');
+  ok(ADV.Game.reloadForUpdate(game), 'reload marks the home card done');
+  ok(game.meta.homeReloadDone && !game.meta.homeReloadNotice, 'reload is one-time');
+})();
+
 // ============================================================ forbidden & divine
 (function () {
   console.log('\n-- Conscription & Divine Intervention (§3a) --');
