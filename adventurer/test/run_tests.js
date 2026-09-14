@@ -320,10 +320,11 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const before = ADV.Game.player(game).inventory.gold;
   ok(ADV.Game.grantCourtesyGold2(game), 'second purse is paid once');
   eq(ADV.Game.player(game).inventory.gold, before + 10000, 'ten thousand gold added');
-  ok(game.meta.courtesyGoldNotice2 && game.meta.homeReloadNotice, 'apology and home-reload cards are queued');
+  ok(!game.meta.courtesyGoldNotice2 && !game.meta.homeReloadNotice, 'gold no longer queues apology or logout cards');
   ok(!ADV.Game.grantCourtesyGold2(game), 'second purse does not repeat');
-  ok(ADV.Game.reloadForUpdate(game), 'reload marks the home card done');
-  ok(game.meta.homeReloadDone && !game.meta.homeReloadNotice, 'reload is one-time');
+  game.meta.homeReloadNotice = true;
+  ok(ADV.Game.clearCourtesyNotices(game), 'leftover logout card is cleared');
+  ok(!game.meta.homeReloadNotice, 'home reload stays off');
 })();
 
 // ============================================================ forbidden & divine
