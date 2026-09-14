@@ -36,9 +36,17 @@ function eq(a, b, name) { ok(a === b, name, a + ' != ' + b); }
   const volleyUids = new Set(st2.units.filter(u => u.side === 'b').map(u => u.uid));
   const aimedHits = st2.events.filter(e => e.t === 'damage' && volleyUids.has(e.uid));
   const dmgEv2 = aimedHits.find(e => e.uid === ud2.uid);
-  console.log('   advanced aimed shot dealt', dmgEv2 && dmgEv2.dmg, '(volley form, power 1.4)');
+  console.log('   advanced aimed shot dealt', dmgEv2 && dmgEv2.dmg, '(volley form)');
   ok(aimedHits.length >= 2, 'Volley hits every enemy');
-  ok(dmgEv2 && dmgEv2.dmg >= 20 && dmgEv2.dmg <= 40, 'advanced manifestation is decisive');
+  // Volley used to buy its spread by cutting power to 1.4, which left the advanced tier
+  // weaker than the intermediate one against a single target. It now keeps full power on the
+  // body you aimed at, so the check is that the upgrade beats the tier below it rather than a
+  // band around the old number.
+  const st3 = ADV.Combat.create([ADV.Character.base({ stats: { hp: 100, atk: 11, def: 10, spd: 10 } })], [ADV.Character.base({ stats: { hp: 95, atk: 10, def: 10, spd: 9 } })], { rng: new ADV.RNG(2) });
+  st3.units[0].ch.actives.push({ skillId: 'aimed_shot', level: ADV.DATA.CONST.TIER_THRESHOLDS.intermediate, uses: 250 });
+  ADV.Combat.act(st3, st3.units[0], { kind: 'skill', skillId: 'aimed_shot', targetUid: st3.units.find(u => u.side === 'b').uid });
+  const midHit = st3.events.find(e => e.t === 'damage' && e.uid === st3.units.find(u => u.side === 'b').uid);
+  ok(dmgEv2 && midHit && dmgEv2.dmg >= midHit.dmg, 'advanced manifestation is decisive', dmgEv2 && (dmgEv2.dmg + ' vs ' + midHit.dmg));
 })();
 
 (function () {

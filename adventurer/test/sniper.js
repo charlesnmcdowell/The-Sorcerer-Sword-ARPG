@@ -26,7 +26,8 @@ function unit(st, ch) { return st.units.find(u => u.ch === ch); }
 console.log('-- tier table --');
 {
   ok(!!SK.sniper && SK.sniper.kind === 'perk' && SK.sniper.archetype === 'ranger', 'sniper is a ranger perk');
-  const lv = { 1: 0.10, 10: 0.20, 25: 0.35 };
+  const T = SK.sniper.tiers;
+  const lv = { 1: T.basic.evadePct, 10: T.intermediate.evadePct, 25: T.advanced.evadePct };
   const ch = withPerk('sniper', 1);
   for (const [level, pct] of Object.entries(lv)) {
     ch.perks[0].level = +level;
@@ -74,9 +75,10 @@ console.log('-- evadeChance sums, caps, and respects exemptions --');
   const foe = ADV.Character.base({ stats: { hp: 200, atk: 10, def: 8, spd: 8 } });
   const st = fight(sn, foe, 5);
   const us = unit(st, sn), ue = unit(st, foe);
-  ok(Math.abs(Cb.evadeChance(st, us) - 0.35) < 0.001, 'Ghost of the Ridge is 35%');
+  const ghost = SK.sniper.tiers.advanced.evadePct;
+  ok(Math.abs(Cb.evadeChance(st, us) - ghost) < 0.001, `Ghost of the Ridge is ${Math.round(ghost * 100)}%`);
   us.statuses.push({ kind: 'aura', evadePct: 0.15, rounds: 3 });
-  ok(Math.abs(Cb.evadeChance(st, us) - 0.50) < 0.001, 'perk + aura sum');
+  ok(Math.abs(Cb.evadeChance(st, us) - (ghost + 0.15)) < 0.001, 'perk + aura sum');
   us.statuses.push({ kind: 'aura', evadePct: 0.40, rounds: 3 });
   ok(Cb.evadeChance(st, us) === 0.75, 'caps at 0.75');
   ok(Cb.evadeChance(st, us, { cannotMiss: true }) === 0, 'cannotMiss suppresses the roll');

@@ -111,7 +111,9 @@ console.log('\n-- enemies: more, better, a little stronger --');
   eq(b.n, a.n + 1, 'normal: one more enemy in a party fight');
   eq(c.n, a.n + 2, 'hard: two more');
   ok(c.extras.every(e => a.kinds.has(e.enemyTypeId)), 'the extras are the encounter\'s own kinds');
-  ok(c.extras.every(e => !e.boss && Df.isFoe(e) && e.__kit0), 'extras are veterans, never bosses');
+  // __toughened was a one-shot flag; toughening is now re-derived from __kit0 every time the
+  // setting changes, so the mark that a creature has been through it is the recorded original.
+  ok(c.extras.every(e => !e.boss && Df.isFoe(e) && e.__kit0 && e.enemyLevel > e.__kit0.enemyLevel), 'extras are veterans, never bosses');
   Df.set(g, 'easy');
 }
 {
@@ -120,7 +122,7 @@ console.log('\n-- enemies: more, better, a little stronger --');
   Df.set(g, 'hard'); ADV.Game.startQuest(g, q, {});
   const enc = ADV.Game.currentEncounter(g);
   ok(!enc.enemies.some(e => e.reinforcement), 'a lone player is never swarmed: no adds on solo work');
-  ok(enc.enemies.every(e => e.__kit0), 'but the solo enemies are veterans');
+  ok(enc.enemies.every(e => e.__kit0 && e.enemyLevel > e.__kit0.enemyLevel), 'but the solo enemies are veterans');
   g.quest = null; Df.set(g, 'easy');
 }
 {

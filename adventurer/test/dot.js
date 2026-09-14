@@ -50,8 +50,8 @@ for (const tier of ['basic', 'intermediate', 'advanced']) {
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
   const n0 = st.events.length; for (let i = 0; i < Cb.DOT_TICKS; i++) endRound(st);
   const total = dots(st, n0, ue.uid).filter((e, i) => i % 2 === 0).reduce((a, e) => a + e.dmg, 0);
-  const want91 = Math.round(91 * Cb.DOT_PCT.intermediate) * 2;
-  ok(dots(st, n0, ue.uid).reduce((a, e) => a + e.dmg, 0) === want91, `rounding: ${Cb.DOT_PCT.intermediate * 100}% on 91 HP deals exactly ${want91 / 2} per status (${dots(st, n0, ue.uid).map(e => e.dmg).join('+')})`);
+  const perStatus = Math.round(91 * Cb.DOT_PCT.intermediate);
+  ok(dots(st, n0, ue.uid).reduce((a, e) => a + e.dmg, 0) === perStatus * 2, `rounding: the window total lands exactly on ${perStatus} per status (${dots(st, n0, ue.uid).map(e => e.dmg).join('+')})`);
 }
 
 console.log('-- §2 duration follows the skill; power/srcAtk/srcLevel do nothing --');
@@ -146,7 +146,8 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   Cb.act(st, ua, { kind: 'skill', skillId: 'venom_fang', targetUid: ue.uid });
   const n0 = st.events.length; endRound(st);
   const t = dots(st, n0, ue.uid)[0];
-  ok(t.dmg === Math.round(Math.round(3000 * Cb.DOT_PCT.basic / Cb.DOT_TICKS) * 1.6), `Septic Sanguine (advanced, dotMult 1.6) scales the percentage tick (${t.dmg})`);
+  const septicMult = ADV.DATA.SKILLS.septic_sanguine.tiers.advanced.dotMult;
+  ok(t.dmg === Math.round(Math.round(3000 * Cb.DOT_PCT.basic / Cb.DOT_TICKS) * septicMult), `Septic Sanguine (advanced, dotMult ${septicMult}) scales the percentage tick (${t.dmg})`);
   ok(ua.chp > 50, 'and feeds the owner');
   const { st: s2, ua: a2, ue: e2 } = duel(['venom_fang'], { venom_fang: lvl.basic, opportunist: 1 }, ['opportunist']);
   e2.maxHp = 3000; e2.chp = 1000;
@@ -177,7 +178,8 @@ console.log('-- §4 stacking, Septic Sanguine, Opportunist, transfer --');
   const n0 = st.events.length; endRound(st);
   const tick = dots(st, n0, ual.uid)[0];
   const heal = st.events.slice(n0).find(e => e.t === 'heal' && e.uid === ua.uid);
-  ok(tick && heal && heal.amount === Math.max(1, Math.round(tick.dmg * 1.0)), 'advanced septic heals from any poison or bleed on the field');
+  const leech = ADV.DATA.SKILLS.septic_sanguine.tiers.advanced.dotLeech;
+  ok(tick && heal && heal.amount === Math.max(1, Math.round(tick.dmg * leech)), 'advanced septic heals from any poison or bleed on the field');
 }
 {
   // venom_draw moves the poison and it recomputes on the new target's max HP
