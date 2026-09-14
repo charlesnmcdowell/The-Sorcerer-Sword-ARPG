@@ -44,11 +44,13 @@ const ok = (c, msg) => { assert.ok(c, msg); n++; };
 const q = k => C3.buildQuest({ meta: {} }, k);
 ok(C3.musicFor(q(1)).quest === 'vg_lanternhold' && C3.musicFor(q(1)).combat === 'vg_battle' && C3.musicFor(q(1)).boss === 'vg_battle', 'Q1: road battle cue, mid-quest bosses use it too');
 ok(C3.musicFor(q(7)).combat === 'vg_battle' && C3.musicFor(q(8)).combat === 'vg_battle_city', 'the city battle cue starts at Q8');
+ok(C3.musicFor(q(5)).combat === 'vg_battle_bandit_camp' && C3.musicFor(q(5)).boss === 'vg_battle_bandit_camp', 'the Bandit Camp and Gorruk have their own battle hymn');
+ok(C3.musicFor(q(4)).combat === 'vg_battle' && C3.musicFor(q(6)).combat === 'vg_battle', 'the Bandit Camp override does not leak into neighboring quests');
 ok(C3.musicFor(q(14)).quest === 'vg_temple' && C3.musicFor(q(14)).boss === 'vg_boss', 'Q14: temple underscore, Kolade for the altar');
 for (let k = 1; k <= 14; k++) ok(ADV.DATA.CAMPAIGN3_MUSIC.quest[k], 'every quest has an underscore: ' + k);
 ok(C3.musicFor({ campaign: true, n: 3 }) === null && C3.musicFor(null) === null, 'other content is not scored');
 { const M = ADV.DATA.CAMPAIGN3_MUSIC;
-  const files = Object.values(M.quest).concat(Object.values(M.combat), [M.boss, M.dream, M.ending, M.camp]);
+  const files = Object.values(M.quest).concat(Object.values(M.combat), Object.values(M.combatByQuest || {}), [M.boss, M.dream, M.ending, M.camp]);
   for (const f of new Set(files)) ok(fs.existsSync(path.join(__dirname, '..', 'audio', 'music', f + '.mp3')), 'score file shipped: ' + f); }
 const game = { meta: {} };
 ok(C3.hubMusic(game) === null, 'hub keeps the home theme before the campaign starts');
@@ -83,6 +85,28 @@ M.cue('vg_dream'); M.cue(null);
 ok(M.el === questEl && !questEl.paused, 'clearing the cue brings the underscore back');
 M.play('town');
 ok(name() === 'edwyn2' && !M.run && questEl.paused, 'town ends the run and returns to the home theme');
+
+// A persisted musicStarted flag is not an in-memory audio session. The scene
+// entry helper restores the correct quest and switches when its chapter changes.
+M.playQuest(q(3));
+ok(name() === 'vg_thornbury' && M.run.story, 'restore Q3 after town/reload with its own score');
+M.playQuest(q(3), 'combat');
+ok(name() === 'vg_battle', 'restored Q3 combat uses its campaign battle cue');
+M.playQuest(q(3));
+ok(name() === 'vg_thornbury', 'return from an ambush restores exploration music');
+M.playQuest(q(8), 'combat');
+ok(name() === 'vg_battle_city', 'a different quest restores the correct half of the score');
+M.play('town');
+M.playQuest(q(14), 'boss');
+ok(name() === 'vg_boss', 'a resumed final fight restores the boss score without an embark screen');
+M.play('town');
+M.playQuest(q(5), 'combat');
+ok(name() === 'vg_battle_bandit_camp', 'bandit fights actually select the new audio');
+M.playQuest(q(5));
+ok(name() === 'vg_gnashing_wood', 'bandit dialogue returns to its quieter forest underscore');
+M.playQuest(q(5), 'boss');
+ok(name() === 'vg_battle_bandit_camp', 'Gorruk uses the same region hymn');
+M.play('town');
 
 // the last quest
 M.startRun(true, C3.musicFor(q(14)));
