@@ -586,11 +586,13 @@ _(if Hiwot in company)_
 > [quiet] Del. It's the ward. He sent the ward.
 >
 
+*Delphine — Beau’s wife, a Warden druid and an old friend of your late stepfather, Tesfaye.*
+
 **DELPHINE**  `q2_selene`
 
-> [blunt] Sit down before you fall down, honey. Both of you. Beau, get the good bread.
+> [warm, gentle] I'm Delphine, Beau's wife. Your late stepfather, Tesfaye, was an old friend of ours. Sit down, honey. Beau, get the good bread.
 >
-> [steady] Tesfaye wrote to us every year for twenty years, and every letter said the same thing: if the child ever comes to your door alone, it means I am dead, and you are to do what I would have done.
+> [steady] He wrote to us from Lanternhold every year for twenty years. Said you and Hiwot were growing up in that keepers' library, getting into everything he tried to keep you out of. His last letter said if you came here without him, we were to keep you safe.
 >
 > [quiet, direct] So. How did he die? All of it. Don't you spare me.
 >
@@ -1421,6 +1423,8 @@ _(if Delphine not in company)_
 
 ### Scene 2: Holloway Vale
 
+*Following the courier’s map north toward the bandit camp, you reach Holloway Vale. A patrol blocks the crossing.*
+
 _(if Santiago in company)_
 
 **SANTIAGO**  `q5_patrol`
@@ -1428,7 +1432,7 @@ _(if Santiago in company)_
 > [uneasy] Burning Gauntlet. A patrol, this far south of the city. They have someone at sword-point — and with respect, by her look, she is not from anywhere near here.
 >
 
-*Holloway Vale. Three soldiers in the flame-tabard of the Burning Gauntlet have a woman in grey on her knees at the roadside.*
+*Holloway Vale, on the way to the bandit camp. You come upon a Burning Gauntlet patrol holding a dark-elf priestess at sword-point.*
 
 **LAYLA**  `q5_patrol`
 
@@ -1525,8 +1529,6 @@ _(if Santiago not in company)_
 
 ### Scene 3: The palisade
 
-_(if Winston in company)_
-
 **WINSTON**  `q5_camp`
 
 > [calm] Three ways into a camp like that, man. Loud, quiet, or invited.
@@ -1534,12 +1536,39 @@ _(if Winston in company)_
 > [dry] Desmond and I can be invited. Recruiters never look too close at faces that frighten them.
 >
 
-_One of the following, whoever is riding along:_
+_(if Hiwot in company)_
 
 **HIWOT**  `q5_camp`
 
 > [whispering] Or I go over the palisade and open the back gate while every eye is on the front.
 >
+
+> **What do you say?**
+> 1. "Get us invited." — _if flag umbralRecruited · no fight; Winston +1; sets campInvited_
+> 2. "Hiwot. The back gate." — _if Hiwot in company · no fight; Hiwot +1; sets campQuiet_
+> 3. "Loud. The front gate, now." — _blood +1_
+>
+
+**WINSTON** *(reply to 1)*  `q5_camp_recruits`
+
+> [murmuring] Walk like you already killed somebody today. Desmond — no smiling.
+>
+> [low] We are in. The big tent is Gorruk's. There is a chained man inside; don't look at him yet.
+>
+
+**HIWOT** *(reply to 2)*  `q5_camp_quiet`
+
+> [breathless] The back gate is open. Two sentries were sleeping, and one of them is going to wake with a headache and no boots.
+>
+> [low] The big tent is the lord's. There is a man chained in it who looks as though he still has jokes left.
+>
+
+**HIWOT** *(reply to 3)*  `q5_camp_storm`
+
+> [resigned] Loud, then. Go for the one with the horns first; the rest will look to him.
+>
+
+_(if Winston in company, Hiwot not in company)_
 
 **WINSTON**  `q5_camp`
 
@@ -1568,12 +1597,7 @@ _One of the following, whoever is riding along:_
 > [low] The big tent is the lord's. There is a man chained in it who looks as though he still has jokes left.
 >
 
-**HIWOT** *(reply to 3, when Hiwot is the one speaking)*  `q5_camp_storm`
-
-> [resigned] Loud, then. Go for the one with the horns first; the rest will look to him.
->
-
-**WINSTON** *(reply to 3, when Winston is the one speaking)*  `q5_camp_storm`
+**WINSTON** *(reply to 3)*  `q5_camp_storm`
 
 > [flat] Loud. Sawa — fine. The one with the horns is a sergeant; the rest look to him. Kill him first and they look to nobody.
 >
@@ -1639,7 +1663,19 @@ _(if not gorrukDead)_
 > [snarling] Not today, foundling. Not for you. The city will finish what I started.
 >
 
-**CAL BOONE**  `q5_letters`
+> **What do you say?**
+> 1. "Break Cal’s chains first. Then take the chest." — _sets caelFreed; sets lettersRecovered_
+> 2. "Secure the chest first. Then break Cal’s chains." — _sets caelFreed; sets lettersRecovered_
+>
+
+**CAL BOONE** *(reply to 1)*  `q5_letters`
+
+> [grinning through a split lip] Told you. Every one sealed with the iron hand. The Iron Consortium — the trading house in the Gate — pays for the mine, for these bandits, and for you.
+>
+> [serious] There's a second name under theirs. A mage called Olamide, in the Mirkhollow. They call his place "the other mine." I heard it twice through that tent wall, and men don't say a thing twice unless it matters.
+>
+
+**CAL BOONE** *(reply to 2)*  `q5_letters`
 
 > [grinning through a split lip] Told you. Every one sealed with the iron hand. The Iron Consortium — the trading house in the Gate — pays for the mine, for these bandits, and for you.
 >
@@ -1727,7 +1763,7 @@ _One of the following, whoever is riding along:_
 > **What do you say?**
 > 1. "Who pays a bounty on a wyvern?" — _question — the choice returns_
 > 2. "Wardens cut for nothing. I am not a Warden. What is your debt worth?" — _question — the choice returns; Kaito +1_
-> 3. "Hold still." — _Kaito +1; Kaito joins; sets faelenRecruited_
+> 3. "Hold still. I’ll cut you free. You can ride with us." — _Kaito +1; Kaito joins; sets faelenRecruited_
 > 4. "Spiders have to eat too." — _blood +1; sets faelenLeft_
 >
 
@@ -1862,6 +1898,8 @@ _(if Delphine in company)_
 
 ### Back in town
 
+*Delphine, Beau’s wife and Tesfaye’s old friend, sits beside you at the fire.*
+
 _(if Delphine recruited, Delphine alive)_
 
 **DELPHINE**  `q6_fire`
@@ -1892,7 +1930,7 @@ _(if Delphine recruited, Delphine alive)_
 
 **DELPHINE** *(reply to 3)*  `q6_fire_deflect`
 
-> [dry] I should. So should you. Neither one of us will.
+> [quiet] All right. Get some rest. We can talk another time.
 >
 > [calm] Goodnight.
 >
@@ -2029,9 +2067,9 @@ _(if Beau not in company)_
 
 **OLAMIDE**  `q7_study`
 
-> [irritated] You have tracked mud across the ledgers. Do you know how long a clean ledger takes?
+> [irritated] Get away from my desk. Those ledgers are Consortium property.
 >
-> [cold] Guards. The Consortium has paid for this mine three times over, and it will not pay a fourth time for the likes of you.
+> [cold] Guards, kill them. The Consortium wants this mine kept running.
 >
 
 _(if Dai Morgan in company)_
@@ -2057,7 +2095,7 @@ _(if Dai Morgan in company)_
 
 > **What do you say?**
 > 1. "Who do you answer to? Say the name and I may let you keep your ledgers." — _question — the choice returns_
-> 2. "Then it will pay in another coin."
+> 2. "Enough. We’re freeing the prisoners."
 >
 
 **OLAMIDE** *(reply to 1)*  `q7_malvane_who`
@@ -2093,7 +2131,7 @@ _(if Dai Morgan not in company)_
 
 > **What do you say?**
 > 1. "Who do you answer to? Say the name and I may let you keep your ledgers." — _question — the choice returns_
-> 2. "Then it will pay in another coin."
+> 2. "Enough. We’re freeing the prisoners."
 >
 
 **OLAMIDE** *(reply to 1)*  `q7_malvane_who`
@@ -2249,7 +2287,7 @@ _(if not umbralBetrayed, Winston recruited)_
 
 **TESFAYE**  `q7_dream`
 
-> [echoing] Closer to the throne this time, my child. You did not walk here. It walked to you.
+> [echoing] The throne is closer this time, my child. You'll keep seeing it as your power grows.
 >
 > [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
 >
@@ -4751,7 +4789,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **Sex:** female · **Role:** companion (romanceable) · **Voice ID:** a3tSl2M9CVI359Oy7H6v
 
-**Who they are:** A Warden druid of the Shore Road, Tesfaye's old friend. Blunt, protective, allergic to self-pity. Speaks for the balance of things.
+**Who they are:** Beau's wife and an old friend of your late stepfather, Tesfaye. A Warden druid of the Shore Road: blunt, protective, allergic to self-pity. Speaks for the balance of things.
 
 **From:** Thornbury, the Shore Road and the Wardens' country — Georgia, USA. **Voice:** Warm drawl. "I reckon", "I'll tell you what", "y'all", "fixing to", "bless him". Plain-spoken courtesy; ma'am and sir to strangers. Long vowels, short tempers.
 
@@ -4776,8 +4814,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q2_selene**
 
-- `q2_selene_1` — [blunt] Sit down before you fall down, honey. Both of you. Beau, get the good bread.
-- `q2_selene_2` — [steady] Tesfaye wrote to us every year for twenty years, and every letter said the same thing: if the child ever comes to your door alone, it means I am dead, and you are to do what I would have done.
+- `q2_selene_1` — [warm, gentle] I'm Delphine, Beau's wife. Your late stepfather, Tesfaye, was an old friend of ours. Sit down, honey. Beau, get the good bread.
+- `q2_selene_2` — [steady] He wrote to us from Lanternhold every year for twenty years. Said you and Hiwot were growing up in that keepers' library, getting into everything he tried to keep you out of. His last letter said if you came here without him, we were to keep you safe.
 - `q2_selene_3` — [quiet, direct] So. How did he die? All of it. Don't you spare me.
 
 **q2_selene_alone**
@@ -4875,7 +4913,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q6_fire_deflect**
 
-- `q6_fire_deflect_1` — [dry] I should. So should you. Neither one of us will.
+- `q6_fire_deflect_1` — [quiet] All right. Get some rest. We can talk another time.
 - `q6_fire_deflect_2` — [calm] Goodnight.
 
 **q6_fire_dorran**
@@ -6557,7 +6595,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q7_dream**
 
-- `q7_dream_1` — [echoing] Closer to the throne this time, my child. You did not walk here. It walked to you.
+- `q7_dream_1` — [echoing] The throne is closer this time, my child. You'll keep seeing it as your power grows.
 - `q7_dream_2` — [grave] There are others like you. More than you would believe. All of them dreaming of the same chair.
 - `q7_dream_3` — [fading] You can still refuse it, my child. It will offer you more power each time. Remember what taking it would cost.
 
@@ -6938,8 +6976,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q7_study**
 
-- `q7_study_1` — [irritated] You have tracked mud across the ledgers. Do you know how long a clean ledger takes?
-- `q7_study_2` — [cold] Guards. The Consortium has paid for this mine three times over, and it will not pay a fourth time for the likes of you.
+- `q7_study_1` — [irritated] Get away from my desk. Those ledgers are Consortium property.
+- `q7_study_2` — [cold] Guards, kill them. The Consortium wants this mine kept running.
 
 **q7_study_ask**
 
@@ -6984,4 +7022,4 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 ---
 
-**Totals:** 45 characters · 669 clips · 78,200 characters of text (ElevenLabs bills per character).
+**Totals:** 45 characters · 669 clips · 78,246 characters of text (ElevenLabs bills per character).
