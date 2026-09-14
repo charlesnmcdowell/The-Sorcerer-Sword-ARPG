@@ -4,6 +4,7 @@
 'use strict';
 const { load, memBackend } = require('./harness');
 const ADV = load();
+require('vm').runInThisContext(require('fs').readFileSync(require('path').join(__dirname, '../js/ui/support.js'), 'utf8'));
 let pass = 0, fail = 0;
 function ok(c, n, x) { if (c) { pass++; console.log('  ok  ' + n); } else { fail++; console.log('FAIL  ' + n, x !== undefined ? '[' + x + ']' : ''); } }
 function eq(a, b, n) { ok(a === b, n, a + ' != ' + b); }
@@ -97,7 +98,7 @@ function playFaction(fid, opts) {
   // recruiters wait for a record: four contracts and a moderate reputation
   const al = fid === 'maw' ? 'criminal' : fid === 'varenholm' ? 'law' : 'neutral';
   ordinaryContract(g, al); ok(!s.supportAskDue, 'no support ask after one contract');
-  ordinaryContract(g, al); ok(s.supportAskDue, 'support ask queued after the second contract');
+  ordinaryContract(g, al); ok(!ADV.SupportUI.due(g), 'ordinary contracts do not trigger the campaign support ask');
   ordinaryContract(g, al);
   ok(!ADV.Campaign.currentOffer(g), 'three contracts: nobody has noticed yet');
   ordinaryContract(g, al);
@@ -127,6 +128,7 @@ function playFaction(fid, opts) {
     const log = runQuest(g, q);
     ok(!log.failed, 'quest ' + n + ' won');
     eq(s.stage, n, 'stage advanced to ' + n);
+    if (n <= 2) eq(ADV.SupportUI.due(g), n === 2, 'support ask begins after faction quest 2');
     const beats = ADV.Campaign.takeBeats(g);
     if (n === 1) ok(beats.some(b => b.key === 'debrief1') && beats.some(b => b.key === 'after1'), 'Q1 debrief + rival aftermath');
     if (n === 2) { eq(s.titleTier, 2, 'title 2 after Q2'); eq(ADV.Campaign.levelRate(p, own.id), 3, 'tier 2 triples the rate'); ok(ADV.Campaign.hallView(g).rivalAvailable, 'rival can be toggled after Q2'); }

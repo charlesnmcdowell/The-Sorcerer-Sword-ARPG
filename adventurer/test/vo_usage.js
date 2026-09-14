@@ -6,17 +6,17 @@ load();
 let pass = 0, fail = 0;
 const ok = (c, m, extra) => { if (c) { pass++; console.log('  ok  ' + m); } else { fail++; console.log('FAIL  ' + m + (extra ? '  [' + extra + ']' : '')); } };
 
-console.log('-- starting town does not reuse voices --');
+console.log('-- eighty-person starting town uses the full voice cast before repeats --');
 {
   const game = ADV.Game.newGame({ seed: 11, name: 'Auden', sex: 'm', portraitSlot: 1, portraitSeed: 1, startingSkills: ['mend'] });
   const living = (game.world.characters || []).filter(c => c && c.alive && !c.isPlayer && c.personalityId);
   const ids = living.map(c => c.personalityId);
   ok(ids.length >= 8, `roster has ${ids.length} voiced NPCs`);
-  ok(new Set(ids).size === ids.length, 'no two living town NPCs share a personality', ids.join(','));
+  ok(new Set(ids).size === 60, 'all sixty personality voices appear in the larger town', ids.join(','));
   const men = living.filter(c => c.sex === 'm').map(c => c.personalityId);
   const women = living.filter(c => c.sex === 'f').map(c => c.personalityId);
-  ok(!men.includes('M01') || men.length === 1, 'Stoic is at most one man, not the default for everyone');
-  ok(!women.includes('F01') || women.length === 1, 'Steely is at most one woman');
+  ok(new Set(men.slice(0,30)).size === 30, 'each male voice is used before any is repeated');
+  ok(new Set(women.slice(0,30)).size === 30, 'each female voice is used before any is repeated');
 }
 
 console.log('-- speakEx rotates inside a warmth band --');

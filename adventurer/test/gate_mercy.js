@@ -93,7 +93,7 @@ console.log('\n-- courtesy gold --');
   const before = p.inventory.gold;
   ok(ADV.Game.grantCourtesyGold(g), 'the first load pays the apology');
   eq(p.inventory.gold, before + 10000, 'ten thousand gold');
-  ok(g.meta.grantGold10000 && g.meta.courtesyGoldNotice, 'the notice is waiting in town');
+  ok(g.meta.grantGold10000 && !g.meta.courtesyGoldNotice, 'the grant is recorded without the retired courtesy notice');
   ok(!ADV.Game.grantCourtesyGold(g), 'it is paid only once');
   eq(p.inventory.gold, before + 10000, 'a second load does not pay again');
 }

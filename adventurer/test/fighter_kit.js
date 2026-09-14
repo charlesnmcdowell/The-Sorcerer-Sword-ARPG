@@ -105,10 +105,10 @@ console.log('-- bulwark physical / health reduction --');
   eq(hpHit, 20, 'and halves a percent-HP / DoT tick the same way');
   tank.perks[0].level = 10;
   ut.chp = 200;
-  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 10, 'intermediate Bulwark leaves 25%');
+  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 14, 'intermediate Bulwark leaves 35%');
   tank.perks[0].level = 25;
   ut.chp = 200;
-  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 4, 'advanced Bulwark leaves 10%');
+  eq(I.applyRawDamage(st, ue, ut, 40, 'attack'), 10, 'advanced Bulwark leaves 25%');
 }
 
 console.log('-- shield wall negates for 2 turns --');

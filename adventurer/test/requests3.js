@@ -91,7 +91,9 @@ function newGame(seed, sex, skills) { ADV.Save.setBackend(mem()); return ADV.Gam
   const b = mkCh({ name: 'B', stats: { hp: 100, atk: 10, def: 10, spd: 8 } }); give(b, 'sneak', 25);
   const c = mkCh({ name: 'C', stats: { hp: 100, atk: 10, def: 10, spd: 8 } });
   const foe = mkCh({ name: 'F', stats: { hp: 100, atk: 10, def: 10, spd: 14 } });
-  const chance = (ch) => { const st = fight(ch, foe, 7); const u = unit(st, ch); ADV.Combat.act(st, u, { kind: 'flee' }); return st.events.find(e => e.t === 'flee').chance; };
+  // Solo escape is now guaranteed. Use a living ally to exercise the party
+  // flee formula and its perk bonuses, with actual room below the chance cap.
+  const chance = (ch) => { const st = fight([ch, mkCh({name:'Ally'})], foe, 7); const u = unit(st, ch); ADV.Combat.act(st, u, { kind: 'flee' }); return st.events.find(e => e.t === 'flee').chance; };
   const base = chance(c);
   ok(chance(a) >= base + 0.3 && chance(b) >= base + 0.3, 'both perks add a big flee bonus', base + ' -> ' + chance(a) + '/' + chance(b));
 })();

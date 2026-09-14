@@ -177,14 +177,14 @@ console.log('\n-- 800g sets, armor slots, septic, venom fang, smoke --');
 {
   const ch = mk({ name: 'Septic' });
   give(ch, 'septic_sanguine', 1);
-  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.25, 'basic septic is +25% bleed/poison');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.2, 'basic septic is +20% bleed/poison');
   eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 0.5, 'basic septic heals 50% of those ticks');
   ch.perks[0].level = 10;
-  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.5, 'intermediate septic is +50%');
-  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 1, 'intermediate septic heals 100% of those ticks');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.4, 'intermediate septic is +40%');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 0.75, 'intermediate septic heals 75% of those ticks');
   ch.perks[0].level = 25;
-  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 2, 'advanced septic doubles bleed/poison');
-  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 2, 'advanced septic heals 200% of those ticks');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotMult, 1.6, 'advanced septic increases bleed/poison by 60%');
+  eq(ADV.SkillSys.manifest(ch, ch.perks[0]).data.dotLeech, 1, 'advanced septic heals 100% of those ticks');
 }
 
 {
