@@ -17,6 +17,6 @@ game.meta.courtesyGoldNotice2 = true;
 game.meta.homeReloadNotice = true;
 ok(ADV.Game.clearCourtesyNotices(game), 'leftover cards are cleared');
 ok(!game.meta.courtesyGoldNotice && !game.meta.courtesyGoldNotice2 && !game.meta.homeReloadNotice, 'no courtesy cards remain');
-ok(!ADV.Game.offerHomeReload(game), 'home reload stays off');
+ok(typeof ADV.Game.offerHomeReload === 'undefined', 'retired home reload API stays removed');
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) process.exit(1);

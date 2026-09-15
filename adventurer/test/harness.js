@@ -15,16 +15,16 @@ const FILES = [
   'js/core/rng.js', 'js/core/util.js', 'js/core/skillsys.js', 'js/core/character.js',
   'js/core/housing.js',
   'js/core/survival.js',
-  'js/core/combat.js', 'js/core/combat_ai.js', 'js/core/combat_effects.js', 'js/core/relationships.js', 'js/core/courtship.js', 'js/core/hiro.js', 'js/core/vault.js',
+  'js/core/combat_events.js', 'js/core/combat_turns.js', 'js/core/combat_targeting.js', 'js/core/combat_damage.js', 'js/core/combat_healing.js', 'js/core/combat_statuses.js', 'js/core/combat.js', 'js/core/combat_ai.js', 'js/core/combat_effects.js', 'js/core/relationships.js', 'js/core/courtship.js', 'js/core/hiro.js', 'js/core/vault.js',
   'js/core/quests.js', 'js/core/party.js', 'js/core/divine.js', 'js/core/death.js',
-  'js/core/world.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/campaign3_perks.js', 'js/core/campaign3_perk_combat.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/difficulty.js', 'js/core/balance_support.js', 'js/core/family_support.js',
+  'js/core/world.js', 'js/core/save_store.js', 'js/core/save.js', 'js/core/prefs.js', 'js/core/campaign_router.js', 'js/core/campaign.js', 'js/core/campaign2.js', 'js/core/quest_lifecycle.js', 'js/core/game.js', 'js/core/campaign3.js', 'js/core/campaign3_perks.js', 'js/core/campaign3_perk_combat.js', 'js/core/conversation.js', 'js/core/travel.js', 'js/core/difficulty.js', 'js/core/balance_support.js', 'js/core/family_support.js',
 ];
 
 function load() {
   delete globalThis.ADV;
   for (const f of FILES) {
     const p = path.join(ROOT, f);
-    if (!fs.existsSync(p)) continue;
+    if (!fs.existsSync(p)) throw new Error('Required runtime file missing: '+f);
     const code = fs.readFileSync(p, 'utf8');
     try { vm.runInThisContext(code, { filename: f }); }
     catch (e) { console.error('LOAD FAIL', f, e.message); throw e; }

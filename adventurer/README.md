@@ -34,7 +34,27 @@ The entry file is [index.html](index.html). Use the local web address so the bro
 | [archive](archive/README.md) | Project snapshots, retained voice backups, legacy exports, and superseded art |
 | `node_modules/` | Installed development dependencies |
 
-The root also keeps `package.json`, its lockfile, and the ESLint/Git configuration. Run development commands from this root folder. Install dependencies with `npm install` when needed; `npm test` runs the core checks.
+The root also keeps `package.json`, its lockfile, and the ESLint/Git configuration. Run development commands from this root folder. Use Node 20 or newer (CI uses Node 24) and Python 3.
+
+## Development and release checks
+
+```powershell
+npm ci
+npm test
+python tools/safe_publish.py --check-only
+```
+
+`test/suites.json` is the test registry. Every command gets a result and a log in `test/reports/`; a failure keeps the overall gate red. CI uses the same check-only publisher and uploads the reports.
+
+Browser checks require the local server above and Playwright browsers (`npx playwright install chromium webkit`; on Linux CI, use `--with-deps`). Windows browser checks use the installed Chrome when present. Run `npm run test:browser` for game UI checks, or `python tools/safe_publish.py --check-only --mobile` for Chromium and WebKit mobile launch/host checks. Phone emulation verifies layout and event handling; it is not a claim of testing an actual iPhone or the Messenger app.
+
+To repeat a focused check: `node tools/test_runner.js headless persistence campaign_retry`. To profile long-running world lookup without a timing pass/fail threshold: `node test/world_profile.js --ticks=150`.
+
+`npm run test:smoke` checks the current creation/voice/difficulty flow, saves, artwork loading/recovery, battle transitions, Gate chapter/dialogue routing and phone launch. The broader `test:browser` suite also retains legacy UI checks; some fail on expectations from older interfaces. They have not been removed or silently treated as passing. See the implementation record for the baseline comparison and release blockers.
+
+Publication uses `tools/safe_publish.py` and `tools/release_manifest.json`; do not hand-copy the game. The publisher freezes runtime files before validation and refuses changed inputs. Source art, caches and archives stay out of new releases. It never pushes automatically. For the existing public website wrapper, retain the `site-shell` profile and its existing game origin.
+
+See [architecture and save/retry contracts](docs/maintenance/ARCHITECTURE.md) and the [September 14 implementation record](docs/maintenance/REFACTOR_2026-09-14.md). Save backup controls are available from the mobile More sheet and Settings.
 
 ## Organization record
 
