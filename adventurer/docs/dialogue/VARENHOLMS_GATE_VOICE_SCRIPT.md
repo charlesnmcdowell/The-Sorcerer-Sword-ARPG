@@ -848,9 +848,9 @@ _(if Winston in company)_
 
 > **What do you say?**
 > 1. "Why would a Crimson Wizard care what happens to one witch?" — _question — the choice returns_
-> 2. "We are freeing her. Bahadır, with me." — _blood -1; Bahadır +2; Bahadır joins_
+> 2. "We are freeing her. Bahadır, with me." — _blood -1; Bahadır +2; Bahadır joins; Yasemin joins_
 > 3. "A hundred gold, and your staff until the Gate. Done." — _blood +1; gold +100; Devendra +1; Devendra joins; sets brammEnemy_
-> 4. "The witch lives, and the wizard walks with us and holds his tongue about it." — _Bahadır +1; Devendra -1; Bahadır joins; Devendra joins_
+> 4. "The witch lives, and the wizard walks with us and holds his tongue about it." — _Bahadır +1; Devendra -1; Bahadır joins; Devendra joins; Yasemin joins_
 >
 
 **DEVENDRA** *(reply to 1)*  `q3_bramm_why`
@@ -1024,7 +1024,7 @@ _(if Winston in company, Delphine not in company)_
 
 _The miners will not go down. Whatever is fouling the ore is four levels below, and it has a priest._
 
-### Setting out
+### Scene 1: The first level
 
 _One of the following, whoever is riding along:_
 
@@ -1039,10 +1039,6 @@ _One of the following, whoever is riding along:_
 
 > [calm] Mind the timbers; half of them are rotten. If the kobolds are as thick as the mayor says, we go slow and we keep the healer in the middle. That's me, honey. Don't argue.
 >
-
-### Scene 1: The first level
-
-_(combat, no dialogue)_
 
 ### Scene 2: The flooded level
 
@@ -1800,6 +1796,17 @@ _One of the following, whoever is riding along:_
 > [sniffing] You carry iron from the Gate. The wood smells it on you. Which of you is theirs?
 >
 
+*An old man is sitting against the nearest stone. He does not get up.*
+
+**MZEE KAMAU**  `q6_grove_mzee`
+
+> [old, unhurried] Wanjiru. They have been told to leave.
+>
+> [flat] I have buried nine of ours since that mine opened. If these people work for the Consortium, they will get no mercy from me.
+>
+> [cold] Hear them out if you must. They stay where they are.
+>
+
 _(if Delphine in company)_
 
 **DELPHINE**  `q6_grove_selene`
@@ -1817,8 +1824,8 @@ _(if Delphine in company)_
 >
 
 > **What do you say?**
-> 1. "What has been done to this wood?" — _question — the choice returns_
-> 2. "We are here for the men who poison your river with their mine. Your enemy is ours." — _if any of: Delphine in company / blood ≤ 0 · no fight; Wanjiru +2; Delphine +1; Wanjiru joins; sets druidsPeace_
+> 1. "What has been done to this wood?" — _question — the choice returns; sets heardTheWood_
+> 2. "We are here for the men who poison your river with their mine. Your enemy is ours." — _if any of: Delphine in company / blood ≤ 0 / flag heardTheWood · no fight; Wanjiru +2; Delphine +1; Wanjiru joins; sets druidsPeace_
 > 3. "Move, or be moved." — _blood +1; sets druidsFought_
 >
 
@@ -1847,8 +1854,8 @@ _(if Delphine not in company)_
 >
 
 > **What do you say?**
-> 1. "What has been done to this wood?" — _question — the choice returns_
-> 2. "We are here for the men who poison your river with their mine. Your enemy is ours." — _if any of: Delphine in company / blood ≤ 0 · no fight; Wanjiru +2; Delphine +1; Wanjiru joins; sets druidsPeace_
+> 1. "What has been done to this wood?" — _question — the choice returns; sets heardTheWood_
+> 2. "We are here for the men who poison your river with their mine. Your enemy is ours." — _if any of: Delphine in company / blood ≤ 0 / flag heardTheWood · no fight; Wanjiru +2; Delphine +1; Wanjiru joins; sets druidsPeace_
 > 3. "Move, or be moved." — _blood +1; sets druidsFought_
 >
 
@@ -1870,6 +1877,15 @@ _(if Delphine not in company)_
 >
 
 ### Scene 3: The wyvern cliffs
+
+_(if flag druidsPeace)_
+
+**MZEE KAMAU**  `q6_grove_mzee_peace`
+
+> [flat, from the trees] Wanjiru. If they are lying, you are the one who let them in.
+>
+> [grudging] Go with them, then. Make sure they shut that mine. I expect you back when it is done.
+>
 
 _(if Kaito in company)_
 
@@ -1976,7 +1992,25 @@ _(if Beau in company)_
 
 ### Scene 1: The upper works
 
-_(combat, no dialogue)_
+_(if Wanjiru in company)_
+
+**WANJIRU**  `q7_mine_umbra`
+
+> [quiet] So this is the mine.
+>
+> [hard] For two years, I have watched the river get worse. Dead fish, sick animals. All because of this place.
+>
+> [firm] I want this mine shut before we leave.
+>
+
+_(if flag druidsFought, Hiwot in company)_
+
+**HIWOT**  `q7_mine_umbra_none`
+
+> [low] The druids wanted this mine shut down too.
+>
+> [dry] We could have had their help. Instead, we picked a fight with them. That was clever of us.
+>
 
 ### Scene 2: The cages
 
@@ -2547,7 +2581,7 @@ _The mine's orders lead to the Iron Consortium's headquarters. Adebayo wants the
 
 **DUKE ADEBAYO**  `q9_plan`
 
-> [precise] The Consortium is hiring swords. You walk in the front door as swords. The ledgers are on the top floor with three men who never leave it.
+> [precise] The Consortium is hiring swords. Go in as hired guards and search the top-floor offices. We need the orders bearing Adigun's seal.
 >
 > [dry] If you can do it without burning the tower down, the city would appreciate it. If you cannot, the city will understand.
 >
@@ -2558,7 +2592,7 @@ _The mine's orders lead to the Iron Consortium's headquarters. Adebayo wants the
 
 > [quiet, city-formal] Tesfaye's ward. I am Sanni. I knew him through the keep's book trade. He wrote about you and Hiwot. I was sorry to hear what happened on the Griffon Road.
 >
-> [low] Adigun Adeyinka is my father. He runs this office. Those orders from the mine carry his seal, and he has gone to Lanternhold to secure the keepers' support. The papers upstairs will prove it.
+> [low] Adigun Adeyinka is my father. Those orders from the mine carry his seal. He and his partners have gone to Lanternhold for a hearing over the iron shortage. He means to persuade the keepers that Calder is to blame.
 >
 > [urgent] He is preparing a war with Calder. Kill him before he buys the Council's vote and you could save thousands of lives. Go to the summit at Lanternhold. Read the evidence first, and hear what he has to say. I will meet you there.
 >
@@ -2767,161 +2801,23 @@ _One of the following, whoever is riding along:_
 
 **DUKE ADEBAYO**  `q9_book`
 
-> [grave] Then you go to Lanternhold. The keep takes a book as its toll; here is one worth the toll. Do not lose it.
+> [grave] The keepers hold shipping records both kingdoms trust. They are hearing the dispute over the iron shortage. Take Adigun's orders to Lanternhold and show them who caused it.
 >
-> [quiet] Find them. Bring me proof I can read to the Council. And {target} — whatever they are hiding about you, I would rather you heard it from a friend than from them.
->
-
-_The romance closer: whichever companions have grown close enough (affinity 3 or more) speak, one after another, and the player may say yes to one. If nobody does, Hiwot marks the night instead._
-
-**DELPHINE** *(if Beau dead)*  `q9_romance`
-
-> [quiet] I buried my husband three weeks ago, and I'm ashamed of what I'm fixing to say, so I'll say it fast.
->
-> [steady] I ain't asking for anything. I'm telling you that when this is over, if you asked, I'd say yes. That's all. That's a great deal, for me, and it's more than I've got a right to.
+> [quiet] I will have my officers keep looking for Kolade here. His father may know where he is. Question Adigun, and bring him back alive if you can. This book will pay your way into the keep.
 >
 
-> **What do you say?**
-> 1. "(Delphine) Yes."
-> 2. Say nothing.
->
+_(if not floodedEarly, Delphine recruited, Delphine alive, Delphine affinity ≥ 0)_
 
-**DELPHINE** *(if yes)*  `q9_romance_yes`
+**DELPHINE**  `q9_family`
 
-> [a soft, unsteady laugh] Then that's settled, and I'm going to sleep before I say anything foolish.
->
-> [warm] Goodnight, sugar. Actually goodnight.
->
-
-**DELPHINE** *(if not)*  `q9_romance_no`
-
-> [gentle] Then it's said and it's done, and nothing between us changes. Sleep well.
->
-
-**SANTIAGO**  `q9_romance`
-
-> [stumbling] I have written this out four times and burned it three. I — {target}. With respect. I have not stopped looking at you since the wolves, and I am not the sort who looks.
->
-> [earnest] If the Order asks, I will say it was duty. It was not.
->
-
-> **What do you say?**
-> 1. "(Santiago) Yes."
-> 2. Say nothing.
->
-
-**SANTIAGO** *(if yes)*  `q9_romance_yes`
-
-> [overwhelmed] Truly? I — yes. Yes. God keep you. I will be very good at this — I will try very hard to be good at this, I promise.
->
-
-**SANTIAGO** *(if not)*  `q9_romance_no`
-
-> [bravely] Then I am glad I said it, and I will not say it again. Thank you for hearing it.
->
-
-**ITSUKI**  `q9_romance`
-
-> [low] I buried the last person I loved beside a road. I said I would not do this again.
->
-> [quiet] I would, though. With you. I wanted you to know it before the city, in case the city is the end of me.
->
-
-> **What do you say?**
-> 1. "(Itsuki) Yes."
-> 2. Say nothing.
->
-
-**ITSUKI** *(if yes)*  `q9_romance_yes`
-
-> [exhaling] Then I will try to live through the city. That is new. Thank you for giving me a reason.
->
-
-**ITSUKI** *(if not)*  `q9_romance_no`
-
-> [calm] I understand. It was enough to say it. Sleep.
->
-
-**LAYLA**  `q9_romance`
-
-> [dry] Do not look so alarmed. I am not asking you to love me; your people are terrible at it.
->
-> [soft] I am telling you that I have decided to stay, and that when you sit in that chair I mean to be standing beside it. By the deep, make of that what you will.
->
-
-> **What do you say?**
-> 1. "(Layla) Yes."
-> 2. Say nothing.
->
-
-**LAYLA** *(if yes)*  `q9_romance_yes`
-
-> [satisfied] Good. You will not regret it, and if you do, I will mend that.
->
-
-**LAYLA** *(if not)*  `q9_romance_no`
-
-> [shrugging] As you like. The offer keeps. I am patient in a way your kind is not.
->
-
-**KAITO**  `q9_romance`
-
-> [smiling] So. I flirt with everything. Trees. Wyverns. That doorman. You have noticed.
->
-> [suddenly serious] Forgive me. I have not meant a word of it since the web. I mean this one. Tell me to stop, or tell me not to.
->
-
-> **What do you say?**
-> 1. "(Kaito) Yes."
-> 2. Say nothing.
->
-
-**KAITO** *(if yes)*  `q9_romance_yes`
-
-> [delighted] Do not stop. Understood. Written down. Framed.
->
-> [soft] Thank you. I will be insufferable about this for years.
->
-
-**KAITO** *(if not)*  `q9_romance_no`
-
-> [light] Stop it is. Friends, then, and I am very good at that as well.
->
-
-**AMARA**  `q9_romance`
-
-> [quiet] I loved a man who wanted to be a god. I am not proud of it, and I am not sorry for it.
->
-> [steady] I do not know what I want from you. I know that when you kept your word at the gate, something in me turned toward you the way a plant turns to a window. Say something, or do not.
->
-
-> **What do you say?**
-> 1. "(Amara) Yes."
-> 2. Say nothing.
->
-
-**AMARA** *(if yes)*  `q9_romance_yes`
-
-> [exhaling] Then we will find out what it is together. After the altar. If there is an after.
->
-
-**AMARA** *(if not)*  `q9_romance_no`
-
-> [calm] That is fair. I have asked enough of you for one life. The altar, then.
->
-
-**HIWOT** *(if nobody spoke)*  `q9_romance_none`
-
-> [teasing] Nobody is in love with you. Good. It would have been unbearable.
->
-> [fond] Sleep. Lanternhold in the morning.
+> [warm] You're family, honey. You don't have to face this alone. Get some rest. We leave for Lanternhold in the morning.
 >
 
 ---
 
 ## Quest 10 — Return to Lanternhold  *(Chapter 6)*
 
-_Sanni has accused his father of planning a war. The Consortium leaders are meeting at Lanternhold. Take the evidence, hear Adigun out, and decide whether to kill him or bring him before Adebayo._
+_The keepers are hearing the dispute over poisoned iron. Take the Consortium's orders to Lanternhold, confront Adigun and his partners, and find out where Kolade has gone._
 
 ### Setting out
 
@@ -3049,7 +2945,7 @@ _(if Hiwot in company)_
 
 ### Scene 2: The summit
 
-*The great reading room. Three men in city coats look up from a table of maps.*
+*Before the hearing, you find the three Consortium partners in the great reading room. Maps and shipping records cover their table.*
 
 **ADIGUN ADEYINKA**  `q10_summit`
 
@@ -3557,7 +3453,7 @@ _(combat, no dialogue)_
 
 **AMARA** *(reply to 2)*  `q11_loved_tesfaye`
 
-> [quiet] He lied to keep you. Kolade has never lied to anyone in his life; it is not the same thing, and I think you know it. But yes. It counts. It means you can hear me.
+> [quiet] Yes. Kolade has lied to me too. I know he has hurt people. I still care for him, but I cannot let him go on killing.
 >
 
 **AMARA** *(reply to 3)*  `q11_loved_no`
@@ -3972,151 +3868,11 @@ _(if Delphine in company)_
 
 ### Back in town
 
-_(if Amara in company)_
+_(if flag promisedAmara, Amara in company)_
 
-_The romance closer: whichever companions have grown close enough (affinity 3 or more) speak, one after another, and the player may say yes to one. If nobody does, Hiwot marks the night instead._
+**AMARA**  `q13_trust`
 
-**DELPHINE** *(if Beau dead)*  `q9_romance`
-
-> [quiet] I buried my husband three weeks ago, and I'm ashamed of what I'm fixing to say, so I'll say it fast.
->
-> [steady] I ain't asking for anything. I'm telling you that when this is over, if you asked, I'd say yes. That's all. That's a great deal, for me, and it's more than I've got a right to.
->
-
-> **What do you say?**
-> 1. "(Delphine) Yes."
-> 2. Say nothing.
->
-
-**DELPHINE** *(if yes)*  `q9_romance_yes`
-
-> [a soft, unsteady laugh] Then that's settled, and I'm going to sleep before I say anything foolish.
->
-> [warm] Goodnight, sugar. Actually goodnight.
->
-
-**DELPHINE** *(if not)*  `q9_romance_no`
-
-> [gentle] Then it's said and it's done, and nothing between us changes. Sleep well.
->
-
-**SANTIAGO**  `q9_romance`
-
-> [stumbling] I have written this out four times and burned it three. I — {target}. With respect. I have not stopped looking at you since the wolves, and I am not the sort who looks.
->
-> [earnest] If the Order asks, I will say it was duty. It was not.
->
-
-> **What do you say?**
-> 1. "(Santiago) Yes."
-> 2. Say nothing.
->
-
-**SANTIAGO** *(if yes)*  `q9_romance_yes`
-
-> [overwhelmed] Truly? I — yes. Yes. God keep you. I will be very good at this — I will try very hard to be good at this, I promise.
->
-
-**SANTIAGO** *(if not)*  `q9_romance_no`
-
-> [bravely] Then I am glad I said it, and I will not say it again. Thank you for hearing it.
->
-
-**ITSUKI**  `q9_romance`
-
-> [low] I buried the last person I loved beside a road. I said I would not do this again.
->
-> [quiet] I would, though. With you. I wanted you to know it before the city, in case the city is the end of me.
->
-
-> **What do you say?**
-> 1. "(Itsuki) Yes."
-> 2. Say nothing.
->
-
-**ITSUKI** *(if yes)*  `q9_romance_yes`
-
-> [exhaling] Then I will try to live through the city. That is new. Thank you for giving me a reason.
->
-
-**ITSUKI** *(if not)*  `q9_romance_no`
-
-> [calm] I understand. It was enough to say it. Sleep.
->
-
-**LAYLA**  `q9_romance`
-
-> [dry] Do not look so alarmed. I am not asking you to love me; your people are terrible at it.
->
-> [soft] I am telling you that I have decided to stay, and that when you sit in that chair I mean to be standing beside it. By the deep, make of that what you will.
->
-
-> **What do you say?**
-> 1. "(Layla) Yes."
-> 2. Say nothing.
->
-
-**LAYLA** *(if yes)*  `q9_romance_yes`
-
-> [satisfied] Good. You will not regret it, and if you do, I will mend that.
->
-
-**LAYLA** *(if not)*  `q9_romance_no`
-
-> [shrugging] As you like. The offer keeps. I am patient in a way your kind is not.
->
-
-**KAITO**  `q9_romance`
-
-> [smiling] So. I flirt with everything. Trees. Wyverns. That doorman. You have noticed.
->
-> [suddenly serious] Forgive me. I have not meant a word of it since the web. I mean this one. Tell me to stop, or tell me not to.
->
-
-> **What do you say?**
-> 1. "(Kaito) Yes."
-> 2. Say nothing.
->
-
-**KAITO** *(if yes)*  `q9_romance_yes`
-
-> [delighted] Do not stop. Understood. Written down. Framed.
->
-> [soft] Thank you. I will be insufferable about this for years.
->
-
-**KAITO** *(if not)*  `q9_romance_no`
-
-> [light] Stop it is. Friends, then, and I am very good at that as well.
->
-
-**AMARA**  `q9_romance`
-
-> [quiet] I loved a man who wanted to be a god. I am not proud of it, and I am not sorry for it.
->
-> [steady] I do not know what I want from you. I know that when you kept your word at the gate, something in me turned toward you the way a plant turns to a window. Say something, or do not.
->
-
-> **What do you say?**
-> 1. "(Amara) Yes."
-> 2. Say nothing.
->
-
-**AMARA** *(if yes)*  `q9_romance_yes`
-
-> [exhaling] Then we will find out what it is together. After the altar. If there is an after.
->
-
-**AMARA** *(if not)*  `q9_romance_no`
-
-> [calm] That is fair. I have asked enough of you for one life. The altar, then.
->
-
-**HIWOT** *(if nobody spoke)*  `q9_romance_none`
-
-> [teasing] Nobody is in love with you. Good. It would have been unbearable.
->
-> [fond] Sleep. Lanternhold in the morning.
+> [quiet] You kept your word. Thank you for letting me help.
 >
 
 ---
@@ -4293,6 +4049,254 @@ _(if any of: Amara in company / flag amaraPassed)_
 >
 
 ---
+
+## Optional private conversations at the inn
+
+Two personal conversations on different completed-quest occasions build familiarity. Friendly answers do not start romance. The player must explicitly express romantic interest, then return on a later occasion and choose to discuss the relationship. Only the selected companion speaks. “Not now” and “friends only” are saved; only the player can reopen courtship. Delphine stays familial. Amara has no new romance until a later story resolves Kolade.
+
+### Santiago
+
+**SANTIAGO**  `bond_first`
+
+> [hesitant] The training yard was easy. You knew the other man would stop.
+>
+> [honest] In a real fight, I still want to run. I worry that one day I will.
+>
+
+> **Friendly response:** You held your ground. Being afraid does not change that.
+> **Leave:** I should go. We can talk another time.
+
+**SANTIAGO** *(only after choosing the friendly response; counts once)*  `bond_first_reply`
+
+> [relieved] Thank you. I needed to hear that from someone who had actually seen me fight.
+>
+
+**SANTIAGO**  `bond_second`
+
+> [easier] I wrote home. Mostly about the people I have met. My mother would worry if I described the fighting.
+>
+> [fond] She runs a bakery. I used to get up before dawn to carry flour. I complained every morning. Now I miss it.
+>
+
+> **Friendly response:** I would like to hear about your home. Tell me more.
+> **Leave:** I should go. We can talk another time.
+
+**SANTIAGO** *(only after choosing the friendly response; counts once)*  `bond_second_reply`
+
+> [warm] There is a stool by the oven where I used to sleep between deliveries. Mother still keeps it there. She says my room is too far from the work.
+>
+
+> **Explicit interest:** I would like to be more than friends.
+
+**SANTIAGO**  `bond_interest`
+
+> [shy] I would like that too. May we take a little time? I want to know you better.
+>
+
+**SANTIAGO** *(on a later occasion, only if the player chooses to discuss courtship)*  `q9_romance`
+
+> [nervous] I enjoy the time we spend together. More than I know how to say properly.
+>
+> [earnest] When we have a quiet evening, may I take you to supper? Just the two of us.
+>
+
+**SANTIAGO** *(accept)*  `q9_romance_yes`
+
+> [pleased] Supper, then. I know a decent place. I will try to get through the evening without saluting you.
+>
+
+**SANTIAGO** *(need more time)*  `bond_later`
+
+> [gentle] Of course. Tell me when you are ready. We can still enjoy each other's company.
+>
+
+**SANTIAGO** *(friendship only)*  `q9_romance_no`
+
+> [bravely] Then I am glad I said it, and I will not say it again. Thank you for hearing it.
+>
+
+### Itsuki
+
+**ITSUKI**  `bond_first`
+
+> [low] I have spent so long following tracks that I have given little thought to what comes after.
+>
+> [tired] I cannot go back to the life I had with my wife. I do not yet know what else I want.
+>
+
+> **Friendly response:** You can stay with us while you decide what comes next.
+> **Leave:** I should go. We can talk another time.
+
+**ITSUKI** *(only after choosing the friendly response; counts once)*  `bond_first_reply`
+
+> [quiet] I would like to stay. It helps to have people expecting me back.
+>
+
+**ITSUKI**  `bond_second`
+
+> [thoughtful] I used to guide travellers through the woods. Some had never slept outside. They would wake me over every rustle.
+>
+> [faintly amused] One paid me extra to keep the owls away. I gave him something to plug his ears.
+>
+
+> **Friendly response:** I would like to see the woods with you sometime.
+> **Leave:** I should go. We can talk another time.
+
+**ITSUKI** *(only after choosing the friendly response; counts once)*  `bond_second_reply`
+
+> [warm] I would enjoy that. There are places worth visiting without a bounty to collect.
+>
+
+> **Explicit interest:** I would like to be more than friends.
+
+**ITSUKI**  `bond_interest`
+
+> [careful] I care for you. I need time before I can promise more. If you are willing to wait, I would like to try.
+>
+
+**ITSUKI** *(on a later occasion, only if the player chooses to discuss courtship)*  `q9_romance`
+
+> [low] I still miss my wife. I always will.
+>
+> [quiet] But I have come to care for you too. If you feel the same, I would like us to be together.
+>
+
+**ITSUKI** *(accept)*  `q9_romance_yes`
+
+> [quiet] Then we will take our time. I am glad you told me.
+>
+
+**ITSUKI** *(need more time)*  `bond_later`
+
+> [calm] Take the time you need. You know where to find me.
+>
+
+**ITSUKI** *(friendship only)*  `q9_romance_no`
+
+> [calm] I understand. It was enough to say it. Sleep.
+>
+
+### Layla
+
+**LAYLA**  `bond_first`
+
+> [direct] I appreciate what you did for me. Understand something, though. You did not buy my loyalty by keeping me alive.
+>
+> [firm] I choose where I go and whom I serve.
+>
+
+> **Friendly response:** You owe me no service. Stay because you want to.
+> **Leave:** I should go. We can talk another time.
+
+**LAYLA** *(only after choosing the friendly response; counts once)*  `bond_first_reply`
+
+> [approving] Good. I prefer travelling with someone who understands that.
+>
+
+**LAYLA**  `bond_second`
+
+> [unguarded] I miss the quiet of the shrine. Before the petitions began, I had an hour to myself.
+>
+> [dry] Up here, someone is always shouting, selling something, or telling me what a lovely morning it is. Usually in the rain.
+>
+
+> **Friendly response:** Tell me about the shrine. What was your life there like?
+> **Leave:** I should go. We can talk another time.
+
+**LAYLA** *(only after choosing the friendly response; counts once)*  `bond_second_reply`
+
+> [measured] The work was demanding. I liked that. I knew what was expected of me, and I was good at it. I miss having a place of my own.
+>
+
+> **Explicit interest:** I would like to be more than friends.
+
+**LAYLA**  `bond_interest`
+
+> [interested] You have my attention. Let us spend more time together before deciding anything.
+>
+
+**LAYLA** *(on a later occasion, only if the player chooses to discuss courtship)*  `q9_romance`
+
+> [dry] I enjoy your company when you stop trying to give me orders.
+>
+> [direct] I would like some time alone with you. Interested?
+>
+
+**LAYLA** *(accept)*  `q9_romance_yes`
+
+> [pleased] Good. Come and sit with me. Your duties can wait for an evening.
+>
+
+**LAYLA** *(need more time)*  `bond_later`
+
+> [level] Then leave it for now. You can bring it up when you know what you want.
+>
+
+**LAYLA** *(friendship only)*  `q9_romance_no`
+
+> [cool] Very well. I will not ask again.
+>
+
+### Kaito
+
+**KAITO**  `bond_first`
+
+> [quieter] I know I make a performance of everything. It is easier than admitting I was scared.
+>
+> [honest] When you found me, I thought I was going to die there. I have been sleeping badly since.
+>
+
+> **Friendly response:** You do not have to entertain me. I am glad you are here.
+> **Leave:** I should go. We can talk another time.
+
+**KAITO** *(only after choosing the friendly response; counts once)*  `bond_first_reply`
+
+> [soft] Thank you. I might be rather poor company tonight, but I would like you to stay.
+>
+
+**KAITO**  `bond_second`
+
+> [cheerful] I used to play for supper at roadside inns. I know six songs well and about forty badly.
+>
+> [smiling] I still have the lute. I sold the feathered hat. A man has to improve himself somehow.
+>
+
+> **Friendly response:** I would enjoy hearing you play. Leave the hat at home.
+> **Leave:** I should go. We can talk another time.
+
+**KAITO** *(only after choosing the friendly response; counts once)*  `bond_second_reply`
+
+> [amused] Cruel, but fair. I will play you the good six. You can request the others after enough wine.
+>
+
+> **Explicit interest:** I would like to be more than friends.
+
+**KAITO**  `bond_interest`
+
+> [pleased] I was hoping you might say that. Let us have a little time together and see how we get on.
+>
+
+**KAITO** *(on a later occasion, only if the player chooses to discuss courtship)*  `q9_romance`
+
+> [smiling] I like you. I'd like to spend an evening with you, without the rest of this lot.
+>
+
+**KAITO** *(accept)*  `q9_romance_yes`
+
+> [delighted] Excellent. A decent meal, some wine, and no work.
+>
+> [warm] I have been looking forward to this.
+>
+
+**KAITO** *(need more time)*  `bond_later`
+
+> [easy] All right. Let me know if you want to try again. No awkwardness between us.
+>
+
+**KAITO** *(friendship only)*  `q9_romance_no`
+
+> [light] Stop it is. Friends, then, and I am very good at that as well.
+>
 
 ## In combat — companion banter
 
@@ -4499,6 +4503,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **Wanjiru — present:** Wanjiru went back to the Mirkhollow. The druids have not forgiven her. The trees, she says, have.
 
+**Wanjiru — gone:** Wanjiru left when the road reached the Gate. She said she had been away from the wood long enough, and that she would know if the river ever ran clean again.
+
 **Dai Morgan — present:** Dai Morgan went back to the Mirkhollow mine with a charter and forty of his clan. It is called the Nineteen now, and ledger four is buried under the first shaft.
 
 **Dai Morgan — gone:** Dai Morgan is presumed to have died in the cages. The mine is closed.
@@ -4509,29 +4515,25 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **Amara — dead:** Amara is buried at the gate of the Undercity, where she stood.
 
-**Romance — Delphine:** Delphine is at the Warden house. So are you, most nights. Neither of you has said Beau's name in front of the other yet. You will.
+**Romance — Santiago:** Santiago asked you to attend his knighting. You went together, then slipped away for supper before the speeches had finished.
 
-**Romance — Delphine, favoured ending:** She says Tesfaye would have liked how it ended. Then she says he would have cheated a little. Then she laughs, for the first time since the mine.
+**Romance — Santiago, favoured ending:** He asked to help rebuild the damaged streets. You spent several mornings working beside him.
 
-**Romance — Santiago:** Santiago asked you to attend his knighting. You did. The Order pretended not to notice you.
+**Romance — Itsuki:** You and Itsuki make time to walk outside the city. Some days he speaks about his wife. On others, you plan where to travel next.
 
-**Romance — Santiago, favoured ending:** He calls it the right ending. He calls everything the right ending. This time you agree with him.
+**Romance — Itsuki, favoured ending:** After the hunt was over, he asked you to visit the woods where he once worked as a guide.
 
-**Romance — Itsuki:** Itsuki sleeps through the night now. He says it is the tree. You suspect it is not the tree.
+**Romance — Layla:** Layla invites you to her chapel after the day's work. You share meals, argue over the wine, and make plans together.
 
-**Romance — Itsuki, favoured ending:** He said "mine" once more, at the altar, and then never again. He did not need to.
+**Romance — Layla, favoured ending:** She insists on keeping her own duties. The two of you arrange time together around them.
 
-**Romance — Layla:** Layla sleeps in the chapel and, when it suits her, elsewhere. She is very clear that it suits her.
+**Romance — Kaito:** Kaito takes you to the inns where he once played for his supper. He remembers the songs better than he claims.
 
-**Romance — Layla, favoured ending:** She was standing beside the chair when you sat in it. She has not stopped smiling. It is not a warm smile. It is yours.
+**Romance — Kaito, favoured ending:** His work with the Undervault keeps him busy, but he always makes time for an evening with you.
 
-**Romance — Kaito:** Kaito still flirts with everything. He says it is professional courtesy. He comes home to one door.
+**Romance — Amara:** You and Amara agree to take your relationship slowly. There is much still to discuss, including her feelings for Kolade.
 
-**Romance — Kaito, favoured ending:** The Undervault knows his face now, and yours, and treats you both as family. Tunde says that is the debt, paid.
-
-**Romance — Amara:** Amara brings bread to the cell every week. You walk her there and wait outside. She has never once asked you to come in.
-
-**Romance — Amara, favoured ending:** She said you kept your word. She said it as if it were the strangest thing anyone had ever done for her.
+**Romance — Amara, favoured ending:** She thanks you for hearing her out. Neither of you pretends that the road ahead will be easy.
 
 **The blood — reject:** The dreams stopped. The chair is a chair.
 
@@ -4545,19 +4547,19 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 | # | Character | Role | From | Lines | Voice ID |
 |---|---|---|---|---|---|
-| 1 | Amara | companion | Nigerian (Yoruba and Igbo) | 27 | nlQtoxiWTYC3witBlK1H |
+| 1 | Amara | companion | Nigerian (Yoruba and Igbo) | 24 | nlQtoxiWTYC3witBlK1H |
 | 2 | Bahadır | companion | Turkish | 9 | ZZKBkhKNX9bfxn63cQTM |
 | 3 | Beau | companion | Georgia, USA | 15 | 7ma36jg9JC0d1pfrWXMw |
 | 4 | Dai Morgan | companion | Welsh valleys | 18 | QZU5JP2C26gx328DNBza |
-| 5 | Delphine | companion | Georgia, USA | 93 | a3tSl2M9CVI359Oy7H6v |
+| 5 | Delphine | companion | Georgia, USA | 89 | a3tSl2M9CVI359Oy7H6v |
 | 6 | Desmond | companion | Jamaican | 14 | 5OtKrUz8y0NUBuMW6YcK |
 | 7 | Devendra | companion | Indian | 8 | Sm4AUh4ykvT9ljuZ5Uy8 |
 | 8 | Hiwot | companion | Ethiopian highlands | 77 | 0F4ybvRD5Lm0AIt5almW |
-| 9 | Itsuki | companion | Japanese | 25 | EqIniNyrvzFcbGecFyI5 |
-| 10 | Kaito | companion | Japanese | 28 | O5EDsXljBLA6l3KfYEde |
-| 11 | Layla | companion | Arabic | 22 | 7nj1jqrTE7EDXPyxWBhY |
-| 12 | Santiago | companion | Mexican | 21 | xHLnsxqUy4cc16VOmSD4 |
-| 13 | Wanjiru | companion | Kenyan | 12 | U1NXjHF5ene7Eze10d5J |
+| 9 | Itsuki | companion | Japanese | 33 | EqIniNyrvzFcbGecFyI5 |
+| 10 | Kaito | companion | Japanese | 35 | O5EDsXljBLA6l3KfYEde |
+| 11 | Layla | companion | Arabic | 30 | 7nj1jqrTE7EDXPyxWBhY |
+| 12 | Santiago | companion | Mexican | 29 | xHLnsxqUy4cc16VOmSD4 |
+| 13 | Wanjiru | companion | Kenyan | 15 | U1NXjHF5ene7Eze10d5J |
 | 14 | Winston | companion | Jamaican | 31 | R7jdv6H5bZOU3sQIMhbd |
 | 15 | Yasemin | companion | Turkish | 10 | E7IRB2a3OVqRb6T7du39 |
 | 16 | Kolade Adeyinka (the Armoured) | antagonist | Nigerian (Yoruba and Igbo) | 37 | CmD1sSN0Gj3pJq3OxRyg |
@@ -4587,9 +4589,10 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 | 40 | Kemi | boss | Nigerian (Yoruba and Igbo) | 1 | zzp11mPTUa7yKugVGfwD |
 | 41 | Lurleen | boss | Georgia, USA | 6 | xWbXI06Q9UpLaSG8TVpw |
 | 42 | Merle | boss | Georgia, USA | 8 | al2GsnInvOnScFc93vu6 |
-| 43 | Olamide | boss | Nigerian (Yoruba and Igbo) | 7 | qY77JO62oGpUeMUDF7bS |
-| 44 | Rasheed | boss | Nigerian (Yoruba and Igbo) | 1 | SwayIXZEQHYPgOU8ZLVO |
-| 45 | Segun Marr | boss | Nigerian (Yoruba and Igbo) | 3 | ouilM4BVCVF7fxKGukKI |
+| 43 | Mzee Kamau (Archdruid) | boss | Kenyan | 5 | _unassigned_ |
+| 44 | Olamide | boss | Nigerian (Yoruba and Igbo) | 7 | qY77JO62oGpUeMUDF7bS |
+| 45 | Rasheed | boss | Nigerian (Yoruba and Igbo) | 1 | SwayIXZEQHYPgOU8ZLVO |
+| 46 | Segun Marr | boss | Nigerian (Yoruba and Igbo) | 3 | ouilM4BVCVF7fxKGukKI |
 
 ## Amara  `amara`
 
@@ -4598,19 +4601,6 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **Who they are:** Kolade's lover and sword-hand. A monk of the Gate's fire temples who wants him stopped, not slaughtered. Grave, exact, tired.
 
 **From:** Varenholm's Gate — dukes, Gauntlet, Consortium, temples, thieves — Nigerian (Yoruba and Igbo). **Voice:** Grand, formal city English. "It is not a small matter", "my friend", "ah-ah!", "I am telling you", "o" softening the end of a line. Titles matter; elders are "Baba" and "Mama".
-
-**q9_romance**
-
-- `q9_romance_1` — [quiet] I loved a man who wanted to be a god. I am not proud of it, and I am not sorry for it.
-- `q9_romance_2` — [steady] I do not know what I want from you. I know that when you kept your word at the gate, something in me turned toward you the way a plant turns to a window. Say something, or do not.
-
-**q9_romance_no**
-
-- `q9_romance_no_1` — [calm] That is fair. I have asked enough of you for one life. The altar, then.
-
-**q9_romance_yes**
-
-- `q9_romance_yes_1` — [exhaling] Then we will find out what it is together. After the altar. If there is an after.
 
 **q11_amara_how**
 
@@ -4649,7 +4639,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q11_loved_tesfaye**
 
-- `q11_loved_tesfaye_1` — [quiet] He lied to keep you. Kolade has never lied to anyone in his life; it is not the same thing, and I think you know it. But yes. It counts. It means you can hear me.
+- `q11_loved_tesfaye_1` — [quiet] Yes. Kolade has lied to me too. I know he has hurt people. I still care for him, but I cannot let him go on killing.
 
 **q11_loved_yes**
 
@@ -4675,6 +4665,10 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q13_gate_pass**
 
 - `q13_gate_pass_1` — [stepping aside] Go. I will be at the altar before you, on my knees, asking him the same thing. He will not listen to me. He might listen to you.
+
+**q13_trust**
+
+- `q13_trust_1` — [quiet] You kept your word. Thank you for letting me help.
 
 **q14_plea**
 
@@ -4841,9 +4835,9 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 ## Delphine  `selene`
 
-**Sex:** female · **Role:** companion (romanceable) · **Voice ID:** a3tSl2M9CVI359Oy7H6v
+**Sex:** female · **Role:** companion · **Voice ID:** a3tSl2M9CVI359Oy7H6v
 
-**Who they are:** Beau's wife and an old friend of your late stepfather, Tesfaye. A Warden druid of the Shore Road: blunt, protective, allergic to self-pity. Speaks for the balance of things.
+**Who they are:** Beau's wife and an old friend of your late stepfather, Tesfaye. She regards you as family. A Warden druid of the Shore Road: blunt, protective, allergic to self-pity. Speaks for the balance of things.
 
 **From:** Thornbury, the Shore Road and the Wardens' country — Georgia, USA. **Voice:** Warm drawl. "I reckon", "I'll tell you what", "y'all", "fixing to", "bless him". Plain-spoken courtesy; ma'am and sir to strangers. Long vowels, short tempers.
 
@@ -5022,6 +5016,10 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 - `q8_faces_1` — [disturbed] That's the merchant's face and it ain't the merchant. Look at the eyes, honey. Nothing lives behind 'em.
 - `q8_faces_2` — [hard] Shape-thieves. They wear you after they kill you. Don't let one get behind you.
 
+**q9_family**
+
+- `q9_family_1` — [warm] You're family, honey. You don't have to face this alone. Get some rest. We leave for Lanternhold in the morning.
+
 **q9_lobby**
 
 - `q9_lobby_1` — [murmuring] A clerk with a list and two guards who are paid to believe him.
@@ -5033,20 +5031,6 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q9_lobby_talk**
 
 - `q9_lobby_talk_1` — [quiet] He believed it. Third floor. Don't touch anything.
-
-**q9_romance**
-
-- `q9_romance_1` — [quiet] I buried my husband three weeks ago, and I'm ashamed of what I'm fixing to say, so I'll say it fast.
-- `q9_romance_2` — [steady] I ain't asking for anything. I'm telling you that when this is over, if you asked, I'd say yes. That's all. That's a great deal, for me, and it's more than I've got a right to.
-
-**q9_romance_no**
-
-- `q9_romance_no_1` — [gentle] Then it's said and it's done, and nothing between us changes. Sleep well.
-
-**q9_romance_yes**
-
-- `q9_romance_yes_1` — [a soft, unsteady laugh] Then that's settled, and I'm going to sleep before I say anything foolish.
-- `q9_romance_yes_2` — [warm] Goodnight, sugar. Actually goodnight.
 
 **q9_top**
 
@@ -5318,6 +5302,11 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 - `q7_flood_now_1` — [shouting] NO —
 - `q7_flood_now_2` — [hollow] He was coming up. We could hear the chains.
 
+**q7_mine_umbra_none**
+
+- `q7_mine_umbra_none_1` — [low] The druids wanted this mine shut down too.
+- `q7_mine_umbra_none_2` — [dry] We could have had their help. Instead, we picked a fight with them. That was clever of us.
+
 **q7_papers**
 
 - `q7_papers_1` — [reading] Three names at the Consortium's tower in the city. Adigun Adeyinka, Bankole, Rotimi.
@@ -5362,11 +5351,6 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q9_lobby_wren**
 
 - `q9_lobby_wren_1` — [hushed] Got it. There is a name at the bottom in red: "the ward — as agreed." Whatever we do up there, somebody upstairs already knows we are coming.
-
-**q9_romance_none**
-
-- `q9_romance_none_1` — [teasing] Nobody is in love with you. Good. It would have been unbearable.
-- `q9_romance_none_2` — [fond] Sleep. Lanternhold in the morning.
 
 **q9_top**
 
@@ -5527,8 +5511,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance**
 
-- `q9_romance_1` — [low] I buried the last person I loved beside a road. I said I would not do this again.
-- `q9_romance_2` — [quiet] I would, though. With you. I wanted you to know it before the city, in case the city is the end of me.
+- `q9_romance_1` — [low] I still miss my wife. I always will.
+- `q9_romance_2` — [quiet] But I have come to care for you too. If you feel the same, I would like us to be together.
 
 **q9_romance_no**
 
@@ -5536,7 +5520,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance_yes**
 
-- `q9_romance_yes_1` — [exhaling] Then I will try to live through the city. That is new. Thank you for giving me a reason.
+- `q9_romance_yes_1` — [quiet] Then we will take our time. I am glad you told me.
 
 **q11_docks_ithrel**
 
@@ -5545,6 +5529,32 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q13_gorruk**
 
 - `q13_gorruk_1` — [very quietly] Mine. You said. Say it again.
+
+**bond_first**
+
+- `bond_first_1` — [low] I have spent so long following tracks that I have given little thought to what comes after.
+- `bond_first_2` — [tired] I cannot go back to the life I had with my wife. I do not yet know what else I want.
+
+**bond_first_reply**
+
+- `bond_first_reply_1` — [quiet] I would like to stay. It helps to have people expecting me back.
+
+**bond_interest**
+
+- `bond_interest_1` — [careful] I care for you. I need time before I can promise more. If you are willing to wait, I would like to try.
+
+**bond_later**
+
+- `bond_later_1` — [calm] Take the time you need. You know where to find me.
+
+**bond_second**
+
+- `bond_second_1` — [thoughtful] I used to guide travellers through the woods. Some had never slept outside. They would wake me over every rustle.
+- `bond_second_2` — [faintly amused] One paid me extra to keep the owls away. I gave him something to plug his ears.
+
+**bond_second_reply**
+
+- `bond_second_reply_1` — [warm] I would enjoy that. There are places worth visiting without a bounty to collect.
 
 **banter**
 
@@ -5612,8 +5622,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance**
 
-- `q9_romance_1` — [smiling] So. I flirt with everything. Trees. Wyverns. That doorman. You have noticed.
-- `q9_romance_2` — [suddenly serious] Forgive me. I have not meant a word of it since the web. I mean this one. Tell me to stop, or tell me not to.
+- `q9_romance_1` — [smiling] I like you. I'd like to spend an evening with you, without the rest of this lot.
 
 **q9_romance_no**
 
@@ -5621,8 +5630,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance_yes**
 
-- `q9_romance_yes_1` — [delighted] Do not stop. Understood. Written down. Framed.
-- `q9_romance_yes_2` — [soft] Thank you. I will be insufferable about this for years.
+- `q9_romance_yes_1` — [delighted] Excellent. A decent meal, some wine, and no work.
+- `q9_romance_yes_2` — [warm] I have been looking forward to this.
 
 **q10_double_listen**
 
@@ -5647,6 +5656,32 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q13_maze_follow**
 
 - `q13_maze_follow_1` — [murmuring] Left. Left. Do not step there. — And we are through, and nobody even bled. I love being right.
+
+**bond_first**
+
+- `bond_first_1` — [quieter] I know I make a performance of everything. It is easier than admitting I was scared.
+- `bond_first_2` — [honest] When you found me, I thought I was going to die there. I have been sleeping badly since.
+
+**bond_first_reply**
+
+- `bond_first_reply_1` — [soft] Thank you. I might be rather poor company tonight, but I would like you to stay.
+
+**bond_interest**
+
+- `bond_interest_1` — [pleased] I was hoping you might say that. Let us have a little time together and see how we get on.
+
+**bond_later**
+
+- `bond_later_1` — [easy] All right. Let me know if you want to try again. No awkwardness between us.
+
+**bond_second**
+
+- `bond_second_1` — [cheerful] I used to play for supper at roadside inns. I know six songs well and about forty badly.
+- `bond_second_2` — [smiling] I still have the lute. I sold the feathered hat. A man has to improve himself somehow.
+
+**bond_second_reply**
+
+- `bond_second_reply_1` — [amused] Cruel, but fair. I will play you the good six. You can request the others after enough wine.
 
 **banter**
 
@@ -5698,16 +5733,16 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance**
 
-- `q9_romance_1` — [dry] Do not look so alarmed. I am not asking you to love me; your people are terrible at it.
-- `q9_romance_2` — [soft] I am telling you that I have decided to stay, and that when you sit in that chair I mean to be standing beside it. By the deep, make of that what you will.
+- `q9_romance_1` — [dry] I enjoy your company when you stop trying to give me orders.
+- `q9_romance_2` — [direct] I would like some time alone with you. Interested?
 
 **q9_romance_no**
 
-- `q9_romance_no_1` — [shrugging] As you like. The offer keeps. I am patient in a way your kind is not.
+- `q9_romance_no_1` — [cool] Very well. I will not ask again.
 
 **q9_romance_yes**
 
-- `q9_romance_yes_1` — [satisfied] Good. You will not regret it, and if you do, I will mend that.
+- `q9_romance_yes_1` — [pleased] Good. Come and sit with me. Your duties can wait for an evening.
 
 **q10_catacombs_ilvara**
 
@@ -5728,6 +5763,32 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q14_sanctum**
 
 - `q14_sanctum_1` — [reverent] Do you feel it? The stone remembers him. Morrak. By the deep — it would remember you too, if you let it.
+
+**bond_first**
+
+- `bond_first_1` — [direct] I appreciate what you did for me. Understand something, though. You did not buy my loyalty by keeping me alive.
+- `bond_first_2` — [firm] I choose where I go and whom I serve.
+
+**bond_first_reply**
+
+- `bond_first_reply_1` — [approving] Good. I prefer travelling with someone who understands that.
+
+**bond_interest**
+
+- `bond_interest_1` — [interested] You have my attention. Let us spend more time together before deciding anything.
+
+**bond_later**
+
+- `bond_later_1` — [level] Then leave it for now. You can bring it up when you know what you want.
+
+**bond_second**
+
+- `bond_second_1` — [unguarded] I miss the quiet of the shrine. Before the petitions began, I had an hour to myself.
+- `bond_second_2` — [dry] Up here, someone is always shouting, selling something, or telling me what a lovely morning it is. Usually in the rain.
+
+**bond_second_reply**
+
+- `bond_second_reply_1` — [measured] The work was demanding. I liked that. I knew what was expected of me, and I was good at it. I miss having a place of my own.
 
 **banter**
 
@@ -5795,8 +5856,8 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance**
 
-- `q9_romance_1` — [stumbling] I have written this out four times and burned it three. I — With respect. I have not stopped looking at you since the wolves, and I am not the sort who looks.
-- `q9_romance_2` — [earnest] If the Order asks, I will say it was duty. It was not.
+- `q9_romance_1` — [nervous] I enjoy the time we spend together. More than I know how to say properly.
+- `q9_romance_2` — [earnest] When we have a quiet evening, may I take you to supper? Just the two of us.
 
 **q9_romance_no**
 
@@ -5804,7 +5865,33 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_romance_yes**
 
-- `q9_romance_yes_1` — [overwhelmed] Truly? I — yes. Yes. God keep you. I will be very good at this — I will try very hard to be good at this, I promise.
+- `q9_romance_yes_1` — [pleased] Supper, then. I know a decent place. I will try to get through the evening without saluting you.
+
+**bond_first**
+
+- `bond_first_1` — [hesitant] The training yard was easy. You knew the other man would stop.
+- `bond_first_2` — [honest] In a real fight, I still want to run. I worry that one day I will.
+
+**bond_first_reply**
+
+- `bond_first_reply_1` — [relieved] Thank you. I needed to hear that from someone who had actually seen me fight.
+
+**bond_interest**
+
+- `bond_interest_1` — [shy] I would like that too. May we take a little time? I want to know you better.
+
+**bond_later**
+
+- `bond_later_1` — [gentle] Of course. Tell me when you are ready. We can still enjoy each other's company.
+
+**bond_second**
+
+- `bond_second_1` — [easier] I wrote home. Mostly about the people I have met. My mother would worry if I described the fighting.
+- `bond_second_2` — [fond] She runs a bakery. I used to get up before dawn to carry flour. I complained every morning. Now I miss it.
+
+**bond_second_reply**
+
+- `bond_second_reply_1` — [warm] There is a stool by the oven where I used to sleep between deliveries. Mother still keeps it there. She says my room is too far from the work.
 
 **banter**
 
@@ -5846,6 +5933,12 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 - `q6_nettle_talk_1` — [grudging] Then we want the same thing, and I would rather kill them beside you than argue with the Mzee about killing you.
 - `q6_nettle_talk_2` — [decisive] Sawa. I am coming. He can take it up with the trees.
+
+**q7_mine_umbra**
+
+- `q7_mine_umbra_1` — [quiet] So this is the mine.
+- `q7_mine_umbra_2` — [hard] For two years, I have watched the river get worse. Dead fish, sick animals. All because of this place.
+- `q7_mine_umbra_3` — [firm] I want this mine shut before we leave.
 
 **banter**
 
@@ -6280,12 +6373,12 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 **q9_book**
 
-- `q9_book_1` — [grave] Then you go to Lanternhold. The keep takes a book as its toll; here is one worth the toll. Do not lose it.
-- `q9_book_2` — [quiet] Find them. Bring me proof I can read to the Council. And — whatever they are hiding about you, I would rather you heard it from a friend than from them.
+- `q9_book_1` — [grave] The keepers hold shipping records both kingdoms trust. They are hearing the dispute over the iron shortage. Take Adigun's orders to Lanternhold and show them who caused it.
+- `q9_book_2` — [quiet] I will have my officers keep looking for Kolade here. His father may know where he is. Question Adigun, and bring him back alive if you can. This book will pay your way into the keep.
 
 **q9_plan**
 
-- `q9_plan_1` — [precise] The Consortium is hiring swords. You walk in the front door as swords. The ledgers are on the top floor with three men who never leave it.
+- `q9_plan_1` — [precise] The Consortium is hiring swords. Go in as hired guards and search the top-floor offices. We need the orders bearing Adigun's seal.
 - `q9_plan_2` — [dry] If you can do it without burning the tower down, the city would appreciate it. If you cannot, the city will understand.
 
 **q11_cured**
@@ -6530,7 +6623,7 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 **q9_tower**
 
 - `q9_tower_1` — [quiet, city-formal] Tesfaye's ward. I am Sanni. I knew him through the keep's book trade. He wrote about you and Hiwot. I was sorry to hear what happened on the Griffon Road.
-- `q9_tower_2` — [low] Adigun Adeyinka is my father. He runs this office. Those orders from the mine carry his seal, and he has gone to Lanternhold to secure the keepers' support. The papers upstairs will prove it.
+- `q9_tower_2` — [low] Adigun Adeyinka is my father. Those orders from the mine carry his seal. He and his partners have gone to Lanternhold for a hearing over the iron shortage. He means to persuade the keepers that Calder is to blame.
 - `q9_tower_3` — [urgent] He is preparing a war with Calder. Kill him before he buys the Council's vote and you could save thousands of lives. Go to the summit at Lanternhold. Read the evidence first, and hear what he has to say. I will meet you there.
 
 **q10_accuse**
@@ -7035,6 +7128,25 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 - `q2_morwin_name_1` — [chuckling] Same as always. A seal, no name. Iron hand on red wax, pressed hard, like whoever did it was angry at the wax. If you want a name you'll have to go up the road a good deal further than me.
 
+## Mzee Kamau, Archdruid  `thornwise`
+
+**Sex:** male · **Role:** boss · **Voice ID:** _unassigned_
+
+**Who they are:** The Umbra archdruid of the Mirkhollow. Believes every axe-holder deserves a root through the chest.
+
+**From:** The Mirkhollow and the Umbra circle — Kenyan. **Voice:** Direct and rhythmic. "Sawa", "pole pole", "eh?" at the end of a challenge, "Mzee" for elders. Swahili proverbs in translation ("haste has no blessing").
+
+**q6_grove_mzee**
+
+- `q6_grove_mzee_1` — [old, unhurried] Wanjiru. They have been told to leave.
+- `q6_grove_mzee_2` — [flat] I have buried nine of ours since that mine opened. If these people work for the Consortium, they will get no mercy from me.
+- `q6_grove_mzee_3` — [cold] Hear them out if you must. They stay where they are.
+
+**q6_grove_mzee_peace**
+
+- `q6_grove_mzee_peace_1` — [flat, from the trees] Wanjiru. If they are lying, you are the one who let them in.
+- `q6_grove_mzee_peace_2` — [grudging] Go with them, then. Make sure they shut that mine. I expect you back when it is done.
+
 ## Olamide  `malvane`
 
 **Sex:** male · **Role:** boss · **Voice ID:** qY77JO62oGpUeMUDF7bS
@@ -7099,4 +7211,4 @@ _One suitable line from a standing ally in round two. Unheard lines rotate befor
 
 ---
 
-**Totals:** 45 characters · 677 clips · 80,550 characters of text (ElevenLabs bills per character).
+**Totals:** 46 characters · 709 clips · 82,993 characters of text (ElevenLabs bills per character).
