@@ -1,8 +1,6 @@
-# Varenholm's Gate — Story Campaign Design (campaign3)
+# Varenholm’s Iron War — Story Campaign Design (campaign3)
 
-Fan-made, non-commercial. Structure follows the Varenholm's Gate research GDD
-(`Varenholms_Gate_GDD.docx`); every line of dialogue, every choice tree and every
-system hook here is original and written for how Adventurer actually works.
+Varenholm’s Iron War is an AI-generated story campaign pack for Adventurer, edited and integrated for its characters, choices, and game systems. This is the current production design. Historical research is retained separately and excluded from the game release; this label is not a statement of legal clearance.
 
 Art is out of scope for this document — see `VARENHOLMS_GATE_ART_REQUIREMENTS.md`.
 Voice is out of scope for this pass — see `VARENHOLMS_GATE_VOICE_SCRIPT.md`.
@@ -11,7 +9,7 @@ Voice is out of scope for this pass — see `VARENHOLMS_GATE_VOICE_SCRIPT.md`.
 
 ## 0. How the player reaches it
 
-- A **Varenholm's Gate** button sits in the town menu beside Campaign / Allegiances,
+- A **Varenholm’s Iron War** button sits in the town menu beside Campaign / Allegiances,
   visible from the first minute of a new life. No contract gate, no reputation gate.
 - The button opens the **Story hall** (`Panels.story`): the current chapter, the next
   quest, the company roster (which companions ride along), the heritage meter, and the
@@ -95,7 +93,7 @@ Every named person carries a `region` (campaign3_data.js, `CAMPAIGN3_REGIONS`). 
 | Varenholm's Gate (dukes, Gauntlet, Consortium, temples, thieves) | Nigerian (Yoruba / Igbo) | Kolade Adeyinka, Adigun Adeyinka, Bankole, Rotimi, Adebayo, Olumide, Folasade, Emeka Obi, Segun Marr, Tunde Softfoot, Folake, Baba Olusegun, Sanni, Jelani, Olamide, Femi, Gbenga, Idris, Rasheed, Kemi, Amara |
 | The elves of the eastern woods | Japanese | Itsuki, Kaito |
 | The deep cities (dark elves) | Arabic | Layla |
-| Kalden | Turkish | Bahadır, Yasemin (and the hamster Fındık) |
+| Kalden | Turkish | Bahadır, Yasemin (and the tiger Fındık) |
 | Vashk | Indian | Devendra |
 | The Umbral Hand | Jamaican | Desmond, Winston |
 | The Order of the Dawning Flame | Mexican | Santiago |

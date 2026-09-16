@@ -4,7 +4,7 @@
 
 Overhaul Adventurer's complete visual presentation into a cohesive anime fantasy aesthetic: characters, equipment, monsters, bosses, environments, travel, cutscenes, portraits, beast forms, combat effects, and supporting interface art.
 
-Use Black Clover and That Time I Got Reincarnated as a Slime as broad references for expressive fantasy characters, adventurous atmosphere, readable action, rich environments, and strong color design. Create original designs appropriate to Adventurer's own factions, cast, gear, and world.
+Use expressive fantasy characters, crisp cel shading, adventurous atmosphere, readable action, detailed environments, and strong color design. Create original designs appropriate to Adventurer's own factions, cast, gear, and world.
 
 Deliver visibly better drawing, anatomy, costume design, material definition, perspective, lighting, and composition. A palette swap, thicker outlines, or a shader over the existing placeholder shapes is insufficient.
 
