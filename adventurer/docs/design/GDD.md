@@ -171,10 +171,12 @@ It also runs against you: everyone who fights the player learns from them, inclu
 `Fire Bolt (basic) → Fire Bolt+ (intermediate) → Fire Ball (advanced)`
 
 - **Basic** — the learned entry, default manifestation.
-- **Intermediate** — granted by a matching gear set (§10) as a **floor**, or reached by skill level. Purchasable with gold.
-- **Advanced** — reached by skill level only. Never purchasable.
+- **Intermediate** — granted by any matching gear set (§10) as a **floor**, or reached by skill level. Purchasable with gold.
+- **Advanced** — reached by skill level, or by a matching **800g set or campaign reward set** once the skill's own level has reached Intermediate.
 
-Gear sets raise the floor and never stack past it: if a skill's level already manifests at or above intermediate, the set changes nothing. Gold buys a shortcut past the early grind; only use earns advanced.
+Gear acts on a skill's **natural** level, so a floor and a tier advance never compound. Every matching set floors its skills at level 10, which is Intermediate. The four 800g sets and every campaign reward set additionally advance one tier from natural level: below natural 10 that lands on the same Intermediate floor, and from natural 10 the skill manifests as its **Advanced** form. Fire Bolt therefore becomes Fire Ball at 90 casts in a Mage Set, against 240 casts bare.
+
+The cheaper single- and dual-class sets (400–600g) floor only and never reach Advanced. They are bought for breadth — most of them cover two archetypes — and for early power, not for the top tier. A character in one still levels every skill normally through use and reaches Advanced that way.
 
 This applies universally — player, NPC, and monster alike. The same basic skill in a novice's hands and a veteran's hands is a different thing on the battlefield. **Skill level is therefore the primary difficulty dial in a fixed-stat game:** a high-level bandit is dangerous not because he has more skills, but because his basic skills manifest as their advanced forms.
 
